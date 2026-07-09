@@ -1,0 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --primary: #2B7A84;
+  --primary-dark: #1D5960;
+  --primary-subtle: rgba(43, 122, 132, 0.12);
+  --bg-warm: #FBF7F0;
+  --bg-cool: #E8DDD0;
+  --bg-surface: #FFFFFF;
+  --fg1: #243434;
+  --fg2: #4A5C5C;          /* ~7:1 sobre blanco */
+  --fg3: #5F7070;          /* ~4.6:1 sobre blanco — pasa WCAG AA */
+  --border-color: #C9BBAD;
+  --border-strong: #9CABAB;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 1px 3px rgba(44,62,62,0.10);
+  --shadow-md: 0 4px 12px rgba(44,62,62,0.14);
+  --shadow-lg: 0 8px 24px rgba(44,62,62,0.18);
+  --shadow-xl: 0 16px 48px rgba(44,62,62,0.24);
+  --color-salud: #B85C84;
+  --color-educacion: #7857A0;
+  --color-empleo: #BE7C34;
+  --color-artes: #5F8043;
+  --color-comunidad: #3A8C8C;
+  --color-vida: #2B7A84;
+  --color-success: #1F8049;
+  --color-warning: #BE7C34;
+  --color-error: #B0434B;
+  --color-info: #2E6F99;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Anillo de foco — visible y consistente en toda la app */
+  --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACCESIBILIDAD: Escalado de texto (zoom de página)
+   La app usa px en estilos en línea, así que escalamos con `zoom`
+   sobre el contenedor raíz — agranda texto Y objetivos táctiles.
+   ───────────────────────────────────────────────────────── */
+html[data-text-scale="lg"] #a11y-root { zoom: 1.15; }
+html[data-text-scale="xl"] #a11y-root { zoom: 1.32; }
+
+/* ─────────────────────────────────────────────────────────
+   ACCESIBILIDAD: Alto contraste
+   Reescribe los tokens; como los estilos en línea usan var(--*),
+   el cambio cascada automáticamente.
+   ───────────────────────────────────────────────────────── */
+html[data-contrast="high"] {
+  --primary: #0F4A52;
+  --primary-dark: #0A363C;
+  --primary-subtle: rgba(15, 74, 82, 0.18);
+  --bg-warm: #FFFFFF;
+  --bg-cool: #EAEAEA;
+  --bg-surface: #FFFFFF;
+  --fg1: #000000;
+  --fg2: #16201F;
+  --fg3: #16201F;
+  --border-color: #16201F;
+  --border-strong: #000000;
+  --color-success: #0B5A2E;
+  --color-warning: #7A4A00;
+  --color-error: #8C1F27;
+  --color-info: #134A6E;
+  --shadow-sm: 0 0 0 1px #16201F;
+  --shadow-md: 0 0 0 2px #16201F;
+  --shadow-lg: 0 0 0 2px #16201F;
+}
+html[data-contrast="high"] .card,
+html[data-contrast="high"] [data-surface] { border-width: 2px !important; }
+
+/* ─────────────────────────────────────────────────────────
+   ACCESIBILIDAD: Lectura fácil
+   Más interlineado, más espaciado de letras, sin cursiva.
+   ───────────────────────────────────────────────────────── */
+html[data-easy-read="true"] #a11y-root {
+  --font-display: 'Inter', system-ui, sans-serif;   /* serif → sans, más legible */
+}
+html[data-easy-read="true"] #a11y-root,
+html[data-easy-read="true"] #a11y-root * {
+  line-height: 1.75 !important;
+  letter-spacing: 0.02em !important;
+  font-style: normal !important;
+  word-spacing: 0.05em !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACCESIBILIDAD: Reducir movimiento (manual o por sistema)
+   ───────────────────────────────────────────────────────── */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACCESIBILIDAD: Modo Daltónico
+   Aplica matrices de color vía SVG filter — los filtros
+   están definidos en AccessibilityBar.jsx (siempre en DOM).
+   ───────────────────────────────────────────────────────── */
+html[data-colorblind="deuteranopia"] #a11y-root {
+  filter: url('#cb-deuteranopia');
+}
+html[data-colorblind="protanopia"] #a11y-root {
+  filter: url('#cb-protanopia');
+}
+html[data-colorblind="tritanopia"] #a11y-root {
+  filter: url('#cb-tritanopia');
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg-warm);
+  color: var(--fg1);
+  -webkit-font-smoothing: antialiased;
+  font-size: 17px;            /* base más legible (antes implícito 16) */
+  line-height: 1.6;
+}
+
+/* ─────────────────────────────────────────────────────────
+   FOCO VISIBLE — crítico para teclado / switch / lectores
+   ───────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+  position: relative;
+  z-index: 1;
+}
+/* Para elementos que ya tienen su propio border-radius redondo */
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Skip-link: oculto hasta recibir foco con Tab */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 2000;
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-family: var(--font-body);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 16px; }
+
+/* Clase utilitaria: solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  padding: 12px 28px;
+  min-height: 48px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--fg1);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  padding: 12px 28px;
+  min-height: 48px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes flowerPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

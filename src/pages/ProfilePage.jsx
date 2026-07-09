@@ -1,0 +1,251 @@
+import { useState } from 'react'
+import { useProfile, useUpdateProfile } from '../hooks/useAuth'
+import { useAuthStore } from '../stores/authStore'
+import { useUiStore } from '../stores/uiStore'
+import { AppSidebar, TopNav, Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle } from '../components/shared'
+
+const DISABILITY_OPTIONS = [
+  'Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial',
+  'Múltiple', 'Autismo', 'Síndrome de Down', 'Lenguaje', 'Otra',
+]
+const LIFE_STAGES = [
+  { id: 'infancia', label: 'Infancia (0-12)' },
+  { id: 'adolescencia', label: 'Adolescencia (13-17)' },
+  { id: 'adulto_joven', label: 'Adulto joven (18-29)' },
+  { id: 'adulto', label: 'Adulto (30-59)' },
+  { id: 'mayor', label: 'Adulto mayor (60+)' },
+]
+
+function hashColor(str = '') {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
+  const colors = ['#2B7A84', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C']
+  return colors[Math.abs(h) % colors.length]
+}
+
+export default function ProfilePage() {
+  const { logout, user: authUser } = useAuthStore()
+  const { data: profile, isLoading } = useProfile()
+  const update = useUpdateProfile()
+  const { addToast } = useUiStore()
+
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState(null)
+
+  const startEdit = () => {
+    setForm({
+      full_name: profile?.full_name ?? '',
+      city: profile?.city ?? '',
+      state: profile?.state ?? '',
+    })
+    setEditing(true)
+  }
+
+  const handleSave = async () => {
+    try {
+      await update.mutateAsync(form)
+      addToast('Perfil actualizado', 'success')
+      setEditing(false)
+    } catch {
+      addToast('Error al guardar', 'error')
+    }
+  }
+
+  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const avatarColor = hashColor(profile?.full_name ?? '')
+  const initials = (profile?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const disabilities = profile?.profiling?.disability_types ?? []
+  const stage = LIFE_STAGES.find(l => l.id === profile?.profiling?.life_stage)
+
+  const s = {
+    page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
+    main: { marginLeft: 88, padding: '40px 48px', maxWidth: 800 },
+    card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 },
+    sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    row: { display: 'flex', gap: 20, marginBottom: 16 },
+    field: { flex: 1 },
+    chip: (color) => ({
+      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+      borderRadius: 20, fontSize: 13, fontWeight: 600,
+      background: `color-mix(in oklch, ${color} 15%, transparent)`,
+      color, border: `1px solid color-mix(in oklch, ${color} 30%, transparent)`,
+    }),
+    roleBadge: {
+      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px',
+      borderRadius: 12, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+      background: 'var(--primary-subtle)', color: 'var(--primary)',
+    },
+    stat: { flex: 1, padding: 20, background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' },
+  }
+
+  const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
+
+  return (
+    <div style={s.page}>
+      <AppSidebar currentPage="profile" />
+      <TopNav user={profile} onLogout={logout} currentPage="profile" />
+      <main style={s.main}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
+          Mi perfil
+        </h1>
+
+        {isLoading ? (
+          <div style={s.card}>
+            {[80, 200, 120, 60].map((w, i) => (
+              <div key={i} style={{ height: 18, width: w, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 16 }} />
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Header card */}
+            <div style={s.card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, flexShrink: 0 }}>
+                  {initials}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                      {profile?.full_name ?? '—'}
+                    </h2>
+                    <span style={s.roleBadge}>{roleLabels[profile?.role] ?? profile?.role}</span>
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', gap: 16 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {Icons.mail({ s: 14 })} {profile?.email}
+                    </span>
+                    {(profile?.city || profile?.state) && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {Icons.mapPin({ s: 14 })} {[profile?.city, profile?.state].filter(Boolean).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!editing && (
+                  <button className="btn-secondary" style={{ fontSize: 14, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={startEdit}>
+                    {Icons.edit({ s: 14 })} Editar
+                  </button>
+                )}
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={s.stat}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                    {disabilities.length}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>tipo{disabilities.length !== 1 ? 's' : ''} de discapacidad</div>
+                </div>
+                <div style={s.stat}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                    {profile?.profiling ? '✓' : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>perfil de necesidades</div>
+                </div>
+                <div style={s.stat}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                    {profile?.is_verified ? '✓' : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>identidad verificada</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit form */}
+            {editing && (
+              <div style={s.card}>
+                <div style={s.sectionTitle}>
+                  <span>Editar datos personales</span>
+                </div>
+                <div style={s.row}>
+                  <div style={s.field}>
+                    <label style={labelStyle}>Nombre completo</label>
+                    <input style={inputStyle} value={form.full_name} onChange={set('full_name')} />
+                  </div>
+                </div>
+                <div style={s.row}>
+                  <div style={s.field}>
+                    <label style={labelStyle}>Ciudad</label>
+                    <input style={inputStyle} value={form.city} onChange={set('city')} placeholder="Mérida" />
+                  </div>
+                  <div style={s.field}>
+                    <label style={labelStyle}>Estado</label>
+                    <input style={inputStyle} value={form.state} onChange={set('state')} placeholder="Yucatán" />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                  <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={() => setEditing(false)}>Cancelar</button>
+                  <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={handleSave} disabled={update.isPending}>
+                    {update.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Perfil de necesidades */}
+            {profile?.profiling ? (
+              <div style={s.card}>
+                <div style={s.sectionTitle}>
+                  <span>Perfil de necesidades</span>
+                  <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {Icons.edit({ s: 13 })} Actualizar
+                  </a>
+                </div>
+                {stage && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Etapa de vida</div>
+                    <span style={s.chip('var(--primary)')}>{stage.label}</span>
+                  </div>
+                )}
+                {disabilities.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipos de discapacidad</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {disabilities.map((d, i) => (
+                        <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {profile.profiling.communication_modes?.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modos de comunicación</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {profile.profiling.communication_modes.map((m, i) => (
+                        <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {profile.profiling.mobility_needs?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Necesidades de movilidad</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {profile.profiling.mobility_needs.map((m, i) => (
+                        <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ ...s.card, textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  {Icons.target({ s: 22 })}
+                </div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Completa tu perfil de necesidades</h3>
+                <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>Con esta información la IA puede recomendarte instituciones que realmente encajen contigo</p>
+                <a href="/onboarding">
+                  <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }}>
+                    Completar ahora {Icons.arrowRight({ s: 14 })}
+                  </button>
+                </a>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  )
+}
