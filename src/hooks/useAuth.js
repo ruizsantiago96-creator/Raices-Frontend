@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuthStore } from '../stores/authStore'
@@ -10,8 +10,10 @@ export function useLogin() {
     mutationFn: (data) => api.post('/auth/login', data).then(r => r.data),
     onSuccess: (data) => {
       const token = data.token ?? data.access_token
+      const refresh = data.refreshToken ?? data.refresh_token
       localStorage.setItem('raices_token', token)
-      setAuth(token, data.user)
+      if (refresh) localStorage.setItem('raices_refresh', refresh)
+      setAuth(token, data.user, refresh)
       const role = data.user?.role
       if (role === 'admin') nav('/admin')
       else if (role === 'institution') nav('/institution-portal')

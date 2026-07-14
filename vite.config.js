@@ -5,8 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    strictPort: true,
     proxy: {
-      '/api': { target: 'http://localhost:7000', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
+      '/api': {
+        target: 'https://raices-backend-219843566314.us-central1.run.app',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

@@ -31,16 +31,28 @@ export default function AuthPage() {
 
   const set = k => e => { setForm(f => ({ ...f, [k]: e.target.value })); setError('') }
 
-  const handleLogin = async e => {
-    e.preventDefault()
+  const doLogin = async () => {
     setError('')
+    if (!form.email || !form.password) {
+      const msg = 'Ingresa tu correo y contraseña'
+      setError(msg)
+      addToast(msg, 'error')
+      return
+    }
     try {
-      await login.mutateAsync({ email: form.email, password: form.password })
+      const data = await login.mutateAsync({ email: form.email, password: form.password })
+      // Token guardado en onSuccess del hook
+      addToast('¡Bienvenido!', 'success')
     } catch (err) {
       const msg = err.response?.data?.message ?? 'Correo o contraseña incorrectos'
       setError(msg)
       addToast(msg, 'error')
     }
+  }
+
+  const handleLogin = async e => {
+    e.preventDefault()
+    await doLogin()
   }
 
   const handleRegister = async e => {
@@ -94,11 +106,10 @@ export default function AuthPage() {
         </header>
 
         <main id="main">
-          {/* ───────────────── LOGIN ───────────────── */}
           {mode === 'login' && (
             <>
               <h1 style={s.title}>Iniciar sesión</h1>
-              <p style={s.sub}>Ingresa tu correo y contraseña para entrar a tu espacio</p>
+              <p style={s.sub}>Ingresa con tu correo electrónico</p>
 
               <div style={s.card}>
                 <form onSubmit={handleLogin} noValidate>
@@ -128,10 +139,9 @@ export default function AuthPage() {
                     {login.isPending ? 'Entrando...' : 'Entrar'} {Icons.arrowRight({ s: 18 })}
                   </button>
                 </form>
-                <p>v{VERSION}</p>
+                <p style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: 'var(--fg3)' }}>v{VERSION}</p>
               </div>
 
-              {/* Cuentas demo — autocompletan el formulario */}
               <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border-color)' }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
                   {Icons.shield({ s: 16 })} Cuentas de demostración
@@ -159,7 +169,6 @@ export default function AuthPage() {
             </>
           )}
 
-          {/* ───────────────── REGISTRO ───────────────── */}
           {mode === 'register' && (
             <>
               <div style={{ marginBottom: 8 }}>
