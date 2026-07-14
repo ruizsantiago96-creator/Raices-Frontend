@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useLogin, useRegister } from '../hooks/useAuth'
 import { useUiStore } from '../stores/uiStore'
 import { Icons, BrandMark, labelStyle, inputStyle } from '../components/shared'
+import { getRememberMe } from '../lib/storage'
 import { VERSION } from '../../version'
 
 const ROLES = [
@@ -24,6 +25,7 @@ export default function AuthPage() {
   const [regStep, setRegStep] = useState(1)
   const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'pcd' })
   const [showPass, setShowPass] = useState(false)
+  const [rememberMe, setRememberMe] = useState(getRememberMe)
   const [error, setError] = useState('')
   const login = useLogin()
   const register = useRegister()
@@ -40,7 +42,7 @@ export default function AuthPage() {
       return
     }
     try {
-      const data = await login.mutateAsync({ email: form.email, password: form.password })
+      const data = await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
       // Token guardado en onSuccess del hook
       addToast('¡Bienvenido!', 'success')
     } catch (err) {
@@ -134,6 +136,18 @@ export default function AuthPage() {
                         {showPass ? 'Ocultar' : 'Mostrar'}
                       </button>
                     </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <input
+                      type="checkbox"
+                      id="remember-me"
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
+                      style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="remember-me" style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none' }}>
+                      Mantener sesión iniciada
+                    </label>
                   </div>
                   <button className="btn-primary" type="submit" style={{ width: '100%', fontSize: 18, padding: '14px' }} disabled={login.isPending}>
                     {login.isPending ? 'Entrando...' : 'Entrar'} {Icons.arrowRight({ s: 18 })}

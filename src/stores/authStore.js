@@ -1,23 +1,23 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { getToken, getRefreshToken, getUser, saveToken, saveRefreshToken, saveUser, clearAllAuth } from '../lib/storage'
 
-export const useAuthStore = create(
-  persist(
-    (set) => ({
-      token: null,
-      refreshToken: null,
-      user: null,
-      setAuth: (token, user, refresh) => set({ token, user, refreshToken: refresh ?? null }),
-      logout: () => {
-        localStorage.removeItem('raices_token')
-        set({ token: null, user: null })
-      },
-    }),
-    {
-      name: 'raices_auth',
-      onRehydrateStorage: () => (state) => {
-        if (state?.token) localStorage.setItem('raices_token', state.token)
-      },
-    }
-  )
-)
+// Restaurar estado desde storage al iniciar la app
+const initialToken = getToken()
+const initialRefresh = getRefreshToken()
+const initialUser = getUser()
+
+export const useAuthStore = create((set) => ({
+  token: initialToken,
+  refreshToken: initialRefresh,
+  user: initialUser,
+  setAuth: (token, user, refresh, rememberMe) => {
+    saveToken(token, rememberMe)
+    saveRefreshToken(refresh, rememberMe)
+    saveUser(user, rememberMe)
+    set({ token, user, refreshToken: refresh ?? null })
+  },
+  logout: () => {
+    clearAllAuth()
+    set({ token: null, user: null, refreshToken: null })
+  },
+}))

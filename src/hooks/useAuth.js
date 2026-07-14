@@ -2,18 +2,19 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuthStore } from '../stores/authStore'
+import { setRememberMe } from '../lib/storage'
 
 export function useLogin() {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   return useMutation({
-    mutationFn: (data) => api.post('/auth/login', data).then(r => r.data),
-    onSuccess: (data) => {
+    mutationFn: ({ _rememberMe, ...data }) => api.post('/auth/login', data).then(r => r.data),
+    onSuccess: (data, variables) => {
       const token = data.token ?? data.access_token
       const refresh = data.refreshToken ?? data.refresh_token
-      localStorage.setItem('raices_token', token)
-      if (refresh) localStorage.setItem('raices_refresh', refresh)
-      setAuth(token, data.user, refresh)
+      const rememberMe = variables?._rememberMe ?? true
+      setRememberMe(rememberMe)
+      setAuth(token, data.user, refresh, rememberMe)
       const role = data.user?.role
       if (role === 'admin') nav('/admin')
       else if (role === 'institution') nav('/institution-portal')
@@ -29,8 +30,8 @@ export function useRegister() {
     mutationFn: (data) => api.post('/auth/register', data).then(r => r.data),
     onSuccess: (data) => {
       const token = data.token ?? data.access_token
-      localStorage.setItem('raices_token', token)
-      setAuth(token, data.user)
+      setRememberMe(true)
+      setAuth(token, data.user, null, true)
       nav('/dashboard')
     },
   })
