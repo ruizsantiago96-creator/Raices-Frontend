@@ -17,6 +17,7 @@ import AdminPage from './pages/AdminPage'
 import ProfilePage from './pages/ProfilePage'
 import TutorPage from './pages/TutorPage'
 import JobsPage from './pages/JobsPage'
+import AboutPage from './pages/AboutPage'
 
 /** Al cambiar de ruta, lleva el foco al contenido principal y sube el scroll
     — clave para que los lectores de pantalla anuncien la nueva página. */
@@ -48,6 +49,7 @@ export default function App() {
         <div id="a11y-root">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

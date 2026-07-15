@@ -15,7 +15,7 @@ export default function FavoritesPage() {
       <AppSidebar currentPage="favorites" />
       <TopNav user={user} onLogout={logout} currentPage="favorites" />
 
-      <main style={{ marginLeft: 88, padding: '32px 40px' }}>
+      <main className="responsive-main">
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
           Instituciones guardadas
         </h1>
@@ -41,7 +41,7 @@ export default function FavoritesPage() {
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+          <div className="responsive-grid-cards">
             {favorites.map(inst => {
               const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
               return (

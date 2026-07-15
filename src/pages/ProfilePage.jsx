@@ -60,10 +60,10 @@ export default function ProfilePage() {
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
-    main: { marginLeft: 88, padding: '40px 48px', maxWidth: 800 },
+    main: { maxWidth: 800 },
     card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 },
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    row: { display: 'flex', gap: 20, marginBottom: 16 },
+    row: { display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 16 },
     field: { flex: 1 },
     chip: (color) => ({
       display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
@@ -85,7 +85,7 @@ export default function ProfilePage() {
     <div style={s.page}>
       <AppSidebar currentPage="profile" />
       <TopNav user={profile} onLogout={logout} currentPage="profile" />
-      <main style={s.main}>
+      <main className="responsive-main" style={s.main}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
           Mi perfil
         </h1>

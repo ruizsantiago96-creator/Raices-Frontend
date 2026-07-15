@@ -233,3 +233,274 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN — Desktop & Laptop
+   Breakpoints: lg ≥1200 | md ≥992 | sm ≥768
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Layout base ─────────────────────────────────────── */
+.responsive-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 88px;
+  z-index: 100;
+  transition: width 0.25s ease;
+}
+
+.responsive-main {
+  margin-left: 88px;
+  padding: 32px 40px;
+  transition: margin-left 0.25s ease;
+}
+
+.responsive-topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  margin-left: 88px;
+  width: calc(100% - 88px);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  font-family: var(--font-body);
+}
+
+.responsive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.responsive-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.responsive-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.responsive-footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+}
+
+/* ── Desktop Large (≥1400px) ─────────────────────────── */
+@media (min-width: 1400px) {
+  .responsive-main {
+    padding: 40px 56px;
+    max-width: 1400px;
+  }
+  .responsive-topnav {
+    padding: 0 48px;
+  }
+}
+
+/* ── Desktop (≥1200px) ──────────────────────────────── */
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .responsive-main {
+    padding: 36px 48px;
+    max-width: 1200px;
+  }
+}
+
+/* ── Laptop (≥992px) ───────────────────────────────── */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .responsive-main {
+    padding: 28px 32px;
+    max-width: 100%;
+  }
+  .responsive-topnav {
+    padding: 0 24px;
+  }
+  .responsive-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .responsive-header {
+    gap: 12px;
+  }
+}
+
+/* ── Small Laptop (≥768px) ──────────────────────────── */
+@media (min-width: 768px) and (max-width: 991px) {
+  .responsive-sidebar {
+    width: 72px;
+  }
+  .responsive-main {
+    margin-left: 72px;
+    padding: 24px 24px;
+  }
+  .responsive-topnav {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    padding: 0 20px;
+    height: 60px;
+  }
+  .responsive-grid-cards {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .responsive-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+/* ── Utility: responsive text ───────────────────────── */
+@media (max-width: 1199px) {
+  .text-title-responsive { font-size: 26px !important; }
+  .text-subtitle-responsive { font-size: 14px !important; }
+}
+@media (max-width: 991px) {
+  .text-title-responsive { font-size: 24px !important; }
+  .text-subtitle-responsive { font-size: 13px !important; }
+}
+
+/* ── Utility: responsive spacing ────────────────────── */
+@media (max-width: 1199px) {
+  .spacing-responsive { padding: 24px 32px !important; }
+}
+@media (max-width: 991px) {
+  .spacing-responsive { padding: 20px 24px !important; }
+}
+
+/* ── Responsive grid utilities ──────────────────────── */
+.grid-2-responsive {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.grid-3-responsive {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.grid-2-1-responsive {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+.grid-sidebar-main {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.grid-messages {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  height: calc(100vh - 130px);
+}
+
+@media (max-width: 1199px) {
+  .grid-3-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-2-1-responsive {
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid-sidebar-main {
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+  }
+  .grid-messages {
+    grid-template-columns: 220px 1fr;
+  }
+}
+@media (max-width: 991px) {
+  .grid-3-responsive {
+    grid-template-columns: 1fr;
+  }
+  .grid-2-1-responsive {
+    grid-template-columns: 1fr;
+  }
+  .grid-2-responsive {
+    grid-template-columns: 1fr;
+  }
+  .grid-sidebar-main {
+    grid-template-columns: 1fr;
+  }
+  .grid-messages {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Responsive table ───────────────────────────────── */
+@media (max-width: 1199px) {
+  .responsive-table {
+    font-size: 13px;
+  }
+  .responsive-table th,
+  .responsive-table td {
+    padding: 10px 12px !important;
+  }
+}
+
+/* ── Onboarding split layout ────────────────────────── */
+@media (max-width: 991px) {
+  .onboarding-layout {
+    flex-direction: column !important;
+  }
+  .onboarding-sidebar {
+    width: 100% !important;
+    padding: 32px 24px !important;
+    min-height: auto !important;
+  }
+  .onboarding-content {
+    padding: 32px 24px !important;
+  }
+}
+@media (min-width: 992px) and (max-width: 1199px) {
+  .onboarding-sidebar {
+    width: 30% !important;
+  }
+}
+
+/* ── Admin sidebar responsive ───────────────────────── */
+@media (max-width: 991px) {
+  .admin-sidebar {
+    width: 64px !important;
+  }
+  .admin-sidebar span {
+    display: none;
+  }
+}
+
+/* ── Footer responsive ──────────────────────────────── */
+@media (max-width: 991px) {
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* ── Cards hover effect (desktop) ───────────────────── */
+@media (hover: hover) {
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+  }
+}
+
+/* ── Focus ring for keyboard nav ────────────────────── */
+.card-hover:focus-within {
+  box-shadow: var(--focus-ring);
+}
+

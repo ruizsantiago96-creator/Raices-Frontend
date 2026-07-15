@@ -158,8 +158,8 @@ export default function JobsPage() {
       <AppSidebar currentPage="jobs" />
       <TopNav user={user} onLogout={logout} currentPage="jobs" />
 
-      <main style={{ marginLeft: 88, padding: '32px 40px', maxWidth: 900 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+      <main className="responsive-main" style={{ maxWidth: 900 }}>
+        <div className="responsive-header" style={{ marginBottom: 28 }}>
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Bolsa de Trabajo Inclusiva

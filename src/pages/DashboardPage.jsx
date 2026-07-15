@@ -27,10 +27,10 @@ export default function DashboardPage() {
       <AppSidebar currentPage="dashboard" />
       <TopNav user={user} onLogout={logout} currentPage="dashboard" />
 
-      <main style={{ marginLeft: 88, padding: '32px 40px', maxWidth: 1100 }}>
+      <main className="responsive-main" style={{ maxWidth: 1100 }}>
         {/* Greeting */}
         <div style={{ marginBottom: 36 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <div className="responsive-header" style={{ marginBottom: 8 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>
               {user?.full_name?.[0]?.toUpperCase() ?? '?'}
             </div>
@@ -145,8 +145,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {isLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+        {isLoading ? (            <div className="responsive-grid-cards">
             {[0, 1, 2].map(i => (
               <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -175,8 +174,7 @@ export default function DashboardPage() {
               </button>
             </Link>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+        ) : (            <div className="responsive-grid-cards">
             {recommendations.slice(0, 6).map(inst => (
               <InstitutionCard key={inst.id} inst={inst} isFav={favIds.includes(inst.id)} onToggleFav={() => toggle.mutate(inst.id)} />
             ))}

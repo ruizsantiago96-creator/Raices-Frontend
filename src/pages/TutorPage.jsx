@@ -54,9 +54,8 @@ export default function TutorPage() {
       <AppSidebar currentPage="tutor" />
       <TopNav user={user} onLogout={logout} currentPage="tutor" />
 
-      <main id="main" style={{ marginLeft: 88, padding: '32px 40px', maxWidth: 960 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 8, flexWrap: 'wrap' }}>
+      <main id="main" className="responsive-main" style={{ maxWidth: 960 }}>
+        {/* Header */}            <div className="responsive-header" style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.users({ s: 24 })}

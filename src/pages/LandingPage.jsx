@@ -29,13 +29,13 @@ export default function LandingPage() {
 
   const s = {
     page: { background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)' },
-    topbar: { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px' },
+    topbar: { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' },
     hero: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '120px 10% 80px', maxWidth: 680, position: 'relative' },
     h1: { fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 700, color: 'var(--fg1)', margin: 0, lineHeight: 1.1 },
     sub: { fontSize: 20, color: 'var(--fg2)', marginTop: 20, lineHeight: 1.6, maxWidth: 520 },
     ctas: { display: 'flex', gap: 16, marginTop: 36 },
     section: { maxWidth: 1100, margin: '0 auto', padding: '80px 48px' },
-    grid4: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 },
+    grid4: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 },
     catCard: (color) => ({
       background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
       borderRadius: 'var(--radius-md)', padding: '24px 20px',
@@ -58,8 +58,8 @@ export default function LandingPage() {
       <header style={s.topbar}>
         <BrandMark />
         <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
-          <button onClick={() => nav('/social')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Comunidad</button>
+          <button onClick={() => nav('/about')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Comunidad</button>
+          <button onClick={() => nav('/auth?mode=register')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
         </nav>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)' }}>Iniciar sesión</button>
@@ -84,7 +84,7 @@ export default function LandingPage() {
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 18, padding: '14px 36px' }}>
             Comenzar gratis {Icons.arrowRight({ s: 18 })}
           </button>
-          <button onClick={() => nav('/explore')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
+          <button onClick={() => nav('/auth?mode=register')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
             Ver instituciones
           </button>
         </div>
@@ -103,7 +103,7 @@ export default function LandingPage() {
               <div key={cat.name} style={s.catCard(cat.color)}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = cat.color }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
-                onClick={() => nav('/explore?category=' + encodeURIComponent(cat.name))}
+                onClick={() => nav('/auth?mode=register')}
               >
                 <div style={s.catIcon(cat.color)}>{cat.icon({ s: 22 })}</div>
                 <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--fg1)' }}>{cat.name}</div>
@@ -132,7 +132,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA bottom */}
-      <section style={{ background: 'var(--primary-dark)', padding: '64px 48px', textAlign: 'center' }}>
+      <section style={{ background: 'var(--primary)', padding: '64px 48px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 700, color: 'white', margin: '0 0 16px' }}>
           Empieza hoy, sin costo
         </h2>

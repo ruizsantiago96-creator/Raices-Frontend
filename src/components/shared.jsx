@@ -95,11 +95,10 @@ export const AppSidebar = ({ currentPage }) => {
   }
 
   return (
-    <nav aria-label="Navegación principal" style={{
-      position: 'fixed', left: 0, top: 0, bottom: 0, width: 88,
+    <nav aria-label="Navegación principal" className="responsive-sidebar" style={{
       background: 'var(--bg-surface)', borderRight: '1px solid var(--border-color)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '16px 6px', gap: 6, zIndex: 100, boxShadow: 'var(--shadow-sm)',
+      padding: '16px 6px', gap: 6, boxShadow: 'var(--shadow-sm)',
     }}>
       {items.map((item) => {
         const isActive = currentPage === item.id
@@ -149,14 +148,13 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const hasSidebar = !!user
   return (
-    <header style={{
-      position: 'sticky', top: 0, zIndex: 50,
-      width: hasSidebar ? 'calc(100% - 88px)' : '100%',
-      marginLeft: hasSidebar ? 88 : 0,
-      borderBottom: '1px solid var(--border-color)',
-      background: 'var(--bg-surface)',
-      height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 32px', fontFamily: 'var(--font-body)',
+    <header className={hasSidebar ? 'responsive-topnav' : undefined} style={{
+      ...(hasSidebar ? {} : {
+        position: 'sticky', top: 0, zIndex: 50, width: '100%',
+        borderBottom: '1px solid var(--border-color)', background: 'var(--bg-surface)',
+        height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 32px', fontFamily: 'var(--font-body)',
+      }),
     }}>
       <BrandMark onClick={() => nav('/')} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -190,14 +188,14 @@ export const inputStyle = {
 
 export const AppFooter = () => (
   <div style={{ position: 'relative' }}>
-    <div style={{ height: 48, background: 'linear-gradient(180deg, var(--bg-cool) 0%, #D6CFC2 50%, #B5A998 100%)' }} />
-    <footer style={{ background: 'linear-gradient(180deg, #B5A998 0%, #8C7D6D 40%, #7A6C5E 100%)', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 32 }}>
+    <div style={{ height: 64, background: 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)' }} />
+    <footer style={{ background: 'linear-gradient(180deg, var(--primary-dark) 0%, #1A4D52 40%, #143D41 100%)', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
         <div>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
-            Raíces para<br /><span style={{ textDecoration: 'underline', textDecorationColor: 'var(--bg-cool)', textUnderlineOffset: 3 }}>florecer.</span>
+            Raíces para<br /><span style={{ textDecoration: 'underline', textDecorationColor: 'var(--primary)', textUnderlineOffset: 3 }}>florecer.</span>
           </h3>
-          <p style={{ fontSize: 14, color: '#E0D8CC', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
+          <p style={{ fontSize: 14, color: 'rgba(251,247,240,0.8)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
             Conectamos caminos claros, dignos y confiables para el desarrollo, la autonomía y el florecimiento.
           </p>
         </div>
@@ -208,12 +206,12 @@ export const AppFooter = () => (
           <div key={i}>
             <h4 style={{ fontSize: 16, fontWeight: 700, color: '#FBF7F0', margin: '0 0 14px' }}>{col.title}</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: '#D4CABC', cursor: 'pointer' }}>{item}</li>)}
+              {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', cursor: 'pointer' }}>{item}</li>)}>
             </ul>
           </div>
         ))}
       </div>
-      <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.15)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }}>
+      <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.15)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="footer-bottom">
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <LeafIcon size={14} color="rgba(251,247,240,0.4)" />
           2026. Raíces para florecer. Construida con dignidad y cuidado

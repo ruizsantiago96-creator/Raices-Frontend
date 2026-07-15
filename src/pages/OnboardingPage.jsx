@@ -65,9 +65,9 @@ export default function OnboardingPage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'var(--font-body)' }}>
+    <div className="onboarding-layout" style={{ minHeight: '100vh', display: 'flex', fontFamily: 'var(--font-body)' }}>
       {/* Left panel */}
-      <div style={{ width: '35%', background: 'var(--primary-dark)', color: 'white', padding: '48px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div className="onboarding-sidebar" style={{ width: '35%', background: 'var(--primary-dark)', color: 'white', padding: '48px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
           <BrandMark onClick={() => nav('/dashboard')} light size={20} />
           <div style={{ marginTop: 32, display: 'inline-block', padding: '6px 14px', background: 'var(--primary)', borderRadius: 'var(--radius-pill)', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Right content */}
-      <div style={{ flex: 1, background: 'var(--bg-surface)', padding: '48px 64px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div className="onboarding-content" style={{ flex: 1, background: 'var(--bg-surface)', padding: '48px 64px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <div style={{ flex: 1, maxWidth: 560 }}>
           <div style={{ color: 'var(--fg3)', marginBottom: 28, opacity: 0.3 }}>{cur.icon({ s: 32 })}</div>
 
