@@ -206,7 +206,7 @@ export const AppFooter = () => (
           <div key={i}>
             <h4 style={{ fontSize: 16, fontWeight: 700, color: '#FBF7F0', margin: '0 0 14px' }}>{col.title}</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', cursor: 'pointer' }}>{item}</li>)}>
+              {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', cursor: 'pointer' }}>{item}</li>)}
             </ul>
           </div>
         ))}
