@@ -53,7 +53,7 @@ export default function ExplorePage() {
       <AppSidebar currentPage="explore" />
       <TopNav user={user} onLogout={logout} currentPage="explore" />
 
-      <main style={{ marginLeft: 88, padding: '32px 40px' }}>
+      <main className="responsive-main">
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 30,
@@ -90,7 +90,7 @@ export default function ExplorePage() {
         </div>
 
         {/* Category pills + view toggles */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32, alignItems: 'center' }}>
+        <div className="responsive-header" style={{ flexWrap: 'wrap', marginBottom: 32 }}>
           <button
             onClick={() => setCategory('')}
             style={{

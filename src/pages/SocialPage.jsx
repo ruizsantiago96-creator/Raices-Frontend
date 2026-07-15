@@ -261,6 +261,69 @@ function PostCard({ post, onLike }) {
   )
 }
 
+/* ─── Quiénes somos la comunidad ─────────────────────────── */
+const COMMUNITY_MEMBERS = [
+  { name: 'María García', role: 'Madre de familia', city: 'Mérida, Yucatán', bio: 'Mamá de Santiago (8 años, TEA). Comparte experiencias sobre terapia ABA y escuela inclusiva.', color: '#C4789A' },
+  { name: 'Carlos Hernández', role: 'Persona con discapacidad motriz', city: 'Ciudad de México', bio: 'Ingeniero en sistemas. Busca oportunidades de empleo inclusivo y compartió su experiencia con accesibilidad urbana.', color: '#2B7A84' },
+  { name: 'Ana Luisa Pérez', role: 'Tutora y cuidadora', city: 'Guadalajara, Jalisco', bio: 'Cuida a su hermano menor (22 años, discapacidad intelectual). Participa en el grupo de Terapia y Empleo.', color: '#8B6BAE' },
+  { name: 'Roberto Díaz', role: 'Psicólogo', city: 'Monterrey, Nuevo León', bio: 'Psicólogo especializado en discapacidad psicosocial. Conecta familias con terapeutas verificados.', color: '#D4944C' },
+  { name: 'Lucía Martínez', role: 'Maestra de educación especial', city: 'Puebla, Puebla', bio: '15 años de experiencia. Comparte recursos didácticos y estrategias de inclusión escolar.', color: '#7BA05B' },
+  { name: 'Fernando Ruiz', role: 'Persona con discapacidad visual', city: 'Oaxaca, Oaxaca', bio: 'Abogado defensor de derechos. Comparte información sobre trámites y apoyos legales para personas con discapacidad.', color: '#4BA3A3' },
+  { name: 'Patricia López', role: 'Madre de familia', city: 'Querétaro, Querétaro', bio: 'Mamá de gemelos (6 años). Comparte experiencias sobre vida independiente y actividades recreativas.', color: '#5A6C8C' },
+  { name: 'Jorge Morales', role: 'Tutor legal', city: 'León, Guanajuato', bio: 'Tutor de su sobrino (15 años, TEA). Comparte su recorrido por el sistema de educación especial.', color: '#D46A6A' },
+]
+
+function AboutCommunity() {
+  const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)' }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Header */}
+      <div style={{ ...card, padding: 32, textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          {Icons.users({ s: 28 })}
+        </div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Quiénes forman parte de nuestra comunidad</h2>
+        <p style={{ fontSize: 15, color: 'var(--fg2)', margin: 0, lineHeight: 1.6, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
+          Somos personas con discapacidad, familias, cuidadores y profesionales comprometidos con la inclusión. Juntos construimos un ecosistema de apoyo real.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 24 }}>
+          {[
+            { label: 'Miembros activos', value: '2,400+' },
+            { label: 'Grupos', value: '12' },
+            { label: 'Historias compartidas', value: '850+' },
+          ].map(s => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--primary)' }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Members grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        {COMMUNITY_MEMBERS.map(m => (
+          <div key={m.name} style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: m.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, flexShrink: 0 }}>
+                {m.name[0]}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{m.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>{m.role}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>{m.bio}</p>
+            <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {Icons.mapPin({ s: 12 })} {m.city}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ─── Mensajes directos ─────────────────────────────────── */
 function DirectMessages({ currentUserId }) {
   const [activePartnerId, setActivePartnerId] = useState(null)
@@ -283,7 +346,7 @@ function DirectMessages({ currentUserId }) {
   const activeConv = conversations.find(c => c.partner.id === activePartnerId)
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 0, height: 'calc(100vh - 130px)', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+    <div className="grid-messages" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
       {/* Lista conversaciones */}
       <div style={{ borderRight: '1px solid var(--border-color)', overflowY: 'auto' }}>
         <div style={{ padding: '16px 16px 12px', fontWeight: 700, fontSize: 13, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>
@@ -362,7 +425,7 @@ function DirectMessages({ currentUserId }) {
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState(null)
   const [newPost, setNewPost] = useState('')
-  const [mainTab, setMainTab] = useState('community') // community | messages
+  const [mainTab, setMainTab] = useState('community') // community | messages | about
 
   const { user, logout } = useAuthStore()
   const { data: groups = [] } = useGroups()
@@ -384,13 +447,14 @@ export default function SocialPage() {
       <AppSidebar currentPage="social" />
       <TopNav user={user} onLogout={logout} currentPage="social" />
 
-      <main style={{ marginLeft: 88, padding: '32px 40px', maxWidth: 1060 }}>
+      <main className="responsive-main" style={{ maxWidth: 1060 }}>
 
         {/* Selector de vista: Comunidad vs Mensajes */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[
             { key: 'community', label: 'Comunidad', icon: Icons.users },
             { key: 'messages', label: 'Mensajes directos', icon: Icons.message },
+            { key: 'about', label: 'Quiénes somos', icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 'var(--radius-pill)', border: mainTab === t.key ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: mainTab === t.key ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: mainTab === t.key ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: mainTab === t.key ? 700 : 500, fontSize: 14, fontFamily: 'var(--font-body)' }}>
@@ -399,10 +463,12 @@ export default function SocialPage() {
           ))}
         </div>
 
-        {mainTab === 'messages' ? (
+        {mainTab === 'about' ? (
+          <AboutCommunity />
+        ) : mainTab === 'messages' ? (
           <DirectMessages currentUserId={user?.id} />
         ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 28, alignItems: 'start' }}>
+        <div className="grid-sidebar-main">
         {/* ── Left sidebar ── */}
         <div
           style={{

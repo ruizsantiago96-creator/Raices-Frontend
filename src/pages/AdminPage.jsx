@@ -99,7 +99,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <main id="main" style={{ padding: '32px 40px', maxWidth: 1200 }}>
+        <main id="main" className="responsive-main" style={{ maxWidth: 1200 }}>
           {tab === 'overview' && <OverviewTab />}
           {tab === 'intelligence' && <IntelligenceTab />}
           {tab === 'institutions' && <InstitutionsTab />}
@@ -126,7 +126,7 @@ function AdminSidebar({ tab, onTab, pendingCount, alertCritical, onLogout }) {
   ]
 
   return (
-    <nav aria-label="Panel de administración" style={{
+    <nav aria-label="Panel de administración" className="admin-sidebar" style={{
       width: 88, minHeight: '100vh', flexShrink: 0,
       background: '#1A2E30', /* fondo oscuro para diferenciar del app de usuario */
       display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -317,7 +317,7 @@ function OverviewTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* KPI grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="grid-3-responsive">
         {statCards.map(c => (
           <div key={c.label} style={{ ...card, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ width: 46, height: 46, borderRadius: '50% 50% 50% 14%', background: `color-mix(in oklch, ${c.color} 15%, transparent)`, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -335,7 +335,7 @@ function OverviewTab() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid-2-responsive">
         <Card>
           <SectionTitle icon={Icons.activity({ s: 18 })}>Registros por mes</SectionTitle>
           {aLoad ? <Skeleton h={160} /> : <BarChartV data={analytics?.registrations_by_month} labelKey="month" valueKey="count" color="#8B6BAE" />}
@@ -346,7 +346,7 @@ function OverviewTab() {
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid-2-responsive">
         <Card>
           <SectionTitle icon={Icons.building({ s: 18 })}>Instituciones por categoría</SectionTitle>
           {aLoad ? <Skeleton h={150} /> : <DonutChart data={analytics?.institutions_by_category} labelKey="label" valueKey="count" />}
@@ -362,7 +362,7 @@ function OverviewTab() {
       </div>
 
       {/* Top institutions + cities */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
+      <div className="grid-2-1-responsive">
         <Card>
           <SectionTitle icon={Icons.target({ s: 18 })}>Top instituciones</SectionTitle>
           {aLoad ? <Skeleton h={120} /> : (
@@ -487,7 +487,7 @@ function IntelligenceTab() {
       </Card>
 
       {/* Demanda agregada */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid-2-responsive">
         <Card>
           <SectionTitle icon={Icons.heart({ s: 18 })}>Necesidades más reportadas</SectionTitle>
           {(data?.demand?.needs?.length ?? 0) === 0 ? <p style={{ fontSize: 13, color: 'var(--fg3)' }}>Sin datos</p> : (
@@ -872,7 +872,7 @@ function AlertsTab({ alerts: initialAlerts, onNavigate }) {
       </SectionTitle>
 
       {/* Resumen de severidades */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="grid-3-responsive" style={{ marginBottom: 24 }}>
         {[
           { label: 'Críticas',      count: critCount, sev: 'critica' },
           { label: 'Medias',        count: medCount,  sev: 'media' },
