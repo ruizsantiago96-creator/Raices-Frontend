@@ -23,7 +23,7 @@ export default function AuthPage() {
   const nav = useNavigate()
   const [mode, setMode] = useState(params.get('mode') === 'register' ? 'register' : 'login')
   const [regStep, setRegStep] = useState(1)
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'pcd' })
+  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'pcd', city: '', state: '' })
   const [showPass, setShowPass] = useState(false)
   const [rememberMe, setRememberMe] = useState(getRememberMe)
   const [error, setError] = useState('')
@@ -61,8 +61,8 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     try {
-      await register.mutateAsync(form)
-      nav('/onboarding')
+      await register.mutateAsync({ ...form, _rememberMe: rememberMe })
+      addToast('¡Cuenta creada!', 'success')
     } catch (err) {
       const msg = err.response?.data?.message ?? 'No se pudo crear la cuenta'
       setError(msg)
@@ -239,6 +239,16 @@ export default function AuthPage() {
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      <div style={s.inputWrap}>
+                        <label htmlFor="reg-city" style={labelStyle}>Ciudad</label>
+                        <input id="reg-city" name="city" autoComplete="address-level2" style={inputStyle} value={form.city} onChange={set('city')} required placeholder="Ej. Mérida" />
+                      </div>
+                      <div style={s.inputWrap}>
+                        <label htmlFor="reg-state" style={labelStyle}>Estado</label>
+                        <input id="reg-state" name="state" autoComplete="address-level1" style={inputStyle} value={form.state} onChange={set('state')} required placeholder="Ej. Yucatán" />
+                      </div>
+                    </div>
                   </form>
                 )}
 
@@ -265,7 +275,7 @@ export default function AuthPage() {
                     </button>
                   : <span />}
                 {regStep < 3
-                  ? <button className="btn-primary" onClick={() => setRegStep(st => st + 1)} disabled={regStep === 2 && (!form.full_name || !form.email || form.password.length < 8)}>
+                  ? <button className="btn-primary" onClick={() => setRegStep(st => st + 1)} disabled={regStep === 2 && (!form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state)}>
                       Continuar {Icons.arrowRight({ s: 18 })}
                     </button>
                   : <button className="btn-primary" onClick={handleRegister} disabled={register.isPending}>
