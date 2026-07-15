@@ -32,7 +32,9 @@ export function useNotificationStream(onNotification) {
 
   useEffect(() => {
     if (!token) return
-    const es = new EventSource(`/api/notifications/stream?token=${token}`)
+    // Use full backend URL for EventSource (relative URLs go to FileZilla, not the API)
+    const baseUrl = import.meta.env.VITE_API_URL ?? '/api'
+    const es = new EventSource(`${baseUrl}/notifications/stream?token=${token}`)
     esRef.current = es
     es.onmessage = (e) => {
       try {
