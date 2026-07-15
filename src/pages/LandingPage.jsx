@@ -3,12 +3,12 @@ import { LeafIcon, Icons, BrandMark, AppFooter } from '../components/shared'
 import { useAuthStore } from '../stores/authStore'
 
 const CATEGORIES = [
-  { name: 'Salud y bienestar', color: '#C4789A', icon: Icons.heartPulse },
+  { name: 'Salud', color: '#C4789A', icon: Icons.heartPulse },
   { name: 'Educación', color: '#8B6BAE', icon: Icons.graduationCap },
   { name: 'Empleo', color: '#D4944C', icon: Icons.briefcase },
   { name: 'Comunidad', color: '#4BA3A3', icon: Icons.users },
   { name: 'Terapia', color: '#2B7A84', icon: Icons.activity },
-  { name: 'Vida independiente', color: '#7BA05B', icon: Icons.target },
+  { name: 'Recreación', color: '#7BA05B', icon: Icons.target },
 ]
 
 const FEATURES = [
@@ -59,14 +59,14 @@ export default function LandingPage() {
         <BrandMark />
         <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <button onClick={() => nav('/about')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Comunidad</button>
-          <button onClick={() => nav('/auth?mode=register')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
+          <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
         </nav>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)' }}>Iniciar sesión</button>
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 15, padding: '10px 24px' }}>Registrarse</button>
         </div>
       </header>
-
+vu
       {/* Hero */}
       <section style={s.hero}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', borderRadius: 'var(--radius-pill)', padding: '6px 16px', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
@@ -84,8 +84,8 @@ export default function LandingPage() {
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 18, padding: '14px 36px' }}>
             Comenzar gratis {Icons.arrowRight({ s: 18 })}
           </button>
-          <button onClick={() => nav('/auth?mode=register')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
-            Ver instituciones
+          <button onClick={() => nav('/explore')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
+            Ver instituciones {Icons.arrowRight({ s: 18 })}
           </button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -103,7 +103,7 @@ export default function LandingPage() {
               <div key={cat.name} style={s.catCard(cat.color)}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = cat.color }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
-                onClick={() => nav('/auth?mode=register')}
+                onClick={() => nav(`/explore?category=${encodeURIComponent(cat.name)}`)}
               >
                 <div style={s.catIcon(cat.color)}>{cat.icon({ s: 22 })}</div>
                 <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--fg1)' }}>{cat.name}</div>

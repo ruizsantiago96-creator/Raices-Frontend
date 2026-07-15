@@ -48,11 +48,17 @@ export function saveToken(token, rememberMe) {
 }
 
 export function saveRefreshToken(refresh, rememberMe) {
-  if (!refresh) return
+  console.log('[Storage] saveRefreshToken called:', { refresh: !!refresh, rememberMe })
+  if (!refresh) {
+    console.warn('[Storage] saveRefreshToken: refresh is falsy, skipping')
+    return
+  }
   const target = getStorage(rememberMe)
   const other = rememberMe ? sessionStorage : localStorage
   target.setItem(AUTH_REFRESH_KEY, refresh)
   try { other.removeItem(AUTH_REFRESH_KEY) } catch { /* ignore */ }
+  console.log('[Storage] Refresh token saved to:', rememberMe ? 'localStorage' : 'sessionStorage')
+  console.log('[Storage] Verification - token stored:', !!target.getItem(AUTH_REFRESH_KEY))
 }
 
 export function saveUser(user, rememberMe) {

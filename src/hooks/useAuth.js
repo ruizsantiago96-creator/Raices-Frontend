@@ -13,8 +13,18 @@ export function useLogin() {
       const token = data.token ?? data.access_token
       const refresh = data.refreshToken ?? data.refresh_token
       const rememberMe = variables?._rememberMe ?? true
+
+      console.log('[Auth] Login response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
+
       setRememberMe(rememberMe)
       setAuth(token, data.user, refresh, rememberMe)
+
+      console.log('[Auth] Saved to storage:', {
+        hasToken: !!token,
+        hasRefreshToken: !!refresh,
+        storageType: rememberMe ? 'localStorage' : 'sessionStorage',
+      })
+
       const role = data.user?.role
       if (role === 'admin') nav('/admin')
       else if (role === 'institution') nav('/institution-portal')
@@ -27,12 +37,23 @@ export function useRegister() {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   return useMutation({
-    mutationFn: (data) => api.post('/auth/register', data).then(r => r.data),
-    onSuccess: (data) => {
+    mutationFn: ({ _rememberMe, ...data }) => api.post('/auth/register', data).then(r => r.data),
+    onSuccess: (data, variables) => {
       const token = data.token ?? data.access_token
-      setRememberMe(true)
-      setAuth(token, data.user, null, true)
-      nav('/dashboard')
+      const refresh = data.refreshToken ?? data.refresh_token
+      const rememberMe = variables?._rememberMe ?? true
+      console.log('[Auth] Register response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
+      setRememberMe(rememberMe)
+      setAuth(token, data.user, refresh, rememberMe)
+      console.log('[Auth] Register - saved to storage:', {
+        hasToken: !!token,
+        hasRefreshToken: !!refresh,
+        storageType: rememberMe ? 'localStorage' : 'sessionStorage',
+      })
+      const role = data.user?.role
+      if (role === 'admin') nav('/admin')
+      else if (role === 'institution') nav('/institution-portal')
+      else nav('/dashboard')
     },
   })
 }
