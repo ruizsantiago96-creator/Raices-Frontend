@@ -3,18 +3,49 @@ import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuthStore } from '../stores/authStore'
 import { setRememberMe } from '../lib/storage'
+import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 
 export function useLogin() {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   return useMutation({
-    mutationFn: ({ _rememberMe, ...data }) => api.post('/auth/login', data).then(r => r.data),
-    onSuccess: (data, variables) => {
+    mutationFn: async ({ _rememberMe, email, password }) => {
+      const rememberMe = _rememberMe ?? true
+
+      // ── Intento 1: Login contra nuestro backend ──────────────────
+      try {
+        const data = await api.post('/auth/login', { email, password }).then(r => r.data)
+        return { source: 'backend', data, rememberMe }
+      } catch (err) {
+        // ── Solo interceptamos 401 y solo si el bridge está habilitado ──
+        if (err.response?.status !== 401 || !isBridgeAvailable()) {
+          throw err
+        }
+
+        console.log('[Auth] Backend devolvió 401 — intentando puente con Firebase…')
+
+        // ── Intento 2: Puente Firebase REST API ────────────────────
+        const { idToken, profile } = await firebaseBridgeLogin(email, password)
+
+        console.log('[Auth] Puente Firebase exitoso — token obtenido ✓')
+
+        return {
+          source: 'firebase-bridge',
+          data: {
+            token: idToken,
+            user: profile,
+            refreshToken: null,
+          },
+          rememberMe,
+        }
+      }
+    },
+    onSuccess: (result, variables) => {
+      const { source, data, rememberMe } = result
       const token = data.token ?? data.access_token
       const refresh = data.refreshToken ?? data.refresh_token
-      const rememberMe = variables?._rememberMe ?? true
 
-      console.log('[Auth] Login response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
+      console.log('[Auth] Login response:', { source, token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
 
       setRememberMe(rememberMe)
       setAuth(token, data.user, refresh, rememberMe)
