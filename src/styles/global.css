@@ -451,6 +451,45 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   }
 }
 
+/* ── Hero Responsive Layout ────────────────────────── */
+.hero-section {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(20px, 5vw, 60px);
+  padding: clamp(40px, 8vw, 100px) 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero-text {
+  flex: 1 1 500px;
+  min-width: 300px;
+}
+
+.hero-logo {
+  flex: 0 1 400px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  .hero-logo {
+    order: -1; /* Move logo to the top on mobile */
+    width: 100%;
+  }
+  .hero-text {
+    order: 1;
+    min-width: auto;
+  }
+}
+
 /* ── Onboarding split layout ────────────────────────── */
 @media (max-width: 991px) {
   .onboarding-layout {

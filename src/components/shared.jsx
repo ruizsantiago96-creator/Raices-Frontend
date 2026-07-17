@@ -128,8 +128,8 @@ export const AppSidebar = ({ currentPage }) => {
 }
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
-  <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: 4, whiteSpace: 'nowrap', padding: 0 }}>
-    <span style={{ fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)' }}>
+  <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-block', verticalAlign: 'baseline', whiteSpace: 'nowrap', padding: 0 }}>
+    <span style={{ fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)', marginRight: 4 }}>
       Raíces para{' '}
     </span>
     <span style={{

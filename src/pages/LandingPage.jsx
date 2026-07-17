@@ -30,10 +30,7 @@ export default function LandingPage() {
   const s = {
     page: { background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)' },
     topbar: { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' },
-    hero: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '120px 10% 80px', maxWidth: 680, position: 'relative' },
-    h1: { fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 700, color: 'var(--fg1)', margin: 0, lineHeight: 1.1 },
-    sub: { fontSize: 20, color: 'var(--fg2)', marginTop: 20, lineHeight: 1.6, maxWidth: 520 },
-    ctas: { display: 'flex', gap: 16, marginTop: 36 },
+
     section: { maxWidth: 1100, margin: '0 auto', padding: '80px 48px' },
     grid4: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 },
     catCard: (color) => ({
@@ -66,31 +63,50 @@ export default function LandingPage() {
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 15, padding: '10px 24px' }}>Registrarse</button>
         </div>
       </header>
-vu
-      {/* Hero */}
-      <section style={s.hero}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', borderRadius: 'var(--radius-pill)', padding: '6px 16px', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
-          <LeafIcon size={14} color="var(--primary)" /> Ecosistema digital para personas con discapacidad
+
+      {/* Hero - Responsivo con Flexbox */}
+      <section className="hero-section">
+        
+        {/* Columna Izquierda (Texto) */}
+        <div className="hero-text">
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', borderRadius: 'var(--radius-pill)', padding: '6px 16px', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
+            <LeafIcon size={14} color="var(--primary)" /> Ecosistema digital para personas con discapacidad
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 700, color: 'var(--fg1)', margin: 0, lineHeight: 1.1 }}>
+            Encontramos<br />
+            <span style={{ color: 'var(--primary)' }}>tu camino</span><br />
+            hacia florecer.
+          </h1>
+          <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--fg2)', marginTop: 20, lineHeight: 1.6, maxWidth: 520 }}>
+            Conectamos a personas con discapacidad, tutores y familias con instituciones confiables, comunidad de apoyo y contenido relevante en México.
+          </p>
+          <div style={{ display: 'flex', gap: 16, marginTop: 36, flexWrap: 'wrap' }}>
+            <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 18, padding: '14px 36px' }}>
+              Comenzar gratis {Icons.arrowRight({ s: 18 })}
+            </button>
+            <button onClick={() => nav('/explore')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
+              Ver instituciones {Icons.arrowRight({ s: 18 })}
+            </button>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {Icons.shield({ s: 14 })} Sin costo · Curado y verificado · Privacidad protegida
+          </p>
         </div>
-        <h1 style={s.h1}>
-          Encontramos<br />
-          <span style={{ color: 'var(--primary)' }}>tu camino</span><br />
-          hacia florecer.
-        </h1>
-        <p style={s.sub}>
-          Conectamos a personas con discapacidad, tutores y familias con instituciones confiables, comunidad de apoyo y contenido relevante en México.
-        </p>
-        <div style={s.ctas}>
-          <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 18, padding: '14px 36px' }}>
-            Comenzar gratis {Icons.arrowRight({ s: 18 })}
-          </button>
-          <button onClick={() => nav('/explore')} className="btn-secondary" style={{ fontSize: 18, padding: '14px 36px' }}>
-            Ver instituciones {Icons.arrowRight({ s: 18 })}
-          </button>
+
+        {/* Columna Derecha (Logo) */}
+        <div className="hero-logo">
+          <img 
+            src="/images/raices.jpg" 
+            alt="Raíces Logo" 
+            style={{ 
+              maxWidth: '100%', 
+              height: 'auto', 
+              borderRadius: '24px', 
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)' 
+            }} 
+          />
         </div>
-        <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {Icons.shield({ s: 14 })} Sin costo · Curado y verificado · Privacidad protegida
-        </p>
+
       </section>
 
       {/* Categories */}
