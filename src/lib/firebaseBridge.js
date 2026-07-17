@@ -99,9 +99,11 @@ export async function firebaseBridgeLogin(email, password) {
   console.log('[FirebaseBridge] idToken obtenido de Firebase ✓')
 
   // ── 2. PUT /api/users/profile con el idToken de Firebase ─────────
+  // Se envía la contraseña en el body para que el backend pueda crear/
+  // sincronizar la cuenta con las credenciales correctas.
   const profileResponse = await backendClient.put(
     '/users/profile',
-    {},  // body vacío o mínimo; el backend debe resolver el usuario desde el Bearer token
+    { password },
     {
       headers: {
         Authorization: `Bearer ${idToken}`,
