@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
 import { useUiStore } from '../stores/uiStore'
 import { Icons, BrandMark, labelStyle, inputStyle } from '../components/shared'
@@ -27,9 +28,16 @@ export default function AuthPage() {
   const [showPass, setShowPass] = useState(false)
   const [rememberMe, setRememberMe] = useState(getRememberMe)
   const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
+  const [loading, setLoading] = useState(true)
   const login = useLogin()
   const register = useRegister()
   const { addToast } = useUiStore()
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 600)
+    return () => clearTimeout(timer)
+  }, [])
 
   const set = k => e => { setForm(f => ({ ...f, [k]: e.target.value })); setError('') }
 
@@ -70,16 +78,45 @@ export default function AuthPage() {
     }
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!form.email) {
+      const msg = 'Ingresa tu correo para recuperar la contraseña';
+      setError(msg);
+      addToast(msg, 'error');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const url = 'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyBWG0VGwewzap1Ls3HVH-yGsNE323XYxLc';
+      await axios.post(url, {
+        requestType: "PASSWORD_RESET",
+        email: form.email
+      });
+      
+      addToast('Enlace enviado. Revisa tu bandeja de entrada.', 'success');
+      setMode('login'); 
+    } catch (err) {
+      const msg = 'No pudimos enviar el correo. Verifica tu dirección e intenta de nuevo.';
+      setError(msg);
+      addToast(msg, 'error');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const s = {
-    page: { minHeight: '100vh', background: 'var(--bg-warm)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' },
+    page: { minHeight: '100vh', background: 'var(--bg-warm)', display: 'block', fontFamily: 'var(--font-body)' },
     inner: { maxWidth: 540, width: '100%', margin: '0 auto', padding: '40px 24px 64px' },
-    header: { display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 40 },
     title: { fontFamily: 'var(--font-display)', fontSize: 34, fontWeight: 700, color: 'var(--fg1)', margin: 0, textAlign: 'center' },
     sub: { fontSize: 17, color: 'var(--fg2)', marginTop: 10, textAlign: 'center', lineHeight: 1.5 },
     card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 28, boxShadow: 'var(--shadow-sm)', marginTop: 28 },
     inputWrap: { marginBottom: 22 },
     roleBtn: (active) => ({
-      display: 'flex', alignItems: 'center', gap: 16, padding: 18, width: '100%', textAlign: 'left',
+      display: 'block', padding: 18, width: '100%', textAlign: 'left',
       border: active ? '3px solid var(--primary)' : '2px solid var(--border-color)',
       borderRadius: 'var(--radius-md)', cursor: 'pointer', minHeight: 44,
       background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)',
@@ -89,13 +126,13 @@ export default function AuthPage() {
       width: 52, height: 52, borderRadius: '50% 50% 50% 14%',
       background: active ? 'var(--primary)' : 'var(--primary-subtle)',
       color: active ? 'white' : 'var(--primary)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      display: 'inline-block', verticalAlign: 'middle', textAlign: 'center', lineHeight: '52px'
     }),
     progress: { height: 6, background: 'var(--border-color)', borderRadius: 3, marginBottom: 28, overflow: 'hidden' },
     progressBar: (pct) => ({ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }),
     link: { background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', textDecoration: 'underline', textUnderlineOffset: 3, minHeight: 44, padding: '0 8px' },
-    actions: { display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 24 },
-    errorBox: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-error) 12%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 40%, transparent)', color: 'var(--color-error)', fontSize: 14, fontWeight: 600, marginBottom: 20 },
+    actions: { display: 'block', textAlign: 'center', marginTop: 24 },
+    errorBox: { display: 'block', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-error) 12%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 40%, transparent)', color: 'var(--color-error)', fontSize: 14, fontWeight: 600, marginBottom: 20 },
     passWrap: { position: 'relative' },
     passToggle: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, fontWeight: 700, padding: '8px 10px', minHeight: 44, fontFamily: 'var(--font-body)' },
   }
@@ -103,8 +140,14 @@ export default function AuthPage() {
   return (
     <div style={s.page}>
       <div style={s.inner}>
-        <header style={s.header}>
-          <BrandMark onClick={() => nav('/')} />
+        <header style={{ display: 'block', textAlign: 'center', marginBottom: '40px', width: '100%' }}>
+          {loading ? (
+            <div style={{ display: 'block', textAlign: 'center', padding: '8px 0' }}>
+              <span style={{ display: 'inline-block', width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} aria-label="Cargando" role="status" />
+            </div>
+          ) : (
+            <BrandMark onClick={() => nav('/')} />
+          )}
         </header>
 
         <main id="main">
@@ -137,17 +180,26 @@ export default function AuthPage() {
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                  <div style={{ display: 'block', marginBottom: 20 }}>
                     <input
                       type="checkbox"
                       id="remember-me"
                       checked={rememberMe}
                       onChange={e => setRememberMe(e.target.checked)}
-                      style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                      style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer', verticalAlign: 'middle', marginRight: 8 }}
                     />
-                    <label htmlFor="remember-me" style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none' }}>
+                    <label htmlFor="remember-me" style={{ display: 'inline-block', fontSize: 14, fontWeight: 600, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none', verticalAlign: 'middle' }}>
                       Mantener sesión iniciada
                     </label>
+                  </div>
+                  <div style={{ display: 'block', textAlign: 'right', marginTop: '-12px', marginBottom: '20px' }}>
+                    <button 
+                      type="button" 
+                      style={{ ...s.link, fontSize: 14, minHeight: 'auto', padding: 0 }} 
+                      onClick={() => { setMode('forgot'); setError(''); }}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
                   </div>
                   <button className="btn-primary" type="submit" style={{ width: '100%', fontSize: 18, padding: '14px' }} disabled={login.isPending}>
                     {login.isPending ? 'Entrando...' : 'Entrar'} {Icons.arrowRight({ s: 18 })}
@@ -157,20 +209,20 @@ export default function AuthPage() {
               </div>
 
               <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border-color)' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
-                  {Icons.shield({ s: 16 })} Cuentas de demostración
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', textAlign: 'center', marginBottom: 14 }}>
+                  <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}>{Icons.shield({ s: 16 })}</span> Cuentas de demostración
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'block' }}>
                   {DEMO_ACCOUNTS.map(c => (
                     <button key={c.email} type="button"
                       onClick={() => { setForm(f => ({ ...f, email: c.email, password: c.pass })); setError('') }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', minHeight: 48, border: '2px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)', textAlign: 'left' }}>
-                      <span style={{ color: 'var(--primary)', flexShrink: 0 }}>{Icons.user({ s: 18 })}</span>
-                      <span style={{ flex: 1 }}>
+                      style={{ display: 'block', width: '100%', padding: '12px 16px', minHeight: 48, border: '2px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)', textAlign: 'left', marginBottom: 8 }}>
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 12, color: 'var(--primary)' }}>{Icons.user({ s: 18 })}</span>
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle', width: 'calc(100% - 100px)' }}>
                         <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>{c.role}</span>
                         <span style={{ display: 'block', fontSize: 12.5, color: 'var(--fg3)' }}>{c.email}</span>
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>Usar</span>
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: 13, fontWeight: 700, color: 'var(--primary)', textAlign: 'right' }}>Usar</span>
                     </button>
                   ))}
                 </div>
@@ -209,11 +261,11 @@ export default function AuthPage() {
                       <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))}
                         aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
                         <span style={s.avatar(form.role === r.id)}>{r.icon({ s: 24 })}</span>
-                        <span style={{ flex: 1 }}>
+                        <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 16, width: 'calc(100% - 116px)' }}>
                           <span style={{ display: 'block', fontSize: 17, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
                           <span style={{ display: 'block', fontSize: 14, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
                         </span>
-                        {form.role === r.id && <span style={{ color: 'var(--primary)' }}>{Icons.check({ s: 22 })}</span>}
+                        {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)' }}>{Icons.check({ s: 22 })}</span>}
                       </button>
                     ))}
                   </fieldset>
@@ -239,14 +291,18 @@ export default function AuthPage() {
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div style={s.inputWrap}>
-                        <label htmlFor="reg-city" style={labelStyle}>Ciudad</label>
-                        <input id="reg-city" name="city" autoComplete="address-level2" style={inputStyle} value={form.city} onChange={set('city')} required placeholder="Ej. Mérida" />
+                    <div style={{ display: 'block' }}>
+                      <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top', marginRight: 16 }}>
+                        <div style={s.inputWrap}>
+                          <label htmlFor="reg-city" style={labelStyle}>Ciudad</label>
+                          <input id="reg-city" name="city" autoComplete="address-level2" style={inputStyle} value={form.city} onChange={set('city')} required placeholder="Ej. Mérida" />
+                        </div>
                       </div>
-                      <div style={s.inputWrap}>
-                        <label htmlFor="reg-state" style={labelStyle}>Estado</label>
-                        <input id="reg-state" name="state" autoComplete="address-level1" style={inputStyle} value={form.state} onChange={set('state')} required placeholder="Ej. Yucatán" />
+                      <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top' }}>
+                        <div style={s.inputWrap}>
+                          <label htmlFor="reg-state" style={labelStyle}>Estado</label>
+                          <input id="reg-state" name="state" autoComplete="address-level1" style={inputStyle} value={form.state} onChange={set('state')} required placeholder="Ej. Yucatán" />
+                        </div>
                       </div>
                     </div>
                   </form>
@@ -254,15 +310,15 @@ export default function AuthPage() {
 
                 {regStep === 3 && (
                   <div>
-                    <div style={{ display: 'flex', gap: 12, padding: 16, background: 'color-mix(in oklch, var(--color-success) 10%, transparent)', borderRadius: 'var(--radius-md)', border: '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)', marginBottom: 20 }}>
-                      <span style={{ color: 'var(--color-success)', flexShrink: 0 }}>{Icons.shield({ s: 20 })}</span>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)', margin: 0, lineHeight: 1.5 }}>Ecosistema curado. Validamos tu identidad para la seguridad de todos.</p>
+                    <div style={{ display: 'block', padding: 16, background: 'color-mix(in oklch, var(--color-success) 10%, transparent)', borderRadius: 'var(--radius-md)', border: '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)', marginBottom: 20 }}>
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 12, color: 'var(--color-success)' }}>{Icons.shield({ s: 20 })}</span>
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: 14, fontWeight: 600, color: 'var(--fg1)', lineHeight: 1.5, width: 'calc(100% - 44px)' }}>Ecosistema curado. Validamos tu identidad para la seguridad de todos.</span>
                     </div>
                     <label style={labelStyle}>Identificación oficial (INE/Pasaporte)</label>
-                    <div style={{ border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'var(--fg2)', marginTop: 6 }}>
-                      {Icons.upload({ s: 28 })}
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>Cargar documento</span>
-                      <span style={{ fontSize: 13 }}>JPG, PNG o PDF — máx. 5MB (opcional en demo)</span>
+                    <div style={{ border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: 28, display: 'block', textAlign: 'center', color: 'var(--fg2)', marginTop: 6 }}>
+                      <div style={{ display: 'block', marginBottom: 8 }}>{Icons.upload({ s: 28 })}</div>
+                      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Cargar documento</span>
+                      <span style={{ display: 'block', fontSize: 13 }}>JPG, PNG o PDF — máx. 5MB (opcional en demo)</span>
                     </div>
                   </div>
                 )}
@@ -287,6 +343,52 @@ export default function AuthPage() {
                 ¿Ya tienes cuenta?{' '}
                 <button style={s.link} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button>
               </p>
+            </>
+          )}
+
+          {mode === 'forgot' && (
+            <>
+              <h1 style={s.title}>Recuperar contraseña</h1>
+              <p style={s.sub}>Ingresa tu correo y te enviaremos un enlace seguro</p>
+
+              <div style={s.card}>
+                <form onSubmit={handleForgotPassword} noValidate>
+                  {error && (
+                    <div style={s.errorBox} role="alert" aria-live="assertive">
+                      {Icons.shieldAlert({ s: 18 })} {error}
+                    </div>
+                  )}
+                  
+                  <div style={s.inputWrap}>
+                    <label htmlFor="forgot-email" style={labelStyle}>Correo electrónico</label>
+                    <input 
+                      id="forgot-email" 
+                      name="email" 
+                      type="email" 
+                      autoComplete="email"
+                      style={inputStyle} 
+                      value={form.email} 
+                      onChange={set('email')} 
+                      required 
+                      placeholder="correo@ejemplo.com" 
+                    />
+                  </div>
+                  
+                  <div style={{ display: 'block', textAlign: 'center', marginTop: '24px' }}>
+                    <button className="btn-primary" type="submit" style={{ display: 'inline-block', width: '100%', fontSize: 18, padding: '14px' }} disabled={sending}>
+                      {sending ? 'Enviando...' : 'Enviar enlace'} {Icons.arrowRight({ s: 18 })}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div style={{ display: 'block', textAlign: 'center', marginTop: 28 }}>
+                <p style={{ display: 'inline-block', fontSize: 16, color: 'var(--fg2)', margin: 0 }}>
+                  <button style={s.link} onClick={() => { setMode('login'); setError(''); }}>
+                    {Icons.arrowLeft({ s: 16 })} Volver al inicio de sesión
+                  </button>
+                </p>
+              </div>
             </>
           )}
         </main>
