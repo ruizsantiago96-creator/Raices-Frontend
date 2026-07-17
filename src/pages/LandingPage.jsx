@@ -58,7 +58,7 @@ export default function LandingPage() {
       <header style={s.topbar}>
         <BrandMark />
         <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <button onClick={() => nav('/about')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Comunidad</button>
+          <button onClick={() => nav('/about')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Conocenos</button>
           <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
         </nav>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
