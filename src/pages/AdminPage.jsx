@@ -252,20 +252,20 @@ function DonutChart({ data, labelKey, valueKey, size = 150 }) {
   if (!data?.length) return <p style={{ fontSize: 13, color: 'var(--fg3)', textAlign: 'center', padding: 24 }}>Sin datos</p>
   const total = data.reduce((s, d) => s + d[valueKey], 0) || 1
   const r = 40, c = 2 * Math.PI * r
-  let offset = 0
+  // Pre-compute segment offsets (no mutation during render)
+  const segments = data.reduce((acc, d) => {
+    const dash = (d[valueKey] / total) * c
+    const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].dash : 0
+    acc.push({ dash, offset })
+    return acc
+  }, [])
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
       <svg viewBox="0 0 100 100" style={{ width: size, height: size, transform: 'rotate(-90deg)', flexShrink: 0 }}>
-        {data.map((d, i) => {
-          const frac = d[valueKey] / total
-          const dash = frac * c
-          const seg = (
-            <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={PALETTE[i % PALETTE.length]}
-              strokeWidth="14" strokeDasharray={`${dash} ${c - dash}`} strokeDashoffset={-offset} />
-          )
-          offset += dash
-          return seg
-        })}
+        {data.map((d, i) => (
+          <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={PALETTE[i % PALETTE.length]}
+            strokeWidth="14" strokeDasharray={`${segments[i].dash} ${c - segments[i].dash}`} strokeDashoffset={-segments[i].offset} />
+        ))}
         <circle cx="50" cy="50" r="28" fill="var(--bg-surface)" />
       </svg>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 140 }}>

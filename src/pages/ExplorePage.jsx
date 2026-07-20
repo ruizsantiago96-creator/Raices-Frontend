@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../hooks/useFavorites'
@@ -48,7 +48,13 @@ export default function ExplorePage() {
     ...(category ? { category } : {}),
   }
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [debouncedSearch, category])
+  // Reset visibleCount when filters change (without useEffect to avoid cascading renders)
+  const prevFilterRef = useRef(`${debouncedSearch}|${category}`)
+  const currentFilterKey = `${debouncedSearch}|${category}`
+  if (prevFilterRef.current !== currentFilterKey) {
+    prevFilterRef.current = currentFilterKey
+    setVisibleCount(PAGE_SIZE)
+  }
 
   // Only call API when authenticated
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error } = useInstitutions(filters)

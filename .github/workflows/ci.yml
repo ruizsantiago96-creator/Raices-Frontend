@@ -17,6 +17,7 @@ jobs:
         node-version: '20'
         cache: 'pnpm'
     - run: pnpm install --no-frozen-lockfile
+    - run: pnpm run lint
     - run: pnpm audit --audit-level=high
       continue-on-error: true
     - run: pnpm run build
