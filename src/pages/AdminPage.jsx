@@ -516,7 +516,7 @@ function InstitutionsTab() {
   const { addToast } = useUiStore()
   const [filter, setFilter] = useState('pending')
   const { data: pending = [], isLoading: pLoad } = usePendingInstitutions()
-  const  data: all = [], isLoading: aLoad } = useAllInstitutions()
+  const { data: all = [], isLoading: aLoad } = useAllInstitutions()
   const approve = useApproveInstitution()
   const reject = useRejectInstitution()
   const verify = useToggleVerifyInstitution()
