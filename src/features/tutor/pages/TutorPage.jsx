@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useMe } from '@features/auth/hooks/useAuth'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { useUiStore } from '../../../shared/stores/uiStore'
+import { useMe, useAuthStore } from '@features/auth'
+import { useUiStore } from '@shared/stores/uiStore'
 import { useDependents, useAddDependent, useUpdateDependent, useDeleteDependent } from '../hooks/useDependents'
 import { useAIForDependent } from '../hooks/useAI'
-import { Icons, labelStyle, inputStyle } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
+import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
 
 const RELATIONSHIPS = ['Hijo/a', 'Hermano/a', 'Nieto/a', 'Sobrino/a', 'Cónyuge', 'Tutor legal', 'Otro familiar']
 const DISABILITIES = ['Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial', 'TEA / Autismo', 'Síndrome de Down', 'Lenguaje', 'Múltiple', 'Otra']
@@ -21,7 +19,7 @@ const LIFE_STAGES = [
 function hashColor(str = '') {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
-  const colors = ['#2B7A84', '#B85C84', '#7857A0', '#BE7C34', '#5F8043', '#3A8C8C', '#5A6C8C']
+  const colors = ['#01ADFF', '#B85C84', '#7857A0', '#BE7C34', '#5F8043', '#3A8C8C', '#5A6C8C']
   return colors[Math.abs(h) % colors.length]
 }
 
@@ -57,7 +55,7 @@ export default function TutorPage() {
       <TopNav user={user} onLogout={logout} currentPage="tutor" />
 
       <main id="main" className="responsive-main" style={{ maxWidth: 960 }}>
-        {/* Header */}            <div className="responsive-header" style={{ marginBottom: 8 }}>
+        {/* Header */}            <div className="tutor-header responsive-header" style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.users({ s: 24 })}
@@ -67,7 +65,7 @@ export default function TutorPage() {
               <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '2px 0 0' }}>Personas a tu cuidado y sus necesidades</p>
             </div>
           </div>
-          <button className="btn-primary" onClick={() => setEditing({})} style={{ fontSize: 16 }}>
+          <button className="btn-primary tutor-btn" onClick={() => setEditing({})} style={{ fontSize: 16 }}>
             {Icons.plus({ s: 18 })} Agregar persona
           </button>
         </div>
@@ -98,7 +96,7 @@ export default function TutorPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+            <div className="tutor-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
                 <DependentCard key={dep.id} dep={dep} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} />
               ))}
@@ -161,7 +159,7 @@ function DependentCard({ dep, onEdit, onDelete }) {
         <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>{dep.notes}</p>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
+      <div className="tutor-card-actions" style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
         <button onClick={handleAIToggle} className="btn-secondary"
           aria-expanded={showAI}
           style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>

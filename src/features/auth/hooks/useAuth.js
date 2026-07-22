@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import api from '../../../shared/lib/api'
+import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
-import { setRememberMe } from '../../../shared/lib/storage'
+import { setRememberMe } from '@shared/lib/storage'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 
 export function useLogin() {

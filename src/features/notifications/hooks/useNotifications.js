@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import api from '../../../shared/lib/api'
-import { useAuthStore } from '@features/auth/store/authStore'
+import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 import { setActiveEventSource, closeNotificationStream, isStreamSuspended } from '../lib/notificationStream'
 
 export function useNotifications() {

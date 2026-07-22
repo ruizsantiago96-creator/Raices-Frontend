@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { useJobs, useAppliedJobIds, useApplyJob, useMyApplications } from '../hooks/useJobs'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { Icons } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
-import { useMe } from '@features/auth/hooks/useAuth'
+import { useAuthStore } from '@features/auth'
+import { useUiStore } from '@shared/stores/uiStore'
+import { Icons } from '@shared/components/shared'
+import { AppSidebar, TopNav, useMe } from '@features/auth'
 
 const MODALITIES = ['Todos', 'presencial', 'remoto', 'híbrido']
 
 const STATUS_LABELS = { pending: 'Enviada', reviewed: 'En revisión', accepted: 'Aceptada', rejected: 'No seleccionado' }
-const STATUS_COLORS = { pending: '#D4944C', reviewed: '#2B7A84', accepted: '#1F8049', rejected: '#B0434B' }
+const STATUS_COLORS = { pending: '#D4944C', reviewed: '#01ADFF', accepted: '#1F8049', rejected: '#B0434B' }
 
 function ApplicationModal({ job, onClose }) {
   const [letter, setLetter] = useState('')
@@ -161,14 +159,14 @@ export default function JobsPage() {
       <TopNav user={user} onLogout={logout} currentPage="jobs" />
 
       <main className="responsive-main" style={{ maxWidth: 900 }}>
-        <div className="responsive-header" style={{ marginBottom: 28 }}>
+        <div className="jobs-header responsive-header" style={{ marginBottom: 28 }}>
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Bolsa de Trabajo Inclusiva
             </h1>
             <p style={{ fontSize: 15, color: 'var(--fg3)', margin: 0 }}>Vacantes en empresas que valoran la diversidad</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="jobs-tabs" style={{ display: 'flex', gap: 8 }}>
             {['board', 'applications'].map(t => (
               <button key={t} onClick={() => setTab(t)}
                 style={{ padding: '10px 18px', borderRadius: 'var(--radius-pill)', border: tab === t ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: tab === t ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: tab === t ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: tab === t ? 700 : 500, fontSize: 14, fontFamily: 'var(--font-body)' }}>
@@ -181,7 +179,7 @@ export default function JobsPage() {
         {tab === 'board' ? (
           <>
             {/* Filtros modalidad */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div className="jobs-filters" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
               {MODALITIES.map(m => (
                 <button key={m} onClick={() => setModality(m)}
                   style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: modality === m ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: modality === m ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: modality === m ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: modality === m ? 700 : 500, fontSize: 13, fontFamily: 'var(--font-body)', textTransform: 'capitalize' }}>

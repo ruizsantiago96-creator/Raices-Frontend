@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import api from '../../../shared/lib/api'
+import api from '@shared/lib/api'
 
 export function useInstitutions(filters = {}) {
   return useQuery({

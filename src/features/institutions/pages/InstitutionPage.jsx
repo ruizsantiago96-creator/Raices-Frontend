@@ -4,17 +4,16 @@ import { useInstitution } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useReviews, useSubmitReview } from '../hooks/useReviews'
 import { useChat } from '../../tutor/hooks/useAI'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { CategoryTag, Icons, CATEGORY_COLORS } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
+import { useAuthStore } from '@features/auth'
+import { useUiStore } from '@shared/stores/uiStore'
+import { CategoryTag, Icons, CATEGORY_COLORS } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
 const AVATAR_COLORS = [
   '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B',
-  '#4BA3A3', '#2B7A84', '#5A6C8C',
+  '#4BA3A3', '#01ADFF', '#5A6C8C',
 ]
 
 function avatarColor(name = '') {

@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMe } from '@features/auth/hooks/useAuth'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { Icons } from '../../../shared/components/shared'
+import { useMe, useAuthStore } from '@features/auth'
+import { useUiStore } from '@shared/stores/uiStore'
+import { Icons } from '@shared/components/shared'
 import {
   useAdminStats, useAdminAnalytics, useNeedsIntelligence,
   useAllInstitutions, usePendingInstitutions, useApproveInstitution,
@@ -15,10 +14,10 @@ import {
 } from '../hooks/useAdmin'
 
 /* ════════════════════ Paleta y helpers ════════════════════ */
-const PALETTE = ['#2B7A84', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C', '#D46A6A']
+const PALETTE = ['#01ADFF', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C', '#D46A6A']
 const ROLE_META = {
   admin: { bg: '#8B6BAE', label: 'Admin' },
-  institution: { bg: '#2B7A84', label: 'Institución' },
+  institution: { bg: '#01ADFF', label: 'Institución' },
   tutor: { bg: '#D4944C', label: 'Tutor' },
   pcd: { bg: '#C4789A', label: 'Persona c/ disc.' },
   user: { bg: '#5A6C8C', label: 'Usuario' },
@@ -32,7 +31,7 @@ const STATUS_META = {
 const SEVERITY_META = {
   alta: { color: '#D46A6A', icon: Icons.shieldAlert },
   media: { color: '#D4944C', icon: Icons.target },
-  info: { color: '#2B7A84', icon: Icons.sparkles },
+  info: { color: '#01ADFF', icon: Icons.sparkles },
 }
 const monthLabel = (m) => {
   if (!m) return ''
@@ -145,7 +144,7 @@ function AdminSidebar({ tab, onTab, pendingCount, alertCritical, onLogout }) {
             style={{
               width: 76, minHeight: 64, background: 'none', border: 'none', cursor: 'pointer',
               borderRadius: 10,
-              backgroundColor: active ? 'rgba(43,122,132,0.35)' : 'transparent',
+              backgroundColor: active ? 'rgba(1,173,255,0.35)' : 'transparent',
               outline: active ? '2px solid var(--primary)' : '2px solid transparent',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
               color: active ? '#7DD3DB' : 'rgba(255,255,255,0.6)',
@@ -218,7 +217,7 @@ function EmptyState({ icon, title, sub }) {
 }
 
 /* ── Gráfica de barras vertical (SVG) ── */
-function BarChartV({ data, labelKey, valueKey, color = '#2B7A84', height = 160 }) {
+function BarChartV({ data, labelKey, valueKey, color = '#01ADFF', height = 160 }) {
   if (!data?.length) return <p style={{ fontSize: 13, color: 'var(--fg3)', textAlign: 'center', padding: 24 }}>Sin datos suficientes</p>
   const max = Math.max(...data.map(d => d[valueKey]), 1)
   const barW = 100 / data.length
@@ -283,7 +282,7 @@ function DonutChart({ data, labelKey, valueKey, size = 150 }) {
 }
 
 /* ── Barra horizontal con etiqueta ── */
-function HBar({ label, value, max, color = '#2B7A84', suffix }) {
+function HBar({ label, value, max, color = '#01ADFF', suffix }) {
   const pct = max > 0 ? (value / max) * 100 : 0
   return (
     <div style={{ marginBottom: 12 }}>
@@ -305,7 +304,7 @@ function OverviewTab() {
 
   const statCards = [
     { label: 'Usuarios', value: stats?.total_users, sub: `${stats?.active_users ?? 0} activos`, icon: Icons.users, color: '#8B6BAE' },
-    { label: 'Instituciones', value: stats?.total_institutions, sub: `${stats?.verified_institutions ?? 0} verificadas`, icon: Icons.building, color: '#2B7A84' },
+    { label: 'Instituciones', value: stats?.total_institutions, sub: `${stats?.verified_institutions ?? 0} verificadas`, icon: Icons.building, color: '#01ADFF' },
     { label: 'Pendientes', value: stats?.pending_approval, sub: 'por aprobar', icon: Icons.shieldAlert, color: '#D4944C' },
     { label: 'Reseñas', value: stats?.total_reviews, sub: stats?.avg_rating ? `${stats.avg_rating}★ promedio` : 'sin datos', icon: Icons.star, color: '#C4789A' },
     { label: 'Publicaciones', value: stats?.total_posts, sub: `${stats?.total_groups ?? 0} grupos`, icon: Icons.message, color: '#7BA05B' },
@@ -475,7 +474,7 @@ function IntelligenceTab() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: 'var(--fg3)', marginBottom: 3 }}>Oferta · {c.supply}</div>
                       <div style={{ height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${(c.supply / maxSupply) * 100}%`, height: '100%', background: '#2B7A84', borderRadius: 4 }} />
+                        <div style={{ width: `${(c.supply / maxSupply) * 100}%`, height: '100%', background: '#01ADFF', borderRadius: 4 }} />
                       </div>
                     </div>
                   </div>
@@ -583,7 +582,7 @@ function InstitutionsTab() {
                       )}
                       {inst.is_active && (
                         <button onClick={() => doVerify(inst.id)} disabled={verify.isPending}
-                          style={btn(inst.is_verified ? '#5A6C8C' : '#2B7A84')}>
+                          style={btn(inst.is_verified ? '#5A6C8C' : '#01ADFF')}>
                           {Icons.shield({ s: 14 })} {inst.is_verified ? 'Quitar verif.' : 'Verificar'}
                         </button>
                       )}
@@ -844,7 +843,7 @@ function btn(color) {
 const ALERT_SEVERITY = {
   critica: { color: '#D46A6A', bg: 'color-mix(in oklch, #D46A6A 10%, transparent)', border: 'color-mix(in oklch, #D46A6A 30%, transparent)', label: 'Crítica', icon: Icons.shieldAlert },
   media:   { color: '#D4944C', bg: 'color-mix(in oklch, #D4944C 10%, transparent)', border: 'color-mix(in oklch, #D4944C 30%, transparent)', label: 'Media',   icon: Icons.target },
-  info:    { color: '#2B7A84', bg: 'color-mix(in oklch, #2B7A84 10%, transparent)', border: 'color-mix(in oklch, #2B7A84 30%, transparent)', label: 'Info',    icon: Icons.sparkles },
+  info:    { color: '#01ADFF', bg: 'color-mix(in oklch, #01ADFF 10%, transparent)', border: 'color-mix(in oklch, #01ADFF 30%, transparent)', label: 'Info',    icon: Icons.sparkles },
 }
 const ALERT_ACTION_TAB = {
   institution: 'institutions', institutions: 'institutions', institutions_pending: 'institutions',

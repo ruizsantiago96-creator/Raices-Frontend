@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getToken, getRefreshToken, getUser, saveToken, saveRefreshToken, saveUser, clearAllAuth } from '../../../shared/lib/storage'
-import { closeNotificationStream, suspendStream, resumeStream } from '@features/notifications/lib/notificationStream'
+import { closeNotificationStream, suspendStream, resumeStream } from '@features/notifications'
 
 // Restaurar estado desde storage al iniciar la app
 const initialToken = getToken()

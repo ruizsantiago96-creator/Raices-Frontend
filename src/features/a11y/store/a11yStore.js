@@ -15,6 +15,7 @@ export const useA11yStore = create(
       reducedMotion: false,
       ttsEnabled: false,
       colorblindMode: 'none',  // 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia'
+      darkMode: false,         // 'false' | 'true'
 
       setTextScale: (textScale) => set({ textScale }),
       cycleTextScale: () => set((s) => ({
@@ -24,8 +25,9 @@ export const useA11yStore = create(
       toggleEasyRead: () => set((s) => ({ easyRead: !s.easyRead })),
       toggleReducedMotion: () => set((s) => ({ reducedMotion: !s.reducedMotion })),
       toggleTts: () => set((s) => ({ ttsEnabled: !s.ttsEnabled })),
+      toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
       setColorblindMode: (colorblindMode) => set({ colorblindMode }),
-      reset: () => set({ textScale: 'base', highContrast: false, easyRead: false, reducedMotion: false, ttsEnabled: false, colorblindMode: 'none' }),
+      reset: () => set({ textScale: 'base', highContrast: false, easyRead: false, reducedMotion: false, ttsEnabled: false, colorblindMode: 'none', darkMode: false }),
     }),
     { name: 'raices_a11y' }
   )
@@ -39,4 +41,5 @@ export function applyA11yAttributes(state) {
   el.setAttribute('data-easy-read', state.easyRead ? 'true' : 'false')
   el.setAttribute('data-reduced-motion', state.reducedMotion ? 'true' : 'false')
   el.setAttribute('data-colorblind', state.colorblindMode ?? 'none')
+  el.setAttribute('data-theme', state.darkMode ? 'dark' : 'light')
 }

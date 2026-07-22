@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom'
-import { useMe, useProfile } from '@features/auth/hooks/useAuth'
-import { useDiscovery } from '@features/institutions/hooks/useInstitutions'
+import { useMe, useProfile } from '@features/auth'
+import { useDiscovery } from '@features/institutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useAINextSteps } from '../../tutor/hooks/useAI'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { Icons, LeafIcon, CategoryTag, CATEGORY_COLORS } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
-import NotificationBell from '@features/notifications/components/NotificationBell'
+import { useAuthStore } from '@features/auth'
+import { Icons, LeafIcon, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
+import { NotificationBell } from '@features/notifications'
 
 export default function DashboardPage() {
   const { logout } = useAuthStore()
@@ -30,13 +29,18 @@ export default function DashboardPage() {
       <TopNav user={user} onLogout={logout} currentPage="dashboard" />
 
       <main className="responsive-main" style={{ maxWidth: 1100 }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
-        <div style={{ marginBottom: 36 }}>
+        <div className="scroll-reveal" style={{ marginBottom: 36 }}>
           <div className="responsive-header" style={{ marginBottom: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>
-              {user?.full_name?.[0]?.toUpperCase() ?? '?'}
+            <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                user?.full_name?.[0]?.toUpperCase() ?? '?'
+              )}
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                 Hola, {user?.full_name?.split(' ')[0] ?? 'bienvenid@'}
               </h1>
@@ -54,7 +58,7 @@ export default function DashboardPage() {
             <div style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 16%', background: 'rgba(255,255,255,0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.target({ s: 28 })}
             </div>
-            <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 21, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
                 Completa tu perfil
               </h2>
@@ -76,7 +80,7 @@ export default function DashboardPage() {
         )}
 
         {/* AI Analysis Panel */}
-        <div style={{ marginBottom: 40 }}>
+        <div className="scroll-reveal" style={{ marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {Icons.brain({ s: 16 })}
@@ -138,11 +142,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Recommendations */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
+        <div className="scroll-reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 12 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
             Recomendaciones para ti
           </h2>
-          <Link to="/explore" style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Link to="/explore" style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             Ver todas {Icons.arrowRight({ s: 14 })}
           </Link>
         </div>
@@ -177,11 +181,12 @@ export default function DashboardPage() {
             </Link>
           </div>
         ) : (            <div className="responsive-grid-cards">
-            {recommendations.slice(0, 6).map(inst => (
-              <InstitutionCard key={inst.id} inst={inst} isFav={favIds.includes(inst.id)} onToggleFav={() => toggle.mutate(inst.id)} />
+            {recommendations.slice(0, 6).map((inst, i) => (
+              <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionCard inst={inst} isFav={favIds.includes(inst.id)} onToggleFav={() => toggle.mutate(inst.id)} /></div>
             ))}
           </div>
         )}
+        </div>
       </main>
     </div>
   )
@@ -190,7 +195,7 @@ export default function DashboardPage() {
 function InstitutionCard({ inst, isFav, onToggleFav }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'all 0.2s ease' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <CategoryTag label={inst.category} color={color} />
         <button onClick={onToggleFav} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isFav ? 'var(--color-salud)' : 'var(--fg3)', padding: 0, display: 'flex' }}>

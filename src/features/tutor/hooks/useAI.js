@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import api from '../../../shared/lib/api'
-import { useAuthStore } from '@features/auth/store/authStore'
+import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 
 export function useChat() {
   return useMutation({

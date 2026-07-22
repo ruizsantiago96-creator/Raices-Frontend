@@ -1,13 +1,13 @@
 import { useNavigate, Navigate } from 'react-router-dom'
-import { LeafIcon, Icons, BrandMark, AppFooter } from '../../../shared/components/shared'
-import { useAuthStore } from '@features/auth/store/authStore'
+import { LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
+import { useAuthStore } from '@features/auth'
 
 const CATEGORIES = [
   { name: 'Salud', color: '#C4789A', icon: Icons.heartPulse },
   { name: 'Educación', color: '#8B6BAE', icon: Icons.graduationCap },
   { name: 'Empleo', color: '#D4944C', icon: Icons.briefcase },
   { name: 'Comunidad', color: '#4BA3A3', icon: Icons.users },
-  { name: 'Terapia', color: '#2B7A84', icon: Icons.activity },
+  { name: 'Terapia', color: '#01ADFF', icon: Icons.activity },
   { name: 'Recreación', color: '#7BA05B', icon: Icons.target },
 ]
 
@@ -49,17 +49,19 @@ export default function LandingPage() {
     sectionSub: { fontSize: 18, color: 'var(--fg2)', marginBottom: 40 },
   }
 
+
+
   return (
     <div style={s.page}>
       {/* Topbar */}
-      <header style={s.topbar}>
+      <header className="landing-topbar" style={s.topbar}>
         <BrandMark />
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+        <nav className="landing-nav" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <button onClick={() => nav('/about')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Conocenos</button>
           <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
         </nav>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)' }}>Iniciar sesión</button>
+        <div className="landing-auth" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)' }}><span>Iniciar sesión</span></button>
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 15, padding: '10px 24px' }}>Registrarse</button>
         </div>
       </header>
@@ -96,13 +98,13 @@ export default function LandingPage() {
         {/* Columna Derecha (Logo) */}
         <div className="hero-logo">
           <img 
-            src="/images/raices.jpg" 
+            src="/images/raices.png" 
             alt="Raíces Logo" 
             style={{ 
               maxWidth: '100%', 
               height: 'auto', 
               borderRadius: '24px', 
-              boxShadow: '0 10px 30px rgba(0,0,0,0.1)' 
+              boxShadow: 'none' 
             }} 
           />
         </div>
@@ -111,12 +113,14 @@ export default function LandingPage() {
 
       {/* Categories */}
       <section style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-        <div style={{ ...s.section, paddingTop: 64, paddingBottom: 64 }}>
-          <h2 style={s.sectionTitle}>Caminos hacia el florecimiento</h2>
-          <p style={s.sectionSub}>Explora las áreas donde podemos conectarte con apoyo real</p>
+        <div className="landing-section" style={{ ...s.section, paddingTop: 64, paddingBottom: 64 }}>
+          <div className="scroll-reveal">
+            <h2 className="landing-section-title" style={s.sectionTitle}>Caminos hacia el florecimiento</h2>
+            <p className="landing-section-sub" style={s.sectionSub}>Explora las áreas donde podemos conectarte con apoyo real</p>
+          </div>
           <div style={s.grid4}>
-            {CATEGORIES.map(cat => (
-              <div key={cat.name} style={s.catCard(cat.color)}
+            {CATEGORIES.map((cat, i) => (
+              <div key={cat.name} className={`scroll-reveal scroll-reveal-delay-${i + 1}`} style={s.catCard(cat.color)}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = cat.color }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
                 onClick={() => nav(`/explore?category=${encodeURIComponent(cat.name)}`)}
@@ -131,12 +135,14 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section style={s.section}>
-        <h2 style={s.sectionTitle}>¿Por qué Raíces para florecer?</h2>
-        <p style={s.sectionSub}>Un ecosistema que acompaña, no solo informa</p>
+      <section className="landing-section" style={s.section}>
+        <div className="scroll-reveal">
+          <h2 className="landing-section-title" style={s.sectionTitle}>¿Por qué Raíces para florecer?</h2>
+          <p className="landing-section-sub" style={s.sectionSub}>Un ecosistema que acompaña, no solo informa</p>
+        </div>
         <div style={s.grid4}>
-          {FEATURES.map(f => (
-            <div key={f.title} style={s.featCard}>
+          {FEATURES.map((f, i) => (
+            <div key={f.title} className={`scroll-reveal scroll-reveal-delay-${i + 1}`} style={s.featCard}>
               <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: `color-mix(in oklch, ${f.color} 15%, transparent)`, color: f.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                 {f.icon({ s: 20 })}
               </div>
@@ -148,17 +154,17 @@ export default function LandingPage() {
       </section>
 
       {/* CTA bottom */}
-      <section style={{ background: 'var(--primary)', padding: '64px 48px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 700, color: 'white', margin: '0 0 16px' }}>
+      <section className="landing-cta scroll-reveal-scale" style={{ background: 'var(--bg-warm)', padding: '64px 48px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 16px' }}>
           Empieza hoy, sin costo
         </h2>
-        <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)', marginBottom: 32, maxWidth: 500, margin: '0 auto 32px' }}>
+        <p style={{ fontSize: 18, color: 'var(--fg2)', marginBottom: 32, maxWidth: 500, margin: '0 auto 32px' }}>
           Crea tu perfil, descubre instituciones y conecta con la comunidad en minutos.
         </p>
-        <button onClick={() => nav('/auth?mode=register')} style={{ background: 'white', color: 'var(--primary-dark)', border: 'none', borderRadius: 'var(--radius-pill)', fontSize: 18, fontWeight: 700, padding: '14px 40px', cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 18, padding: '14px 40px' }}>
           Crear mi cuenta {Icons.arrowRight({ s: 18 })}
         </button>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>
+        <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 16 }}>
           Demo: demo@raices.mx / Demo1234
         </p>
       </section>

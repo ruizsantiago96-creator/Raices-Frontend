@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
-import { Icons, CategoryTag, CATEGORY_COLORS } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
-import { useMe } from '@features/auth/hooks/useAuth'
-import { useAuthStore } from '@features/auth/store/authStore'
+import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
+import { useMe, useAuthStore } from '@features/auth'
 
 export default function FavoritesPage() {
   const { data: favorites = [], isLoading } = useFavorites()

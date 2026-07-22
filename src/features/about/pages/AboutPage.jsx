@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { LeafIcon, Icons, BrandMark, AppFooter } from '../../../shared/components/shared'
-import { useAuthStore } from '@features/auth/store/authStore'
+import { LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
+import { useAuthStore } from '@features/auth'
 
 const VALUES = [
   { icon: Icons.heart, title: 'Dignidad', desc: 'Cada persona merece ser tratada con respeto y valorada por quien es.' },
@@ -15,30 +15,12 @@ export default function AboutPage() {
 
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
-      <style>{`
-        @media (max-width: 991px) {
-          .about-community-grid {
-            grid-template-columns: 1fr !important;
-            gap: 32px !important;
-          }
-          .about-community-grid > *:first-child {
-            order: -1;
-          }
-          .about-values-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-        }
-        @media (max-width: 600px) {
-          .about-values-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+
 
       {/* Topbar — dark teal matching the hero */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--primary-dark)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontFamily: 'var(--font-body)' }}>
+      <header className="about-topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--primary-dark)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontFamily: 'var(--font-body)' }}>
         <BrandMark onClick={() => nav('/')} light />
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <nav className="about-nav" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>Inicio</button>
           {!token && (
             <>
@@ -50,7 +32,7 @@ export default function AboutPage() {
       </header>
 
       {/* Hero — subtle, monochrome teal */}
-      <section style={{ background: 'var(--primary-dark)', padding: '140px 48px 80px', textAlign: 'center' }}>
+      <section className="about-hero" style={{ background: 'var(--primary-dark)', padding: '140px 48px 80px', textAlign: 'center' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', borderRadius: 'var(--radius-pill)', padding: '6px 16px', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
             <LeafIcon size={14} color="rgba(255,255,255,0.9)" /> Nuestra historia
@@ -65,7 +47,7 @@ export default function AboutPage() {
       </section>
 
       {/* Mission — clean, centered */}
-      <section style={{ maxWidth: 700, margin: '0 auto', padding: '80px 48px', textAlign: 'center' }}>
+      <section className="about-section scroll-reveal" style={{ maxWidth: 700, margin: '0 auto', padding: '80px 48px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 16px' }}>
           Nuestro propósito
         </h2>
@@ -75,13 +57,13 @@ export default function AboutPage() {
       </section>
 
       {/* Values — minimal, same palette */}
-      <section style={{ maxWidth: 1000, margin: '0 auto', padding: '72px 48px' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 48px', textAlign: 'center' }}>
+      <section className="about-section" style={{ maxWidth: 1000, margin: '0 auto', padding: '72px 48px' }}>
+        <h2 className="scroll-reveal" style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 48px', textAlign: 'center' }}>
           Nuestros valores
         </h2>
         <div className="about-values-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-          {VALUES.map(v => (
-            <div key={v.title} style={{ padding: 24, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+          {VALUES.map((v, i) => (
+            <div key={v.title} className={`scroll-reveal scroll-reveal-delay-${i + 1}`} style={{ padding: 24, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
               <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                 {v.icon({ s: 20 })}
               </div>
@@ -93,7 +75,7 @@ export default function AboutPage() {
       </section>
 
       {/* Quiénes conforman Raíses — two-column layout */}
-      <section style={{ maxWidth: 1000, margin: '0 auto', padding: '72px 48px' }}>
+      <section className="about-section" style={{ maxWidth: 1000, margin: '0 auto', padding: '72px 48px' }}>
         <div className="about-community-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
           {/* Left Column: Image */}
           <div style={{
@@ -101,17 +83,15 @@ export default function AboutPage() {
             aspectRatio: '4 / 5',
             borderRadius: 24,
             overflow: 'hidden',
-            boxShadow: '0 24px 64px rgba(44, 62, 62, 0.16), 0 8px 24px rgba(44, 62, 62, 0.10)',
-            position: 'relative',
+            background: 'var(--bg-surface)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid var(--border-color)',
+            padding: 20,
+            boxSizing: 'border-box',
           }}>
-            <img src="/images/raices.jpg" alt="Comunidad Raíses" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 24 }} />
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              height: '30%',
-              background: 'linear-gradient(to top, rgba(44,62,62,0.18), transparent)',
-              borderRadius: '0 0 24px 24px',
-              pointerEvents: 'none',
-            }} />
+            <img src="/images/dibujo.png" alt="Comunidad Raíses" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
           </div>
 
           {/* Right Column: Content */}
@@ -120,7 +100,7 @@ export default function AboutPage() {
               fontFamily: 'var(--font-display)',
               fontSize: 36,
               fontWeight: 700,
-              color: 'var(--fg1)',
+              color: 'var(--primary)',
               margin: 0,
               lineHeight: 1.15,
             }}>
@@ -162,7 +142,7 @@ export default function AboutPage() {
 
       {/* CTA — card style, distinct from footer */}
       <section style={{ maxWidth: 800, margin: '0 auto', padding: '0 48px 80px' }}>
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 20, padding: '56px 48px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
+        <div className="about-cta-card scroll-reveal-scale" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 20, padding: '56px 48px', textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             {Icons.users({ s: 24 })}
           </div>

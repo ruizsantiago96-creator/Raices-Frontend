@@ -30,6 +30,7 @@ const I = {
   speaker: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>,
   stop: (s = 18) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>,
   reset: (s = 16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>,
+  darkMode: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
 }
 
 /* ── Síntesis de voz (Web Speech API) ── */
@@ -58,7 +59,7 @@ export default function AccessibilityBar() {
   const btnRef = useRef(null)
 
   /* Aplica preferencias al <html> cada vez que cambian */
-  useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode])
+  useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode, a11y.darkMode])
 
   /* Cerrar con Escape y clic fuera */
   useEffect(() => {
@@ -164,6 +165,9 @@ export default function AccessibilityBar() {
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--primary)' }}>{I.access(22)}</span> Accesibilidad
           </h2>
+
+          {/* Modo oscuro */}
+          <Toggle icon={I.darkMode()} label="Modo oscuro" on={a11y.darkMode} onToggle={a11y.toggleDarkMode} />
 
           {/* Tamaño de texto */}
           <Group label="Tamaño de texto">

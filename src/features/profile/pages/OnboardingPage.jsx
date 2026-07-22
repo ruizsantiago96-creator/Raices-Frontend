@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSaveProfiling } from '../hooks/useProfile'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { Icons, BrandMark, labelStyle, inputStyle } from '../../../shared/components/shared'
+import { useUiStore } from '@shared/stores/uiStore'
+import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
 
 const STEPS = [
   { title: 'Datos generales', desc: 'Conocer lo básico nos ayuda a personalizar tu entorno.', icon: Icons.user },

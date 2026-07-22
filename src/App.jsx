@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
-import { useSessionVerify } from '@features/auth/hooks/useSessionVerify'
+import { useSessionVerify } from '@features/auth'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { queryClient } from '@shared/lib/queryClient'
-import ProtectedRoute from '@features/auth/components/ProtectedRoute'
+import { ProtectedRoute } from '@features/auth'
 import ToastContainer from '@shared/components/Toast'
-import AccessibilityBar from '@features/a11y/components/AccessibilityBar'
+import { AccessibilityBar } from '@features/a11y'
 import LandingPage from '@features/landing/pages/LandingPage'
 import AuthPage from '@features/auth/pages/AuthPage'
 import OnboardingPage from '@features/profile/pages/OnboardingPage'
@@ -19,6 +20,7 @@ import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import AboutPage from '@features/about/pages/AboutPage'
+import DesignPreview from '@features/landing/pages/DesignPreview'
 
 /** Al cambiar de ruta, lleva el foco al contenido principal y sube el scroll
     — clave para que los lectores de pantalla anuncien la nueva página. */
@@ -31,6 +33,8 @@ function RouteFocus() {
       main.focus({ preventScroll: true })
     }
     window.scrollTo({ top: 0, left: 0 })
+    // Init scroll reveal on route change
+    requestAnimationFrame(() => initScrollReveal())
   }, [pathname])
   return null
 }
@@ -136,6 +140,7 @@ export default function App() {
             <div id="a11y-root">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/design-preview" element={<DesignPreview />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

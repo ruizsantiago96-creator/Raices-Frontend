@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
-import { CategoryTag, CATEGORY_COLORS } from '../../../shared/components/shared'
+import { CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { createRoot } from 'react-dom/client'
 
 const MERIDA = { lng: -89.5926, lat: 20.9674 }
@@ -60,9 +60,9 @@ export default function MapView({ institutions = [], height = '400px' }) {
         'width:24px',
         'height:24px',
         'border-radius:50%',
-        'background:#2B7A84',
+        'background:#01ADFF',
         'border:3px solid white',
-        'box-shadow:0 2px 8px rgba(0,0,0,0.25)',
+        'box-shadow:none',
         'cursor:pointer',
         'display:flex',
         'align-items:center',
@@ -79,7 +79,7 @@ export default function MapView({ institutions = [], height = '400px' }) {
       el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)' })
 
       // Build popup HTML
-      const color = CATEGORY_COLORS[inst.category] ?? '#2B7A84'
+      const color = CATEGORY_COLORS[inst.category] ?? '#01ADFF'
       const popupNode = document.createElement('div')
       popupNode.style.cssText = 'font-family:Inter,sans-serif;min-width:200px;padding:4px 2px'
 
@@ -109,7 +109,7 @@ export default function MapView({ institutions = [], height = '400px' }) {
         borderRadius: 12,
         overflow: 'hidden',
         border: '1px solid var(--border-light)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        boxShadow: 'none',
       }}
     />
   )
@@ -145,7 +145,7 @@ function PopupContent({ inst, color }) {
         style={{
           width: '100%',
           padding: '8px 0',
-          background: '#2B7A84',
+          background: '#01ADFF',
           color: 'white',
           border: 'none',
           borderRadius: 8,

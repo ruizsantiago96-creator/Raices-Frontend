@@ -47,6 +47,7 @@ export const Icons = {
   grid: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
   list: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
   loader: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+  camera: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
 }
 
 export const CategoryTag = ({ label, color }) => (
@@ -68,7 +69,7 @@ export const CategoryTag = ({ label, color }) => (
 )
 
 export const CATEGORY_COLORS = {
-  'Terapia': '#2B7A84',
+  'Terapia': '#01ADFF',
   'Educación': '#8B6BAE',
   'Empleo': '#D4944C',
   'Comunidad': '#4BA3A3',
@@ -93,9 +94,20 @@ export const BrandMark = ({ onClick, size = 22, light = false }) => (
   </button>
 )
 
+export function hashColor(str = '') {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
+  const colors = ['#01ADFF', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C']
+  return colors[Math.abs(h) % colors.length]
+}
+
 export const TopNav = ({ currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const hasSidebar = !!user
+  const avatarColor = hashColor(user?.full_name ?? '')
+  const initials = (user?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const hasAvatar = !!user?.avatar_url
+
   return (
     <header className={hasSidebar ? 'responsive-topnav' : undefined} style={{
       ...(hasSidebar ? {} : {
@@ -108,9 +120,22 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
       <BrandMark onClick={() => nav('/')} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {user && (
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg2)' }}>
-            {user.full_name?.split(' ')[0]}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: hasAvatar ? 'transparent' : avatarColor,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-display)',
+              overflow: 'hidden', flexShrink: 0,
+            }}>
+              {hasAvatar ? (
+                <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : initials}
+            </div>
+            <span className="topnav-username" style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg2)' }}>
+              {user.full_name?.split(' ')[0]}
+            </span>
+          </div>
         )}
         {onLogout && (
           <button onClick={onLogout} style={{ background: 'none', border: '2px solid var(--border-color)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', color: 'var(--fg2)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-body)', padding: '8px 18px', minHeight: 44 }}>
@@ -137,8 +162,8 @@ export const inputStyle = {
 
 export const AppFooter = () => (
   <div style={{ position: 'relative' }}>
-    <div style={{ height: 64, background: 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)' }} />
-    <footer style={{ background: 'linear-gradient(180deg, var(--primary-dark) 0%, #1A4D52 40%, #143D41 100%)', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
+    <div className="app-footer-transition" style={{ height: 64, background: 'linear-gradient(180deg, #4A5568 0%, #2E3B46 100%)' }} />
+    <footer className="app-footer-main" style={{ background: '#2E3B46', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
         <div>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
@@ -160,7 +185,7 @@ export const AppFooter = () => (
           </div>
         ))}
       </div>
-      <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.15)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="footer-bottom">
+      <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.15)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="app-footer-bottom footer-bottom">
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <LeafIcon size={14} color="rgba(251,247,240,0.4)" />
           2026. Raíces para florecer. Construida con dignidad y cuidado

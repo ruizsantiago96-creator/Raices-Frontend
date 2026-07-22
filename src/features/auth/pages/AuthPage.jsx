@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { Icons, BrandMark, labelStyle, inputStyle } from '../../../shared/components/shared'
-import { getRememberMe } from '../../../shared/lib/storage'
+import { useUiStore } from '@shared/stores/uiStore'
+import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
+import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 
 const ROLES = [

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { Icons } from '../../../shared/components/shared'
+import { Icons, LeafIcon } from '@shared/components/shared'
 
 export const AppSidebar = ({ currentPage }) => {
   const { user } = useAuthStore()
@@ -19,35 +19,77 @@ export const AppSidebar = ({ currentPage }) => {
     items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
   }
 
+  // Bottom nav items (mobile) — show only the 5 main ones
+  const bottomItems = items.slice(0, 5)
+
   return (
-    <nav aria-label="Navegación principal" className="responsive-sidebar" style={{
-      background: 'var(--bg-surface)', borderRight: '1px solid var(--border-color)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '16px 6px', gap: 6, boxShadow: 'var(--shadow-sm)',
-    }}>
-      {items.map((item) => {
-        const isActive = currentPage === item.id
-        return (
-          <Link
-            key={item.id}
-            to={item.path}
-            aria-current={isActive ? 'page' : undefined}
-            style={{
-              width: 76, minHeight: 60, textDecoration: 'none',
-              background: isActive ? 'var(--primary-subtle)' : 'transparent',
-              borderRadius: 'var(--radius-md)',
-              border: isActive ? '2px solid var(--primary)' : '2px solid transparent',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-              color: isActive ? 'var(--primary)' : 'var(--fg2)',
-              transition: 'all 0.2s ease', padding: '8px 4px',
-              fontFamily: 'var(--font-body)', fontWeight: isActive ? 800 : 600,
-            }}
-          >
-            {item.icon({ s: 24 })}
-            <span style={{ fontSize: 12, lineHeight: 1.1, textAlign: 'center' }}>{item.label}</span>
-          </Link>
-        )
-      })}
-    </nav>
+    <>
+      {/* Desktop sidebar */}
+      <nav aria-label="Navegación principal" className="responsive-sidebar" style={{
+        background: '#001D26',
+        display: 'flex', flexDirection: 'column',
+        padding: '20px 12px', gap: 4,
+      }}>
+        {/* Brand logo at top */}
+        <div style={{ padding: '8px 12px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LeafIcon size={18} color="rgba(255,255,255,0.9)" />
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Raíces</span>
+        </div>
+        {/* Nav items */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+          {items.map((item) => {
+            const isActive = currentPage === item.id
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                aria-current={isActive ? 'page' : undefined}
+                style={{
+                  textDecoration: 'none',
+                  background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                  transition: 'all 0.2s ease', padding: '10px 12px',
+                  fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
+                  fontSize: 14,
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+                <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+        {/* Bottom section */}
+        <div style={{ padding: '12px 12px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
+              {(user?.full_name ?? '?')[0]?.toUpperCase()}
+            </div>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.full_name ?? 'Usuario'}</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile bottom navigation */}
+      <nav aria-label="Navegación principal móvil" className="mobile-bottom-nav">
+        {bottomItems.map((item) => {
+          const isActive = currentPage === item.id
+          return (
+            <Link
+              key={item.id}
+              to={item.path}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {item.icon({ s: 20 })}
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
+      </nav>
+    </>
   )
 }

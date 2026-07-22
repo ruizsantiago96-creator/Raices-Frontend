@@ -8,10 +8,9 @@ import {
   useCreateComment,
 } from '../hooks/useCommunity'
 import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { Icons } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
+import { useAuthStore } from '@features/auth'
+import { Icons } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
 
 const relativeDate = (d) => {
   const diff = Date.now() - new Date(d)
@@ -76,7 +75,7 @@ function SkeletonCard() {
       </div>
       <div style={{ height: 13, background: 'var(--border-color)', borderRadius: 6, marginBottom: 8 }} />
       <div style={{ height: 13, width: '80%', background: 'var(--border-color)', borderRadius: 6 }} />
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+
     </div>
   )
 }
@@ -266,7 +265,7 @@ function PostCard({ post, onLike }) {
 /* ─── Quiénes somos la comunidad ─────────────────────────── */
 const COMMUNITY_MEMBERS = [
   { name: 'María García', role: 'Madre de familia', city: 'Mérida, Yucatán', bio: 'Mamá de Santiago (8 años, TEA). Comparte experiencias sobre terapia ABA y escuela inclusiva.', color: '#C4789A' },
-  { name: 'Carlos Hernández', role: 'Persona con discapacidad motriz', city: 'Ciudad de México', bio: 'Ingeniero en sistemas. Busca oportunidades de empleo inclusivo y compartió su experiencia con accesibilidad urbana.', color: '#2B7A84' },
+  { name: 'Carlos Hernández', role: 'Persona con discapacidad motriz', city: 'Ciudad de México', bio: 'Ingeniero en sistemas. Busca oportunidades de empleo inclusivo y compartió su experiencia con accesibilidad urbana.', color: '#01ADFF' },
   { name: 'Ana Luisa Pérez', role: 'Tutora y cuidadora', city: 'Guadalajara, Jalisco', bio: 'Cuida a su hermano menor (22 años, discapacidad intelectual). Participa en el grupo de Terapia y Empleo.', color: '#8B6BAE' },
   { name: 'Roberto Díaz', role: 'Psicólogo', city: 'Monterrey, Nuevo León', bio: 'Psicólogo especializado en discapacidad psicosocial. Conecta familias con terapeutas verificados.', color: '#D4944C' },
   { name: 'Lucía Martínez', role: 'Maestra de educación especial', city: 'Puebla, Puebla', bio: '15 años de experiencia. Comparte recursos didácticos y estrategias de inclusión escolar.', color: '#7BA05B' },
@@ -452,7 +451,7 @@ export default function SocialPage() {
       <main className="responsive-main" style={{ maxWidth: 1060 }}>
 
         {/* Selector de vista: Comunidad vs Mensajes */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <div className="social-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[
             { key: 'community', label: 'Comunidad', icon: Icons.users },
             { key: 'messages', label: 'Mensajes directos', icon: Icons.message },
@@ -460,7 +459,7 @@ export default function SocialPage() {
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 'var(--radius-pill)', border: mainTab === t.key ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: mainTab === t.key ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: mainTab === t.key ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: mainTab === t.key ? 700 : 500, fontSize: 14, fontFamily: 'var(--font-body)' }}>
-              {t.icon({ s: 16 })} {t.label}
+              {t.icon({ s: 16 })} <span>{t.label}</span>
             </button>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import api from '../../../shared/lib/api'
+import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
-import { getToken } from '../../../shared/lib/storage'
+import { getToken } from '@shared/lib/storage'
 
 /**
  * Hook que verifica la sesión del usuario al montar la aplicación.

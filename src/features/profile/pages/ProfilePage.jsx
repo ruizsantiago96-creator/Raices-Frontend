@@ -1,10 +1,8 @@
-import { useState } from 'react'
-import { useProfile, useUpdateProfile } from '@features/auth/hooks/useAuth'
-import { useAuthStore } from '@features/auth/store/authStore'
-import { useUiStore } from '../../../shared/stores/uiStore'
-import { Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle } from '../../../shared/components/shared'
-import { AppSidebar } from '@features/auth/components/AppSidebar'
-import { TopNav } from '@features/auth/components/TopNav'
+import { useState, useRef } from 'react'
+import { useProfile, useUpdateProfile, useAuthStore } from '@features/auth'
+import { useUiStore } from '@shared/stores/uiStore'
+import { Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
+import { AppSidebar, TopNav } from '@features/auth'
 
 const DISABILITY_OPTIONS = [
   'Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial',
@@ -18,12 +16,6 @@ const LIFE_STAGES = [
   { id: 'mayor', label: 'Adulto mayor (60+)' },
 ]
 
-function hashColor(str = '') {
-  let h = 0
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
-  const colors = ['#2B7A84', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C']
-  return colors[Math.abs(h) % colors.length]
-}
 
 export default function ProfilePage() {
   const { logout, user: authUser } = useAuthStore()
@@ -33,19 +25,58 @@ export default function ProfilePage() {
 
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const fileInputRef = useRef(null)
 
   const startEdit = () => {
     setForm({
       full_name: profile?.full_name ?? '',
       city: profile?.city ?? '',
       state: profile?.state ?? '',
+      avatar_url: avatarPreview || profile?.avatar_url || '',
     })
     setEditing(true)
   }
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      addToast('Por favor selecciona una imagen', 'error')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('La imagen no puede superar 5MB', 'error')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result
+      setAvatarPreview(base64)
+      try {
+        await update.mutateAsync({ avatar_url: base64 })
+        addToast('Foto de perfil actualizada', 'success')
+      } catch {
+        setAvatarPreview(null)
+        addToast('Error al subir la foto', 'error')
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
   const handleSave = async () => {
     try {
-      await update.mutateAsync(form)
+      await update.mutateAsync({
+        full_name: form.full_name,
+        city: form.city,
+        state: form.state,
+        ...(form.avatar_url ? { avatar_url: form.avatar_url } : {}),
+      })
       addToast('Perfil actualizado', 'success')
       setEditing(false)
     } catch {
@@ -81,6 +112,8 @@ export default function ProfilePage() {
     stat: { flex: 1, padding: 20, background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' },
   }
 
+
+
   const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
 
   return (
@@ -101,19 +134,34 @@ export default function ProfilePage() {
         ) : (
           <>
             {/* Header card */}
-            <div style={s.card}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, flexShrink: 0 }}>
-                  {initials}
+            <div className="profile-card" style={s.card}>
+              <div className="profile-header-row" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || profile?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
+                    {(avatarPreview || profile?.avatar_url) ? (
+                      <img src={avatarPreview || profile?.avatar_url} alt={profile?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : initials}
+                  </button>
+                  <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
+                    {update.isPending ? (
+                      <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    ) : (
+                      Icons.camera({ s: 14 })
+                    )}
+                  </span>
                 </div>
+                <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {Icons.upload({ s: 14 })} Subir foto
+                </button>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                       {profile?.full_name ?? '—'}
                     </h2>
                     <span style={s.roleBadge}>{roleLabels[profile?.role] ?? profile?.role}</span>
                   </div>
-                  <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', gap: 16 }}>
+                  <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {Icons.mail({ s: 14 })} {profile?.email}
                     </span>
@@ -125,14 +173,16 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {!editing && (
-                  <button className="btn-secondary" style={{ fontSize: 14, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={startEdit}>
-                    {Icons.edit({ s: 14 })} Editar
-                  </button>
+                  <div className="profile-header-actions">
+                    <button className="btn-secondary" style={{ fontSize: 14, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={startEdit}>
+                      {Icons.edit({ s: 14 })} Editar
+                    </button>
+                  </div>
                 )}
               </div>
 
               {/* Stats row */}
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>
                 <div style={s.stat}>
                   <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
                     {disabilities.length}
@@ -176,7 +226,7 @@ export default function ProfilePage() {
                     <input style={inputStyle} value={form.state} onChange={set('state')} placeholder="Yucatán" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <div className="profile-edit-actions" style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                   <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={() => setEditing(false)}>Cancelar</button>
                   <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={handleSave} disabled={update.isPending}>
                     {update.isPending ? 'Guardando...' : 'Guardar cambios'}

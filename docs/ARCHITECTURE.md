@@ -1,231 +1,418 @@
-# Arquitectura del Proyecto — Raíces para Florecer
+# 🏗️ Arquitectura Feature-Driven — Raíces para Florecer
 
-Este documento describe la arquitectura feature-based del frontend, diseñada para escalar de forma organizada y mantener el código modular.
+> Guía completa para el equipo sobre la estructura del proyecto, convenciones de imports y reglas de exportación.
 
-## 📁 Estructura General
+---
+
+## 📑 Índice
+
+1. [Visión General](#1-visión-general)
+2. [Estructura del Proyecto](#2-estructura-del-proyecto)
+3. [Reglas de Feature Modules](#3-reglas-de-feature-modules)
+4. [El Punto de Entrada `index.js`](#4-el-punto-de-entrada-indexjs)
+5. [Convenciones de Imports](#5-convenciones-de-imports)
+6. [Directorio `shared/`](#6-directorio-shared)
+7. [Guía: Agregar una Nueva Feature](#7-guía-agregar-una-nueva-feature)
+8. [Guía: Consumir Otra Feature](#8-guía-consumir-otra-feature)
+9. [Problemas Conocidos y Soluciones](#9-problemas-conocidos-y-soluciones)
+10. [Referencia Rápida](#10-referencia-rápida)
+
+---
+
+## 1. Visión General
+
+El proyecto utiliza una **arquitectura Feature-Driven** donde el código se organiza por **dominios de negocio** en lugar de por tipo técnico (componentes, hooks, utils separados).
+
+### Principios Clave
+
+| Principio | Descripción |
+|-----------|-------------|
+| **Agrupación por feature** | Cada dominio (auth, jobs, social) es un módulo autocontenido |
+| **API pública explícita** | Solo lo que se usa fuera de la feature se exporta en `index.js` |
+| **Privacidad por defecto** | Páginas, stores, tests y mocks son internos |
+| **Reutilización global** | Código compartido por múltiples features va en `src/shared/` |
+
+### Beneficios
+
+- **Bajo acoplamiento**: Las features no conocen la estructura interna de otras
+- **Fácil refactorización**: Mover archivos internos no rompe imports externos
+- **Claridad**: Es obvio qué es público vs privado
+- **Escalabilidad**: Agregar features no afecta las existentes
+
+---
+
+## 2. Estructura del Proyecto
 
 ```
 src/
-├── App.jsx                          # Punto de entrada de rutas
-├── main.jsx                         # Montaje de React + providers
-├── features/                        # Módulos por dominio de negocio
-│   ├── a11y/                        # Accesibilidad
-│   ├── about/                       # Página "Quiénes somos"
-│   ├── admin/                       # Panel de administración
-│   ├── auth/                        # Autenticación y sesión
-│   ├── dashboard/                   # Panel principal del usuario
-│   ├── favorites/                   # Instituciones guardadas
-│   ├── institutions/                # Exploración y detalle de instituciones
-│   ├── jobs/                        # Bolsa de trabajo inclusiva
-│   ├── landing/                     # Página de inicio (pública)
-│   ├── notifications/               # Sistema de notificaciones SSE
-│   ├── profile/                     # Perfil de usuario y onboarding
-│   ├── social/                      # Comunidad y mensajes directos
-│   └── tutor/                       # Gestión de familiares dependientes
-├── shared/                          # Utilidades compartidas
-│   ├── components/                  # Componentes UI reutilizables
-│   ├── lib/                         # Utilidades de red y storage
-│   └── stores/                      # Stores globales
+├── App.jsx                    # Punto de entrada de rutas (importa páginas directamente)
+├── main.jsx                   # Montaje de React + providers
+│
+├── features/                  # 🧩 Módulos por dominio de negocio
+│   ├── a11y/                  # Accesibilidad (panel flotante)
+│   ├── about/                 # Página "Quiénes somos"
+│   ├── admin/                 # Panel de administración
+│   ├── auth/                  # Autenticación y sesión
+│   ├── dashboard/             # Panel principal del usuario
+│   ├── favorites/             # Instituciones guardadas
+│   ├── institutions/          # Exploración y detalle de instituciones
+│   ├── jobs/                  # Bolsa de trabajo inclusiva
+│   ├── landing/               # Página de inicio (pública)
+│   ├── notifications/         # Sistema de notificaciones SSE
+│   ├── profile/               # Perfil de usuario y onboarding
+│   ├── social/                # Comunidad y mensajes directos
+│   └── tutor/                 # Gestión de familiares dependientes
+│
+├── shared/                    # 🔧 Utilidades compartidas entre features
+│   ├── components/            # UI reutilizable (Icons, BrandMark, etc.)
+│   ├── lib/                   # api.js, storage.js, queryClient.js
+│   └── stores/                # uiStore.js (toasts globales)
+│
 └── styles/
-    └── global.css                   # Estilos globales y variables CSS
+    └── global.css             # Variables CSS y estilos globales
 ```
 
-## 🧩 Cada Feature Contiene
+---
 
-Cada directorio dentro de `features/` es un módulo autocontenido que sigue la siguiente convención:
+## 3. Reglas de Feature Modules
+
+Cada feature en `src/features/<nombre>/` debe seguir esta estructura interna **si aplica**:
 
 ```
 features/<nombre-feature>/
-├── components/        # Componentes UI específicos de esta feature
-├── hooks/             # Custom hooks (queries, mutations, lógica)
-├── lib/               # Utilidades específicas (streams, helpers)
-├── pages/             # Páginas/rutas de esta feature
-└── store/             # Zustand store (si aplica)
+├── index.js         ← 🆕 Punto de entrada único (OBLIGATORIO)
+├── components/      # Elementos UI específicos de la feature
+├── hooks/           # Custom hooks (queries, mutations, lógica)
+├── lib/             # Utilidades y funciones helpers
+├── store/           # Estado global (Zustand) — PRIVADO
+├── pages/           # Pantallas/rutas — PRIVADAS
+├── types/           # Definiciones de tipos (si se usa TypeScript)
+└── __tests__/       # Tests — PRIVADOS
 ```
 
-### Features Detalladas
+### Reglas Estrictas de Exportación
 
-#### `auth/` — Autenticación
-| Tipo | Archivos |
-|------|----------|
-| Components | `ProtectedRoute.jsx` |
-| Hooks | `useAuth.js` (login, register, me, profile), `useSessionVerify.js` |
-| Store | `authStore.js` (token, user, setAuth, logout) |
-| Lib | `firebaseBridge.js` (puente Firebase REST API) |
-| Pages | `AuthPage.jsx` (login, registro, forgot password) |
+| Categoría | ¿Se exporta en index.js? | Ejemplo |
+|-----------|--------------------------|---------|
+| **Componentes reutilizables** | ✅ SÍ | `AppSidebar`, `TopNav`, `ProtectedRoute` |
+| **Hooks usados fuera** | ✅ SÍ | `useAuth`, `useMe`, `useJobs` |
+| **Helpers/funciones** | ✅ SÍ | `firebaseBridgeLogin`, `isBridgeAvailable` |
+| **Stores (estado)** | ⚠️ Solo si se consumen fuera | `useAuthStore` (usado por múltiples features) |
+| **Páginas/Views** | ❌ NO | `AuthPage`, `DashboardPage` |
+| **Tests/Mocks** | ❌ NO | `__tests__/`, `__mocks__/` |
+| **Tipos/Types** | ✅ SÍ | `UserProfile`, `Institution` |
 
-#### `institutions/` — Instituciones
-| Tipo | Archivos |
-|------|----------|
-| Components | `MapView.jsx` (mapa con MapLibre) |
-| Hooks | `useInstitutions.js`, `useReviews.js` |
-| Pages | `ExplorePage.jsx`, `InstitutionPage.jsx` |
+---
 
-#### `jobs/` — Empleo
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useJobs.js` (useJobs, useAppliedJobIds, useApplyJob, useMyApplications) |
-| Pages | `JobsPage.jsx` |
+## 4. El Punto de Entrada `index.js`
 
-#### `favorites/` — Favoritos
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useFavorites.js` (useFavorites, useFavoriteIds, useToggleFavorite) |
-| Pages | `FavoritesPage.jsx` |
+### Propósito
 
-#### `notifications/` — Notificaciones
-| Tipo | Archivos |
-|------|----------|
-| Components | `NotificationBell.jsx` |
-| Hooks | `useNotifications.js` (useNotifications, useMarkRead, useMarkAllRead, useNotificationStream) |
-| Lib | `notificationStream.js` (gestor SSE con "freno de mano") |
+El `index.js` actúa como la **API pública** de cada feature. Es el único punto de contacto que otras features necesitan conocer.
 
-#### `social/` — Comunidad
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useCommunity.js` (grupos, posts, comentarios), `useMessages.js` (mensajes directos) |
-| Pages | `SocialPage.jsx` |
+### Ejemplo: `src/features/auth/index.js`
 
-#### `profile/` — Perfil
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useProfile.js` (useProfile, useUpdateProfile, useSaveProfiling) |
-| Pages | `ProfilePage.jsx`, `OnboardingPage.jsx` |
-
-#### `tutor/` — Tutor/Familia
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useDependents.js`, `useAI.js` (useChat, useAINextSteps, useAIForDependent) |
-| Pages | `TutorPage.jsx` |
-
-#### `admin/` — Administración
-| Tipo | Archivos |
-|------|----------|
-| Hooks | `useAdmin.js` (stats, analytics, institutions, users, reviews, alerts, settings) |
-| Pages | `AdminPage.jsx` |
-
-#### `a11y/` — Accesibilidad
-| Tipo | Archivos |
-|------|----------|
-| Components | `AccessibilityBar.jsx` (panel flotante de accesibilidad) |
-| Store | `a11yStore.js` (textScale, highContrast, colorblindMode, ttsEnabled, etc.) |
-
-#### `landing/` — Landing Page
-| Tipo | Archivos |
-|------|----------|
-| Pages | `LandingPage.jsx` |
-
-#### `dashboard/` — Dashboard
-| Tipo | Archivos |
-|------|----------|
-| Pages | `DashboardPage.jsx` |
-
-#### `about/` — About
-| Tipo | Archivos |
-|------|----------|
-| Pages | `AboutPage.jsx` |
-
-## 📦 `shared/` — Utilidades Compartidas
-
-Contiene código reutilizable que **no pertenece a una feature específica**:
-
-### `shared/components/`
-| Archivo | Exports |
-|---------|---------|
-| `shared.jsx` | `Icons`, `CategoryTag`, `CATEGORY_COLORS`, `BrandMark`, `LeafIcon`, `AppFooter`, `labelStyle`, `inputStyle` |
-| `Toast.jsx` | `ToastContainer` |
-
-### `shared/lib/`
-| Archivo | Exports |
-|---------|---------|
-| `api.js` | Cliente Axios con interceptores de auth y refresh token |
-| `storage.js` | Helpers para localStorage/sessionStorage (tokens, usuario) |
-| `queryClient.js` | Instancia de TanStack Query |
-
-### `shared/stores/`
-| Archivo | Exports |
-|---------|---------|
-| `uiStore.js` | `useUiStore` (toasts) |
-
-> **Nota**: `AppSidebar` y `TopNav` están en `features/auth/components/` (no en shared) porque dependen directamente de `useAuthStore`.
-
-## 🔧 Stack Tecnológico
-
-| Capa | Tecnología |
-|------|------------|
-| Framework | React 18 |
-| Bundler | Vite |
-| Routing | React Router v6 |
-| Server State | TanStack Query v5 |
-| Client State | Zustand |
-| HTTP Client | Axios |
-| Mapas | MapLibre GL |
-| Estilos | CSS Variables + Inline Styles |
-
-## 📐 Convenciones de Código
-
-### Imports
-Se utilizan **path aliases** configurados en `vite.config.js` para imports limpios y consistentes:
 ```js
-@shared/*    → src/shared/*
-@features/*  → src/features/*
-@styles/*    → src/styles/*
+/**
+ * Auth Feature — Public API
+ *
+ * Exports components, hooks, and state used by other features.
+ * Pages (AuthPage) are kept private — imported directly by App.jsx.
+ */
+
+// ── Components (reusable UI used across features) ──────────────────
+export { AppSidebar } from './components/AppSidebar'
+export { default as ProtectedRoute } from './components/ProtectedRoute'
+export { TopNav } from './components/TopNav'
+
+// ── Hooks (business logic used by other features) ─────────────────
+export { useLogin, useRegister, useMe, useProfile, useUpdateProfile } from './hooks/useAuth'
+export { useSessionVerify } from './hooks/useSessionVerify'
+
+// ── Store (auth state consumed by multiple features) ───────────────
+export { useAuthStore } from './store/authStore'
+
+// ── Lib (Firebase bridge — used internally and by api.js) ──────────
+export { firebaseBridgeLogin, isBridgeAvailable } from './lib/firebaseBridge'
 ```
 
-Ejemplos:
+### Features con index.js vacío (solo páginas)
+
+Algunas features solo contienen páginas y no tienen componentes o hooks reutilizables:
+
+```js
+// src/features/landing/index.js
+/**
+ * Landing Feature — Public API
+ *
+ * This feature only contains pages (LandingPage).
+ * Pages are kept private — imported directly by App.jsx.
+ * No reusable components or hooks to export.
+ */
+```
+
+---
+
+## 5. Convenciones de Imports
+
+### Aliases Disponibles
+
+| Alias | Ruta | Uso |
+|-------|------|-----|
+| `@features` | `src/features` | Imports entre features |
+| `@shared` | `src/shared` | Utilidades compartidas |
+| `@styles` | `src/styles` | Hojas de estilo |
+
+### Reglas de Import
+
+#### ✅ CORRECTO — Importar desde el index.js de otra feature
+
 ```jsx
-import { Icons } from '@shared/components/shared'
+// Desde cualquier archivo fuera de auth:
+import { AppSidebar, TopNav, useAuthStore } from '@features/auth'
+import { useMe, useProfile } from '@features/auth'
+import { ProtectedRoute, useSessionVerify } from '@features/auth'
+```
+
+#### ✅ CORRECTO — Importar páginas directamente (solo en App.jsx)
+
+```jsx
+// App.jsx importa páginas directamente (son privadas):
+import AuthPage from '@features/auth/pages/AuthPage'
+import DashboardPage from '@features/dashboard/pages/DashboardPage'
+```
+
+#### ✅ CORRECTO — Imports internos dentro de la misma feature
+
+```jsx
+// Dentro de auth/hooks/useAuth.js:
+import api from '@shared/lib/api'
+import { useAuthStore } from '../store/authStore'  // relativo es OK intra-feature
+```
+
+#### ✅ CORRECTO — Imports desde shared
+
+```jsx
+import api from '@shared/lib/api'
+import { Icons, BrandMark } from '@shared/components/shared'
+import { useUiStore } from '@shared/stores/uiStore'
+import { getToken } from '@shared/lib/storage'
+```
+
+#### ❌ INCORRECTO — Importar rutas internas de otra feature
+
+```jsx
+// NO hacer esto:
+import { AppSidebar } from '@features/auth/components/AppSidebar'
 import { useAuthStore } from '@features/auth/store/authStore'
-import { api } from '@shared/lib/api'
+import { useMe } from '@features/auth/hooks/useAuth'
 ```
 
-#### Regla de Profundidad de Rutas
+#### ❌ INCORRECTO — Imports con rutas relativas a shared
 
-Los aliases eliminan el problema de contar niveles `../`, pero si alguna vez necesitas rutas relativas, recuerda:
-
-| Ubicación del archivo | Profundidad desde `src/` | Para llegar a `src/shared/` necesitas | Para llegar a `src/features/` necesitas |
-|---|---|---|---|
-| `src/App.jsx` | 1 nivel | `./shared/` | `./features/` |
-| `src/features/X/pages/*.jsx` | 3 niveles | `../../../shared/` | `../../` |
-| `src/features/X/hooks/*.js` | 3 niveles | `../../../shared/` | `../../` |
-| `src/shared/lib/*.js` | 2 niveles | `../` | `../../features/` |
-
-**Regla práctica**: Cuenta cuántos `../` necesitas para llegar a `src/` y luego agrega la ruta. Con aliases esto no es necesario — simplemente usa `@shared/...` o `@features/...`.
-
-- **Nunca** importar directamente de `features/` desde `shared/` (excepto `shared.jsx` que importa `authStore` para el sidebar — deuda técnica conocida)
-- `jsconfig.json` está configurado para que VSCode/IntelliJ resuelva los aliases en autocompletado y errores
-
-### Naming
-- **Components**: PascalCase (`AuthPage.jsx`, `NotificationBell.jsx`)
-- **Hooks**: camelCase con prefijo `use` (`useAuth.js`, `useFavorites.js`)
-- **Stores**: camelCase con sufijo `Store` (`authStore.js`, `uiStore.js`)
-- **Pages**: PascalCase con sufijo `Page` (`DashboardPage.jsx`)
-
-## ➕ Cómo Agregar una Nueva Feature
-
-### Paso 1: Crear la estructura de carpetas
-```bash
-mkdir -p src/features/<nombre-feature>/{components,hooks,pages,lib}
-```
-
-### Paso 2: Desarrollar los componentes
-- **Hooks**: Si consume la API, usa `import api from '@shared/lib/api'`
-- **Components**: Si necesita el usuario, importa `useAuthStore` de `@features/auth/store/authStore`
-- **Pages**: Importa layouts compartidos de `@shared/components/shared`
-
-### Paso 3: Registrar la ruta en App.jsx
 ```jsx
-import <PageName> from '@features/<nombre-feature>/pages/<PageName>'
-
-// Dentro de <Routes>:
-<Route path="/<ruta>" element={<ProtectedRoute><PageName /></ProtectedRoute>} />
+// NO hacer esto (usar alias @shared):
+import api from '../../../shared/lib/api'
+import { Icons } from '../../../shared/components/shared'
 ```
 
-### Paso 4: Actualizar la navegación (si aplica)
-Si la feature tiene página propia, agregar entrada en `AppSidebar` dentro de `@features/auth/components/AppSidebar.jsx`.
+### Resumen de Convenciones
 
-## ⚠️ Deuda Técnica Conocida
+| Desde | Hacia | Import |
+|-------|-------|--------|
+| Cualquier archivo | Otra feature | `import { X } from '@features/otra'` |
+| App.jsx | Página de feature | `import Page from '@features/xxx/pages/Page'` |
+| Dentro de feature | Shared | `import X from '@shared/lib/xxx'` |
+| Dentro de feature | Mismo store | `import { X } from '../store/xxx'` (relativo OK) |
+| Dentro de feature | Mismo hook | `import { X } from '../hooks/xxx'` (relativo OK) |
 
-1. **Dependencia shared → features**: `shared/lib/api.js` importa `useAuthStore` desde `features/auth/` para manejar logout en 401 y refresh token. Esta cadena (api → authStore → storage) es unidireccional y no causa problemas de inicialización en runtime. Para eliminarla completamente, se pasarían las funciones de auth como parámetros al crear la instancia de axios, pero requeriría refactorizar toda la capa de API.
+---
 
-2. **Path aliases configurados**: Se usan `@shared/*`, `@features/*` y `@styles/*` en lugar de rutas relativas. Configurados en `vite.config.js` y `jsconfig.json`.
+## 6. Directorio `shared/`
+
+El directorio `shared/` contiene código reutilizado por múltiples features.
+
+### Estructura
+
+```
+shared/
+├── components/
+│   ├── shared.jsx        # Icons, BrandMark, CategoryTag, AppFooter, etc.
+│   └── Toast.jsx         # Container de notificaciones toast
+├── lib/
+│   ├── api.js            # Cliente Axios con interceptores de auth
+│   ├── storage.js        # Gestión de tokens (localStorage/sessionStorage)
+│   └── queryClient.js    # Configuración de TanStack Query
+└── stores/
+    └── uiStore.js        # Estado global de UI (toasts)
+```
+
+### Regla: shared → features
+
+Existe **una única dependencia** de `shared` hacia `features`:
+
+```js
+// shared/lib/api.js importa authStore para manejar refresh token:
+import { useAuthStore } from '@features/auth/store/authStore'
+```
+
+Esta dependencia es **aceptada** porque `api.js` necesita acceder al token y al store para manejar la autenticación. Sin embargo, se importa directamente del store (no del index.js) para evitar dependencias circulares.
+
+---
+
+## 7. Guía: Agregar una Nueva Feature
+
+### Paso 1: Crear la estructura
+
+```bash
+mkdir -p src/features/mi-feature/{components,hooks,pages,store}
+```
+
+### Paso 2: Crear el index.js
+
+```js
+// src/features/mi-feature/index.js
+/**
+ * Mi Feature — Public API
+ *
+ * Exports components and hooks used by other features.
+ * Pages are kept private — imported directly by App.jsx.
+ */
+
+// ── Components ─────────────────────────────────────────────────────
+export { default as MiComponente } from './components/MiComponente'
+
+// ── Hooks ──────────────────────────────────────────────────────────
+export { useMiHook } from './hooks/useMiHook'
+```
+
+### Paso 3: Implementar componentes y hooks
+
+```jsx
+// src/features/mi-feature/components/MiComponente.jsx
+import { Icons } from '@shared/components/shared'
+
+export default function MiComponente() {
+  return <div>{Icons.home()}</div>
+}
+```
+
+```js
+// src/features/mi-feature/hooks/useMiHook.js
+import api from '@shared/lib/api'
+
+export function useMiHook() {
+  // ...
+}
+```
+
+### Paso 4: Agregar ruta en App.jsx
+
+```jsx
+import MiFeaturePage from '@features/mi-feature/pages/MiFeaturePage'
+
+// En las rutas:
+<Route path="/mi-feature" element={<ProtectedRoute><MiFeaturePage /></ProtectedRoute>} />
+```
+
+### Paso 5: Consumir desde otras features
+
+```jsx
+import { MiComponente, useMiHook } from '@features/mi-feature'
+```
+
+---
+
+## 8. Guía: Consumir Otra Feature
+
+### Regla de Oro
+
+> **Nunca importes directamente los archivos internos de otra feature.**
+> **Siempre importa desde el `index.js` de esa feature.**
+
+### Ejemplo: Dashboard usa auth
+
+```jsx
+// ✅ CORRECTO
+import { AppSidebar, TopNav, useMe, useAuthStore } from '@features/auth'
+import { NotificationBell } from '@features/notifications'
+
+// ❌ INCORRECTO
+import { AppSidebar } from '@features/auth/components/AppSidebar'
+import { useAuthStore } from '@features/auth/store/authStore'
+import { useMe } from '@features/auth/hooks/useAuth'
+```
+
+### Si necesitas algo que no está exportado
+
+Si una feature no exporta algo que necesitas:
+
+1. **Verifica si es realmente necesario** fuera de la feature
+2. **Si sí**: Agrega el export al `index.js` de esa feature
+3. **Si no**: El código debe vivir dentro de esa feature
+
+---
+
+## 9. Problemas Conocidos y Soluciones
+
+### Dependencia Circular
+
+**Problema**: `shared/lib/api.js` necesita `useAuthStore` de auth, pero auth hooks usan `api.js`.
+
+**Solución**: `api.js` importa directamente del store, no del index.js:
+
+```js
+// shared/lib/api.js
+import { useAuthStore } from '@features/auth/store/authStore'  // ✅ Directo al store
+// NO: import { useAuthStore } from '@features/auth'           // ❌ Circular
+```
+
+### Páginas que necesitan ser importadas externamente
+
+**Problema**: App.jsx necesita importar páginas, pero las páginas son "privadas".
+
+**Solución**: App.jsx importa páginas directamente de la ruta interna:
+
+```jsx
+// App.jsx
+import AuthPage from '@features/auth/pages/AuthPage'
+import DashboardPage from '@features/dashboard/pages/DashboardPage'
+```
+
+Esto es aceptable porque App.jsx es el orquestador de rutas y es el único lugar que necesita esta importación.
+
+---
+
+## 10. Referencia Rápida
+
+### Mapa de Imports por Feature
+
+| Feature | Index.js Exporta | Páginas (privadas) |
+|---------|------------------|-------------------|
+| `auth` | `AppSidebar`, `ProtectedRoute`, `TopNav`, `useLogin`, `useRegister`, `useMe`, `useProfile`, `useUpdateProfile`, `useSessionVerify`, `useAuthStore`, `firebaseBridgeLogin`, `isBridgeAvailable` | `AuthPage` |
+| `a11y` | `AccessibilityBar` | — |
+| `institutions` | `MapView`, `useInstitutions`, `useDiscovery`, `useReviews` | `ExplorePage`, `InstitutionPage` |
+| `notifications` | `NotificationBell`, `useNotifications`, `closeNotificationStream`, `suspendStream`, `resumeStream` | — |
+| `profile` | `useProfile`, `useUpdateProfile` | `ProfilePage`, `OnboardingPage` |
+| `social` | `useCommunity`, `useMessages` | `SocialPage` |
+| `tutor` | `useAI`, `useDependents` | `TutorPage` |
+| `jobs` | `useJobs` | `JobsPage` |
+| `favorites` | `useFavorites` | `FavoritesPage` |
+| `admin` | `useAdmin` | `AdminPage` |
+| `landing` | *(vacío)* | `LandingPage` |
+| `about` | *(vacío)* | `AboutPage` |
+| `dashboard` | *(vacío)* | `DashboardPage` |
+
+### Checklist para Code Review
+
+- [ ] ¿Los imports entre features usan el `index.js` (`@features/xxx`)?
+- [ ] ¿Los imports de shared usan el alias (`@shared/xxx`)?
+- [ ] ¿Las páginas solo se importan en App.jsx?
+- [ ] ¿El `index.js` no exporta tests, mocks ni páginas?
+- [ ] ¿No hay dependencias circulares entre features?
+- [ ] ¿Los stores solo se exportan si se consumen fuera de la feature?
+
+---
+
+*Documento creado el 21 de julio de 2026 para el proyecto Raíces Frontend.*
+*Última actualización: 21 de julio de 2026.*

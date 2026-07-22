@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../../shared/lib/api'
-import { useAuthStore } from '@features/auth/store/authStore'
+import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 
 export function useDependents() {
   const { token } = useAuthStore()
