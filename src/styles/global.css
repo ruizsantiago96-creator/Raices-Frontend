@@ -888,15 +888,7 @@ html[data-contrast="high"][data-theme="dark"] {
   --border-strong: rgba(255,255,255,0.5);
 }
 
-/* ── Footer transitions (base) ──────────────────────── */
-.app-footer-transition { transition: background 0.3s ease; }
-.app-footer-main { transition: background-color 0.3s ease; }
-
 /* ── Footer dark mode ──────────────────────────────── */
-html[data-theme="dark"] .app-footer-transition {
-  background: linear-gradient(180deg, #121418 0%, #0E1014 100%) !important;
-}
-
 html[data-theme="dark"] .app-footer-main {
   background: #0E1014 !important;
 }

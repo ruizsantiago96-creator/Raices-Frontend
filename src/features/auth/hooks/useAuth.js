@@ -14,7 +14,18 @@ export function useLogin() {
 
       // ── Intento 1: Login contra nuestro backend ──────────────────
       try {
-        const data = await api.post('/auth/login', { email, password }).then(r => r.data)
+        const raw = await api.post('/autenticacion/inicio-sesion', { email, password }).then(r => r.data)
+        // Mapear respuesta del backend (español) al formato interno
+        const data = {
+          token: raw.tokenAcceso,
+          refreshToken: raw.tokenRefresco ?? null,
+          user: raw.usuario ? {
+            id: raw.usuario.id,
+            email: raw.usuario.email,
+            role: raw.usuario.rol,
+            full_name: raw.usuario.nombreCompleto,
+          } : undefined,
+        }
         return { source: 'backend', data, rememberMe }
       } catch (err) {
         // ── Solo interceptamos 401 y solo si el bridge está habilitado ──
@@ -42,8 +53,8 @@ export function useLogin() {
     },
     onSuccess: (result, variables) => {
       const { source, data, rememberMe } = result
-      const token = data.token ?? data.access_token
-      const refresh = data.refreshToken ?? data.refresh_token
+      const token = data.token
+      const refresh = data.refreshToken ?? null
 
       console.log('[Auth] Login response:', { source, token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
 

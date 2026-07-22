@@ -160,38 +160,39 @@ export const inputStyle = {
   outline: 'none', boxSizing: 'border-box',
 }
 
+/* ── Footer columns data ──────────────────────────── */
+const FOOTER_COLUMNS = [
+  { title: 'Caminos', items: ['Salud y bienestar', 'Educación', 'Empleo', 'Comunidad'] },
+  { title: 'Florece', items: ['Acerca de nosotros', 'Nuestro propósito', 'Privacidad', 'Contacto'] },
+]
+
 export const AppFooter = () => (
-  <div style={{ position: 'relative' }}>
-    <div className="app-footer-transition" style={{ height: 64, background: 'linear-gradient(180deg, #4A5568 0%, #2E3B46 100%)' }} />
-    <footer className="app-footer-main" style={{ background: '#2E3B46', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
-        <div>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
-            Raíces para<br /><span style={{ textDecoration: 'underline', textDecorationColor: 'var(--primary)', textUnderlineOffset: 3 }}>florecer.</span>
-          </h3>
-          <p style={{ fontSize: 14, color: 'rgba(251,247,240,0.8)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
-            Conectamos caminos claros, dignos y confiables para el desarrollo, la autonomía y el florecimiento.
-          </p>
+  <footer className="app-footer-main" style={{ background: '#2E3B46', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
+      <div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
+          Raíces para<br />
+          <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(251,247,240,0.3)', textUnderlineOffset: 3 }}>florecer.</span>
+        </h3>
+        <p style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
+          Conectamos caminos claros, dignos y confiables para el desarrollo, la autonomía y el florecimiento.
+        </p>
+      </div>
+      {FOOTER_COLUMNS.map((col, i) => (
+        <div key={i}>
+          <h4 style={{ fontSize: 16, fontWeight: 700, color: '#FBF7F0', margin: '0 0 14px' }}>{col.title}</h4>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.6)', cursor: 'pointer' }}>{item}</li>)}
+          </ul>
         </div>
-        {[
-          { title: 'Caminos', items: ['Salud y bienestar', 'Educación', 'Empleo', 'Comunidad'] },
-          { title: 'Florece', items: ['Acerca de nosotros', 'Nuestro propósito', 'Privacidad', 'Contacto'] },
-        ].map((col, i) => (
-          <div key={i}>
-            <h4 style={{ fontSize: 16, fontWeight: 700, color: '#FBF7F0', margin: '0 0 14px' }}>{col.title}</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', cursor: 'pointer' }}>{item}</li>)}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.15)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="app-footer-bottom footer-bottom">
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <LeafIcon size={14} color="rgba(251,247,240,0.4)" />
-          2026. Raíces para florecer. Construida con dignidad y cuidado
-        </span>
-        <span>Privacidad · Accesibilidad</span>
-      </div>
-    </footer>
-  </div>
+      ))}
+    </div>
+    <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.1)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="app-footer-bottom footer-bottom">
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <LeafIcon size={14} color="rgba(251,247,240,0.4)" />
+        2026. Raíces para florecer. Construida con dignidad y cuidado
+      </span>
+      <span>Privacidad · Accesibilidad</span>
+    </div>
+  </footer>
 )
