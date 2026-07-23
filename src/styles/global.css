@@ -101,39 +101,6 @@ html[data-colorblind="tritanopia"] [role="dialog"] {
   filter: url('#cb-tritanopia');
 }
 
-/* ── Daltonismo: panel de accesibilidad completo ── */
-html[data-colorblind="deuteranopia"] [role="dialog"] {
-  filter: url('#cb-deuteranopia');
-}
-html[data-colorblind="protanopia"] [role="dialog"] {
-  filter: url('#cb-protanopia');
-}
-html[data-colorblind="tritanopia"] [role="dialog"] {
-  filter: url('#cb-tritanopia');
-}
-
-/* ── Daltonismo: panel de accesibilidad completo ── */
-html[data-colorblind="deuteranopia"] [role="dialog"] {
-  filter: url('#cb-deuteranopia');
-}
-html[data-colorblind="protanopia"] [role="dialog"] {
-  filter: url('#cb-protanopia');
-}
-html[data-colorblind="tritanopia"] [role="dialog"] {
-  filter: url('#cb-tritanopia');
-}
-
-/* ── Daltonismo: panel de accesibilidad completo ── */
-html[data-colorblind="deuteranopia"] [role="dialog"] {
-  filter: url('#cb-deuteranopia');
-}
-html[data-colorblind="protanopia"] [role="dialog"] {
-  filter: url('#cb-protanopia');
-}
-html[data-colorblind="tritanopia"] [role="dialog"] {
-  filter: url('#cb-tritanopia');
-}
-
 body {
   margin: 0;
   font-family: var(--font-body);
