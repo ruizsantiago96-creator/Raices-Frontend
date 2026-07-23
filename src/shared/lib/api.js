@@ -4,7 +4,7 @@ import { useAuthStore } from '@features/auth/store/authStore'
 
 /* ─── Configuración ───────────────────────────────────────────────── */
 
-const REFRESH_ENDPOINT = '/auth/refresh'
+const REFRESH_ENDPOINT = '/autenticacion/renovar-token'
 const PUBLIC_ROUTES = ['/', '/auth', '/explore']
 
 /** Rutas donde NUNCA redirigimos a /auth (evita loops en páginas públicas) */
@@ -104,11 +104,11 @@ api.interceptors.response.use(
     }
 
     try {
-      // 7. POST /auth/refresh { refreshToken }
-      const { data } = await refreshClient.post(REFRESH_ENDPOINT, { refreshToken })
+      // 7. POST /autenticacion/renovar-token { tokenRefresco }
+      const { data } = await refreshClient.post(REFRESH_ENDPOINT, { tokenRefresco: refreshToken })
 
-      const newToken = data.token ?? data.access_token
-      const newRefresh = data.refreshToken ?? data.refresh_token ?? refreshToken
+      const newToken = data.tokenAcceso
+      const newRefresh = data.tokenRefresco ?? refreshToken
       const rememberMe = getRememberMe()
 
       // 8. Actualizar storage (respetando rememberMe)

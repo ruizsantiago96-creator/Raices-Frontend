@@ -47,27 +47,27 @@ export function useSessionVerify() {
 
       // 2. Token existe → validar contra el servidor
       try {
-        const response = await api.get('/auth/me')
-        const userData = response.data
+        const response = await api.get('/autenticacion/yo')
+        const raw = response.data
 
         if (!cancelled) {
           // 3. Mapear la respuesta del servidor al store
-          // El servidor retorna: { id, email, role, full_name, city, state, avatar_url, is_verified }
+          // El servidor retorna: { id, email, rol, nombreCompleto, ciudad, estado, urlAvatar, verificado }
           // Actualizamos el store con la información fresca del servidor
           useAuthStore.setState({
             user: {
-              id: userData.id,
-              email: userData.email,
-              role: userData.role,
-              full_name: userData.full_name,
-              city: userData.city,
-              state: userData.state,
-              avatar_url: userData.avatar_url,
-              is_verified: userData.is_verified,
+              id: raw.id,
+              email: raw.email,
+              role: raw.rol,
+              full_name: raw.nombreCompleto,
+              city: raw.ciudad,
+              state: raw.estado,
+              avatar_url: raw.urlAvatar,
+              is_verified: raw.verificado,
             },
           })
 
-          console.log('[SessionVerify] Session valid:', userData.email)
+          console.log('[SessionVerify] Session valid:', raw.email)
           setIsVerified(true)
           setIsChecking(false)
           setError(null)

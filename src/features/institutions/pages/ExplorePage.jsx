@@ -35,11 +35,11 @@ export default function ExplorePage() {
   const [view, setView] = useState('grid')
   const [showMap, setShowMap] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const { data: user, isLoading } = useMe()
+  const { data: user } = useMe()
   const { token } = useAuthStore()
   const navigate = useNavigate()
 
-  const isAuthenticated = !!token && (isLoading || !!user)
+  const isAuthenticated = !!token
   const debouncedSearch = useDebounce(search, 400)
 
   const filters = {
@@ -76,40 +76,7 @@ export default function ExplorePage() {
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-        {/* Header */}
-        <header className="explore-guest-header" style={{
-          position: 'sticky', top: 0, zIndex: 100,
-          background: 'var(--bg-surface)', backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border-color)',
-          padding: '0 32px', height: 64,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <Link to="/" className="explore-header-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: 'var(--primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-display)',
-            }}>R</div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--text-main)' }}>Raíces</span>
-          </Link>
-          <div className="explore-header-actions" style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={() => navigate('/auth?mode=login')}
-              className="btn-secondary"
-              style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, borderRadius: 10 }}
-            >
-              <span>Iniciar sesión</span>
-            </button>
-            <button
-              onClick={() => navigate('/auth?mode=register')}
-              className="btn-primary"
-              style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, borderRadius: 10 }}
-            >
-              Registrarse
-            </button>
-          </div>
-        </header>
+        <TopNav currentPage="explore" />
 
         <main className="responsive-main" style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 32px' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700,          color: 'var(--fg1)', margin: '0 0 24px' }}>

@@ -79,17 +79,18 @@ export const CATEGORY_COLORS = {
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
   <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-block', verticalAlign: 'baseline', whiteSpace: 'nowrap', padding: 0 }}>
-    <span style={{ fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)', marginRight: 4 }}>
-      Raíces para{' '}
-    </span>
     <span style={{
       fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700,
       color: light ? 'white' : 'var(--fg1)',
       textDecoration: 'underline',
       textDecorationColor: light ? 'rgba(255,255,255,0.5)' : 'var(--primary)',
       textUnderlineOffset: 3, textDecorationThickness: 2,
+      marginRight: 4,
     }}>
-      florecer.
+      Raíces
+    </span>
+    <span style={{ fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)' }}>
+      {' para florecer.'}
     </span>
   </button>
 )
@@ -171,8 +172,9 @@ export const AppFooter = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
       <div>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
-          Raíces para<br />
-          <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(251,247,240,0.3)', textUnderlineOffset: 3 }}>florecer.</span>
+          <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(251,247,240,0.3)', textUnderlineOffset: 3 }}>Raíces</span>
+          <br />
+          para florecer.
         </h3>
         <p style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
           Conectamos caminos claros, dignos y confiables para el desarrollo, la autonomía y el florecimiento.

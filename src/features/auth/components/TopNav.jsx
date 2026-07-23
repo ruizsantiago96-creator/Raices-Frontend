@@ -67,6 +67,16 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
             {Icons.logout({ s: 18 })} Salir
           </button>
         )}
+        {!user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={() => nav('/auth?mode=login')} className="btn-secondary" style={{ padding: '8px 18px', fontSize: 14, fontWeight: 600, borderRadius: 10, minHeight: 40 }}>
+              Iniciar sesión
+            </button>
+            <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ padding: '8px 18px', fontSize: 14, fontWeight: 600, borderRadius: 10, minHeight: 40 }}>
+              Registrarse
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )
