@@ -1,4 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import FocusTrap from 'focus-trap-react'
+import EasySpeech from 'easy-speech'
+import '@fontsource/atkinson-hyperlegible'
+import '@fontsource/atkinson-hyperlegible/700.css'
 import { useA11yStore, applyA11yAttributes } from '../store/a11yStore'
 
 /* ── Iconos locales (trazo consistente, decorativos → aria-hidden) ── */
@@ -31,23 +35,52 @@ const I = {
   stop: (s = 18) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>,
   reset: (s = 16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>,
   darkMode: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+  cursor: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/><path d="M4 4l3.24 7.39L12 8" fill="currentColor"/></svg>,
+  guide: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/><circle cx="7" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="6" r="1.5" fill="currentColor"/><circle cx="17" cy="18" r="1.5" fill="currentColor"/></svg>,
+  link: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  expand: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>,
+  flash: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  eye: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  brain: (s = 20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4c0 .73-.2 1.41-.54 2A4 4 0 0 1 18 10a4 4 0 0 1-1.76 3.32A4 4 0 0 1 14 18a4 4 0 0 1-2 .53A4 4 0 0 1 10 18a4 4 0 0 1-2.24-4.68A4 4 0 0 1 6 10a4 4 0 0 1 2.54-3.68A4 4 0 0 1 8 6a4 4 0 0 1 4-4z"/><path d="M12 2v20"/></svg>,
 }
 
-/* ── Síntesis de voz (Web Speech API) ── */
+/* ── Síntesis de voz (easy-speech) ── */
 function useSpeech() {
-  const supported = typeof window !== 'undefined' && 'speechSynthesis' in window
+  const [supported, setSupported] = useState(false)
+  const [ready, setReady] = useState(false)
+  const voiceRef = useRef(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    EasySpeech.init({ verbose: false })
+      .then(() => {
+        setSupported(true)
+        setReady(true)
+        // Seleccionar voz en español
+        const voices = EasySpeech.voices()
+        const esVoice = voices.find(v => /es(-|_)?(MX|ES|419)?/i.test(v.lang))
+        voiceRef.current = esVoice || null
+      })
+      .catch(() => setSupported(false))
+  }, [])
+
   const speak = useCallback((text) => {
-    if (!supported || !text?.trim()) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text.trim().slice(0, 4000))
-    u.lang = 'es-MX'
-    u.rate = 0.96
-    const voices = window.speechSynthesis.getVoices()
-    const es = voices.find(v => /es(-|_)?(MX|ES|419)?/i.test(v.lang))
-    if (es) u.voice = es
-    window.speechSynthesis.speak(u)
-  }, [supported])
-  const stop = useCallback(() => { if (supported) window.speechSynthesis.cancel() }, [supported])
+    if (!ready || !text?.trim()) return
+    EasySpeech.cancel()
+    EasySpeech.speak({
+      text: text.trim().slice(0, 4000),
+      lang: 'es-MX',
+      rate: 0.96,
+      pitch: 1,
+      volume: 1,
+      voice: voiceRef.current,
+    })
+  }, [ready])
+
+  const stop = useCallback(() => {
+    if (ready) EasySpeech.cancel()
+  }, [ready])
+
   return { supported, speak, stop }
 }
 
@@ -55,23 +88,70 @@ export default function AccessibilityBar() {
   const a11y = useA11yStore()
   const [open, setOpen] = useState(false)
   const { supported: ttsSupported, speak, stop } = useSpeech()
-  const panelRef = useRef(null)
   const btnRef = useRef(null)
+  const readingGuideRef = useRef(null)
+  const flashRef = useRef(null)
 
   /* Aplica preferencias al <html> cada vez que cambian */
-  useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode, a11y.darkMode])
+  useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode, a11y.darkMode, a11y.largeCursor, a11y.readingGuide, a11y.highlightLinks, a11y.motorSpacing, a11y.visualAlerts])
 
-  /* Cerrar con Escape y clic fuera */
+  /* Aplicar Atkinson Hyperlegible cuando easyRead está activo */
+  useEffect(() => {
+    const root = document.documentElement
+    if (a11y.easyRead) {
+      root.style.setProperty('--font-body', "'Atkinson Hyperlegible', system-ui, sans-serif")
+      root.style.setProperty('--font-display', "'Atkinson Hyperlegible', system-ui, sans-serif")
+    } else {
+      root.style.removeProperty('--font-body')
+      root.style.removeProperty('--font-display')
+    }
+  }, [a11y.easyRead])
+
+  /* Guía de lectura: sigue la posición Y del mouse */
+  useEffect(() => {
+    if (!a11y.readingGuide) return
+    const guide = readingGuideRef.current
+    if (!guide) return
+
+    const onMouseMove = (e) => {
+      guide.style.top = `${e.clientY - 15}px`
+      guide.style.opacity = '1'
+    }
+    const onMouseLeave = () => {
+      guide.style.opacity = '0'
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseleave', onMouseLeave)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [a11y.readingGuide])
+
+  /* Cerrar con Escape (focus-trap maneja el foco automáticamente) */
   useEffect(() => {
     if (!open) return
     const onKey = (e) => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus() } }
-    const onClick = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target) && !btnRef.current.contains(e.target)) setOpen(false)
-    }
     document.addEventListener('keydown', onKey)
-    document.addEventListener('mousedown', onClick)
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick) }
+    return () => document.removeEventListener('keydown', onKey)
   }, [open])
+
+  /* Alertas visuales: flash en pantalla cuando hay notificaciones */
+  useEffect(() => {
+    if (!a11y.visualAlerts) return
+    const flash = flashRef.current
+    if (!flash) return
+
+    const showFlash = () => {
+      flash.style.opacity = '1'
+      setTimeout(() => { flash.style.opacity = '0' }, 300)
+    }
+
+    // Escuchar eventos de notificación custom
+    window.addEventListener('a11y-notify', showFlash)
+    return () => window.removeEventListener('a11y-notify', showFlash)
+  }, [a11y.visualAlerts])
 
   /* Leer al pasar el cursor por elementos interactivos o encabezados */
   useEffect(() => {
@@ -147,15 +227,24 @@ export default function AccessibilityBar() {
         {open ? I.close(26) : I.access(28)}
       </button>
 
-      {/* Panel */}
+      {/* Panel con FocusTrap */}
       {open && (
+        <FocusTrap
+          focusTrapOptions={{
+            returnFocusOnDeactivate: true,
+            clickOutsideDeactivates: true,
+            escapeDeactivates: false,
+          }}
+          onDeactivate={() => { setOpen(false); btnRef.current?.focus() }}
+        >
         <div
-          ref={panelRef}
           role="dialog"
           aria-label="Opciones de accesibilidad"
           style={{
             position: 'fixed', right: 20, bottom: 92, zIndex: 1500,
             width: 320, maxWidth: 'calc(100vw - 40px)',
+            maxHeight: 'calc(100vh - 120px)',
+            overflowY: 'auto',
             background: 'var(--bg-surface)', border: '2px solid var(--border-strong)',
             borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-xl)',
             padding: 20, fontFamily: 'var(--font-body)',
@@ -166,10 +255,11 @@ export default function AccessibilityBar() {
             <span style={{ color: 'var(--primary)' }}>{I.access(22)}</span> Accesibilidad
           </h2>
 
-          {/* Modo oscuro */}
+          {/* ═══ SECCIÓN VISUAL ═══ */}
+          <SectionHeader icon={I.eye()} label="Visual" color="var(--color-salud)" />
+
           <Toggle icon={I.darkMode()} label="Modo oscuro" on={a11y.darkMode} onToggle={a11y.toggleDarkMode} />
 
-          {/* Tamaño de texto */}
           <Group label="Tamaño de texto">
             <div role="group" aria-label="Tamaño de texto" style={{ display: 'flex', gap: 8 }}>
               {['base', 'lg', 'xl'].map(sz => {
@@ -190,10 +280,8 @@ export default function AccessibilityBar() {
             </div>
           </Group>
 
-          {/* Toggles */}
           <Toggle icon={I.contrast()} label="Alto contraste" on={a11y.highContrast} onToggle={a11y.toggleHighContrast} />
 
-          {/* Modo daltónico */}
           <Group label="Modo daltónico">
             <div role="group" aria-label="Modo daltónico" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {[
@@ -224,14 +312,35 @@ export default function AccessibilityBar() {
               </p>
             )}
           </Group>
-          <Toggle icon={I.book()} label="Lectura fácil" on={a11y.easyRead} onToggle={a11y.toggleEasyRead} />
+
+          <Toggle icon={I.cursor()} label="Cursor gigante" on={a11y.largeCursor} onToggle={a11y.toggleLargeCursor}
+            hint="Cursor de alto contraste fosforescente para mejor visibilidad" />
+          <Toggle icon={I.guide()} label="Guía de lectura" on={a11y.readingGuide} onToggle={a11y.toggleReadingGuide}
+            hint="Barra horizontal que sigue el cursor para ayudar a leer" />
+          <Toggle icon={I.link()} label="Resaltar enlaces" on={a11y.highlightLinks} onToggle={a11y.toggleHighlightLinks}
+            hint="Subrayado grueso y bordes marcados en elementos clicables" />
+          <Toggle icon={I.flash()} label="Alertas visuales" on={a11y.visualAlerts} onToggle={a11y.toggleVisualAlerts}
+            hint="Convierte sonidos de notificación en destellos visuales" />
+
+          {/* ═══ SECCIÓN COGNITIVA ═══ */}
+          <SectionHeader icon={I.brain()} label="Cognitiva" color="var(--color-educacion)" />
+
+          <Toggle icon={I.book()} label="Lectura fácil" on={a11y.easyRead} onToggle={a11y.toggleEasyRead}
+            hint="Tipografía Atkinson Hyperlegible con mayor espaciado" />
           <Toggle icon={I.motion()} label="Reducir movimiento" on={a11y.reducedMotion} onToggle={a11y.toggleReducedMotion} />
 
-          {/* Lectura en voz */}
+          {/* ═══ SECCIÓN MOTOR ═══ */}
+          <SectionHeader icon={I.expand()} label="Motor" color="var(--color-empleo)" />
+
+          <Toggle icon={I.expand()} label="Espaciado motriz" on={a11y.motorSpacing} onToggle={a11y.toggleMotorSpacing}
+            hint="Amplía áreas de clic/touch para facilitar la interacción" />
+
+          {/* ═══ AUDITIVA ═══ */}
           {ttsSupported && (
             <>
+              <SectionHeader icon={I.speaker()} label="Auditiva" color="var(--color-comunidad)" />
               <Toggle icon={I.speaker()} label="Leer al pasar el cursor" on={a11y.ttsEnabled} onToggle={a11y.toggleTts}
-                hint="Al activar, pasa el cursor sobre botones, títulos o campos para escucharlos" />
+                hint="Pasa el cursor sobre botones, títulos o campos para escucharlos" />
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button onClick={readPage} className="btn-secondary" style={{ flex: 1, fontSize: 14, padding: '10px', minHeight: 44 }}>
                   {I.speaker(16)} Leer página
@@ -250,8 +359,55 @@ export default function AccessibilityBar() {
             {I.reset()} Restablecer todo
           </button>
         </div>
+        </FocusTrap>
+      )}
+      {/* Guía de lectura visual */}
+      {a11y.readingGuide && (
+        <div
+          ref={readingGuideRef}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            height: '30px',
+            background: 'linear-gradient(180deg, rgba(0,78,82,0.15) 0%, rgba(0,78,82,0.08) 50%, rgba(0,78,82,0.15) 100%)',
+            borderTop: '2px solid rgba(0,78,82,0.4)',
+            borderBottom: '2px solid rgba(0,78,82,0.4)',
+            pointerEvents: 'none',
+            zIndex: 9999,
+            opacity: 0,
+            transition: 'opacity 0.15s ease',
+          }}
+        />
+      )}
+      {/* Flash de alerta visual */}
+      {a11y.visualAlerts && (
+        <div
+          ref={flashRef}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            border: '6px solid var(--color-warning)',
+            boxShadow: 'inset 0 0 80px rgba(241,250,63,0.4)',
+            pointerEvents: 'none',
+            zIndex: 10000,
+            opacity: 0,
+            transition: 'opacity 0.15s ease',
+          }}
+        />
       )}
     </>
+  )
+}
+
+function SectionHeader({ icon, label, color = 'var(--primary)' }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0 12px', paddingBottom: 6, borderBottom: `2px solid ${color}` }}>
+      <span style={{ color, display: 'flex' }}>{icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+    </div>
   )
 }
 
@@ -265,18 +421,20 @@ function Group({ label, children }) {
 }
 
 function Toggle({ icon, label, on, onToggle, hint }) {
+  const OFF_COLOR = '#556678'
   return (
     <div style={{ marginBottom: 12 }}>
       <button onClick={onToggle} role="switch" aria-checked={on}
         style={{
           width: '100%', minHeight: 52, padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-          border: on ? '2px solid var(--primary)' : '2px solid var(--border-color)',
+          border: on ? '2px solid var(--primary)' : `2px solid ${OFF_COLOR}`,
           background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)',
+          transition: 'border-color 0.2s',
         }}>
-        <span style={{ color: on ? 'var(--primary)' : 'var(--fg3)', flexShrink: 0 }}>{icon}</span>
+        <span style={{ color: on ? 'var(--primary)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.2s' }}>{icon}</span>
         <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{label}</span>
-        <span aria-hidden="true" style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--primary)' : 'var(--border-strong)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+        <span aria-hidden="true" style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--primary)' : OFF_COLOR, position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
           <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
         </span>
       </button>

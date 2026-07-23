@@ -8,7 +8,11 @@ export default function NotificationBell() {
   const markAll = useMarkAllRead()
   const qc = useQueryClient()
 
-  useNotificationStream(() => qc.invalidateQueries({ queryKey: ['notifications'] }))
+  useNotificationStream(() => {
+    qc.invalidateQueries({ queryKey: ['notifications'] })
+    // Despachar evento para alertas visuales de accesibilidad
+    window.dispatchEvent(new Event('a11y-notify'))
+  })
 
   const unread = notifications.filter(n => !n.is_read).length
 
