@@ -6,4 +6,4 @@
  */
 
 // ── Hooks ──────────────────────────────────────────────────────────
-export { useProfile, useUpdateProfile } from './hooks/useProfile'
+export { default as useProfile, useUpdateProfile } from './hooks/useProfile'

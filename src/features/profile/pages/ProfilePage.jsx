@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { useProfile, useUpdateProfile, useAuthStore } from '@features/auth'
+import useProfile, { useUpdateProfile } from '@features/profile/hooks/useProfile'
+import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
@@ -19,7 +20,7 @@ const LIFE_STAGES = [
 
 export default function ProfilePage() {
   const { logout, user: authUser } = useAuthStore()
-  const { data: profile, isLoading } = useProfile()
+  const { data: profile, isLoading, isError } = useProfile()
   const update = useUpdateProfile()
   const { addToast } = useUiStore()
 
@@ -130,6 +131,16 @@ export default function ProfilePage() {
             {[80, 200, 120, 60].map((w, i) => (
               <div key={i} style={{ height: 18, width: w, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 16 }} />
             ))}
+          </div>
+        ) : isError ? (
+          <div style={s.card}>
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--danger-subtle, #fdecea)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                {Icons.shieldAlert({ s: 22 })}
+              </div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>No se pudo cargar el perfil</h3>
+              <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>Verifica tu conexión e intenta de nuevo</p>
+            </div>
           </div>
         ) : (
           <>
