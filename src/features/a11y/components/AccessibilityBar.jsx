@@ -421,18 +421,20 @@ function Group({ label, children }) {
 }
 
 function Toggle({ icon, label, on, onToggle, hint }) {
+  const OFF_COLOR = '#556678'
   return (
     <div style={{ marginBottom: 12 }}>
       <button onClick={onToggle} role="switch" aria-checked={on}
         style={{
           width: '100%', minHeight: 52, padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-          border: on ? '2px solid var(--primary)' : '2px solid var(--border-color)',
+          border: on ? '2px solid var(--primary)' : `2px solid ${OFF_COLOR}`,
           background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)',
+          transition: 'border-color 0.2s',
         }}>
-        <span style={{ color: on ? 'var(--primary)' : 'var(--fg3)', flexShrink: 0 }}>{icon}</span>
+        <span style={{ color: on ? 'var(--primary)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.2s' }}>{icon}</span>
         <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{label}</span>
-        <span aria-hidden="true" style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--primary)' : 'var(--border-strong)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+        <span aria-hidden="true" style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--primary)' : OFF_COLOR, position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
           <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
         </span>
       </button>
