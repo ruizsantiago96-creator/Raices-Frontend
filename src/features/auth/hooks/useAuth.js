@@ -79,20 +79,35 @@ export function useRegister() {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   return useMutation({
-    mutationFn: ({ _rememberMe, ...data }) => api.post('/auth/register', data).then(r => r.data),
-    onSuccess: (data, variables) => {
-      const token = data.token ?? data.access_token
-      const refresh = data.refreshToken ?? data.refresh_token
+    mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }) => {
+      const body = {
+        ...rest,
+        nombreCompleto: full_name,
+        rol: role,
+        ciudad: city,
+        estado: state,
+      }
+      return api.post('/autenticacion/registro', body).then(r => r.data)
+    },
+    onSuccess: (raw, variables) => {
+      const token = raw.tokenAcceso
+      const refresh = raw.tokenRefresco ?? null
       const rememberMe = variables?._rememberMe ?? true
-      console.log('[Auth] Register response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
+      const user = raw.usuario ? {
+        id: raw.usuario.id,
+        email: raw.usuario.email,
+        role: raw.usuario.rol,
+        full_name: raw.usuario.nombreCompleto,
+      } : undefined
+      console.log('[Auth] Register response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: user?.role })
       setRememberMe(rememberMe)
-      setAuth(token, data.user, refresh, rememberMe)
+      setAuth(token, user, refresh, rememberMe)
       console.log('[Auth] Register - saved to storage:', {
         hasToken: !!token,
         hasRefreshToken: !!refresh,
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
-      const role = data.user?.role
+      const role = user?.role
       if (role === 'admin') nav('/admin')
       else if (role === 'institution') nav('/institution-portal')
       else nav('/dashboard')
@@ -104,7 +119,19 @@ export function useMe() {
   const { token } = useAuthStore()
   return useQuery({
     queryKey: ['me'],
-    queryFn: () => api.get('/auth/me').then(r => r.data),
+    queryFn: () => api.get('/autenticacion/yo').then(r => {
+      const d = r.data
+      return {
+        id: d.id,
+        email: d.email,
+        role: d.rol,
+        full_name: d.nombreCompleto,
+        city: d.ciudad,
+        state: d.estado,
+        avatar_url: d.urlAvatar,
+        is_verified: d.verificado,
+      }
+    }),
     enabled: !!token,
   })
 }

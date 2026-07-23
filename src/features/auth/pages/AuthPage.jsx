@@ -6,6 +6,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
+import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 
 const ROLES = [
   { id: 'pcd', icon: Icons.heart, title: 'Persona con discapacidad', desc: 'Accede a tu ecosistema personalizado' },
@@ -131,7 +132,7 @@ export default function AuthPage() {
     progress: { height: 6, background: 'var(--border-color)', borderRadius: 3, marginBottom: 28, overflow: 'hidden' },
     progressBar: (pct) => ({ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }),
     link: { background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', textDecoration: 'underline', textUnderlineOffset: 3, minHeight: 44, padding: '0 8px' },
-    actions: { display: 'block', textAlign: 'center', marginTop: 24 },
+    actions: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 },
     errorBox: { display: 'block', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-error) 12%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 40%, transparent)', color: 'var(--color-error)', fontSize: 14, fontWeight: 600, marginBottom: 20 },
     passWrap: { position: 'relative' },
     passToggle: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, fontWeight: 700, padding: '8px 10px', minHeight: 44, fontFamily: 'var(--font-body)' },
@@ -238,13 +239,13 @@ export default function AuthPage() {
           {mode === 'register' && (
             <>
               <div style={{ marginBottom: 8 }}>
-                <p style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 700, marginBottom: 8 }}>Paso {regStep} de 3</p>
-                <div style={s.progress} role="progressbar" aria-valuenow={regStep} aria-valuemin={1} aria-valuemax={3} aria-label={`Paso ${regStep} de 3`}>
-                  <div style={s.progressBar((regStep / 3) * 100)} />
+                <p style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 700, marginBottom: 8 }}>Paso {regStep} de 2</p>
+                <div style={s.progress} role="progressbar" aria-valuenow={regStep} aria-valuemin={1} aria-valuemax={2} aria-label={`Paso ${regStep} de 2`}>
+                  <div style={s.progressBar((regStep / 2) * 100)} />
                 </div>
               </div>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
-                {regStep === 1 ? '¿Cómo te gustaría unirte?' : regStep === 2 ? 'Crea tu cuenta' : 'Validación y seguridad'}
+                {regStep === 1 ? '¿Cómo te gustaría unirte?' : 'Crea tu cuenta'}
               </h1>
 
               {error && (
@@ -272,7 +273,7 @@ export default function AuthPage() {
                 )}
 
                 {regStep === 2 && (
-                  <form onSubmit={e => { e.preventDefault(); setRegStep(3) }}>
+                  <form onSubmit={e => { e.preventDefault(); handleRegister(e) }}>
                     <div style={s.inputWrap}>
                       <label htmlFor="reg-name" style={labelStyle}>Nombre completo</label>
                       <input id="reg-name" name="name" autoComplete="name" style={inputStyle} value={form.full_name} onChange={set('full_name')} required placeholder="Ej. Ana Pérez" />
@@ -294,47 +295,61 @@ export default function AuthPage() {
                     <div style={{ display: 'block' }}>
                       <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top', marginRight: 16 }}>
                         <div style={s.inputWrap}>
-                          <label htmlFor="reg-city" style={labelStyle}>Ciudad</label>
-                          <input id="reg-city" name="city" autoComplete="address-level2" style={inputStyle} value={form.city} onChange={set('city')} required placeholder="Ej. Mérida" />
+                          <label htmlFor="reg-state" style={labelStyle}>Estado</label>
+                          <select
+                            id="reg-state"
+                            name="state"
+                            autoComplete="address-level1"
+                            style={{ ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
+                            value={form.state}
+                            onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }}
+                            required
+                          >
+                            <option value="" disabled>Selecciona un estado</option>
+                            {STATES.map(st => (
+                              <option key={st} value={st}>{st}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                       <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top' }}>
                         <div style={s.inputWrap}>
-                          <label htmlFor="reg-state" style={labelStyle}>Estado</label>
-                          <input id="reg-state" name="state" autoComplete="address-level1" style={inputStyle} value={form.state} onChange={set('state')} required placeholder="Ej. Yucatán" />
+                          <label htmlFor="reg-city" style={labelStyle}>Municipio</label>
+                          <select
+                            id="reg-city"
+                            name="city"
+                            autoComplete="address-level2"
+                            style={{ ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
+                            value={form.city}
+                            onChange={set('city')}
+                            required
+                            disabled={!form.state}
+                          >
+                            <option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
+                            {form.state && getMunicipalities(form.state).map(m => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
                   </form>
                 )}
 
-                {regStep === 3 && (
-                  <div>
-                    <div style={{ display: 'block', padding: 16, background: 'color-mix(in oklch, var(--color-success) 10%, transparent)', borderRadius: 'var(--radius-md)', border: '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)', marginBottom: 20 }}>
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 12, color: 'var(--color-success)' }}>{Icons.shield({ s: 20 })}</span>
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: 14, fontWeight: 600, color: 'var(--fg1)', lineHeight: 1.5, width: 'calc(100% - 44px)' }}>Ecosistema curado. Validamos tu identidad para la seguridad de todos.</span>
-                    </div>
-                    <label style={labelStyle}>Identificación oficial (INE/Pasaporte)</label>
-                    <div style={{ border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: 28, display: 'block', textAlign: 'center', color: 'var(--fg2)', marginTop: 6 }}>
-                      <div style={{ display: 'block', marginBottom: 8 }}>{Icons.upload({ s: 28 })}</div>
-                      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Cargar documento</span>
-                      <span style={{ display: 'block', fontSize: 13 }}>JPG, PNG o PDF — máx. 5MB (opcional en demo)</span>
-                    </div>
-                  </div>
-                )}
+                
               </div>
 
               <div style={s.actions}>
-                {regStep > 1
-                  ? <button className="btn-secondary" onClick={() => setRegStep(st => st - 1)}>
-                      {Icons.arrowLeft({ s: 18 })} Volver
-                    </button>
-                  : <span />}
-                {regStep < 3
-                  ? <button className="btn-primary" onClick={() => setRegStep(st => st + 1)} disabled={regStep === 2 && (!form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state)}>
+                {regStep > 1 && (
+                  <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setRegStep(st => st - 1)}>
+                    {Icons.arrowLeft({ s: 18 })} Volver
+                  </button>
+                )}
+                {regStep === 1
+                  ? <button className="btn-primary" style={{ width: '100%' }} onClick={() => setRegStep(st => st + 1)}>
                       Continuar {Icons.arrowRight({ s: 18 })}
                     </button>
-                  : <button className="btn-primary" onClick={handleRegister} disabled={register.isPending}>
+                  : <button className="btn-primary" type="button" style={{ width: '100%' }} onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state}>
                       {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
                     </button>}
               </div>
