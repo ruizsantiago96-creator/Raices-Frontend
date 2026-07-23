@@ -66,16 +66,7 @@ html[data-contrast="high"] {
 html[data-contrast="high"] .card,
 html[data-contrast="high"] [data-surface] { border: 2px solid var(--border-strong) !important; }
 
-html[data-easy-read="true"] #a11y-root {
-  --font-display: 'Inter', system-ui, sans-serif;
-}
-html[data-easy-read="true"] #a11y-root,
-html[data-easy-read="true"] #a11y-root * {
-  line-height: 1.75 !important;
-  letter-spacing: 0.02em !important;
-  font-style: normal !important;
-  word-spacing: 0.05em !important;
-}
+
 
 html[data-reduced-motion="true"] *,
 html[data-reduced-motion="true"] *::before,
@@ -96,6 +87,50 @@ html[data-colorblind="protanopia"] #a11y-root {
   filter: url('#cb-protanopia');
 }
 html[data-colorblind="tritanopia"] #a11y-root {
+  filter: url('#cb-tritanopia');
+}
+
+/* ── Daltonismo: panel de accesibilidad completo ── */
+html[data-colorblind="deuteranopia"] [role="dialog"] {
+  filter: url('#cb-deuteranopia');
+}
+html[data-colorblind="protanopia"] [role="dialog"] {
+  filter: url('#cb-protanopia');
+}
+html[data-colorblind="tritanopia"] [role="dialog"] {
+  filter: url('#cb-tritanopia');
+}
+
+/* ── Daltonismo: panel de accesibilidad completo ── */
+html[data-colorblind="deuteranopia"] [role="dialog"] {
+  filter: url('#cb-deuteranopia');
+}
+html[data-colorblind="protanopia"] [role="dialog"] {
+  filter: url('#cb-protanopia');
+}
+html[data-colorblind="tritanopia"] [role="dialog"] {
+  filter: url('#cb-tritanopia');
+}
+
+/* ── Daltonismo: panel de accesibilidad completo ── */
+html[data-colorblind="deuteranopia"] [role="dialog"] {
+  filter: url('#cb-deuteranopia');
+}
+html[data-colorblind="protanopia"] [role="dialog"] {
+  filter: url('#cb-protanopia');
+}
+html[data-colorblind="tritanopia"] [role="dialog"] {
+  filter: url('#cb-tritanopia');
+}
+
+/* ── Daltonismo: panel de accesibilidad completo ── */
+html[data-colorblind="deuteranopia"] [role="dialog"] {
+  filter: url('#cb-deuteranopia');
+}
+html[data-colorblind="protanopia"] [role="dialog"] {
+  filter: url('#cb-protanopia');
+}
+html[data-colorblind="tritanopia"] [role="dialog"] {
   filter: url('#cb-tritanopia');
 }
 
@@ -992,3 +1027,105 @@ html[data-reduced-motion="true"] .scroll-reveal-up {
     transition: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ACCESSIBILITY FEATURES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Large Cursor Mode ───────────────────────────────── */
+html[data-large-cursor="true"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4l14.14 28.47 3.35-9.86L30 13.86z' fill='%23000' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") 4 4, auto !important;
+}
+
+html[data-large-cursor="true"] a,
+html[data-large-cursor="true"] button,
+html[data-large-cursor="true"] [role="button"],
+html[data-large-cursor="true"] [role="link"],
+html[data-large-cursor="true"] [role="switch"],
+html[data-large-cursor="true"] [role="tab"],
+html[data-large-cursor="true"] [role="menuitem"],
+html[data-large-cursor="true"] input,
+html[data-large-cursor="true"] select,
+html[data-large-cursor="true"] textarea {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4l14.14 28.47 3.35-9.86L30 13.86z' fill='%23004E52' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") 4 4, pointer !important;
+}
+
+/* ── Reading Guide (Mask) ─────────────────────────────── */
+html[data-reading-guide="true"] #a11y-root {
+  position: relative;
+}
+
+/* ── Enhanced Easy Read Mode with Atkinson Hyperlegible ── */
+html[data-easy-read="true"] {
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-display: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+html[data-easy-read="true"] #a11y-root,
+html[data-easy-read="true"] #a11y-root * {
+  line-height: 1.8 !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.08em !important;
+  font-style: normal !important;
+}
+
+html[data-easy-read="true"] h1,
+html[data-easy-read="true"] h2,
+html[data-easy-read="true"] h3,
+html[data-easy-read="true"] h4 {
+  letter-spacing: 0.02em !important;
+  line-height: 1.4 !important;
+}
+
+html[data-easy-read="true"] p,
+html[data-easy-read="true"] li,
+html[data-easy-read="true"] span {
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.1em !important;
+}
+
+/* ── Highlight Links & Interactions ─────────────────── */
+html[data-highlight-links="true"] a,
+html[data-highlight-links="true"] [role="link"] {
+  text-decoration: underline !important;
+  text-decoration-thickness: 3px !important;
+  text-underline-offset: 4px !important;
+}
+
+html[data-highlight-links="true"] button,
+html[data-highlight-links="true"] [role="button"],
+html[data-highlight-links="true"] [role="switch"],
+html[data-highlight-links="true"] [role="tab"],
+html[data-highlight-links="true"] [role="menuitem"] {
+  border: 3px solid var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--primary-subtle) !important;
+}
+
+html[data-highlight-links="true"] a:hover,
+html[data-highlight-links="true"] button:hover {
+  border-color: var(--primary-dark) !important;
+  box-shadow: 0 0 0 4px var(--primary-subtle) !important;
+}
+
+/* ── Motor Spacing (Expanded Touch Areas) ────────────── */
+html[data-motor-spacing="true"] button:not([role="switch"]),
+html[data-motor-spacing="true"] a,
+html[data-motor-spacing="true"] [role="button"],
+html[data-motor-spacing="true"] [role="link"],
+html[data-motor-spacing="true"] [role="tab"],
+html[data-motor-spacing="true"] [role="menuitem"],
+html[data-motor-spacing="true"] input,
+html[data-motor-spacing="true"] select,
+html[data-motor-spacing="true"] textarea {
+  min-height: 56px !important;
+  padding: 16px 24px !important;
+  gap: 12px !important;
+}
+
+html[data-motor-spacing="true"] .mobile-bottom-nav a {
+  min-height: 64px !important;
+  padding: 12px 16px !important;
+  min-width: 64px !important;
+}
+
+
