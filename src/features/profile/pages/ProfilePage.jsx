@@ -78,7 +78,6 @@ export default function ProfilePage() {
         nombreCompleto: form.full_name,
         ciudad: form.city,
         estado: form.state,
-        ...(form.avatar_url ? { avatar_url: form.avatar_url } : {}),
       })
       addToast('Perfil actualizado', 'success')
       setEditing(false)
