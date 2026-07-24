@@ -125,7 +125,7 @@ export default function AccessibilityBar() {
   }, [open])
 
   /* Aplica preferencias al <html> cada vez que cambian */
-  useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode, a11y.darkMode, a11y.largeCursor, a11y.readingGuide, a11y.highlightLinks, a11y.motorSpacing, a11y.visualAlerts])
+  useEffect(() => { applyA11yAttributes(a11y) }, [a11y])
 
   /* Aplicar Atkinson Hyperlegible cuando easyRead está activo */
   useEffect(() => {

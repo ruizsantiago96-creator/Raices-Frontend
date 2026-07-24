@@ -33,7 +33,7 @@ export default function LandingPage() {
 
     section: { maxWidth: 1100, margin: '0 auto', padding: '80px 48px' },
     grid4: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 },
-    catCard: (color) => ({
+    catCard: (_color) => ({
       background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
       borderRadius: 'var(--radius-md)', padding: '24px 20px',
       display: 'flex', flexDirection: 'column', gap: 12,

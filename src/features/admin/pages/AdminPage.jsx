@@ -233,7 +233,7 @@ function HBar({ label, value, max, color = '#01ADFF', suffix }) {
 }
 
 /* ════════════════════ TAB: Resumen ════════════════════ */
-function OverviewTab({ onNavigate }) {
+function OverviewTab({ onNavigate: _onNavigate }) {
   const { data: stats, isLoading } = useAdminStats()
 
   const statCards = [

@@ -85,5 +85,5 @@ export function useNotificationStream(onNotification) {
       closeNotificationStream()
       esRef.current = null
     }
-  }, [token])
+  }, [token, onNotification])
 }

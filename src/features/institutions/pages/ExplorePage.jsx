@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
@@ -67,10 +68,13 @@ export default function ExplorePage() {
     ...(ciudad ? { ciudad } : {}),
   }
 
-  // Reset visibleCount when filters change
-  useEffect(() => {
+  // Reset visibleCount when filters change (adjust state during render)
+  const filterKey = JSON.stringify(filters)
+  const prevFilterKeyRef = useRef(filterKey)
+  if (prevFilterKeyRef.current !== filterKey) {
+    prevFilterKeyRef.current = filterKey
     setVisibleCount(PAGE_SIZE)
-  }, [debouncedSearch, category, tipoDiscapacidad, edad, ciudad])
+  }
 
   // Only call API when authenticated
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error } = useInstitutions(filters)

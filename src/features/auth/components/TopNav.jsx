@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Icons, BrandMark, hashColor } from '@shared/components/shared'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
 
-export const TopNav = ({ currentPage, user, onLogout }) => {
+export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const { darkMode, toggleDarkMode } = useA11yStore()
   const hasSidebar = !!user

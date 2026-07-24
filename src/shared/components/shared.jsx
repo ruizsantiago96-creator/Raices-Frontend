@@ -1,5 +1,5 @@
 /* Raíces para Florecer — Shared Components (React module version) */
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export const LeafIcon = ({ size = 16, color = 'currentColor', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} opacity="0.8" style={style}>
@@ -7,6 +7,7 @@ export const LeafIcon = ({ size = 16, color = 'currentColor', style }) => (
   </svg>
 )
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const Icons = {
   home: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   search: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
@@ -68,6 +69,7 @@ export const CategoryTag = ({ label, color }) => (
   </span>
 )
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CATEGORY_COLORS = {
   'funcional': '#01ADFF',
   'educativo': '#8B6BAE',
@@ -93,6 +95,7 @@ export const BrandMark = ({ onClick, size = 22, light = false }) => (
   </button>
 )
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function hashColor(str = '') {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
@@ -100,7 +103,7 @@ export function hashColor(str = '') {
   return colors[Math.abs(h) % colors.length]
 }
 
-export const TopNav = ({ currentPage, user, onLogout }) => {
+export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const hasSidebar = !!user
   const avatarColor = hashColor(user?.full_name ?? '')
@@ -146,11 +149,13 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const labelStyle = {
   display: 'block', fontFamily: 'var(--font-body)', fontSize: 14,
   fontWeight: 700, color: 'var(--fg2)', marginBottom: 6, letterSpacing: '0.02em',
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const inputStyle = {
   width: '100%', height: 48, padding: '0 16px',
   border: '1px solid var(--border-color)',

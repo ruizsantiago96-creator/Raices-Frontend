@@ -103,7 +103,7 @@ export function useSessionVerify() {
     return () => {
       cancelled = true
     }
-  }, []) // ← Array de dependencias vacío: solo se ejecuta al montar
+  }, [logout]) // ← Se incluye logout para evitar stale closure
 
   return { isVerified, isChecking, error }
 }

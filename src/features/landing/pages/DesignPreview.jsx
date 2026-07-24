@@ -2,7 +2,6 @@
  * Design Preview — New Color Scheme Demo
  * Primary: #01ADFF (Blue) | Secondary: #F1FA3F (Yellow/Lime)
  */
-import { useState } from 'react'
 import { BrandMark } from '@shared/components/shared'
 
 const COLORS = {
@@ -21,8 +20,6 @@ const COLORS = {
 }
 
 export default function DesignPreview() {
-  const [activeTab, setActiveTab] = useState('buttons')
-
   return (
     <div style={{ minHeight: '100vh', background: COLORS.bg, fontFamily: "'Inter', system-ui, sans-serif", color: COLORS.fg1 }}>
       {/* Header */}

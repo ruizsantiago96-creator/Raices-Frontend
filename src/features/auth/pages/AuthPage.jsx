@@ -51,7 +51,7 @@ export default function AuthPage() {
       return
     }
     try {
-      const data = await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
+      await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
       // Token guardado en onSuccess del hook
       addToast('¡Bienvenido!', 'success')
     } catch (err) {
@@ -100,7 +100,7 @@ export default function AuthPage() {
       
       addToast('Enlace enviado. Revisa tu bandeja de entrada.', 'success');
       setMode('login'); 
-    } catch (err) {
+    } catch {
       const msg = 'No pudimos enviar el correo. Verifica tu dirección e intenta de nuevo.';
       setError(msg);
       addToast(msg, 'error');
