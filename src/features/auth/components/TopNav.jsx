@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Icons, BrandMark, hashColor } from '@shared/components/shared'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
 
-export const TopNav = ({ currentPage, user, onLogout }) => {
+export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const { darkMode, toggleDarkMode } = useA11yStore()
   const hasSidebar = !!user
@@ -45,7 +45,7 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
           </button>
         )}
         {user && (
-          <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <Link to="/profile" className="topnav-profile-link" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
               background: user.avatar_url ? 'transparent' : hashColor(user.full_name ?? ''),

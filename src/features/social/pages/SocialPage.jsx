@@ -448,7 +448,7 @@ export default function SocialPage() {
       <AppSidebar currentPage="social" />
       <TopNav user={user} onLogout={logout} currentPage="social" />
 
-      <main className="responsive-main" style={{ maxWidth: 1060 }}>
+      <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
 
         {/* Selector de vista: Comunidad vs Mensajes */}
         <div className="social-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>

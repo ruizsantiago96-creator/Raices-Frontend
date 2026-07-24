@@ -127,7 +127,7 @@ export default function CrearInstitucionPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
       <AppSidebar currentPage="explore" />
       <TopNav user={user} onLogout={() => { useAuthStore.getState().logout(); navigate('/'); }} currentPage="explore" />
-      <main className="responsive-main" style={{ maxWidth: 720, margin: '0 auto' }}>
+      <main className="responsive-main" style={{ '--main-max-width': '720px' }}>
         <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, fontWeight: 600, marginBottom: 20, padding: 0 }}>
           {Icons.arrowLeft({ s: 16 })} Volver
         </button>

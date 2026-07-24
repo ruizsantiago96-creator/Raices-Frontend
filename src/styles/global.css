@@ -3,6 +3,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
+  --sidebar-width: 260px;
+  --main-max-width: 100%;
   --primary: #004E52;
   --primary-dark: #003A3D;
   --primary-subtle: rgba(0, 78, 82, 0.12);
@@ -224,7 +226,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 260px;
+  width: var(--sidebar-width);
   z-index: 100;
   transition: width 0.25s ease, background-color 0.3s ease;
   overflow-y: auto;
@@ -234,11 +236,13 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 }
 
 .responsive-main {
-  margin-left: 260px;
+  margin-left: max(var(--sidebar-width), calc(var(--sidebar-width) + (100% - var(--sidebar-width) - var(--main-max-width)) / 2));
+  margin-right: auto;
   padding: 28px 32px;
-  width: calc(100% - 260px);
+  width: 100%;
+  max-width: var(--main-max-width);
   box-sizing: border-box;
-  transition: margin-left 0.25s ease;
+  transition: margin-left 0.25s ease, margin-right 0.25s ease;
 }
 
 .responsive-topnav {
@@ -250,8 +254,8 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  margin-left: 260px;
-  width: calc(100% - 260px);
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
   background: var(--bg-surface);
   border-bottom: none;
   font-family: var(--font-body);
@@ -289,7 +293,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 @media (min-width: 1400px) {
   .responsive-main {
     padding: 32px 48px;
-    max-width: 1200px;
+    --main-max-width: 1200px;
   }
   .responsive-topnav {
     padding: 0 48px;
@@ -300,7 +304,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 @media (min-width: 1200px) and (max-width: 1399px) {
   .responsive-main {
     padding: 28px 40px;
-    max-width: 1100px;
+    --main-max-width: 1100px;
   }
 }
 
@@ -308,7 +312,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 @media (min-width: 992px) and (max-width: 1199px) {
   .responsive-main {
     padding: 24px 28px;
-    max-width: 100%;
+    --main-max-width: 100%;
   }
   .responsive-topnav {
     padding: 0 24px;
@@ -324,16 +328,14 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
 /* ── Small Laptop (≥768px) ──────────────────────────── */
 @media (min-width: 768px) and (max-width: 991px) {
-  .responsive-sidebar {
-    width: 240px;
+  :root {
+    --sidebar-width: 240px;
   }
   .responsive-main {
-    margin-left: 240px;
     padding: 20px 20px;
+    --main-max-width: 100%;
   }
   .responsive-topnav {
-    margin-left: 240px;
-    width: calc(100% - 240px);
     padding: 0 20px;
     height: 56px;
   }
@@ -527,6 +529,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
   /* Topnav */
   .topnav-username { display: none !important; }
+  .topnav-profile-link { display: none !important; }
 }
 
 /* ── Mobile bottom navigation bar ───────────────────── */

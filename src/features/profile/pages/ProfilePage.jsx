@@ -1,13 +1,10 @@
 import { useState, useRef } from 'react'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
+import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 
-const DISABILITY_OPTIONS = [
-  'Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial',
-  'Múltiple', 'Autismo', 'Síndrome de Down', 'Lenguaje', 'Otra',
-]
+
 const LIFE_STAGES = [
   { id: 'infancia', label: 'Infancia (0-12)' },
   { id: 'adolescencia', label: 'Adolescencia (13-17)' },
@@ -18,7 +15,7 @@ const LIFE_STAGES = [
 
 
 export default function ProfilePage() {
-  const { logout, user: authUser } = useAuthStore()
+  const { logout } = useAuthStore()
   const { data, isLoading, isError } = useProfile()
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
@@ -95,7 +92,6 @@ export default function ProfilePage() {
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
-    main: { maxWidth: 800 },
     card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 },
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     row: { display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 16 },
@@ -122,7 +118,8 @@ export default function ProfilePage() {
     <div style={s.page}>
       <AppSidebar currentPage="profile" />
       <TopNav user={data} onLogout={logout} currentPage="profile" />
-      <main className="responsive-main" style={s.main}>
+      <main className="responsive-main">
+        <div style={{ maxWidth: 800, width: '100%', margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
           Mi perfil
         </h1>
@@ -309,6 +306,7 @@ export default function ProfilePage() {
             )}
           </>
         )}
+        </div>
       </main>
     </div>
   )

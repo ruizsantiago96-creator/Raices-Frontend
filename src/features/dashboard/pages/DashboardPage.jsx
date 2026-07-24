@@ -28,7 +28,7 @@ export default function DashboardPage() {
       <AppSidebar currentPage="dashboard" />
       <TopNav user={user} onLogout={logout} currentPage="dashboard" />
 
-      <main className="responsive-main" style={{ maxWidth: 1100 }}>
+      <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
         <div className="scroll-reveal" style={{ marginBottom: 36 }}>

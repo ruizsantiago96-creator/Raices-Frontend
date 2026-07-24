@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
@@ -67,10 +68,13 @@ export default function ExplorePage() {
     ...(ciudad ? { ciudad } : {}),
   }
 
-  // Reset visibleCount when filters change
-  useEffect(() => {
+  // Reset visibleCount when filters change (adjust state during render)
+  const filterKey = JSON.stringify(filters)
+  const prevFilterKeyRef = useRef(filterKey)
+  if (prevFilterKeyRef.current !== filterKey) {
+    prevFilterKeyRef.current = filterKey
     setVisibleCount(PAGE_SIZE)
-  }, [debouncedSearch, category, tipoDiscapacidad, edad, ciudad])
+  }
 
   // Only call API when authenticated
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error } = useInstitutions(filters)
@@ -95,7 +99,7 @@ export default function ExplorePage() {
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
         <TopNav currentPage="explore" />
 
-        <main className="responsive-main" style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 32px' }}>
+        <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700,          color: 'var(--fg1)', margin: '0 0 24px' }}>
             Explorar instituciones
           </h1>

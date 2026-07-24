@@ -150,7 +150,7 @@ export default function InstitutionPage() {
         <style>{shimmerStyle}</style>
         <AppSidebar currentPage="explore" />
         <TopNav user={user} onLogout={logout} currentPage="explore" />
-        <main className="responsive-main" style={{ maxWidth: 860 }}>
+        <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 }}>
             <Skeleton w={80} h={24} radius={12} mb={20} />
             <Skeleton w="60%" h={36} mb={12} />
@@ -191,7 +191,7 @@ export default function InstitutionPage() {
       <AppSidebar currentPage="explore" />
       <TopNav user={user} onLogout={logout} currentPage="explore" />
 
-      <main className="responsive-main" style={{ maxWidth: 860 }}>
+      <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
 
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, fontSize: 14, color: 'var(--fg3)' }}>

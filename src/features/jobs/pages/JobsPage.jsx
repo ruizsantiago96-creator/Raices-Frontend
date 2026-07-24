@@ -158,7 +158,7 @@ export default function JobsPage() {
       <AppSidebar currentPage="jobs" />
       <TopNav user={user} onLogout={logout} currentPage="jobs" />
 
-      <main className="responsive-main" style={{ maxWidth: 900 }}>
+      <main className="responsive-main" style={{ '--main-max-width': '900px' }}>
         <div className="jobs-header responsive-header" style={{ marginBottom: 28 }}>
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
