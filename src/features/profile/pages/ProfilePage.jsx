@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useProfile, useUpdateProfile, useActualizarAvatar, useAuthStore } from '@features/auth'
+import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const { data, isLoading, isError } = useProfile()
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
+  const deleteAvatar = useEliminarAvatar()
   const { addToast } = useUiStore()
 
   const [editing, setEditing] = useState(false)
@@ -84,6 +85,17 @@ export default function ProfilePage() {
   }
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const handleDeleteAvatar = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')) return
+    try {
+      const result = await deleteAvatar.mutateAsync()
+      setAvatarPreview(null)
+      addToast(result.mensaje ?? 'Foto de perfil eliminada correctamente', 'success')
+    } catch (err) {
+      addToast(err.message ?? err.response?.data?.mensaje ?? 'Error al eliminar la foto', 'error')
+    }
+  }
 
   const avatarColor = hashColor(data?.nombreCompleto ?? '')
   const initials = (data?.nombreCompleto ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -160,9 +172,20 @@ export default function ProfilePage() {
                     )}
                   </span>
                 </div>
-                <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {Icons.upload({ s: 14 })} Subir foto
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {Icons.upload({ s: 14 })} Subir foto
+                  </button>
+                  {(avatarPreview || data?.urlAvatar) && (
+                    <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'none', border: 'none', color: '#DC3545', fontSize: 13, fontWeight: 600, cursor: deleteAvatar.isPending ? 'not-allowed' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
+                      {deleteAvatar.isPending ? (
+                        <span style={{ width: 14, height: 14, border: '2px solid #DC3545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                      ) : (
+                        Icons.x({ s: 14 })
+                      )} Eliminar foto
+                    </button>
+                  )}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>

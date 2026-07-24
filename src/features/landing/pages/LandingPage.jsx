@@ -61,7 +61,10 @@ export default function LandingPage() {
           <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)' }}>Explorar</button>
         </nav>
         <div className="landing-auth" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)' }}><span>Iniciar sesión</span></button>
+          <button onClick={() => nav('/auth')} className="btn-login-responsive" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600, color: 'var(--fg2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className="auth-text">Iniciar sesión</span>
+            <span className="auth-icon" style={{ display: 'none' }}>{Icons.user({ s: 20 })}</span>
+          </button>
           <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ fontSize: 15, padding: '10px 24px' }}>Registrarse</button>
         </div>
       </header>

@@ -7,12 +7,9 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
   const { darkMode, toggleDarkMode } = useA11yStore()
   const hasSidebar = !!user
   return (
-    <header className={hasSidebar ? 'responsive-topnav' : undefined} style={{
+    <header className={hasSidebar ? 'responsive-topnav' : 'responsive-topnav guest-topbar'} style={{
       ...(hasSidebar ? {} : {
-        position: 'sticky', top: 0, zIndex: 50, width: '100%',
-        borderBottom: '1px solid var(--border-color)', background: 'var(--bg-surface)',
-        height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 32px', fontFamily: 'var(--font-body)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }),
     }}>
       <BrandMark onClick={() => nav('/')} />
@@ -71,8 +68,9 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
         )}
         {!user && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => nav('/auth?mode=login')} className="btn-secondary" style={{ padding: '8px 18px', fontSize: 14, fontWeight: 600, borderRadius: 10, minHeight: 40 }}>
-              Iniciar sesión
+            <button onClick={() => nav('/auth?mode=login')} className="btn-secondary btn-login-responsive" style={{ padding: '8px 18px', fontSize: 14, fontWeight: 600, borderRadius: 10, minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span className="auth-text">Iniciar sesión</span>
+              <span className="auth-icon" style={{ display: 'none' }}>{Icons.user({ s: 20 })}</span>
             </button>
             <button onClick={() => nav('/auth?mode=register')} className="btn-primary" style={{ padding: '8px 18px', fontSize: 14, fontWeight: 600, borderRadius: 10, minHeight: 40 }}>
               Registrarse

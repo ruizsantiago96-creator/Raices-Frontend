@@ -14,11 +14,7 @@ const ROLES = [
   { id: 'institution', icon: Icons.building, title: 'Institución', desc: 'Ofrece servicios, terapia o educación' },
 ]
 
-const DEMO_ACCOUNTS = [
-  { role: 'Persona con discapacidad', email: 'demo@raices.mx', pass: 'Demo1234' },
-  { role: 'Tutor o familiar', email: 'tutor@raices.mx', pass: 'Tutor1234' },
-  { role: 'Administrador', email: 'admin@raices.mx', pass: 'Admin1234' },
-]
+
 
 export default function AuthPage() {
   const [params] = useSearchParams()
@@ -135,7 +131,6 @@ export default function AuthPage() {
     actions: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 },
     errorBox: { display: 'block', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-error) 12%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 40%, transparent)', color: 'var(--color-error)', fontSize: 14, fontWeight: 600, marginBottom: 20 },
     passWrap: { position: 'relative' },
-    passToggle: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, fontWeight: 700, padding: '8px 10px', minHeight: 44, fontFamily: 'var(--font-body)' },
   }
 
   return (
@@ -174,10 +169,10 @@ export default function AuthPage() {
                     <label htmlFor="login-pass" style={labelStyle}>Contraseña</label>
                     <div style={s.passWrap}>
                       <input id="login-pass" name="password" type={showPass ? 'text' : 'password'} autoComplete="current-password"
-                        style={{ ...inputStyle, paddingRight: 80 }} value={form.password} onChange={set('password')} required />
-                      <button type="button" onClick={() => setShowPass(v => !v)} style={s.passToggle}
+                        style={{ ...inputStyle, paddingRight: 48 }} value={form.password} onChange={set('password')} required />
+                      <button type="button" onClick={() => setShowPass(v => !v)} className="btn-pass-toggle"
                         aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
-                        {showPass ? 'Ocultar' : 'Mostrar'}
+                        {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                       </button>
                     </div>
                   </div>
@@ -209,25 +204,7 @@ export default function AuthPage() {
                 <p style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: 'var(--fg3)' }}>v{VERSION}</p>
               </div>
 
-              <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border-color)' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', textAlign: 'center', marginBottom: 14 }}>
-                  <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}>{Icons.shield({ s: 16 })}</span> Cuentas de demostración
-                </p>
-                <div style={{ display: 'block' }}>
-                  {DEMO_ACCOUNTS.map(c => (
-                    <button key={c.email} type="button"
-                      onClick={() => { setForm(f => ({ ...f, email: c.email, password: c.pass })); setError('') }}
-                      style={{ display: 'block', width: '100%', padding: '12px 16px', minHeight: 48, border: '2px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)', textAlign: 'left', marginBottom: 8 }}>
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 12, color: 'var(--primary)' }}>{Icons.user({ s: 18 })}</span>
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle', width: 'calc(100% - 100px)' }}>
-                        <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>{c.role}</span>
-                        <span style={{ display: 'block', fontSize: 12.5, color: 'var(--fg3)' }}>{c.email}</span>
-                      </span>
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: 13, fontWeight: 700, color: 'var(--primary)', textAlign: 'right' }}>Usar</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+
 
               <p style={{ textAlign: 'center', marginTop: 28, fontSize: 16, color: 'var(--fg2)' }}>
                 ¿No tienes cuenta?{' '}
@@ -285,9 +262,9 @@ export default function AuthPage() {
                     <div style={s.inputWrap}>
                       <label htmlFor="reg-pass" style={labelStyle}>Contraseña</label>
                       <div style={s.passWrap}>
-                        <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" style={{ ...inputStyle, paddingRight: 80 }} value={form.password} onChange={set('password')} required minLength={8} />
-                        <button type="button" onClick={() => setShowPass(v => !v)} style={s.passToggle} aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
-                          {showPass ? 'Ocultar' : 'Mostrar'}
+                        <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" style={{ ...inputStyle, paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} />
+                        <button type="button" onClick={() => setShowPass(v => !v)} className="btn-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
+                          {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                         </button>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
