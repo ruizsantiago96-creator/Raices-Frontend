@@ -1176,4 +1176,160 @@ html[data-motor-spacing="true"] .mobile-bottom-nav a {
   min-width: 64px !important;
 }
 
+/* ── Responsive Header / Navigation fixes ──────────────── */
+.guest-topbar {
+  margin-left: 0 !important;
+  width: 100% !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+@media (max-width: 767px) {
+  .brand-subtitle {
+    display: none !important;
+  }
+
+  .btn-login-responsive {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    min-height: 40px !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .btn-login-responsive:not(.btn-secondary) {
+    background: color-mix(in srgb, currentColor 8%, transparent) !important;
+  }
+
+  .btn-login-responsive:not(.btn-secondary):hover {
+    background: color-mix(in srgb, currentColor 16%, transparent) !important;
+  }
+
+  .btn-login-responsive .auth-text {
+    display: none !important;
+  }
+
+  .btn-login-responsive .auth-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .about-topbar button:not(.btn-login-responsive) {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ── Filter Banner Button ──────────────────────────────── */
+.btn-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  width: 160px;
+  padding: 0 16px;
+  border-radius: 24px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--fg3);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.btn-filter-banner:hover {
+  background: var(--bg-cool);
+  color: var(--fg1);
+}
+
+.btn-filter-banner.is-active {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+}
+
+.btn-filter-banner.is-active:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-filter-banner:active {
+  transform: translateY(1px);
+}
+
+.btn-filter-banner .btn-filter-left {
+  display: flex;
+  align-items: center;
+}
+
+.btn-filter-banner .btn-filter-center {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: 700;
+}
+
+.btn-filter-banner .btn-filter-right {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.btn-filter-banner .btn-filter-right.is-open {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 767px) {
+  .btn-filter-banner {
+    width: 100% !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    height: 44px !important;
+  }
+
+  .explore-toolbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+
+/* ── Password input show/hide button ────────────────────── */
+.btn-pass-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  z-index: 10;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-pass-toggle:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: var(--fg1);
+}
+
+
+
+
+
 

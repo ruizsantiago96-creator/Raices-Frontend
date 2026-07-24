@@ -330,3 +330,37 @@ export function useActualizarAvatar() {
     },
   })
 }
+
+/**
+ * @typedef {Object} EliminarAvatarResponse
+ * @property {boolean} exito - Si la operación fue exitosa
+ * @property {string} mensaje - Mensaje de confirmación
+ */
+
+/**
+ * Hook para eliminar la foto de perfil/avatar del usuario.
+ * DELETE /api/usuarios/avatar
+ * @returns {EliminarAvatarResponse}
+ */
+export function useEliminarAvatar() {
+  const qc = useQueryClient()
+  const { user } = useAuthStore()
+  return useMutation({
+    mutationFn: () => api.delete('/usuarios/avatar').then(r => r.data),
+    onSuccess: (data) => {
+      // Verificar que la operación fue exitosa antes de limpiar el avatar
+      if (!data.exito) {
+        throw new Error(data.mensaje ?? 'No se pudo eliminar el avatar')
+      }
+      // Limpiar la URL del avatar en el store global
+      if (user) {
+        const updatedUser = { ...user, avatar_url: null }
+        useAuthStore.setState({ user: updatedUser })
+        saveUser(updatedUser, getRememberMe())
+      }
+      // Invalidar queries para refrescar datos
+      qc.invalidateQueries({ queryKey: ['me'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+    },
+  })
+}

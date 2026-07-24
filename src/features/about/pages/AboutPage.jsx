@@ -24,7 +24,10 @@ export default function AboutPage() {
           <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>Inicio</button>
           {!token && (
             <>
-              <button onClick={() => nav('/auth')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>Iniciar sesión</button>
+              <button onClick={() => nav('/auth')} className="btn-login-responsive" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="auth-text">Iniciar sesión</span>
+                <span className="auth-icon" style={{ display: 'none' }}>{Icons.user({ s: 20 })}</span>
+              </button>
               <button onClick={() => nav('/auth?mode=register')} style={{ background: 'white', color: 'var(--primary-dark)', border: 'none', borderRadius: 'var(--radius-pill)', fontSize: 14, fontWeight: 700, padding: '10px 20px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Registrarse</button>
             </>
           )}
