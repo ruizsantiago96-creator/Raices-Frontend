@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import  LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
+import { LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
 import { useAuthStore } from '@features/auth'
 
 const VALUES = [
