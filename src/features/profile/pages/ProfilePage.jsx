@@ -75,9 +75,9 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       await update.mutateAsync({
-        full_name: form.full_name,
-        city: form.city,
-        state: form.state,
+        nombreCompleto: form.full_name,
+        ciudad: form.city,
+        estado: form.state,
         ...(form.avatar_url ? { avatar_url: form.avatar_url } : {}),
       })
       addToast('Perfil actualizado', 'success')
@@ -89,8 +89,8 @@ export default function ProfilePage() {
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
-  const avatarColor = hashColor(data?.full_name ?? '')
-  const initials = (data?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const avatarColor = hashColor(data?.nombreCompleto ?? '')
+  const initials = (data?.nombreCompleto ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const disabilities = data?.perfilNecesidades?.tiposDiscapacidad ?? []
   const stage = LIFE_STAGES.find(l => l.id === data?.perfilNecesidades?.life_stage)
 
@@ -153,7 +153,7 @@ export default function ProfilePage() {
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || data?.urlAvatar) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
                     {(avatarPreview || data?.urlAvatar) ? (
-                      <img src={avatarPreview || data?.urlAvatar} alt={data?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={avatarPreview || data?.urlAvatar} alt={data?.nombreCompleto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : initials}
                   </button>
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {Icons.mail({ s: 14 })} {data?.email}
                     </span>
-                    {(data?.city || data?.state) && (
+                    {(data?.ciudad || data?.estado) && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {Icons.mapPin({ s: 14 })} {[data?.ciudad, data?.estado].filter(Boolean).join(', ')}
                       </span>
