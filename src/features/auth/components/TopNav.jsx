@@ -45,7 +45,7 @@ export const TopNav = ({ currentPage, user, onLogout }) => {
           </button>
         )}
         {user && (
-          <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <Link to="/profile" className="topnav-profile-link" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
               background: user.avatar_url ? 'transparent' : hashColor(user.full_name ?? ''),

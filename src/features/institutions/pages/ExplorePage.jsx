@@ -95,7 +95,7 @@ export default function ExplorePage() {
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
         <TopNav currentPage="explore" />
 
-        <main className="responsive-main" style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 32px' }}>
+        <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700,          color: 'var(--fg1)', margin: '0 0 24px' }}>
             Explorar instituciones
           </h1>

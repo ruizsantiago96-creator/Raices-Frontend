@@ -93,7 +93,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <main id="main" className="responsive-main" style={{ maxWidth: 1200 }}>
+        <main id="main" className="responsive-main" style={{ '--main-max-width': '1200px' }}>
           {tab === 'overview' && <OverviewTab onNavigate={onTab} />}
           {tab === 'intelligence' && <IntelligenceTab />}
           {tab === 'institutions' && <InstitutionsTab />}
@@ -120,60 +120,65 @@ function AdminSidebar({ tab, onTab, pendingCount, alertCritical }) {
   ]
 
   return (
-    <nav aria-label="Panel de administración" className="admin-sidebar" style={{
-      width: 88, minHeight: '100vh', flexShrink: 0,
-      background: '#1A2E30', /* fondo oscuro para diferenciar del app de usuario */
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '16px 6px 20px', gap: 4, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+    <nav aria-label="Panel de administración" className="responsive-sidebar" style={{
+      background: '#001D26',
+      display: 'flex', flexDirection: 'column',
+      padding: '20px 12px', gap: 4,
     }}>
-      {/* Logo de admin */}
-      <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, flexShrink: 0 }}>
-        {Icons.shield({ s: 22 })}
+      {/* Brand logo at top */}
+      <div style={{ padding: '8px 12px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {Icons.shield({ s: 18 })}
+        </div>
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Admin</span>
       </div>
 
-      {NAV.map(item => {
-        const active = tab === item.key
-        return (
-          <button key={item.key} onClick={() => onTab(item.key)}
-            aria-current={active ? 'page' : undefined}
-            style={{
-              width: 76, minHeight: 64, background: 'none', border: 'none', cursor: 'pointer',
-              borderRadius: 10,
-              backgroundColor: active ? 'rgba(1,173,255,0.35)' : 'transparent',
-              outline: active ? '2px solid var(--primary)' : '2px solid transparent',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-              color: active ? '#7DD3DB' : 'rgba(255,255,255,0.6)',
-              fontFamily: 'var(--font-body)', fontWeight: active ? 800 : 500,
-              position: 'relative', padding: '8px 4px', transition: 'all 0.15s',
-            }}>
-            {item.icon({ s: 22 })}
-            {(item.badge > 0) && (
-              <span aria-label={`${item.badge} pendientes`} style={{
-                position: 'absolute', top: 6, right: 6,
-                minWidth: 18, height: 18, borderRadius: 9,
-                background: item.badgeColor, color: '#fff',
-                fontSize: 10, fontWeight: 700, padding: '0 4px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>{item.badge > 9 ? '9+' : item.badge}</span>
-            )}
-            <span style={{ fontSize: 11, lineHeight: 1.1, textAlign: 'center' }}>{item.label}</span>
-          </button>
-        )
-      })}
-
-      <div style={{ flex: 1 }} />
+      {/* Nav items */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        {NAV.map(item => {
+          const active = tab === item.key
+          return (
+            <button key={item.key} onClick={() => onTab(item.key)}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                borderRadius: 'var(--radius-md)',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                color: active ? '#fff' : 'rgba(255,255,255,0.55)',
+                transition: 'all 0.2s ease', padding: '10px 12px',
+                fontFamily: 'var(--font-body)', fontWeight: active ? 700 : 500,
+                fontSize: 14, textAlign: 'left', position: 'relative',
+              }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+              <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+              {(item.badge > 0) && (
+                <span aria-label={`${item.badge} pendientes`} style={{
+                  marginLeft: 'auto',
+                  minWidth: 18, height: 18, borderRadius: 9,
+                  background: item.badgeColor, color: '#fff',
+                  fontSize: 10, fontWeight: 700, padding: '0 4px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{item.badge > 9 ? '9+' : item.badge}</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Volver a la app */}
-      <Link to="/dashboard" style={{
-        width: 76, minHeight: 56, textDecoration: 'none',
-        borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-        color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
-        border: '1px solid rgba(255,255,255,0.12)',
-        transition: 'all 0.15s',
-      }}>
-        {Icons.arrowRight({ s: 18 })}
-        <span>Ir a app</span>
-      </Link>
+      <div style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+        <Link to="/dashboard" style={{
+          textDecoration: 'none',
+          display: 'flex', alignItems: 'center', gap: 12,
+          color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
+          padding: '10px 12px', borderRadius: 'var(--radius-md)',
+          transition: 'all 0.15s',
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
+          <span>Ir a app</span>
+        </Link>
+      </div>
     </nav>
   )
 }

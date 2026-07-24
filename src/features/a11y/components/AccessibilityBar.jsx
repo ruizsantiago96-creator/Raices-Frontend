@@ -87,10 +87,42 @@ function useSpeech() {
 export default function AccessibilityBar() {
   const a11y = useA11yStore()
   const [open, setOpen] = useState(false)
+  const [minimized, setMinimized] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const { supported: ttsSupported, speak, stop } = useSpeech()
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   const btnRef = useRef(null)
   const readingGuideRef = useRef(null)
   const flashRef = useRef(null)
+  const panelRef = useRef(null)
+  const triggerRef = useRef(null)
+
+  /* Cerrar panel al hacer click o tap fuera de él */
+  useEffect(() => {
+    if (!open) return
+
+    const handleClickOutside = (event) => {
+      if (
+        panelRef.current && !panelRef.current.contains(event.target) &&
+        triggerRef.current && !triggerRef.current.contains(event.target)
+      ) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [open])
 
   /* Aplica preferencias al <html> cada vez que cambian */
   useEffect(() => { applyA11yAttributes(a11y) }, [a11y.textScale, a11y.highContrast, a11y.easyRead, a11y.reducedMotion, a11y.colorblindMode, a11y.darkMode, a11y.largeCursor, a11y.readingGuide, a11y.highlightLinks, a11y.motorSpacing, a11y.visualAlerts])
@@ -209,23 +241,75 @@ export default function AccessibilityBar() {
   return (
     <>
       <ColorblindFilters />
-      {/* Botón flotante */}
-      <button
-        ref={btnRef}
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        aria-label="Opciones de accesibilidad"
-        style={{
-          position: 'fixed', right: 20, bottom: 20, zIndex: 1500,
-          width: 60, height: 60, borderRadius: '50%',
-          background: 'var(--primary)', color: '#fff', border: '3px solid #fff',
-          boxShadow: 'var(--shadow-lg)', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        {open ? I.close(26) : I.access(28)}
-      </button>
+      {/* Botón flotante y su pestaña colapsable */}
+      <div ref={triggerRef} style={{
+        position: 'fixed',
+        right: minimized ? 0 : 20,
+        bottom: isMobile ? 80 : 20,
+        zIndex: 1500,
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: minimized ? 'translateX(50%)' : 'none',
+      }}>
+        {/* Botón de minimizar/maximizar (solo visible en móvil) */}
+        {isMobile && (
+          <button
+            onClick={() => setMinimized(!minimized)}
+            aria-label={minimized ? 'Mostrar botón de accesibilidad' : 'Ocultar botón de accesibilidad'}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--primary-dark)',
+              border: '2px solid #fff',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              marginRight: minimized ? 4 : -8,
+              boxShadow: 'var(--shadow-sm)',
+              zIndex: 1510,
+              padding: 0,
+            }}
+          >
+            {minimized ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            )}
+          </button>
+        )}
+
+        <button
+          ref={btnRef}
+          onClick={() => {
+            if (minimized) {
+              setMinimized(false)
+            } else {
+              setOpen(o => !o)
+            }
+          }}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label="Opciones de accesibilidad"
+          style={{
+            width: 60, height: 60, borderRadius: '50%',
+            background: 'var(--primary)', color: '#fff', border: '3px solid #fff',
+            boxShadow: 'var(--shadow-lg)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: minimized ? 0.7 : 1,
+            transition: 'opacity 0.2s',
+          }}
+        >
+          {open ? I.close(26) : I.access(28)}
+        </button>
+      </div>
 
       {/* Panel con FocusTrap */}
       {open && (
@@ -238,6 +322,7 @@ export default function AccessibilityBar() {
           onDeactivate={() => { setOpen(false); btnRef.current?.focus() }}
         >
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="Opciones de accesibilidad"
           style={{
