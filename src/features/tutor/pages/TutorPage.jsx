@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useDependents, useAddDependent, useUpdateDependent, useDeleteDependent } from '../hooks/useDependents'
+import { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent } from '../hooks/useDependientes'
 import { useAIForDependent } from '../hooks/useAI'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
+import AddDependienteModal from '../components/AddDependienteModal'
 
 const RELATIONSHIPS = ['Hijo/a', 'Hermano/a', 'Nieto/a', 'Sobrino/a', 'Cónyuge', 'Tutor legal', 'Otro familiar']
 const DISABILITIES = ['Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial', 'TEA / Autismo', 'Síndrome de Down', 'Lenguaje', 'Múltiple', 'Otra']
@@ -29,19 +30,26 @@ export default function TutorPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
   const { addToast } = useUiStore()
-  const { data: dependents = [], isLoading } = useDependents()
-  const add = useAddDependent()
+  const { data: dependents = [], isLoading } = useDependientes()
+  const add = useAddDependiente()
   const update = useUpdateDependent()
   const del = useDeleteDependent()
 
-  const [editing, setEditing] = useState(null)   // objeto en edición, {} para nuevo, null cerrado
+  const [showCreate, setShowCreate] = useState(false)  // modal de creación
+  const [editing, setEditing] = useState(null)          // objeto en edición (null = cerrado)
   const [confirm, setConfirm] = useState(null)
 
-  const save = (form) => {
-    const mut = form.id ? update : add
-    mut.mutate(form, {
-      onSuccess: () => { addToast(form.id ? 'Datos actualizados' : 'Persona agregada', 'success'); setEditing(null) },
-      onError: (e) => addToast(e.response?.data?.message ?? 'Error al guardar', 'error'),
+  const handleCreate = (payload) => {
+    add.mutate(payload, {
+      onSuccess: () => { addToast('Persona agregada', 'success'); setShowCreate(false) },
+      onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
+    })
+  }
+
+  const handleUpdate = (form) => {
+    update.mutate(form, {
+      onSuccess: () => { addToast('Datos actualizados', 'success'); setEditing(null) },
+      onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
     })
   }
   const doDelete = () => del.mutate(confirm.id, {
@@ -65,7 +73,7 @@ export default function TutorPage() {
               <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '2px 0 0' }}>Personas a tu cuidado y sus necesidades</p>
             </div>
           </div>
-          <button className="btn-primary tutor-btn" onClick={() => setEditing({})} style={{ fontSize: 16 }}>
+          <button className="btn-primary tutor-btn" onClick={() => setShowCreate(true)} style={{ fontSize: 16 }}>
             {Icons.plus({ s: 18 })} Agregar persona
           </button>
         </div>
@@ -91,27 +99,34 @@ export default function TutorPage() {
               <p style={{ fontSize: 15, color: 'var(--fg2)', marginBottom: 24, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>
                 Registra a las personas que cuidas para guardar sus necesidades y encontrar instituciones adecuadas para cada una.
               </p>
-              <button className="btn-primary" onClick={() => setEditing({})} style={{ fontSize: 16 }}>
+              <button className="btn-primary" onClick={() => setShowCreate(true)} style={{ fontSize: 16 }}>
                 {Icons.plus({ s: 18 })} Agregar la primera persona
               </button>
             </div>
           ) : (
             <div className="tutor-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <DependentCard key={dep.id} dep={dep} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} />
+                <DependentCard key={dep?.id} dep={dep} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} />
               ))}
             </div>
           )}
         </div>
       </main>
 
+      {showCreate && (
+        <AddDependienteModal
+          onClose={() => setShowCreate(false)}
+          onSubmit={handleCreate}
+          saving={add.isPending}
+        />
+      )}
       {editing !== null && (
-        <DependentForm initial={editing} onCancel={() => setEditing(null)} onSave={save} saving={add.isPending || update.isPending} />
+        <DependentForm initial={editing} onCancel={() => setEditing(null)} onSave={handleUpdate} saving={update.isPending} />
       )}
       {confirm && (
         <ConfirmDialog
           title="Eliminar persona"
-          message={`¿Seguro que quieres eliminar a "${confirm.full_name}"? Se borrarán sus datos guardados.`}
+          message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos guardados.`}
           onConfirm={doDelete}
           onCancel={() => setConfirm(null)}
         />
@@ -122,9 +137,10 @@ export default function TutorPage() {
 
 /* ── Tarjeta de dependiente ── */
 function DependentCard({ dep, onEdit, onDelete }) {
-  const color = hashColor(dep.full_name)
-  const initials = (dep.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const stage = LIFE_STAGES.find(l => l.id === dep.life_stage)
+  const nombre = dep?.nombreCompleto || 'Sin nombre'
+  const color = hashColor(nombre)
+  const initials = nombre.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
+  const stage = LIFE_STAGES.find(l => l.id === dep?.etapaVida)
   const [showAI, setShowAI] = useState(false)
   const aiRec = useAIForDependent()
 
@@ -142,21 +158,21 @@ function DependentCard({ dep, onEdit, onDelete }) {
           {initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{dep.full_name}</h3>
-          <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '2px 0 0' }}>{dep.relationship}{stage ? ` · ${stage.label}` : ''}</p>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{nombre}</h3>
+          <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '2px 0 0' }}>{dep?.parentesco || 'Familiar'}{stage ? ` · ${stage.label}` : ''}</p>
         </div>
       </div>
 
-      {dep.disability_types?.length > 0 && (
+      {dep?.tiposDiscapacidad?.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {dep.disability_types.map((d, i) => (
+          {dep.tiposDiscapacidad.map((d, i) => (
             <span key={i} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 12.5, fontWeight: 600, background: `color-mix(in oklch, ${color} 14%, transparent)`, color }}>{d}</span>
           ))}
         </div>
       )}
 
-      {dep.notes && (
-        <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>{dep.notes}</p>
+      {dep?.notas && (
+        <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>{dep.notas}</p>
       )}
 
       <div className="tutor-card-actions" style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
@@ -168,7 +184,7 @@ function DependentCard({ dep, onEdit, onDelete }) {
         <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {Icons.edit({ s: 15 })} Editar
         </button>
-        <button onClick={onDelete} aria-label={`Eliminar a ${dep.full_name}`}
+        <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`}
           style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {Icons.x({ s: 16 })}
         </button>
@@ -178,7 +194,7 @@ function DependentCard({ dep, onEdit, onDelete }) {
       {showAI && (
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {Icons.sparkles({ s: 13 })} Próximos pasos para {dep.full_name}
+            {Icons.sparkles({ s: 13 })}            Próximos pasos para {nombre}
           </p>
 
           {aiRec.isPending && (
@@ -217,21 +233,21 @@ function DependentCard({ dep, onEdit, onDelete }) {
 /* ── Formulario (modal) ── */
 function DependentForm({ initial, onCancel, onSave, saving }) {
   const [form, setForm] = useState({
-    id: initial.id,
-    full_name: initial.full_name ?? '',
-    relationship: initial.relationship ?? RELATIONSHIPS[0],
-    disability_types: initial.disability_types ?? [],
-    life_stage: initial.life_stage ?? '',
-    notes: initial.notes ?? '',
+    id: initial?.id,
+    nombreCompleto: initial?.nombreCompleto ?? '',
+    parentesco: initial?.parentesco ?? RELATIONSHIPS[0],
+    tiposDiscapacidad: initial?.tiposDiscapacidad ?? [],
+    etapaVida: initial?.etapaVida ?? '',
+    notas: initial?.notas ?? '',
   })
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
   const toggleDis = (d) => setForm(f => ({
     ...f,
-    disability_types: f.disability_types.includes(d) ? f.disability_types.filter(x => x !== d) : [...f.disability_types, d],
+    tiposDiscapacidad: f.tiposDiscapacidad.includes(d) ? f.tiposDiscapacidad.filter(x => x !== d) : [...f.tiposDiscapacidad, d],
   }))
   const submit = (e) => {
     e.preventDefault()
-    if (!form.full_name.trim()) return
+    if (!form.nombreCompleto.trim()) return
     onSave(form)
   }
 
@@ -252,19 +268,19 @@ function DependentForm({ initial, onCancel, onSave, saving }) {
         <form onSubmit={submit}>
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-name" style={labelStyle}>Nombre completo</label>
-            <input id="dep-name" style={inputStyle} value={form.full_name} onChange={set('full_name')} required placeholder="Ej. Mateo Pérez" autoFocus />
+            <input id="dep-name" style={inputStyle} value={form.nombreCompleto} onChange={set('nombreCompleto')} required placeholder="Ej. Mateo Pérez" autoFocus />
           </div>
 
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-rel" style={labelStyle}>Relación contigo</label>
-            <select id="dep-rel" style={{ ...inputStyle, cursor: 'pointer' }} value={form.relationship} onChange={set('relationship')}>
+            <select id="dep-rel" style={{ ...inputStyle, cursor: 'pointer' }} value={form.parentesco} onChange={set('parentesco')}>
               {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
 
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-stage" style={labelStyle}>Etapa de vida</label>
-            <select id="dep-stage" style={{ ...inputStyle, cursor: 'pointer' }} value={form.life_stage} onChange={set('life_stage')}>
+            <select id="dep-stage" style={{ ...inputStyle, cursor: 'pointer' }} value={form.etapaVida} onChange={set('etapaVida')}>
               <option value="">Sin especificar</option>
               {LIFE_STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -274,7 +290,7 @@ function DependentForm({ initial, onCancel, onSave, saving }) {
             <legend style={{ ...labelStyle, padding: 0 }}>Tipo(s) de discapacidad</legend>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
               {DISABILITIES.map(d => {
-                const on = form.disability_types.includes(d)
+                const on = form.tiposDiscapacidad.includes(d)
                 return (
                   <button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on}
                     style={{ padding: '8px 14px', minHeight: 44, borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
@@ -289,14 +305,14 @@ function DependentForm({ initial, onCancel, onSave, saving }) {
 
           <div style={{ marginBottom: 24 }}>
             <label htmlFor="dep-notes" style={labelStyle}>Notas (opcional)</label>
-            <textarea id="dep-notes" value={form.notes} onChange={set('notes')} rows={3}
+            <textarea id="dep-notes" value={form.notas} onChange={set('notas')} rows={3}
               placeholder="Información útil: terapias actuales, intereses, lo que necesita..."
               style={{ ...inputStyle, height: 'auto', paddingTop: 12, paddingBottom: 12, resize: 'vertical', lineHeight: 1.5 }} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button type="button" className="btn-secondary" onClick={onCancel}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={saving || !form.full_name.trim()}>
+            <button type="submit" className="btn-primary" disabled={saving || !form.nombreCompleto.trim()}>
               {saving ? 'Guardando...' : form.id ? 'Guardar cambios' : 'Agregar'}
             </button>
           </div>

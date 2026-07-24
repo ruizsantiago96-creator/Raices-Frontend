@@ -7,4 +7,4 @@
 
 // ── Hooks ──────────────────────────────────────────────────────────
 export { useAI } from './hooks/useAI'
-export { useDependents } from './hooks/useDependents'
+export { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent } from './hooks/useDependientes'
