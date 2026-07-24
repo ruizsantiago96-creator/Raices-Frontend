@@ -4,7 +4,7 @@ import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
 import {
-  useAdminStats, useAdminAnalytics, useNeedsIntelligence,
+  useAdminStats, useNeedsIntelligence,
   useAllInstitutions, usePendingInstitutions, useApproveInstitution,
   useRejectInstitution, useToggleVerifyInstitution,
   useAdminUsers, useToggleUserActive, useChangeUserRole,
@@ -14,7 +14,6 @@ import {
 } from '../hooks/useAdmin'
 
 /* ════════════════════ Paleta y helpers ════════════════════ */
-const PALETTE = ['#01ADFF', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C', '#D46A6A']
 const ROLE_META = {
   admin: { bg: '#8B6BAE', label: 'Admin' },
   institution: { bg: '#01ADFF', label: 'Institución' },
@@ -33,17 +32,13 @@ const SEVERITY_META = {
   media: { color: '#D4944C', icon: Icons.target },
   info: { color: '#01ADFF', icon: Icons.sparkles },
 }
-const monthLabel = (m) => {
-  if (!m) return ''
-  const [y, mo] = m.split('-')
-  const names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  return `${names[Number(mo) - 1]} ${y.slice(2)}`
-}
+
 
 export default function AdminPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
-  const [tab, setTab] = useState('overview')
+  const [tab, setTab] = useState(() => localStorage.getItem('admin-tab') ?? 'overview')
+  const onTab = (t) => { setTab(t); localStorage.setItem('admin-tab', t) }
   const { data: pending = [] } = usePendingInstitutions()
   const { data: alerts = [] } = useAdminAlerts()
 
@@ -61,11 +56,11 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
-      <AdminSidebar tab={tab} onTab={setTab} pendingCount={pending.length} alertCritical={criticalCount} onLogout={logout} />
+      <AdminSidebar tab={tab} onTab={onTab} pendingCount={pending.length} alertCritical={criticalCount} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Top bar */}
-        <header style={{
+        <header className="admin-topbar" style={{
           position: 'sticky', top: 0, zIndex: 50, height: 64,
           background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -86,7 +81,7 @@ export default function AdminPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {criticalCount > 0 && (
-              <button onClick={() => setTab('alerts')}
+              <button onClick={() => onTab('alerts')}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: '1.5px solid #D46A6A', background: 'color-mix(in oklch, #D46A6A 10%, transparent)', color: '#D46A6A', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)' }}>
                 {Icons.shieldAlert({ s: 15 })} {criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica{criticalCount !== 1 ? 's' : ''}
               </button>
@@ -99,12 +94,12 @@ export default function AdminPage() {
         </header>
 
         <main id="main" className="responsive-main" style={{ maxWidth: 1200 }}>
-          {tab === 'overview' && <OverviewTab />}
+          {tab === 'overview' && <OverviewTab onNavigate={onTab} />}
           {tab === 'intelligence' && <IntelligenceTab />}
           {tab === 'institutions' && <InstitutionsTab />}
           {tab === 'users' && <UsersTab currentUserId={user?.id} />}
           {tab === 'reviews' && <ReviewsTab />}
-          {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={setTab} />}
+          {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
           {tab === 'settings' && <SettingsTab />}
         </main>
       </div>
@@ -113,7 +108,7 @@ export default function AdminPage() {
 }
 
 /* ════════════════════ Admin Sidebar ════════════════════ */
-function AdminSidebar({ tab, onTab, pendingCount, alertCritical, onLogout }) {
+function AdminSidebar({ tab, onTab, pendingCount, alertCritical }) {
   const NAV = [
     { key: 'overview',      label: 'Inicio',         icon: Icons.home },
     { key: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
@@ -216,71 +211,6 @@ function EmptyState({ icon, title, sub }) {
   )
 }
 
-/* ── Gráfica de barras vertical (SVG) ── */
-function BarChartV({ data, labelKey, valueKey, color = '#01ADFF', height = 160 }) {
-  if (!data?.length) return <p style={{ fontSize: 13, color: 'var(--fg3)', textAlign: 'center', padding: 24 }}>Sin datos suficientes</p>
-  const max = Math.max(...data.map(d => d[valueKey]), 1)
-  const barW = 100 / data.length
-  return (
-    <div>
-      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block' }}>
-        {data.map((d, i) => {
-          const h = (d[valueKey] / max) * (height - 24)
-          return (
-            <g key={i}>
-              <rect x={i * barW + barW * 0.18} y={height - 20 - h} width={barW * 0.64} height={h}
-                fill={color} rx="1.5" opacity={0.85} />
-              <text x={i * barW + barW / 2} y={height - 20 - h - 3} fontSize="6" fill="var(--fg2)" textAnchor="middle" fontWeight="700">{d[valueKey]}</text>
-            </g>
-          )
-        })}
-      </svg>
-      <div style={{ display: 'flex' }}>
-        {data.map((d, i) => (
-          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 11, color: 'var(--fg3)', fontWeight: 600 }}>
-            {labelKey === 'month' ? monthLabel(d[labelKey]) : d[labelKey]}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ── Dona (SVG) ── */
-function DonutChart({ data, labelKey, valueKey, size = 150 }) {
-  if (!data?.length) return <p style={{ fontSize: 13, color: 'var(--fg3)', textAlign: 'center', padding: 24 }}>Sin datos</p>
-  const total = data.reduce((s, d) => s + d[valueKey], 0) || 1
-  const r = 40, c = 2 * Math.PI * r
-  // Pre-compute segment offsets (no mutation during render)
-  const segments = data.reduce((acc, d) => {
-    const dash = (d[valueKey] / total) * c
-    const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].dash : 0
-    acc.push({ dash, offset })
-    return acc
-  }, [])
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-      <svg viewBox="0 0 100 100" style={{ width: size, height: size, transform: 'rotate(-90deg)', flexShrink: 0 }}>
-        {data.map((d, i) => (
-          <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={PALETTE[i % PALETTE.length]}
-            strokeWidth="14" strokeDasharray={`${segments[i].dash} ${c - segments[i].dash}`} strokeDashoffset={-segments[i].offset} />
-        ))}
-        <circle cx="50" cy="50" r="28" fill="var(--bg-surface)" />
-      </svg>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 140 }}>
-        {data.map((d, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: PALETTE[i % PALETTE.length], flexShrink: 0 }} />
-            <span style={{ color: 'var(--fg2)', flex: 1 }}>{d[labelKey]}</span>
-            <span style={{ fontWeight: 700, color: 'var(--fg1)' }}>{d[valueKey]}</span>
-            <span style={{ color: 'var(--fg3)', fontSize: 12 }}>{Math.round((d[valueKey] / total) * 100)}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 /* ── Barra horizontal con etiqueta ── */
 function HBar({ label, value, max, color = '#01ADFF', suffix }) {
   const pct = max > 0 ? (value / max) * 100 : 0
@@ -298,20 +228,17 @@ function HBar({ label, value, max, color = '#01ADFF', suffix }) {
 }
 
 /* ════════════════════ TAB: Resumen ════════════════════ */
-function OverviewTab() {
-  const { data: stats, isLoading: sLoad } = useAdminStats()
-  const { data: analytics, isLoading: aLoad } = useAdminAnalytics()
+function OverviewTab({ onNavigate }) {
+  const { data: stats, isLoading } = useAdminStats()
 
   const statCards = [
-    { label: 'Usuarios', value: stats?.total_users, sub: `${stats?.active_users ?? 0} activos`, icon: Icons.users, color: '#8B6BAE' },
-    { label: 'Instituciones', value: stats?.total_institutions, sub: `${stats?.verified_institutions ?? 0} verificadas`, icon: Icons.building, color: '#01ADFF' },
-    { label: 'Pendientes', value: stats?.pending_approval, sub: 'por aprobar', icon: Icons.shieldAlert, color: '#D4944C' },
-    { label: 'Reseñas', value: stats?.total_reviews, sub: stats?.avg_rating ? `${stats.avg_rating}★ promedio` : 'sin datos', icon: Icons.star, color: '#C4789A' },
-    { label: 'Publicaciones', value: stats?.total_posts, sub: `${stats?.total_groups ?? 0} grupos`, icon: Icons.message, color: '#7BA05B' },
-    { label: 'Perfiles completos', value: stats?.profiles_completed, sub: 'con datos de necesidades', icon: Icons.target, color: '#4BA3A3' },
+    { label: 'Usuarios', value: stats?.totalUsuarios, sub: `${stats?.usuariosActivos ?? 0} activos`, icon: Icons.users, color: '#8B6BAE' },
+    { label: 'Instituciones', value: stats?.totalInstituciones, sub: `${stats?.institucionesVerificadas ?? 0} verificadas`, icon: Icons.building, color: '#01ADFF' },
+    { label: 'Pendientes', value: stats?.aprobacionPendiente, sub: 'por aprobar', icon: Icons.shieldAlert, color: '#D4944C' },
+    { label: 'Reseñas', value: stats?.totalResenas, sub: stats?.calificacionPromedio != null ? `${stats.calificacionPromedio}★ promedio` : 'Sin calificaciones', icon: Icons.star, color: '#C4789A' },
+    { label: 'Publicaciones', value: stats?.totalPublicaciones, sub: `${stats?.totalGrupos ?? 0} grupos`, icon: Icons.message, color: '#7BA05B' },
+    { label: 'Perfiles completos', value: stats?.perfilesCompletados, sub: 'con datos de necesidades', icon: Icons.target, color: '#4BA3A3' },
   ]
-
-  const roleData = (analytics?.role_distribution ?? []).map(r => ({ ...r, label: ROLE_META[r.role]?.label ?? r.role }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -324,7 +251,7 @@ function OverviewTab() {
             </div>
             <div>
               <div style={{ fontSize: 26, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--fg1)', lineHeight: 1 }}>
-                {sLoad ? <Skeleton w={40} h={26} /> : (c.value ?? 0)}
+                {isLoading ? <Skeleton w={40} h={26} /> : (c.value ?? 0)}
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginTop: 4 }}>{c.label}</div>
               <div style={{ fontSize: 11, color: 'var(--fg3)' }}>{c.sub}</div>
@@ -333,65 +260,34 @@ function OverviewTab() {
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid-2-responsive">
-        <Card>
-          <SectionTitle icon={Icons.activity({ s: 18 })}>Registros por mes</SectionTitle>
-          {aLoad ? <Skeleton h={160} /> : <BarChartV data={analytics?.registrations_by_month} labelKey="month" valueKey="count" color="#8B6BAE" />}
-        </Card>
-        <Card>
-          <SectionTitle icon={Icons.users({ s: 18 })}>Distribución de roles</SectionTitle>
-          {aLoad ? <Skeleton h={150} /> : <DonutChart data={roleData} labelKey="label" valueKey="count" />}
-        </Card>
-      </div>
-
-      <div className="grid-2-responsive">
-        <Card>
-          <SectionTitle icon={Icons.building({ s: 18 })}>Instituciones por categoría</SectionTitle>
-          {aLoad ? <Skeleton h={150} /> : <DonutChart data={analytics?.institutions_by_category} labelKey="label" valueKey="count" />}
-        </Card>
-        <Card>
-          <SectionTitle icon={Icons.star({ s: 18 })}>Distribución de calificaciones</SectionTitle>
-          {aLoad ? <Skeleton h={160} /> : (
-            (analytics?.rating_distribution?.length ?? 0) === 0
-              ? <p style={{ fontSize: 13, color: 'var(--fg3)', textAlign: 'center', padding: 24 }}>Aún no hay reseñas</p>
-              : <BarChartV data={analytics.rating_distribution.map(r => ({ label: `${r.rating}★`, count: r.count }))} labelKey="label" valueKey="count" color="#D4944C" />
-          )}
-        </Card>
-      </div>
-
-      {/* Top institutions + cities */}
-      <div className="grid-2-1-responsive">
-        <Card>
-          <SectionTitle icon={Icons.target({ s: 18 })}>Top instituciones</SectionTitle>
-          {aLoad ? <Skeleton h={120} /> : (
+      {/* Resumen rápido */}
+      <Card>
+        <SectionTitle icon={Icons.activity({ s: 18 })}>Resumen del ecosistema</SectionTitle>
+          {isLoading ? <Skeleton h={100} /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(analytics?.top_institutions ?? []).map((inst, i) => (
-                <div key={inst.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{inst.name}</span>
-                  {inst.is_verified && <span style={{ color: '#7BA05B' }} title="Verificada">{Icons.check({ s: 14 })}</span>}
-                  <span style={{ fontSize: 13, color: '#D4944C', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
-                    {Icons.star({ s: 13, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--fg3)' }}>({inst.rating_count})</span>
-                </div>
-              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#8B6BAE' }}>{Icons.users({ s: 16 })}</span>
+                <span style={{ fontSize: 14, color: 'var(--fg2)' }}><b style={{ color: 'var(--fg1)' }}>{stats?.totalUsuarios ?? 0}</b> usuarios registrados ({stats?.usuariosActivos ?? 0} activos)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#01ADFF' }}>{Icons.building({ s: 16 })}</span>
+                <span style={{ fontSize: 14, color: 'var(--fg2)' }}><b style={{ color: 'var(--fg1)' }}>{stats?.totalInstituciones ?? 0}</b> instituciones ({stats?.institucionesVerificadas ?? 0} verificadas, {stats?.aprobacionPendiente ?? 0} pendientes)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#7BA05B' }}>{Icons.message({ s: 16 })}</span>
+                <span style={{ fontSize: 14, color: 'var(--fg2)' }}><b style={{ color: 'var(--fg1)' }}>{stats?.totalPublicaciones ?? 0}</b> publicaciones en {stats?.totalGrupos ?? 0} grupos</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#C4789A' }}>{Icons.star({ s: 16 })}</span>
+                <span style={{ fontSize: 14, color: 'var(--fg2)' }}><b style={{ color: 'var(--fg1)' }}>{stats?.totalResenas ?? 0}</b> reseñas{stats?.calificacionPromedio != null ? ` · ${stats.calificacionPromedio}★ promedio` : ''}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#4BA3A3' }}>{Icons.target({ s: 16 })}</span>
+                <span style={{ fontSize: 14, color: 'var(--fg2)' }}><b style={{ color: 'var(--fg1)' }}>{stats?.perfilesCompletados ?? 0}</b> perfiles con necesidades completadas</span>
+              </div>
             </div>
           )}
-        </Card>
-        <Card>
-          <SectionTitle icon={Icons.mapPin({ s: 18 })}>Cobertura geográfica</SectionTitle>
-          {aLoad ? <Skeleton h={120} /> : (
-            <div>
-              {(analytics?.institutions_by_city ?? []).map((c, i) => {
-                const max = Math.max(...(analytics?.institutions_by_city ?? []).map(x => x.count), 1)
-                return <HBar key={i} label={c.city} value={c.count} max={max} color={PALETTE[i % PALETTE.length]} />
-              })}
-            </div>
-          )}
-        </Card>
-      </div>
+      </Card>
     </div>
   )
 }
@@ -659,8 +555,8 @@ function UsersTab({ currentUserId }) {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Icons.users({ s: 32 })} title="No se encontraron usuarios" />
       ) : (
-        <div style={{ ...card, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="responsive-table-wrap" style={{ ...card, overflow: 'hidden' }}>
+          <table className="responsive-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
                 {['Usuario', 'Rol', 'Estado', 'Registrado', 'Acciones'].map(h => (
@@ -802,7 +698,7 @@ function SettingsTab() {
         <SectionTitle icon={Icons.target({ s: 18 })}>Configuración de la plataforma</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {SETTING_FIELDS.map(f => (
-            <div key={f.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingBottom: 14, borderBottom: '1px solid var(--border-color)' }}>
+            <div key={f.key} className="admin-settings-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingBottom: 14, borderBottom: '1px solid var(--border-color)' }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{f.label}</div>
               </div>
@@ -812,9 +708,9 @@ function SettingsTab() {
                     background: isOn(current[f.key]) ? 'var(--primary)' : 'var(--border-color)', transition: 'background 0.2s' }}>
                   <span style={{ position: 'absolute', top: 3, left: isOn(current[f.key]) ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                 </button>
-              ) : (
-                <input type={f.type} value={current[f.key] ?? ''} onChange={e => set(f.key, e.target.value)}
-                  style={{ width: 220, height: 38, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', fontFamily: 'var(--font-body)' }} />
+              ) : (                  <input type={f.type} value={current[f.key] ?? ''} onChange={e => set(f.key, e.target.value)}
+                  className="admin-settings-input"
+                  style={{ height: 38, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', fontFamily: 'var(--font-body)' }} />
               )}
             </div>
           ))}

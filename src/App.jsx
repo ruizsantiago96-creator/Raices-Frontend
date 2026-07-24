@@ -15,6 +15,7 @@ import ExplorePage from '@features/institutions/pages/ExplorePage'
 import SocialPage from '@features/social/pages/SocialPage'
 import FavoritesPage from '@features/favorites/pages/FavoritesPage'
 import InstitutionPage from '@features/institutions/pages/InstitutionPage'
+import CrearInstitucionPage from '@features/institutions/pages/CrearInstitucionPage'
 import AdminPage from '@features/admin/pages/AdminPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
@@ -148,6 +149,7 @@ export default function App() {
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
                 <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+                <Route path="/institution/nueva" element={<ProtectedRoute><CrearInstitucionPage /></ProtectedRoute>} />
                 <Route path="/institution/:id" element={<ProtectedRoute><InstitutionPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/familia" element={<ProtectedRoute><TutorPage /></ProtectedRoute>} />

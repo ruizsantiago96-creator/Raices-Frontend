@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
-import useProfile, { useUpdateProfile } from '@features/profile/hooks/useProfile'
-import { useAuthStore } from '@features/auth'
+import { useProfile, useUpdateProfile, useActualizarAvatar, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, CategoryTag, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
@@ -22,6 +21,7 @@ export default function ProfilePage() {
   const { logout, user: authUser } = useAuthStore()
   const { data, isLoading, isError } = useProfile()
   const update = useUpdateProfile()
+  const uploadAvatar = useActualizarAvatar()
   const { addToast } = useUiStore()
 
   const [editing, setEditing] = useState(false)
@@ -46,27 +46,29 @@ export default function ProfilePage() {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      addToast('Por favor selecciona una imagen', 'error')
+    // Validar tipo de archivo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
+    if (!allowedTypes.includes(file.type)) {
+      addToast('Formato no permitido. Usa PNG, JPG o JPEG', 'error')
       return
     }
+    // Validar tamaño (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
       addToast('La imagen no puede superar 5MB', 'error')
       return
     }
+    // Mostrar preview inmediato
     const reader = new FileReader()
-    reader.onload = async (ev) => {
-      const base64 = ev.target.result
-      setAvatarPreview(base64)
-      try {
-        await update.mutateAsync({ avatar_url: base64 })
-        addToast('Foto de perfil actualizada', 'success')
-      } catch {
-        setAvatarPreview(null)
-        addToast('Error al subir la foto', 'error')
-      }
-    }
+    reader.onload = (ev) => setAvatarPreview(ev.target.result)
     reader.readAsDataURL(file)
+    // Subir al endpoint real
+    try {
+      await uploadAvatar.mutateAsync(file)
+      addToast('Avatar actualizado correctamente', 'success')
+    } catch (err) {
+      setAvatarPreview(null)
+      addToast(err.response?.data?.mensaje ?? 'Error al subir la foto', 'error')
+    }
     e.target.value = ''
   }
 
@@ -155,7 +157,7 @@ export default function ProfilePage() {
                     ) : initials}
                   </button>
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
-                    {update.isPending ? (
+                    {uploadAvatar.isPending ? (
                       <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                     ) : (
                       Icons.camera({ s: 14 })

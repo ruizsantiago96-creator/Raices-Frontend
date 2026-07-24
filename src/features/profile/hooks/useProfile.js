@@ -4,17 +4,12 @@ import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth/store/authStore'
 import { useUiStore } from '@shared/stores/uiStore'
 
-/**
- * Hook para obtener el perfil del usuario autenticado.
- * Endpoint: GET /api/usuarios/perfil
- * Query Key: ['user', 'profile']
- */
-function useProfile() {
+export function useProfile() {
   const { token } = useAuthStore()
   const addToast = useUiStore(s => s.addToast)
 
   const query = useQuery({
-    queryKey: ['user', 'profile'],
+    queryKey: ['perfil'],
     queryFn: () => api.get('/usuarios/perfil').then(r => r.data),
     enabled: !!token,
   })
@@ -38,8 +33,8 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (data) => api.put('/usuarios/perfil', data).then(r => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['user', 'profile'] })
-      qc.invalidateQueries({ queryKey: ['me'] })
+      qc.invalidateQueries({ queryKey: ['perfil'] })
+      qc.invalidateQueries({ queryKey: ['yo'] })
     },
   })
 }
@@ -47,7 +42,7 @@ export function useUpdateProfile() {
 export function useSaveProfiling() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.post('/usuarios/profiling', data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['user', 'profile'] }),
+    mutationFn: (data) => api.post('/usuarios/perfil-necesidades', data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['perfil'] }),
   })
 }

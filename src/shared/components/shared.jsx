@@ -69,12 +69,10 @@ export const CategoryTag = ({ label, color }) => (
 )
 
 export const CATEGORY_COLORS = {
-  'Terapia': '#01ADFF',
-  'Educación': '#8B6BAE',
-  'Empleo': '#D4944C',
-  'Comunidad': '#4BA3A3',
-  'Salud': '#C4789A',
-  'Recreación': '#7BA05B',
+  'funcional': '#01ADFF',
+  'educativo': '#8B6BAE',
+  'laboral': '#D4944C',
+  'social': '#4BA3A3',
 }
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
