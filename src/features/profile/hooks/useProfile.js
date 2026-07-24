@@ -3,18 +3,18 @@ import api from '@shared/lib/api'
 
 export function useProfile() {
   return useQuery({
-    queryKey: ['profile'],
-    queryFn: () => api.get('/users/profile').then(r => r.data),
+    queryKey: ['perfil'],
+    queryFn: () => api.get('/usuarios/perfil').then(r => r.data),
   })
 }
 
 export function useUpdateProfile() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.put('/users/profile', data).then(r => r.data),
+    mutationFn: (data) => api.put('/usuarios/perfil', data).then(r => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['profile'] })
-      qc.invalidateQueries({ queryKey: ['me'] })
+      qc.invalidateQueries({ queryKey: ['perfil'] })
+      qc.invalidateQueries({ queryKey: ['yo'] })
     },
   })
 }
@@ -22,7 +22,7 @@ export function useUpdateProfile() {
 export function useSaveProfiling() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.post('/users/profiling', data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] }),
+    mutationFn: (data) => api.post('/usuarios/perfil-necesidades', data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['perfil'] }),
   })
 }

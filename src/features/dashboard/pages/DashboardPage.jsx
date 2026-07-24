@@ -4,7 +4,7 @@ import { useDiscovery } from '@features/institutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useAINextSteps } from '../../tutor/hooks/useAI'
 import { useAuthStore } from '@features/auth'
-import { Icons, LeafIcon, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
+import { Icons, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import { NotificationBell } from '@features/notifications'
 
@@ -32,7 +32,7 @@ export default function DashboardPage() {
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
         <div className="scroll-reveal" style={{ marginBottom: 36 }}>
-          <div className="responsive-header" style={{ marginBottom: 8 }}>
+          <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
               {user?.avatar_url ? (
                 <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
         {/* Banner guía: completar perfil (persistente hasta completar) */}
         {!profileComplete && (
-          <div style={{ marginBottom: 32, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: 'var(--radius-md)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 24, boxShadow: 'var(--shadow-md)', flexWrap: 'wrap' }}>
+          <div className="dashboard-banner" style={{ marginBottom: 32, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: 'var(--radius-md)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 24, boxShadow: 'var(--shadow-md)', flexWrap: 'wrap' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 16%', background: 'rgba(255,255,255,0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.target({ s: 28 })}
             </div>

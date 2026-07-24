@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
@@ -7,16 +7,28 @@ import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
 import MapView from '../components/MapView'
 
 const CATEGORIES = Object.keys(CATEGORY_COLORS)
-const PAGE_SIZE = 6
+const PAGE_SIZE = 50
+
+const DISABILITY_TYPES = [
+  { value: '', label: 'Todos' },
+  { value: 'tea', label: 'TEA (Autismo)' },
+  { value: 'motriz', label: 'Motriz' },
+  { value: 'visual', label: 'Visual' },
+  { value: 'auditiva', label: 'Auditiva' },
+  { value: 'intelectual', label: 'Intelectual' },
+  { value: 'psicosocial', label: 'Psicosocial' },
+  { value: 'multiple', label: 'Múltiple' },
+  { value: 'otro', label: 'Otro' },
+]
 
 /* Mock data for blurred background cards */
 const MOCK_INSTITUTIONS = [
-  { id: 1, name: 'Centro de Terapia Familiar', category: 'Terapia', city: 'Ciudad de México', state: 'CDMX', description: 'Servicios de terapia familiar y de pareja con profesionales certificados.', rating_avg: 4.8, rating_count: 124 },
-  { id: 2, name: 'Instituto de Educación Inclusiva', category: 'Educación', city: 'Guadalajara', state: 'Jalisco', description: 'Programas educativos adaptados para niños y jóvenes con capacidades diferentes.', rating_avg: 4.6, rating_count: 89 },
-  { id: 3, name: 'Empleo Digno A.C.', category: 'Empleo', city: 'Monterrey', state: 'Nuevo León', description: 'Conectamos personas con discapacidad con empresas inclusivas.', rating_avg: 4.9, rating_count: 203 },
-  { id: 4, name: 'Red de Comunidad Autismo', category: 'Comunidad', city: 'Puebla', state: 'Puebla', description: 'Espacios de encuentro y apoyo para familias del espectro autista.', rating_avg: 4.7, rating_count: 156 },
-  { id: 5, name: 'Clínica de Bienestar Integral', category: 'Salud', city: 'Querétaro', state: 'Querétaro', description: 'Atención médica integral con enfoque en salud mental y física.', rating_avg: 4.5, rating_count: 78 },
-  { id: 6, name: 'Deporte y Recreación Adaptada', category: 'Recreación', city: 'Cancún', state: 'Quintana Roo', description: 'Actividades deportivas y recreativas para todas las capacidades.', rating_avg: 4.8, rating_count: 91 },
+  { id: 1, name: 'Centro de Terapia Familiar', category: 'funcional', city: 'Ciudad de México', state: 'CDMX', description: 'Servicios de terapia familiar y de pareja con profesionales certificados.', rating_avg: 4.8, rating_count: 124 },
+  { id: 2, name: 'Instituto de Educación Inclusiva', category: 'educativo', city: 'Guadalajara', state: 'Jalisco', description: 'Programas educativos adaptados para niños y jóvenes con capacidades diferentes.', rating_avg: 4.6, rating_count: 89 },
+  { id: 3, name: 'Empleo Digno A.C.', category: 'laboral', city: 'Monterrey', state: 'Nuevo León', description: 'Conectamos personas con discapacidad con empresas inclusivas.', rating_avg: 4.9, rating_count: 203 },
+  { id: 4, name: 'Red de Comunidad Autismo', category: 'social', city: 'Puebla', state: 'Puebla', description: 'Espacios de encuentro y apoyo para familias del espectro autista.', rating_avg: 4.7, rating_count: 156 },
+  { id: 5, name: 'Clínica de Bienestar Integral', category: 'funcional', city: 'Querétaro', state: 'Querétaro', description: 'Atención médica integral con enfoque en salud mental y física.', rating_avg: 4.5, rating_count: 78 },
+  { id: 6, name: 'Deporte y Recreación Adaptada', category: 'social', city: 'Cancún', state: 'Quintana Roo', description: 'Actividades deportivas y recreativas para todas las capacidades.', rating_avg: 4.8, rating_count: 91 },
 ]
 
 function useDebounce(value, delay) {
@@ -32,6 +44,11 @@ export default function ExplorePage() {
   const [params] = useSearchParams()
   const [search, setSearch] = useState(params.get('q') ?? '')
   const [category, setCategory] = useState(params.get('category') ?? '')
+  const [tipoDiscapacidad, setTipoDiscapacidad] = useState('')
+  const [edad, setEdad] = useState('')
+  const [ciudad, setCiudad] = useState('')
+
+  const [showFilters, setShowFilters] = useState(false)
   const [view, setView] = useState('grid')
   const [showMap, setShowMap] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -43,17 +60,17 @@ export default function ExplorePage() {
   const debouncedSearch = useDebounce(search, 400)
 
   const filters = {
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(category ? { category } : {}),
+    ...(debouncedSearch ? { busqueda: debouncedSearch } : {}),
+    ...(category ? { categoria: category } : {}),
+    ...(tipoDiscapacidad ? { tipoDiscapacidad } : {}),
+    ...(edad ? { edad } : {}),
+    ...(ciudad ? { ciudad } : {}),
   }
 
-  // Reset visibleCount when filters change (without useEffect to avoid cascading renders)
-  const prevFilterRef = useRef(`${debouncedSearch}|${category}`)
-  const currentFilterKey = `${debouncedSearch}|${category}`
-  if (prevFilterRef.current !== currentFilterKey) {
-    prevFilterRef.current = currentFilterKey
+  // Reset visibleCount when filters change
+  useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }
+  }, [debouncedSearch, category, tipoDiscapacidad, edad, ciudad])
 
   // Only call API when authenticated
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error } = useInstitutions(filters)
@@ -103,7 +120,7 @@ export default function ExplorePage() {
           </div>
 
           {/* Category pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
+          <div className="explore-category-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
             <button
               onClick={() => setCategory('')}
               style={{
@@ -232,14 +249,38 @@ export default function ExplorePage() {
       <main className="responsive-main">
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700,          color: 'var(--fg1)', margin: '0 0 24px' }}>
           Explorar instituciones
-        </h1>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        </h1>        <div className="explore-search-bar" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar instituciones, servicios, ciudades..."            style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-cool)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
+          <button onClick={() => setShowFilters(v => !v)} title="Filtros avanzados" style={{ height: 48, width: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 9999, cursor: 'pointer', border: '1px solid var(--border-color)',                background: showFilters || tipoDiscapacidad || edad || ciudad ? 'var(--primary)' : 'var(--bg-surface)', color: showFilters || tipoDiscapacidad || edad || ciudad ? 'white' : 'var(--fg3)', transition: 'all 0.2s', flexShrink: 0 }}>{Icons.filter({ s: 18 })}</button>
         </div>
-        <div className="responsive-header" style={{ flexWrap: 'wrap', marginBottom: 32 }}>
+
+        {/* Advanced filters panel */}
+        {showFilters && (
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '20px 24px', marginBottom: 24, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1 1 180px', minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Tipo de discapacidad</label>
+              <select value={tipoDiscapacidad} onChange={e => setTipoDiscapacidad(e.target.value)} style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                {DISABILITY_TYPES.map(dt => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Edad</label>
+              <input type="number" min="0" max="120" value={edad} onChange={e => setEdad(e.target.value)} placeholder="Ej. 25" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ flex: '1 1 180px', minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Ciudad</label>
+              <input type="text" value={ciudad} onChange={e => setCiudad(e.target.value)} placeholder="Ej. Monterrey" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            {(tipoDiscapacidad || edad || ciudad) && (
+              <button onClick={() => { setTipoDiscapacidad(''); setEdad(''); setCiudad('') }} style={{ height: 40, padding: '0 16px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, transition: 'all 0.2s' }}>{Icons.x({ s: 14 })} Limpiar</button>
+            )}
+          </div>
+        )}
+
+        <div className="responsive-header explore-category-pills" style={{ marginBottom: 32 }}>
           <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-surface)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
           {CATEGORIES.map(cat => {
             const active = category === cat
@@ -251,7 +292,7 @@ export default function ExplorePage() {
             {['grid', 'list'].map(v => <button key={v} onClick={() => setView(v)} title={v === 'grid' ? 'Vista cuadrícula' : 'Vista lista'} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', borderRadius: 8,                background: view === v && !showMap ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: view === v && !showMap ? 'var(--primary)' : 'var(--fg3)', cursor: 'pointer', transition: 'all 0.2s' }}>{v === 'grid' ? Icons.grid({ s: 16 }) : Icons.list({ s: 16 })}</button>)}
           </div>
         </div>
-        <div style={{ fontSize: 14, color: 'var(--fg3)', marginBottom: 20 }}>{loadingInstitutions ? 'Buscando...' : institutions.length === 0 ? 'Sin resultados' : `Mostrando ${Math.min(visibleCount, institutions.length)} de ${institutions.length} institución${institutions.length !== 1 ? 'es' : ''}`}{category && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {category}</span>}</div>
+        <div style={{ fontSize: 14, color: 'var(--fg3)', marginBottom: 20 }}>{loadingInstitutions ? 'Buscando...' : institutions.length === 0 ? 'Sin resultados' : `Mostrando ${Math.min(visibleCount, institutions.length)} de ${institutions.length} institución${institutions.length !== 1 ? 'es' : ''}`}{category && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {category}</span>}{tipoDiscapacidad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {DISABILITY_TYPES.find(d => d.value === tipoDiscapacidad)?.label || tipoDiscapacidad}</span>}{ciudad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {ciudad}</span>}</div>
         {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
         {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
           <>

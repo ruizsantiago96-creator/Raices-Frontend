@@ -11,7 +11,7 @@ export { default as ProtectedRoute } from './components/ProtectedRoute'
 export { TopNav } from './components/TopNav'
 
 // ── Hooks (business logic used by other features) ─────────────────
-export { useLogin, useRegister, useMe, useProfile, useUpdateProfile } from './hooks/useAuth'
+export { useLogin, useRegister, useMe, useProfile, useUpdateProfile, useActualizarAvatar } from './hooks/useAuth'
 export { useSessionVerify } from './hooks/useSessionVerify'
 
 // ── Store (auth state consumed by multiple features) ───────────────

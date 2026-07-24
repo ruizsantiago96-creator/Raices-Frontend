@@ -449,16 +449,17 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
   /* ── Page-specific mobile overrides ────────────────── */
   /* Landing page topbar */
-  .landing-topbar { padding: 0 16px !important; height: 56px !important; }
-  .landing-topbar .landing-nav { gap: 8px !important; }
-  .landing-topbar .landing-nav button { font-size: 13px !important; padding: 6px 10px !important; }
-  .landing-topbar .landing-auth { gap: 8px !important; }
-  .landing-section { padding: 48px 16px !important; }
-  .landing-section-title { font-size: 26px !important; }
-  .landing-section-sub { font-size: 15px !important; margin-bottom: 24px !important; }
-  .landing-cta { padding: 40px 16px !important; }
-  .landing-cta h2 { font-size: 26px !important; }
-  .landing-cta p { font-size: 15px !important; }
+  .landing-topbar { padding: 0 12px !important; height: 56px !important; }
+  .landing-topbar .landing-nav { gap: 4px !important; }
+  .landing-topbar .landing-nav button { font-size: 13px !important; padding: 6px 8px !important; }
+  .landing-topbar .landing-auth { gap: 6px !important; }
+  .landing-topbar .landing-auth .btn-primary { padding: 8px 14px !important; font-size: 13px !important; }
+  .landing-section { padding: 32px 16px !important; }
+  .landing-section-title { font-size: 24px !important; }
+  .landing-section-sub { font-size: 14px !important; margin-bottom: 20px !important; }
+  .landing-cta { padding: 32px 16px !important; }
+  .landing-cta h2 { font-size: 24px !important; }
+  .landing-cta p { font-size: 14px !important; }
 
   /* Explore page guest */
   .explore-guest-header { padding: 0 16px !important; height: 56px !important; }
@@ -723,6 +724,83 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   }
   .admin-sidebar span {
     display: none;
+  }
+  .admin-topbar {
+    padding: 0 16px !important;
+    height: 56px !important;
+  }
+  .admin-settings-input {
+    width: 160px !important;
+  }
+  .admin-settings-row {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  .dashboard-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    padding: 20px !important;
+  }
+  .dashboard-banner button {
+    width: 100% !important;
+  }
+  .dashboard-greeting {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+@media (max-width: 767px) {
+  .admin-topbar {
+    padding: 0 12px !important;
+    height: 52px !important;
+  }
+  .admin-settings-input {
+    width: 100% !important;
+  }
+  .dashboard-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    padding: 20px !important;
+  }
+  .dashboard-banner button {
+    width: 100% !important;
+  }
+  .dashboard-greeting {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .admin-settings-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .admin-settings-input {
+    width: 100% !important;
+  }
+  .topnav-username { display: none !important; }
+  .explore-search-bar {
+    flex-direction: column;
+  }
+  .explore-search-bar > button {
+    width: 100%;
+    height: 44px;
+  }
+  .explore-guest-overlay {
+    padding: 32px 20px !important;
+    margin: 0 8px !important;
+  }
+  .explore-guest-overlay h2 {
+    font-size: 22px !important;
+  }
+  .explore-guest-overlay-actions {
+    flex-direction: column !important;
+  }
+  .explore-guest-overlay-actions button {
+    width: 100% !important;
   }
 }
 
