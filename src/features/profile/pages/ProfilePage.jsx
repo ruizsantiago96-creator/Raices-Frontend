@@ -31,9 +31,9 @@ export default function ProfilePage() {
 
   const startEdit = () => {
     setForm({
-      full_name: data?.full_name ?? '',
-      city: data?.city ?? '',
-      state: data?.state ?? '',
+      full_name: data?.nombreCompleto ?? '',
+      city: data?.ciudad ?? '',
+      state: data?.estado ?? '',
       avatar_url: avatarPreview || data?.urlAvatar || '',
     })
     setEditing(true)
@@ -170,7 +170,7 @@ export default function ProfilePage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                      {data?.full_name ?? '—'}
+                      {data?.nombreCompleto ?? '—'}
                     </h2>
                     <span style={s.roleBadge}>{roleLabels[data?.role] ?? data?.role}</span>
                   </div>
@@ -180,7 +180,7 @@ export default function ProfilePage() {
                     </span>
                     {(data?.city || data?.state) && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {Icons.mapPin({ s: 14 })} {[data?.city, data?.state].filter(Boolean).join(', ')}
+                        {Icons.mapPin({ s: 14 })} {[data?.ciudad, data?.estado].filter(Boolean).join(', ')}
                       </span>
                     )}
                   </div>
@@ -273,21 +273,21 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
-                {data?.perfilNecesidades?.communication_modes?.length > 0 && (
+                {data?.perfilNecesidades?.modosComunicacion?.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modos de comunicación</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.perfilNecesidades?.communication_modes?.map((m, i) => (
+                      {data?.perfilNecesidades?.modosComunicacion?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {data?.perfilNecesidades?.mobility_needs?.length > 0 && (
+                {data?.perfilNecesidades?.necesidadesMovilidad?.length > 0 && (
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Necesidades de movilidad</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.perfilNecesidades?.mobility_needs?.map((m, i) => (
+                      {data?.perfilNecesidades?.necesidadesMovilidad?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
                       ))}
                     </div>
