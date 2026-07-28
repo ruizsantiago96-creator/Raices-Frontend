@@ -25,6 +25,10 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
     tiposDiscapacidad: [],
     etapaVida: '',
     notas: '',
+    // Campos para crear cuenta Firebase
+    crearCuenta: false,
+    email: '',
+    password: '',
   })
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -40,13 +44,23 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!form.nombreCompleto.trim()) return
-    onSubmit({
+    
+    const payload = {
       nombreCompleto: form.nombreCompleto.trim(),
       parentesco: form.parentesco,
       tiposDiscapacidad: form.tiposDiscapacidad,
       etapaVida: form.etapaVida || null,
       notas: form.notas,
-    })
+    }
+
+    // Incluir datos de cuenta si se activó la opción
+    if (form.crearCuenta && form.email.trim() && form.password) {
+      payload.crearCuenta = true
+      payload.email = form.email.trim()
+      payload.password = form.password
+    }
+
+    onSubmit(payload)
   }
 
   return (
@@ -56,7 +70,7 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
         role="dialog"
         aria-modal="true"
         aria-label="Agregar dependiente"
-        style={{ ...card, padding: 28, maxWidth: 540, width: '100%', margin: 'auto' }}
+        style={{ ...card, padding: 28, maxWidth: 540, width: '100%', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}
       >
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -149,6 +163,57 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
               })}
             </div>
           </fieldset>
+
+          {/* ── Crear cuenta para el dependiente ── */}
+          <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.crearCuenta}
+                onChange={(e) => setForm(f => ({ ...f, crearCuenta: e.target.checked }))}
+                style={{ width: 20, height: 20, accentColor: 'var(--primary)' }}
+              />
+              <div>
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>Crear cuenta de acceso</span>
+                <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>
+                  Permite que {form.nombreCompleto || 'esta persona'} inicie sesión en la plataforma
+                </p>
+              </div>
+            </label>
+
+            {form.crearCuenta && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label htmlFor="dep-email" style={labelStyle}>Correo electrónico</label>
+                  <input
+                    id="dep-email"
+                    type="email"
+                    style={inputStyle}
+                    value={form.email}
+                    onChange={set('email')}
+                    required
+                    placeholder="ejemplo@correo.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dep-password" style={labelStyle}>Contraseña</label>
+                  <input
+                    id="dep-password"
+                    type="password"
+                    style={inputStyle}
+                    value={form.password}
+                    onChange={set('password')}
+                    required={form.crearCuenta}
+                    placeholder="Mínimo 8 caracteres"
+                    minLength={8}
+                  />
+                  <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>
+                    La cuenta se creará en Firebase para que puedan iniciar sesión
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* ── Notas ── */}
           <div style={{ marginBottom: 24 }}>

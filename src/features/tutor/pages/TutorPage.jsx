@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent, useUpdateDependentFeatures, useVincularPCD } from '../hooks/useDependientes'
+import { useRegisterDependiente } from '../hooks/usePermisos'
 import { useAIForDependent } from '../hooks/useAI'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import AddDependienteModal from '../components/AddDependienteModal'
+import PermissionsModal from '../components/PermissionsModal'
 
 function hashColor(str = '') {
   let h = 0
@@ -24,6 +26,7 @@ export default function TutorPage() {
   const { data: catalogos } = useCatalogos()
   const { data: dependents = [], isLoading } = useDependientes()
   const add = useAddDependiente()
+  const register = useRegisterDependiente()
   const update = useUpdateDependent()
   const del = useDeleteDependent()
 
@@ -40,12 +43,30 @@ export default function TutorPage() {
   const updateFeatures = useUpdateDependentFeatures()
   const vincularPCD = useVincularPCD()
   const [showVincular, setShowVincular] = useState(false)
+  const [permissionsFor, setPermissionsFor] = useState(null) // { id, nombreCompleto } para modal de permisos
 
   const handleCreate = (payload) => {
-    add.mutate(payload, {
-      onSuccess: () => { addToast('Persona agregada', 'success'); setShowCreate(false) },
-      onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
-    })
+    // Si se solicita crear cuenta, registrar primero
+    if (payload.crearCuenta && payload.email && payload.password) {
+      add.mutate(payload, {
+        onSuccess: (newDep) => {
+          // Crear la cuenta Firebase para el dependiente recién creado
+          register.mutate(
+            { email: payload.email, password: payload.password, dependienteId: newDep?.id },
+            {
+              onSuccess: () => { addToast('Persona y cuenta creadas', 'success'); setShowCreate(false) },
+              onError: (e) => addToast('Persona creada, pero error al crear cuenta: ' + (e?.message ?? 'Error'), 'warning'),
+            }
+          )
+        },
+        onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
+      })
+    } else {
+      add.mutate(payload, {
+        onSuccess: () => { addToast('Persona agregada', 'success'); setShowCreate(false) },
+        onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
+      })
+    }
   }
 
   const handleUpdate = (form) => {
@@ -119,7 +140,7 @@ export default function TutorPage() {
           ) : (
             <div className="tutor-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <DependentCard key={dep?.id} dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} />
+                <DependentCard key={dep?.id} dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} />
               ))}
             </div>
           )}
@@ -133,7 +154,12 @@ export default function TutorPage() {
         <DependentForm initial={editing} onCancel={() => setEditing(null)} onSave={handleUpdate} saving={update.isPending} relationships={RELATIONSHIPS} lifeStages={LIFE_STAGES} disabilities={DISABILITIES} />
       )}
       {confirm && (
-        <ConfirmDialog title="Eliminar persona" message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos guardados.`} onConfirm={doDelete} onCancel={() => setConfirm(null)} />
+        <ConfirmDialog
+          title="Eliminar persona"
+          message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos guardados.`}
+          onConfirm={doDelete}
+          onCancel={() => setConfirm(null)}
+        />
       )}
       {configuringFeatures && (
         <FeaturesConfigModal dependent={configuringFeatures} features={AVAILABLE_FEATURES} onSave={handleFeaturesSave} onCancel={() => setConfiguringFeatures(null)} saving={updateFeatures.isPending} />
@@ -141,12 +167,19 @@ export default function TutorPage() {
       {showVincular && (
         <VincularPCDModal onVincular={(pcdUserId) => { vincularPCD.mutate(pcdUserId, { onSuccess: () => { addToast('Persona vinculada exitosamente', 'success'); setShowVincular(false) }, onError: (e) => addToast(e?.message ?? 'Error al vincular', 'error') }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />
       )}
+      {permissionsFor && (
+        <PermissionsModal
+          dependienteId={permissionsFor.id}
+          dependienteName={permissionsFor.nombreCompleto || 'esta persona'}
+          onClose={() => setPermissionsFor(null)}
+        />
+      )}
     </div>
   )
 }
 
 /* ── Tarjeta de dependiente ── */
-function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeatures }) {
+function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeatures, onPermissions }) {
   const nombre = dep?.nombreCompleto || 'Sin nombre'
   const color = hashColor(nombre)
   const initials = nombre.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
@@ -175,10 +208,24 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
       )}
       {dep?.notas && (<p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>{dep.notas}</p>)}
       <div className="tutor-card-actions" style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
-        <button onClick={handleAIToggle} className="btn-secondary" aria-expanded={showAI} style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{Icons.sparkles({ s: 15 })} {showAI ? 'Ocultar IA' : 'Recomendaciones IA'}</button>
-        <button onClick={onConfigureFeatures} className="btn-secondary" title="Configurar permisos" style={{ fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{Icons.shield({ s: 15 })} Permisos</button>
-        <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{Icons.edit({ s: 15 })} Editar</button>
-        <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`} style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 16 })}</button>
+        <button onClick={handleAIToggle} className="btn-secondary"
+          aria-expanded={showAI}
+          style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {Icons.sparkles({ s: 15 })} {showAI ? 'Ocultar IA' : 'Recomendaciones IA'}
+        </button>
+        <button onClick={onConfigureFeatures} className="btn-secondary" title="Configurar features" style={{ fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {Icons.shield({ s: 15 })} Features
+        </button>
+        <button onClick={() => onPermissions({ id: dep.id, nombreCompleto: dep.nombreCompleto })} className="btn-secondary" style={{ fontSize: 13, padding: '10px 12px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-label="Gestionar permisos">
+          {Icons.lock({ s: 15 })} Permisos
+        </button>
+        <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {Icons.edit({ s: 15 })} Editar
+        </button>
+        <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`}
+          style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {Icons.x({ s: 16 })}
+        </button>
       </div>
       {showAI && (
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
@@ -283,7 +330,7 @@ function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, savin
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icons.shield({ s: 22 })}</div>
-            <div><h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Permisos de {nombre}</h2><p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>Controla qué secciones puede ver esta persona</p></div>
+            <div><h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Features de {nombre}</h2><p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>Controla qué secciones puede ver esta persona</p></div>
           </div>
           <button onClick={onCancel} aria-label="Cerrar" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 18 })}</button>
         </div>
