@@ -187,7 +187,7 @@ export function useToggleUserActive() {
 export function useChangeUserRole() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, role }) => api.patch(`/administracion/usuarios/${id}/rol`, { rol: role }).then(r => r.data),
+    mutationFn: ({ id, role }) => api.patch(`/administracion/usuarios/${id}/rol`, { rol: role, role: role }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
@@ -244,5 +244,14 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (settings) => api.put('/administracion/configuracion', settings).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
+  })
+}
+
+export function useAdminActiveUsersDetail() {
+  return useQuery({
+    queryKey: ['admin', 'active-users-detail'],
+    queryFn: () => api.get('/administracion/visitantes-activos').then(r => r.data),
+    staleTime: 1000 * 30, // Refrescar cada 30 segundos
+    retry: false,
   })
 }

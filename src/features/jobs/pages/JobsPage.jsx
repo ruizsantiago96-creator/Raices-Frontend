@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { useJobs, useAppliedJobIds, useApplyJob, useMyApplications, useCreateJob } from '../hooks/useJobs'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons } from '@shared/components/shared'
 import { AppSidebar, TopNav, useMe } from '@features/auth'
-
-const MODALITIES = ['Todos', 'presencial', 'remoto', 'híbrido']
 
 const STATUS_LABELS = { pending: 'Enviada', reviewed: 'En revisión', accepted: 'Aceptada', rejected: 'No seleccionado' }
 const STATUS_COLORS = { pending: '#D4944C', reviewed: '#01ADFF', accepted: '#1F8049', rejected: '#B0434B' }
@@ -39,14 +38,14 @@ function CreateJobModal({ onClose }) {
           <div><label style={labelStyle}>Título *</label><input required value={form.titulo} onChange={e => update('titulo', e.target.value)} placeholder="Ej: Terapeuta Ocupacional" style={inputStyle} /></div>
           <div><label style={labelStyle}>Descripción</label><textarea rows={3} value={form.descripcion} onChange={e => update('descripcion', e.target.value)} placeholder="Describe la vacante..." style={{ ...inputStyle, resize: 'vertical' }} /></div>
           <div><label style={labelStyle}>Requisitos</label><textarea rows={2} value={form.requisitos} onChange={e => update('requisitos', e.target.value)} placeholder="Requisitos del puesto..." style={{ ...inputStyle, resize: 'vertical' }} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>Modalidad</label>
               <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="presencial">Presencial</option><option value="remoto">Remoto</option><option value="híbrido">Híbrido</option>
               </select></div>
             <div><label style={labelStyle}>Horario</label><input value={form.horario} onChange={e => update('horario', e.target.value)} placeholder="Lun-Vie 8:00-15:00" style={inputStyle} /></div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>Ciudad</label><input value={form.ciudad} onChange={e => update('ciudad', e.target.value)} placeholder="Mérida" style={inputStyle} /></div>
             <div><label style={labelStyle}>Estado</label><input value={form.estado} onChange={e => update('estado', e.target.value)} placeholder="Yucatán" style={inputStyle} /></div>
           </div>
@@ -92,22 +91,10 @@ function ApplicationModal({ job, onClose }) {
           <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 8 }}>
             Carta de presentación (opcional)
           </label>
-          <textarea
-            rows={5}
-            value={letter}
-            onChange={e => setLetter(e.target.value)}
-            placeholder="Cuéntanos por qué eres el candidato ideal para esta vacante…"
-            style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }}
-          />
+          <textarea rows={5} value={letter} onChange={e => setLetter(e.target.value)} placeholder="Cuéntanos por qué eres el candidato ideal para esta vacante…" style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-            <button type="button" onClick={onClose}
-              style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary" disabled={apply.isPending}
-              style={{ padding: '10px 24px', fontSize: 14 }}>
-              {apply.isPending ? 'Enviando…' : 'Enviar solicitud'}
-            </button>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={apply.isPending} style={{ padding: '10px 24px', fontSize: 14 }}>{apply.isPending ? 'Enviando…' : 'Enviar solicitud'}</button>
           </div>
         </form>
       </div>
@@ -201,10 +188,14 @@ export default function JobsPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
   const [modality, setModality] = useState('Todos')
-  const [tab, setTab] = useState('board') // board | applications
+  const [tab, setTab] = useState('board')
   const [applyTarget, setApplyTarget] = useState(null)
   const [showCreateJob, setShowCreateJob] = useState(false)
   const isInstitution = user?.rol === 'institution' || user?.rol === 'admin'
+  const { data: catalogos } = useCatalogos()
+
+  // Catálogos del backend
+  const MODALITIES = ['Todos', ...(catalogos?.modalidadesEmpleo ?? [])]
 
   const { data: jobs = [], isLoading } = useJobs({ modalidad: modality === 'Todos' ? undefined : modality })
   const { data: appliedIds = [] } = useAppliedJobIds()
@@ -240,7 +231,6 @@ export default function JobsPage() {
 
         {tab === 'board' ? (
           <>
-            {/* Filtros modalidad */}
             <div className="jobs-filters" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
               {MODALITIES.map(m => (
                 <button key={m} onClick={() => setModality(m)}

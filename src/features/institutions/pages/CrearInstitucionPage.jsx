@@ -2,25 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCrearInstitucion } from '../hooks/useInstitutions'
 import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle } from '@shared/components/shared'
-
-const CATEGORIES = [
-  { value: 'funcional', label: 'Funcional' },
-  { value: 'educativo', label: 'Educativo' },
-  { value: 'laboral', label: 'Laboral' },
-  { value: 'social', label: 'Social' },
-]
-
-const DISABILITY_TYPES = [
-  { value: 'tea', label: 'TEA (Autismo)' },
-  { value: 'motriz', label: 'Motriz' },
-  { value: 'visual', label: 'Visual' },
-  { value: 'auditiva', label: 'Auditiva' },
-  { value: 'intelectual', label: 'Intelectual' },
-  { value: 'psicosocial', label: 'Psicosocial' },
-  { value: 'multiple', label: 'Múltiple' },
-  { value: 'otro', label: 'Otro' },
-]
 
 const initialForm = {
   nombre: '',
@@ -42,6 +25,11 @@ export default function CrearInstitucionPage() {
   const { token } = useAuthStore()
   const navigate = useNavigate()
   const crear = useCrearInstitucion()
+  const { data: catalogos } = useCatalogos()
+
+  // Catálogos del backend
+  const CATEGORIES = catalogos?.categoriasInstitucion ?? []
+  const DISABILITY_TYPES = catalogos?.tiposDiscapacidad ?? []
 
   const isAuthenticated = !!token
 
@@ -83,14 +71,12 @@ export default function CrearInstitucionPage() {
         tiposDiscapacidad: form.tiposDiscapacidad.length > 0 ? form.tiposDiscapacidad : undefined,
       }
 
-      // Remove undefined keys
       const datosLimpios = Object.fromEntries(
         Object.entries(datos).filter(([, v]) => v !== undefined)
       )
 
       const result = await crear.mutateAsync(datosLimpios)
 
-      // Redirect to the newly created institution or explore page
       if (result?.id) {
         navigate(`/institution/${result.id}`)
       } else {
@@ -155,48 +141,25 @@ export default function CrearInstitucionPage() {
 
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>Nombre de la institución *</label>
-              <input
-                type="text"
-                value={form.nombre}
-                onChange={e => updateField('nombre', e.target.value)}
-                placeholder="Ej. Centro de Terapia Familiar"
-                style={inputStyle}
-                required
-              />
+              <input type="text" value={form.nombre} onChange={e => updateField('nombre', e.target.value)} placeholder="Ej. Centro de Terapia Familiar" style={inputStyle} required />
             </div>
 
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>Descripción</label>
-              <textarea
-                value={form.descripcion}
-                onChange={e => updateField('descripcion', e.target.value)}
-                placeholder="Describe brevemente la institución y sus servicios..."
-                rows={3}
-                style={{ ...inputStyle, height: 'auto', minHeight: 80, padding: '12px 16px', resize: 'vertical' }}
-              />
+              <textarea value={form.descripcion} onChange={e => updateField('descripcion', e.target.value)} placeholder="Describe brevemente la institución y sus servicios..." rows={3} style={{ ...inputStyle, height: 'auto', minHeight: 80, padding: '12px 16px', resize: 'vertical' }} />
             </div>
 
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>Categoría</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {CATEGORIES.map(cat => {
-                  const active = form.categoria === cat.value
-                  const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
+                  const catValue = cat.value ?? cat
+                  const catLabel = cat.label ?? cat
+                  const active = form.categoria === catValue
+                  const color = CATEGORY_COLORS[catValue] ?? 'var(--primary)'
                   return (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => updateField('categoria', active ? '' : cat.value)}
-                      style={{
-                        padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600,
-                        cursor: 'pointer', fontFamily: 'var(--font-body)',
-                        border: active ? 'none' : '1px solid var(--border-color)',
-                        background: active ? color : 'var(--bg-warm)',
-                        color: active ? 'white' : 'var(--fg3)',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      {cat.label}
+                    <button key={catValue} type="button" onClick={() => updateField('categoria', active ? '' : catValue)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
+                      {catLabel}
                     </button>
                   )
                 })}
@@ -210,38 +173,20 @@ export default function CrearInstitucionPage() {
               {Icons.mapPin({ s: 18 })} Ubicación
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
+            <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
               <div>
                 <label style={labelStyle}>Ciudad</label>
-                <input
-                  type="text"
-                  value={form.ciudad}
-                  onChange={e => updateField('ciudad', e.target.value)}
-                  placeholder="Ej. Monterrey"
-                  style={inputStyle}
-                />
+                <input type="text" value={form.ciudad} onChange={e => updateField('ciudad', e.target.value)} placeholder="Ej. Monterrey" style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Estado</label>
-                <input
-                  type="text"
-                  value={form.estado}
-                  onChange={e => updateField('estado', e.target.value)}
-                  placeholder="Ej. Nuevo León"
-                  style={inputStyle}
-                />
+                <input type="text" value={form.estado} onChange={e => updateField('estado', e.target.value)} placeholder="Ej. Nuevo León" style={inputStyle} />
               </div>
             </div>
 
             <div style={{ marginBottom: 0 }}>
               <label style={labelStyle}>Dirección</label>
-              <input
-                type="text"
-                value={form.direccion}
-                onChange={e => updateField('direccion', e.target.value)}
-                placeholder="Ej. Av. Universidad 1234"
-                style={inputStyle}
-              />
+              <input type="text" value={form.direccion} onChange={e => updateField('direccion', e.target.value)} placeholder="Ej. Av. Universidad 1234" style={inputStyle} />
             </div>
           </div>
 
@@ -251,38 +196,20 @@ export default function CrearInstitucionPage() {
               {Icons.phone({ s: 18 })} Contacto
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
+            <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
               <div>
                 <label style={labelStyle}>Teléfono</label>
-                <input
-                  type="tel"
-                  value={form.telefono}
-                  onChange={e => updateField('telefono', e.target.value)}
-                  placeholder="Ej. 81 1234 5678"
-                  style={inputStyle}
-                />
+                <input type="tel" value={form.telefono} onChange={e => updateField('telefono', e.target.value)} placeholder="Ej. 81 1234 5678" style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Correo electrónico</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => updateField('email', e.target.value)}
-                  placeholder="Ej. contacto@institucion.org"
-                  style={inputStyle}
-                />
+                <input type="email" value={form.email} onChange={e => updateField('email', e.target.value)} placeholder="Ej. contacto@institucion.org" style={inputStyle} />
               </div>
             </div>
 
             <div style={{ marginBottom: 0 }}>
               <label style={labelStyle}>Sitio web</label>
-              <input
-                type="url"
-                value={form.sitioWeb}
-                onChange={e => updateField('sitioWeb', e.target.value)}
-                placeholder="Ej. https://www.institucion.org"
-                style={inputStyle}
-              />
+              <input type="url" value={form.sitioWeb} onChange={e => updateField('sitioWeb', e.target.value)} placeholder="Ej. https://www.institucion.org" style={inputStyle} />
             </div>
           </div>
 
@@ -295,23 +222,13 @@ export default function CrearInstitucionPage() {
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {DISABILITY_TYPES.map(dt => {
-                const active = form.tiposDiscapacidad.includes(dt.value)
+                const dtValue = dt.id ?? dt.value ?? dt
+                const dtLabel = dt.label ?? dt
+                const active = form.tiposDiscapacidad.includes(dtValue)
                 return (
-                  <button
-                    key={dt.value}
-                    type="button"
-                    onClick={() => toggleDisability(dt.value)}
-                    style={{
-                      padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600,
-                      cursor: 'pointer', fontFamily: 'var(--font-body)',
-                      border: active ? 'none' : '1px solid var(--border-color)',
-                      background: active ? 'var(--primary)' : 'var(--bg-warm)',
-                      color: active ? 'white' : 'var(--fg3)',
-                      transition: 'all 0.2s',
-                    }}
-                  >
+                  <button key={dtValue} type="button" onClick={() => toggleDisability(dtValue)} style={{ padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
                     {active && <span style={{ marginRight: 4 }}>✓</span>}
-                    {dt.label}
+                    {dtLabel}
                   </button>
                 )
               })}
@@ -320,21 +237,10 @@ export default function CrearInstitucionPage() {
 
           {/* Botones */}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 48 }}>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="btn-secondary"
-              style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, minWidth: 140 }}
-              disabled={crear.isPending}
-            >
+            <button type="button" onClick={() => navigate(-1)} className="btn-secondary" style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, minWidth: 140 }} disabled={crear.isPending}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, minWidth: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-              disabled={crear.isPending}
-            >
+            <button type="submit" className="btn-primary" style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, minWidth: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} disabled={crear.isPending}>
               {crear.isPending ? (
                 <>
                   <span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />

@@ -31,7 +31,7 @@ function limpiarFiltros(filtros) {
  * @param {Object} inst - Objeto institución crudo de la API
  * @returns {Object} Institución con campos normalizados en inglés
  */
-function mapInstitucion(inst) {
+export function mapInstitucion(inst) {
   return {
     ...inst,
     name: inst.name ?? inst.nombre,
@@ -149,14 +149,22 @@ export function useDiscovery(filtros = {}) {
   const params = limpiarFiltros(filtros)
   return useQuery({
     queryKey: ['discovery', params],
-    queryFn: () => api.get('/descubrimiento', { params }).then(r => r.data),
+    queryFn: async () => {
+      const r = await api.get('/descubrimiento', { params })
+      const res = r.data
+      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      return data.map(mapInstitucion)
+    },
   })
 }
 
 export function useMiInstitucion() {
   return useQuery({
     queryKey: ['mi-institucion'],
-    queryFn: () => api.get('/instituciones/mi-institucion').then(r => r.data),
+    queryFn: () => api.get('/instituciones/mi-institucion').then(r => {
+      const inst = r.data?.datos ?? r.data
+      return mapInstitucion(inst)
+    }),
   })
 }
 

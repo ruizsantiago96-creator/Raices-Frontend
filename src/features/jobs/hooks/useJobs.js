@@ -1,6 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 
+function mapJob(job) {
+  if (!job) return job
+  return {
+    ...job,
+    title: job.title ?? job.titulo,
+    description: job.description ?? job.descripcion,
+    requirements: job.requirements ?? job.requisitos,
+    modality: job.modality ?? job.modalidad,
+    schedule: job.schedule ?? job.horario,
+    salary_range: job.salary_range ?? job.rangoSalario,
+    city: job.city ?? job.ciudad,
+    state: job.state ?? job.estado,
+    disability_inclusive: job.disability_inclusive ?? job.inclusivaDiscapacidad,
+    institution_name: job.institution_name ?? job.nombreInstitucion ?? job.institucionNombre ?? job.institucion?.nombre ?? job.nombre_institucion,
+    institution_verified: job.institution_verified ?? job.verificada ?? job.institucionVerificada ?? job.institucion?.verificada,
+    disability_types: job.disability_types ?? job.tiposDiscapacidad,
+  }
+}
+
 export function useJobs(filters = {}) {
   const params = new URLSearchParams()
   if (filters.buscar) params.set('buscar', filters.buscar)
@@ -10,7 +29,8 @@ export function useJobs(filters = {}) {
     queryKey: ['jobs', filters],
     queryFn: () => api.get(`/empleo?${params}`).then(r => {
       const res = r.data
-      return Array.isArray(res) ? res : (res?.datos ?? [])
+      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      return data.map(mapJob)
     }),
     staleTime: 1000 * 60 * 2,
   })
@@ -19,7 +39,10 @@ export function useJobs(filters = {}) {
 export function useJob(id) {
   return useQuery({
     queryKey: ['job', id],
-    queryFn: () => api.get(`/empleo/${id}`).then(r => r.data),
+    queryFn: () => api.get(`/empleo/${id}`).then(r => {
+      const inst = r.data?.datos ?? r.data
+      return mapJob(inst)
+    }),
     enabled: !!id,
   })
 }
@@ -40,7 +63,8 @@ export function useMyApplications() {
     queryKey: ['jobs', 'my-applications'],
     queryFn: () => api.get('/empleo/mis-postulaciones').then(r => {
       const res = r.data
-      return Array.isArray(res) ? res : (res?.datos ?? [])
+      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      return data.map(mapJob)
     }),
   })
 }
