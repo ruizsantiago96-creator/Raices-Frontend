@@ -8,3 +8,7 @@
 // ── Hooks ──────────────────────────────────────────────────────────
 export { useAI } from './hooks/useAI'
 export { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent } from './hooks/useDependientes'
+export { usePermisos, useUpdatePermisos, useRegisterDependiente, DEFAULT_PERMISOS, PERMISOS_CONFIG } from './hooks/usePermisos'
+
+// ── Components ─────────────────────────────────────────────────────
+export { default as PermissionsModal } from './components/PermissionsModal'

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent } from '../hooks/useDependientes'
+import { useRegisterDependiente } from '../hooks/usePermisos'
 import { useAIForDependent } from '../hooks/useAI'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import AddDependienteModal from '../components/AddDependienteModal'
+import PermissionsModal from '../components/PermissionsModal'
 
 const RELATIONSHIPS = ['Hijo/a', 'Hermano/a', 'Nieto/a', 'Sobrino/a', 'Cónyuge', 'Tutor legal', 'Otro familiar']
 const DISABILITIES = ['Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial', 'TEA / Autismo', 'Síndrome de Down', 'Lenguaje', 'Múltiple', 'Otra']
@@ -32,18 +34,37 @@ export default function TutorPage() {
   const { addToast } = useUiStore()
   const { data: dependents = [], isLoading } = useDependientes()
   const add = useAddDependiente()
+  const register = useRegisterDependiente()
   const update = useUpdateDependent()
   const del = useDeleteDependent()
 
   const [showCreate, setShowCreate] = useState(false)  // modal de creación
   const [editing, setEditing] = useState(null)          // objeto en edición (null = cerrado)
   const [confirm, setConfirm] = useState(null)
+  const [permissionsFor, setPermissionsFor] = useState(null) // { id, nombreCompleto } para modal de permisos
 
   const handleCreate = (payload) => {
-    add.mutate(payload, {
-      onSuccess: () => { addToast('Persona agregada', 'success'); setShowCreate(false) },
-      onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
-    })
+    // Si se solicita crear cuenta, registrar primero
+    if (payload.crearCuenta && payload.email && payload.password) {
+      add.mutate(payload, {
+        onSuccess: (newDep) => {
+          // Crear la cuenta Firebase para el dependiente recién creado
+          register.mutate(
+            { email: payload.email, password: payload.password, dependienteId: newDep?.id },
+            {
+              onSuccess: () => { addToast('Persona y cuenta creadas', 'success'); setShowCreate(false) },
+              onError: (e) => addToast('Persona creada, pero error al crear cuenta: ' + (e?.message ?? 'Error'), 'warning'),
+            }
+          )
+        },
+        onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
+      })
+    } else {
+      add.mutate(payload, {
+        onSuccess: () => { addToast('Persona agregada', 'success'); setShowCreate(false) },
+        onError: (e) => addToast(e?.message ?? 'Error al guardar', 'error'),
+      })
+    }
   }
 
   const handleUpdate = (form) => {
@@ -106,7 +127,7 @@ export default function TutorPage() {
           ) : (
             <div className="tutor-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <DependentCard key={dep?.id} dep={dep} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} />
+                <DependentCard key={dep?.id} dep={dep} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onPermissions={(data) => setPermissionsFor(data)} />
               ))}
             </div>
           )}
@@ -126,9 +147,16 @@ export default function TutorPage() {
       {confirm && (
         <ConfirmDialog
           title="Eliminar persona"
-          message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos guardados.`}
+          message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos y permisos.`}
           onConfirm={doDelete}
           onCancel={() => setConfirm(null)}
+        />
+      )}
+      {permissionsFor && (
+        <PermissionsModal
+          dependienteId={permissionsFor.id}
+          dependienteName={permissionsFor.nombreCompleto || 'esta persona'}
+          onClose={() => setPermissionsFor(null)}
         />
       )}
     </div>
@@ -136,7 +164,7 @@ export default function TutorPage() {
 }
 
 /* ── Tarjeta de dependiente ── */
-function DependentCard({ dep, onEdit, onDelete }) {
+function DependentCard({ dep, onEdit, onDelete, onPermissions }) {
   const nombre = dep?.nombreCompleto || 'Sin nombre'
   const color = hashColor(nombre)
   const initials = nombre.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
@@ -183,6 +211,9 @@ function DependentCard({ dep, onEdit, onDelete }) {
         </button>
         <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {Icons.edit({ s: 15 })} Editar
+        </button>
+        <button onClick={() => onPermissions({ id: dep.id, nombreCompleto: dep.nombreCompleto })} className="btn-secondary" style={{ fontSize: 13, padding: '10px 12px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-label="Gestionar permisos">
+          {Icons.shield({ s: 15 })} Permisos
         </button>
         <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`}
           style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
