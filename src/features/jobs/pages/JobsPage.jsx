@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useJobs, useAppliedJobIds, useApplyJob, useMyApplications } from '../hooks/useJobs'
+import { useJobs, useAppliedJobIds, useApplyJob, useMyApplications, useCreateJob } from '../hooks/useJobs'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
@@ -9,6 +9,61 @@ const MODALITIES = ['Todos', 'presencial', 'remoto', 'híbrido']
 
 const STATUS_LABELS = { pending: 'Enviada', reviewed: 'En revisión', accepted: 'Aceptada', rejected: 'No seleccionado' }
 const STATUS_COLORS = { pending: '#D4944C', reviewed: '#01ADFF', accepted: '#1F8049', rejected: '#B0434B' }
+
+function CreateJobModal({ onClose }) {
+  const [form, setForm] = useState({ titulo: '', descripcion: '', requisitos: '', modalidad: 'presencial', horario: '', rangoSalario: '', ciudad: '', estado: '', inclusivaDiscapacidad: true })
+  const createJob = useCreateJob()
+  const { addToast } = useUiStore()
+
+  const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await createJob.mutateAsync(form)
+      addToast('Vacante creada con éxito', 'success')
+      onClose()
+    } catch (err) {
+      addToast(err?.response?.data?.message ?? 'No se pudo crear la vacante', 'error')
+    }
+  }
+
+  const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }
+  const labelStyle = { fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px' }}>Crear vacante</h2>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div><label style={labelStyle}>Título *</label><input required value={form.titulo} onChange={e => update('titulo', e.target.value)} placeholder="Ej: Terapeuta Ocupacional" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Descripción</label><textarea rows={3} value={form.descripcion} onChange={e => update('descripcion', e.target.value)} placeholder="Describe la vacante..." style={{ ...inputStyle, resize: 'vertical' }} /></div>
+          <div><label style={labelStyle}>Requisitos</label><textarea rows={2} value={form.requisitos} onChange={e => update('requisitos', e.target.value)} placeholder="Requisitos del puesto..." style={{ ...inputStyle, resize: 'vertical' }} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div><label style={labelStyle}>Modalidad</label>
+              <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <option value="presencial">Presencial</option><option value="remoto">Remoto</option><option value="híbrido">Híbrido</option>
+              </select></div>
+            <div><label style={labelStyle}>Horario</label><input value={form.horario} onChange={e => update('horario', e.target.value)} placeholder="Lun-Vie 8:00-15:00" style={inputStyle} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div><label style={labelStyle}>Ciudad</label><input value={form.ciudad} onChange={e => update('ciudad', e.target.value)} placeholder="Mérida" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Estado</label><input value={form.estado} onChange={e => update('estado', e.target.value)} placeholder="Yucatán" style={inputStyle} /></div>
+          </div>
+          <div><label style={labelStyle}>Rango salarial</label><input value={form.rangoSalario} onChange={e => update('rangoSalario', e.target.value)} placeholder="$15,000 - $20,000 MXN" style={inputStyle} /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--fg2)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.inclusivaDiscapacidad} onChange={e => update('inclusivaDiscapacidad', e.target.checked)} style={{ width: 18, height: 18 }} />
+            Vacante inclusiva para personas con discapacidad
+          </label>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || createJob.isPending} style={{ padding: '10px 24px', fontSize: 14 }}>{createJob.isPending ? 'Creando...' : 'Crear vacante'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 function ApplicationModal({ job, onClose }) {
   const [letter, setLetter] = useState('')
@@ -148,8 +203,10 @@ export default function JobsPage() {
   const [modality, setModality] = useState('Todos')
   const [tab, setTab] = useState('board') // board | applications
   const [applyTarget, setApplyTarget] = useState(null)
+  const [showCreateJob, setShowCreateJob] = useState(false)
+  const isInstitution = user?.rol === 'institution' || user?.rol === 'admin'
 
-  const { data: jobs = [], isLoading } = useJobs({ modality: modality === 'Todos' ? undefined : modality })
+  const { data: jobs = [], isLoading } = useJobs({ modalidad: modality === 'Todos' ? undefined : modality })
   const { data: appliedIds = [] } = useAppliedJobIds()
   const { data: applications = [] } = useMyApplications()
 
@@ -167,6 +224,11 @@ export default function JobsPage() {
             <p style={{ fontSize: 15, color: 'var(--fg3)', margin: 0 }}>Vacantes en empresas que valoran la diversidad</p>
           </div>
           <div className="jobs-tabs" style={{ display: 'flex', gap: 8 }}>
+            {isInstitution && (
+              <button className="btn-primary" onClick={() => setShowCreateJob(true)} style={{ padding: '10px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {Icons.plus({ s: 16 })} Crear vacante
+              </button>
+            )}
             {['board', 'applications'].map(t => (
               <button key={t} onClick={() => setTab(t)}
                 style={{ padding: '10px 18px', borderRadius: 'var(--radius-pill)', border: tab === t ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: tab === t ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: tab === t ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: tab === t ? 700 : 500, fontSize: 14, fontFamily: 'var(--font-body)' }}>
@@ -236,6 +298,7 @@ export default function JobsPage() {
       </main>
 
       {applyTarget && <ApplicationModal job={applyTarget} onClose={() => setApplyTarget(null)} />}
+      {showCreateJob && <CreateJobModal onClose={() => setShowCreateJob(false)} />}
     </div>
   )
 }

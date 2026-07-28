@@ -37,7 +37,7 @@ export function useAdminAnalytics() {
 export function useNeedsIntelligence() {
   return useQuery({
     queryKey: ['admin', 'needs-intelligence'],
-    queryFn: () => api.get('/admin/needs-intelligence').then(r => r.data),
+    queryFn: () => api.get('/administracion/inteligencia-necesidades').then(r => r.data),
     staleTime: 1000 * 60 * 5,
   })
 }
@@ -98,7 +98,7 @@ export function useAllInstitutions() {
 export function usePendingInstitutions() {
   return useQuery({
     queryKey: ['admin', 'pending'],
-    queryFn: () => api.get('/administracion/instituciones/pending').then(r => {
+    queryFn: () => api.get('/administracion/instituciones/pendientes').then(r => {
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
       return data.map(mapInstitucionAdmin)
@@ -109,7 +109,7 @@ export function usePendingInstitutions() {
 export function useApproveInstitution() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.post(`/administracion/instituciones/${id}/approve`).then(r => r.data),
+    mutationFn: (id) => api.post(`/administracion/instituciones/${id}/aprobar`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
@@ -125,7 +125,7 @@ export function useRejectInstitution() {
 export function useToggleVerifyInstitution() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.patch(`/administracion/instituciones/${id}/verify`).then(r => r.data),
+    mutationFn: (id) => api.patch(`/administracion/instituciones/${id}/verificar`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
@@ -194,13 +194,16 @@ export function useChangeUserRole() {
 
 /* ── Reseñas ── */
 export function useAdminReviews() {
-  return useQuery({ queryKey: ['admin', 'reviews'], queryFn: () => api.get('/admin/reviews').then(r => r.data) })
+  return useQuery({ queryKey: ['admin', 'reviews'], queryFn: () => api.get('/administracion/resenas').then(r => {
+    const res = r.data
+    return Array.isArray(res) ? res : (res?.datos ?? [])
+  }) })
 }
 
 export function useDeleteReview() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/admin/reviews/${id}`).then(r => r.data),
+    mutationFn: (id) => api.delete(`/administracion/resenas/${id}`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
@@ -209,7 +212,7 @@ export function useDeleteReview() {
 export function useAdminAlerts() {
   return useQuery({
     queryKey: ['admin', 'alerts'],
-    queryFn: () => api.get('/admin/alerts').then(r => r.data),
+    queryFn: () => api.get('/administracion/alertas').then(r => r.data),
     staleTime: 1000 * 60 * 2, // 2 min — las alertas deben estar relativamente frescas
     refetchOnWindowFocus: true,
   })
@@ -217,13 +220,29 @@ export function useAdminAlerts() {
 
 /* ── Configuración ── */
 export function useAdminSettings() {
-  return useQuery({ queryKey: ['admin', 'settings'], queryFn: () => api.get('/admin/settings').then(r => r.data) })
+  return useQuery({ queryKey: ['admin', 'settings'],    queryFn: () => api.get('/administracion/configuracion').then(r => r.data) })
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.delete(`/administracion/usuarios/${id}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useAdminDetailedAnalytics() {
+  return useQuery({
+    queryKey: ['admin', 'detailed-analytics'],
+    queryFn: () => api.get('/administracion/analiticas').then(r => r.data),
+    staleTime: 1000 * 60 * 5,
+  })
 }
 
 export function useUpdateSettings() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (settings) => api.put('/admin/settings', settings).then(r => r.data),
+    mutationFn: (settings) => api.put('/administracion/configuracion', settings).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
   })
 }

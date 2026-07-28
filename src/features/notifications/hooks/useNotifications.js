@@ -9,7 +9,10 @@ export function useNotifications() {
 
   return useQuery({
     queryKey: ['notifications'],
-    queryFn: () => api.get('/notifications').then(r => r.data),
+    queryFn: () => api.get('/notificaciones').then(r => {
+      const res = r.data
+      return Array.isArray(res) ? res : (res?.datos ?? [])
+    }),
     // 🔒 No ejecutar la petición si no hay token activo.
     //    Esto evita errores 500 del servidor durante el logout,
     //    cuando el token ya fue eliminado del store pero React
@@ -23,7 +26,7 @@ export function useNotifications() {
 export function useMarkRead() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.patch(`/notifications/${id}/read`).then(r => r.data),
+    mutationFn: (id) => api.patch(`/notificaciones/${id}/leer`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 }
@@ -31,7 +34,7 @@ export function useMarkRead() {
 export function useMarkAllRead() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => api.patch('/notifications/read-all').then(r => r.data),
+    mutationFn: () => api.patch('/notificaciones/leer-todas').then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 }
@@ -60,26 +63,27 @@ export function useNotificationStream(onNotification) {
     // Cerrar conexión previa si existiera (evita duplicados)
     closeNotificationStream()
 
-    // Use full backend URL for EventSource (relative URLs go to FileZilla, not the API)
-    const baseUrl = import.meta.env.VITE_API_URL ?? '/api'
-    const es = new EventSource(`${baseUrl}/notifications/stream?token=${token}`)
-    esRef.current = es
-    setActiveEventSource(es)
-
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data)
-        onNotification?.(data)
-      } catch { /* ignore malformed data */ }
-    }
-
-    es.onerror = () => {
-      // Cerrar en cualquier error (token inválido, 401, o red).
-      // Esto evita reconexiones infinitas con tokens obsoletos.
-      // Trade-off: un corte de red temporal requiere refrescar la página.
-      closeNotificationStream()
-      esRef.current = null
-    }
+    // ⚠️ SSE temporalmente deshabilitado.
+    //    El endpoint /notificaciones/flujo devuelve 401 en el backend actual.
+    //    El polling de useNotifications() ya funciona correctamente.
+    //    Para reactivar: descomentar el bloque de abajo.
+    //
+    // const baseUrl = import.meta.env.VITE_API_URL ?? '/api'
+    // const es = new EventSource(`${baseUrl}/notificaciones/flujo?token=${token}`)
+    // esRef.current = es
+    // setActiveEventSource(es)
+    //
+    // es.onmessage = (e) => {
+    //   try {
+    //     const data = JSON.parse(e.data)
+    //     onNotification?.(data)
+    //   } catch { /* ignore malformed data */ }
+    // }
+    //
+    // es.onerror = () => {
+    //   closeNotificationStream()
+    //   esRef.current = null
+    // }
 
     return () => {
       closeNotificationStream()

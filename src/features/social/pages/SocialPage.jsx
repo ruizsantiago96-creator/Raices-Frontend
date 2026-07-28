@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react' // useRef/useEffect used in DirectMessages
+import { useState, useRef, useEffect } from 'react'
+import { useUiStore } from '@shared/stores/uiStore'
 import {
   useGroups,
   usePosts,
@@ -6,6 +7,11 @@ import {
   useToggleLike,
   useComments,
   useCreateComment,
+  useCreateGroup,
+  useJoinGroup,
+  useLeaveGroup,
+  useUpdatePost,
+  useDeletePost,
 } from '../hooks/useCommunity'
 import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
 import { useAuthStore } from '@features/auth'
@@ -59,15 +65,7 @@ function SkeletonCard() {
       }}
     >
       <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50% 50% 50% 14%',
-            background: 'var(--border-color)',
-            flexShrink: 0,
-          }}
-        />
+        <div style={{ width: 40, height: 40, borderRadius: '50% 50% 50% 14%', background: 'var(--border-color)', flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
           <div style={{ height: 14, width: '40%', background: 'var(--border-color)', borderRadius: 6, marginBottom: 6 }} />
           <div style={{ height: 11, width: '25%', background: 'var(--border-color)', borderRadius: 6 }} />
@@ -75,7 +73,6 @@ function SkeletonCard() {
       </div>
       <div style={{ height: 13, background: 'var(--border-color)', borderRadius: 6, marginBottom: 8 }} />
       <div style={{ height: 13, width: '80%', background: 'var(--border-color)', borderRadius: 6 }} />
-
     </div>
   )
 }
@@ -102,29 +99,15 @@ function CommentSection({ postId }) {
           <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <div
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'var(--primary-subtle)',
-                color: 'var(--primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 12,
-                fontWeight: 700,
-                flexShrink: 0,
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'var(--primary-subtle)', color: 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700, flexShrink: 0,
               }}
             >
               {(c.author_name?.[0] ?? '?').toUpperCase()}
             </div>
-            <div
-              style={{
-                background: 'var(--bg-warm)',
-                borderRadius: 10,
-                padding: '6px 10px',
-                flex: 1,
-              }}
-            >
+            <div style={{ background: 'var(--bg-warm)', borderRadius: 10, padding: '6px 10px', flex: 1 }}>
               <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--fg1)' }}>{c.author_name} </span>
               <span style={{ fontSize: 13, color: 'var(--fg2)' }}>{c.content}</span>
               <div style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 2 }}>{relativeDate(c.created_at)}</div>
@@ -135,39 +118,13 @@ function CommentSection({ postId }) {
 
       <form onSubmit={submit} style={{ display: 'flex', gap: 8, marginTop: 4 }}>
         <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          type="text" value={text} onChange={(e) => setText(e.target.value)}
           placeholder="Escribe un comentario…"
-          style={{
-            flex: 1,
-            padding: '8px 12px',
-            border: '1px solid var(--border-color)',
-            borderRadius: 20,
-            fontSize: 13,
-            fontFamily: 'var(--font-body)',
-            background: 'var(--bg-warm)',
-            color: 'var(--fg1)',
-            outline: 'none',
-          }}
+          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: 20, fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--bg-warm)', color: 'var(--fg1)', outline: 'none' }}
         />
         <button
-          type="submit"
-          disabled={!text.trim() || createComment.isPending}
-          style={{
-            background: 'var(--primary)',
-            border: 'none',
-            borderRadius: '50%',
-            width: 34,
-            height: 34,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            cursor: text.trim() && !createComment.isPending ? 'pointer' : 'not-allowed',
-            opacity: text.trim() && !createComment.isPending ? 1 : 0.5,
-            flexShrink: 0,
-          }}
+          type="submit" disabled={!text.trim() || createComment.isPending}
+          style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: text.trim() && !createComment.isPending ? 'pointer' : 'not-allowed', opacity: text.trim() && !createComment.isPending ? 1 : 0.5, flexShrink: 0 }}
         >
           {Icons.send({ s: 16 })}
         </button>
@@ -176,82 +133,79 @@ function CommentSection({ postId }) {
   )
 }
 
-function PostCard({ post, onLike }) {
+function PostCard({ post, onLike, currentUserId }) {
   const [showComments, setShowComments] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content)
+  const updatePost = useUpdatePost(post.id)
+  const deletePost = useDeletePost(post.id)
+  const { addToast } = useUiStore()
+  const isAuthor = post.author_id === currentUserId
+
+  const handleSaveEdit = () => {
+    if (!editContent.trim()) return
+    updatePost.mutate({ content: editContent }, {
+      onSuccess: () => { setEditing(false); addToast('Publicación actualizada', 'success') },
+      onError: () => addToast('No se pudo actualizar', 'error'),
+    })
+  }
+
+  const handleDelete = () => {
+    if (!window.confirm('¿Eliminar esta publicación?')) return
+    deletePost.mutate(undefined, {
+      onSuccess: () => addToast('Publicación eliminada', 'success'),
+      onError: () => addToast('No se pudo eliminar', 'error'),
+    })
+  }
 
   return (
-    <div
-      style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-md)',
-        padding: 20,
-        boxShadow: 'var(--shadow-sm)',
-        marginBottom: 16,
-      }}
-    >
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 16 }}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
         <Avatar name={post.author_name} src={post.author_avatar} />
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{post.author_name}</div>
-          <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
-            {relativeDate(post.created_at)}
-            {post.group_name ? <span style={{ marginLeft: 6 }}>· {post.group_name}</span> : null}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{post.author_name}</div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                {relativeDate(post.created_at)}
+                {post.group_name ? <span style={{ marginLeft: 6 }}>· {post.group_name}</span> : null}
+              </div>
+            </div>
+            {isAuthor && !editing && (
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', padding: 4, borderRadius: 4 }} title="Editar">
+                  {Icons.edit({ s: 14 })}
+                </button>
+                <button onClick={handleDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D46A6A', padding: 4, borderRadius: 4 }} title="Eliminar">
+                  {Icons.trash({ s: 14 })}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <p style={{ fontSize: 15, color: 'var(--fg1)', lineHeight: 1.6, margin: '0 0 16px', whiteSpace: 'pre-wrap' }}>
-        {post.content}
-      </p>
+      {editing ? (
+        <div style={{ marginBottom: 16 }}>
+          <textarea rows={3} value={editContent} onChange={e => setEditContent(e.target.value)}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button onClick={() => { setEditing(false); setEditContent(post.content) }} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-body)' }}>Cancelar</button>
+            <button onClick={handleSaveEdit} disabled={updatePost.isPending} className="btn-primary" style={{ padding: '6px 14px', fontSize: 13 }}>{updatePost.isPending ? 'Guardando...' : 'Guardar'}</button>
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: 15, color: 'var(--fg1)', lineHeight: 1.6, margin: '0 0 16px', whiteSpace: 'pre-wrap' }}>
+          {post.content}
+        </p>
+      )}
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          paddingTop: 12,
-          borderTop: '1px solid var(--border-color)',
-        }}
-      >
-        <button
-          onClick={onLike}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: post.liked_by_me ? '#e04e6e' : 'var(--fg3)',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: 0,
-            fontFamily: 'var(--font-body)',
-            transition: 'color 0.15s',
-          }}
-        >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
+        <button onClick={onLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: post.liked_by_me ? '#e04e6e' : 'var(--fg3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}>
           {Icons.heart({ s: 16, filled: !!post.liked_by_me })}
           {post.like_count ?? 0}
         </button>
-
-        <button
-          onClick={() => setShowComments((v) => !v)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: showComments ? 'var(--primary)' : 'var(--fg3)',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: 0,
-            fontFamily: 'var(--font-body)',
-            transition: 'color 0.15s',
-          }}
-        >
+        <button onClick={() => setShowComments((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: showComments ? 'var(--primary)' : 'var(--fg3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}>
           {Icons.message({ s: 16 })}
           {post.comment_count ?? 0}
         </button>
@@ -262,30 +216,71 @@ function PostCard({ post, onLike }) {
   )
 }
 
-/* ─── Quiénes somos la comunidad ─────────────────────────── */
+/* ─── Create Group Modal ────────────────────────────────── */
+function CreateGroupModal({ onClose }) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [isPublic, setIsPublic] = useState(true)
+  const createGroup = useCreateGroup()
+  const { addToast } = useUiStore()
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    createGroup.mutate({ nombre: name, descripcion: description, esPublico: isPublic }, {
+      onSuccess: () => { addToast('Grupo creado', 'success'); onClose() },
+      onError: () => addToast('No se pudo crear el grupo', 'error'),
+    })
+  }
+
+  const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 480, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px' }}>Crear grupo</h2>
+        <form onSubmit={handleSubmit}>
+          <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Nombre *</label>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Familias TEA Mérida" required style={{ ...inputStyle, marginBottom: 14 }} />
+          <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Descripción</label>
+          <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="¿De qué trata el grupo?" style={{ ...inputStyle, resize: 'vertical', marginBottom: 14 }} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--fg2)', cursor: 'pointer', marginBottom: 16 }}>
+            <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} style={{ width: 18, height: 18 }} />
+            Grupo público (visible para todos)
+          </label>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={!name.trim() || createGroup.isPending} style={{ padding: '10px 24px', fontSize: 14 }}>{createGroup.isPending ? 'Creando...' : 'Crear grupo'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Community members ─────────────────────────────────── */
 const COMMUNITY_MEMBERS = [
   { name: 'María García', role: 'Madre de familia', city: 'Mérida, Yucatán', bio: 'Mamá de Santiago (8 años, TEA). Comparte experiencias sobre terapia ABA y escuela inclusiva.', color: '#C4789A' },
-  { name: 'Carlos Hernández', role: 'Persona con discapacidad motriz', city: 'Ciudad de México', bio: 'Ingeniero en sistemas. Busca oportunidades de empleo inclusivo y compartió su experiencia con accesibilidad urbana.', color: '#01ADFF' },
-  { name: 'Ana Luisa Pérez', role: 'Tutora y cuidadora', city: 'Guadalajara, Jalisco', bio: 'Cuida a su hermano menor (22 años, discapacidad intelectual). Participa en el grupo de Terapia y Empleo.', color: '#8B6BAE' },
-  { name: 'Roberto Díaz', role: 'Psicólogo', city: 'Monterrey, Nuevo León', bio: 'Psicólogo especializado en discapacidad psicosocial. Conecta familias con terapeutas verificados.', color: '#D4944C' },
-  { name: 'Lucía Martínez', role: 'Maestra de educación especial', city: 'Puebla, Puebla', bio: '15 años de experiencia. Comparte recursos didácticos y estrategias de inclusión escolar.', color: '#7BA05B' },
-  { name: 'Fernando Ruiz', role: 'Persona con discapacidad visual', city: 'Oaxaca, Oaxaca', bio: 'Abogado defensor de derechos. Comparte información sobre trámites y apoyos legales para personas con discapacidad.', color: '#4BA3A3' },
-  { name: 'Patricia López', role: 'Madre de familia', city: 'Querétaro, Querétaro', bio: 'Mamá de gemelos (6 años). Comparte experiencias sobre vida independiente y actividades recreativas.', color: '#5A6C8C' },
-  { name: 'Jorge Morales', role: 'Tutor legal', city: 'León, Guanajuato', bio: 'Tutor de su sobrino (15 años, TEA). Comparte su recorrido por el sistema de educación especial.', color: '#D46A6A' },
+  { name: 'Carlos Hernández', role: 'Persona con discapacidad motriz', city: 'Ciudad de México', bio: 'Ingeniero en sistemas. Busca oportunidades de empleo inclusivo.', color: '#01ADFF' },
+  { name: 'Ana Luisa Pérez', role: 'Tutora y cuidadora', city: 'Guadalajara, Jalisco', bio: 'Cuida a su hermano menor (22 años, discapacidad intelectual).', color: '#8B6BAE' },
+  { name: 'Roberto Díaz', role: 'Psicólogo', city: 'Monterrey, Nuevo León', bio: 'Psicólogo especializado en discapacidad psicosocial.', color: '#D4944C' },
+  { name: 'Lucía Martínez', role: 'Maestra de educación especial', city: 'Puebla, Puebla', bio: '15 años de experiencia. Comparte recursos didácticos.', color: '#7BA05B' },
+  { name: 'Fernando Ruiz', role: 'Persona con discapacidad visual', city: 'Oaxaca, Oaxaca', bio: 'Abogado defensor de derechos.', color: '#4BA3A3' },
+  { name: 'Patricia López', role: 'Madre de familia', city: 'Querétaro, Querétaro', bio: 'Mamá de gemelos (6 años).', color: '#5A6C8C' },
+  { name: 'Jorge Morales', role: 'Tutor legal', city: 'León, Guanajuato', bio: 'Tutor de su sobrino (15 años, TEA).', color: '#D46A6A' },
 ]
 
 function AboutCommunity() {
   const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)' }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Header */}
       <div style={{ ...card, padding: 32, textAlign: 'center' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           {Icons.users({ s: 28 })}
         </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Quiénes forman parte de nuestra comunidad</h2>
         <p style={{ fontSize: 15, color: 'var(--fg2)', margin: 0, lineHeight: 1.6, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
-          Somos personas con discapacidad, familias, cuidadores y profesionales comprometidos con la inclusión. Juntos construimos un ecosistema de apoyo real.
+          Somos personas con discapacidad, familias, cuidadores y profesionales comprometidos con la inclusión.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 24 }}>
           {[
@@ -300,8 +295,6 @@ function AboutCommunity() {
           ))}
         </div>
       </div>
-
-      {/* Members grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
         {COMMUNITY_MEMBERS.map(m => (
           <div key={m.name} style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -325,7 +318,7 @@ function AboutCommunity() {
   )
 }
 
-/* ─── Mensajes directos ─────────────────────────────────── */
+/* ─── Direct Messages ───────────────────────────────────── */
 function DirectMessages({ currentUserId }) {
   const [activePartnerId, setActivePartnerId] = useState(null)
   const [text, setText] = useState('')
@@ -348,7 +341,6 @@ function DirectMessages({ currentUserId }) {
 
   return (
     <div className="grid-messages" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-      {/* Lista conversaciones */}
       <div style={{ borderRight: '1px solid var(--border-color)', overflowY: 'auto' }}>
         <div style={{ padding: '16px 16px 12px', fontWeight: 700, fontSize: 13, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>
           Mensajes
@@ -379,7 +371,6 @@ function DirectMessages({ currentUserId }) {
         )}
       </div>
 
-      {/* Panel de chat */}
       {activePartnerId ? (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontSize: 15, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -423,22 +414,30 @@ function DirectMessages({ currentUserId }) {
   )
 }
 
+/* ═══════════════════════════════════════════════════════════ */
+/* ═══ SocialPage (main) ════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════ */
+
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState(null)
   const [newPost, setNewPost] = useState('')
-  const [mainTab, setMainTab] = useState('community') // community | messages | about
+  const [mainTab, setMainTab] = useState('community')
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const { addToast } = useUiStore()
 
   const { user, logout } = useAuthStore()
   const { data: groups = [] } = useGroups()
   const { data: posts = [], isLoading: postsLoading } = usePosts(activeGroupId)
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
+  const joinGroup = useJoinGroup()
+  const leaveGroup = useLeaveGroup()
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!newPost.trim() || createPost.isPending) return
     createPost.mutate(
-      { content: newPost, group_id: activeGroupId ?? undefined },
+      { content: newPost, grupoId: activeGroupId ?? undefined },
       { onSuccess: () => setNewPost('') }
     )
   }
@@ -450,7 +449,7 @@ export default function SocialPage() {
 
       <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
 
-        {/* Selector de vista: Comunidad vs Mensajes */}
+        {/* Tab selector */}
         <div className="social-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[
             { key: 'community', label: 'Comunidad', icon: Icons.users },
@@ -469,208 +468,103 @@ export default function SocialPage() {
         ) : mainTab === 'messages' ? (
           <DirectMessages currentUserId={user?.id} />
         ) : (
-        <div className="grid-sidebar-main">
-        {/* ── Left sidebar ── */}
-        <div
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            padding: 20,
-            boxShadow: 'var(--shadow-sm)',
-            position: 'sticky',
-            top: 24,
-            maxHeight: 'calc(100vh - 48px)',
-            overflowY: 'auto',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'var(--fg3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: 12,
-            }}
-          >
-            Grupos <span style={{ fontWeight: 400, fontSize: 12 }}>({groups.length})</span>
-          </div>
-
-          {/* "Todos" pseudo-group */}
-          <button
-            onClick={() => setActiveGroupId(null)}
-            style={{
-              width: '100%',
-              textAlign: 'left',
-              padding: '10px 12px',
-              borderRadius: 8,
-              border: 'none',
-              background: activeGroupId === null ? 'var(--primary-subtle)' : 'transparent',
-              color: activeGroupId === null ? 'var(--primary)' : 'var(--fg2)',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: activeGroupId === null ? 700 : 400,
-              marginBottom: 4,
-              fontFamily: 'var(--font-body)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            {Icons.users({ s: 16 })} Todos
-          </button>
-
-          {groups.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setActiveGroupId(g.id)}
-              title={g.description}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '10px 12px',
-                borderRadius: 8,
-                border: 'none',
-                background: activeGroupId === g.id ? 'var(--primary-subtle)' : 'transparent',
-                color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg2)',
-                cursor: 'pointer',
-                marginBottom: 2,
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: activeGroupId === g.id ? 700 : 500,
-                  marginBottom: 2,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {g.name}
+          <div className="grid-sidebar-main">
+            {/* ── Sidebar ── */}
+            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', position: 'sticky', top: 24, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+                Grupos <span style={{ fontWeight: 400, fontSize: 12 }}>({groups.length})</span>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg3)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  opacity: 0.85,
-                }}
-              >
-                {g.member_count} miembro{g.member_count !== 1 ? 's' : ''}
-                {g.description ? ` · ${g.description}` : ''}
-              </div>
-            </button>
-          ))}
-        </div>
 
-        {/* ── Main column ── */}
-        <div>
-          {/* Compose box */}
-          <div
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: 20,
-              boxShadow: 'var(--shadow-sm)',
-              marginBottom: 20,
-            }}
-          >
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Avatar name={user?.name} src={user?.avatar_url} />
-              <form onSubmit={handleSubmit} style={{ flex: 1 }}>
-                <textarea
-                  rows={3}
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  placeholder="¿Qué quieres compartir con la comunidad?"
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 15,
-                    resize: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: 'var(--font-body)',
-                    color: 'var(--fg1)',
-                    background: 'var(--bg-warm)',
-                    outline: 'none',
-                  }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button onClick={() => setShowCreateGroup(true)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px dashed var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
+                {Icons.plus({ s: 14 })} Crear grupo
+              </button>
+
+              <button onClick={() => setActiveGroupId(null)}
+                style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: 'none', background: activeGroupId === null ? 'var(--primary-subtle)' : 'transparent', color: activeGroupId === null ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: activeGroupId === null ? 700 : 400, marginBottom: 4, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {Icons.users({ s: 16 })} Todos
+              </button>
+
+              {groups.map((g) => (
+                <button key={g.id} onClick={() => setActiveGroupId(g.id)} title={g.description}
+                  style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: 'none', background: activeGroupId === g.id ? 'var(--primary-subtle)' : 'transparent', color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-body)' }}>
+                  <div style={{ fontSize: 14, fontWeight: activeGroupId === g.id ? 700 : 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {g.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.85 }}>
+                    {g.member_count} miembro{g.member_count !== 1 ? 's' : ''}
+                  </div>
+                </button>
+              ))}
+
+              {activeGroupId && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-color)' }}>
                   <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={!newPost.trim() || createPost.isPending}
-                    style={{ fontSize: 15, padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                    {createPost.isPending ? 'Publicando…' : 'Publicar'}
-                    {Icons.send({ s: 16 })}
+                    onClick={() => {
+                      const group = groups.find(g => g.id === activeGroupId)
+                      if (group?.is_member) {
+                        leaveGroup.mutate(activeGroupId, {
+                          onSuccess: () => { addToast('Saliste del grupo', 'success'); setActiveGroupId(null) },
+                          onError: () => addToast('No se pudo salir del grupo', 'error'),
+                        })
+                      } else {
+                        joinGroup.mutate(activeGroupId, {
+                          onSuccess: () => addToast('Te uniste al grupo', 'success'),
+                          onError: () => addToast('No se pudo unir al grupo', 'error'),
+                        })
+                      }
+                    }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: 'none', background: groups.find(g => g.id === activeGroupId)?.is_member ? 'color-mix(in oklch, #D46A6A 10%, transparent)' : 'var(--primary-subtle)', color: groups.find(g => g.id === activeGroupId)?.is_member ? '#D46A6A' : 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}>
+                    {groups.find(g => g.id === activeGroupId)?.is_member ? 'Salir del grupo' : 'Unirse al grupo'}
                   </button>
                 </div>
-              </form>
+              )}
+            </div>
+
+            {/* ── Main column ── */}
+            <div>
+              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <Avatar name={user?.name} src={user?.avatar_url} />
+                  <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+                    <textarea rows={3} value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder="¿Qué quieres compartir con la comunidad?"
+                      style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                      <button type="submit" className="btn-primary" disabled={!newPost.trim() || createPost.isPending}
+                        style={{ fontSize: 15, padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {createPost.isPending ? 'Publicando…' : 'Publicar'}
+                        {Icons.send({ s: 16 })}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              {postsLoading ? (
+                <>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </>
+              ) : posts.length === 0 ? (
+                <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 48, textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    {Icons.message({ s: 24 })}
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Sé el primero en escribir en este grupo</h3>
+                  <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>Comparte experiencias, preguntas o recursos con la comunidad</p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
+                ))
+              )}
             </div>
           </div>
-
-          {/* Post feed */}
-          {postsLoading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : posts.length === 0 ? (
-            <div
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)',
-                padding: 48,
-                textAlign: 'center',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'var(--primary-subtle)',
-                  color: 'var(--primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                }}
-              >
-                {Icons.message({ s: 24 })}
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
-                Sé el primero en escribir en este grupo
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
-                Comparte experiencias, preguntas o recursos con la comunidad
-              </p>
-            </div>
-          ) : (
-            posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={() => toggleLike.mutate(post.id)}
-              />
-            ))
-          )}
-        </div>
-        </div>
         )}
       </main>
+
+      {showCreateGroup && <CreateGroupModal onClose={() => setShowCreateGroup(false)} />}
     </div>
   )
 }

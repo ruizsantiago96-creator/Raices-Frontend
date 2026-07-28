@@ -48,6 +48,15 @@ export function useAddDependiente() {
   })
 }
 
+export function useDependiente(id) {
+  const { token } = useAuthStore()
+  return useQuery({
+    queryKey: ['dependiente', id],
+    queryFn: () => api.get(`/usuarios/dependientes/${id}`).then(r => r.data),
+    enabled: !!token && !!id,
+  })
+}
+
 export function useUpdateDependent() {
   const qc = useQueryClient()
   return useMutation({

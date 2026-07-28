@@ -20,6 +20,7 @@ import AdminPage from '@features/admin/pages/AdminPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
+import NotificationsPage from '@features/notifications/pages/NotificationsPage'
 import AboutPage from '@features/about/pages/AboutPage'
 import DesignPreview from '@features/landing/pages/DesignPreview'
 
@@ -154,6 +155,7 @@ export default function App() {
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/familia" element={<ProtectedRoute><TutorPage /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                 <Route path="/institution-portal" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

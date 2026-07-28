@@ -145,9 +145,48 @@ export function useCrearInstitucion() {
   })
 }
 
-export function useDiscovery() {
+export function useDiscovery(filtros = {}) {
+  const params = limpiarFiltros(filtros)
   return useQuery({
-    queryKey: ['discovery'],
-    queryFn: () => api.get('/discovery').then(r => r.data),
+    queryKey: ['discovery', params],
+    queryFn: () => api.get('/descubrimiento', { params }).then(r => r.data),
+  })
+}
+
+export function useMiInstitucion() {
+  return useQuery({
+    queryKey: ['mi-institucion'],
+    queryFn: () => api.get('/instituciones/mi-institucion').then(r => r.data),
+  })
+}
+
+export function useUpdateMiInstitucion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data) => api.put('/instituciones/mi-institucion', data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['mi-institucion'] })
+      qc.invalidateQueries({ queryKey: ['institutions'] })
+    },
+  })
+}
+
+export function useUpdateInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }) => api.put(`/instituciones/${id}`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['institutions'] })
+    },
+  })
+}
+
+export function useDeleteInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.delete(`/instituciones/${id}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['institutions'] })
+    },
   })
 }
