@@ -217,7 +217,7 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
           {Icons.shield({ s: 15 })} Features
         </button>
         <button onClick={() => onPermissions({ id: dep.id, nombreCompleto: dep.nombreCompleto })} className="btn-secondary" style={{ fontSize: 13, padding: '10px 12px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-label="Gestionar permisos">
-          {Icons.lock({ s: 15 })} Permisos
+          {Icons.shield({ s: 15 })} Permisos
         </button>
         <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {Icons.edit({ s: 15 })} Editar
