@@ -222,6 +222,9 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
         <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {Icons.edit({ s: 15 })} Editar
         </button>
+        <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {Icons.edit({ s: 15 })} Editar
+        </button>
         <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`}
           style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {Icons.x({ s: 16 })}
@@ -326,7 +329,7 @@ function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, savin
 
   return (
     <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16, overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Configurar permisos" style={{ ...card, padding: 28, maxWidth: 480, width: '100%', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Configurar features" style={{ ...card, padding: 28, maxWidth: 480, width: '100%', margin: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icons.shield({ s: 22 })}</div>
