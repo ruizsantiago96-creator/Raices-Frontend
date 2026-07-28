@@ -8,4 +8,7 @@ export const useUiStore = create((set) => ({
     setTimeout(() => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), 4000)
   },
   removeToast: (id) => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })),
+  sidebarOpen: false,
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
 }))

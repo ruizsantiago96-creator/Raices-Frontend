@@ -1,22 +1,15 @@
 import { useState, useRef } from 'react'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
-
-
-const LIFE_STAGES = [
-  { id: 'infancia', label: 'Infancia (0-12)' },
-  { id: 'adolescencia', label: 'Adolescencia (13-17)' },
-  { id: 'adulto_joven', label: 'Adulto joven (18-29)' },
-  { id: 'adulto', label: 'Adulto (30-59)' },
-  { id: 'mayor', label: 'Adulto mayor (60+)' },
-]
-
 
 export default function ProfilePage() {
   const { logout } = useAuthStore()
   const { data, isLoading, isError } = useProfile()
+  const { data: catalogos } = useCatalogos()
+  const LIFE_STAGES = catalogos?.etapasVida ?? []
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
   const deleteAvatar = useEliminarAvatar()
@@ -44,22 +37,18 @@ export default function ProfilePage() {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    // Validar tipo de archivo
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
     if (!allowedTypes.includes(file.type)) {
       addToast('Formato no permitido. Usa PNG, JPG o JPEG', 'error')
       return
     }
-    // Validar tamaño (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
       addToast('La imagen no puede superar 5MB', 'error')
       return
     }
-    // Mostrar preview inmediato
     const reader = new FileReader()
     reader.onload = (ev) => setAvatarPreview(ev.target.result)
     reader.readAsDataURL(file)
-    // Subir al endpoint real
     try {
       await uploadAvatar.mutateAsync(file)
       addToast('Avatar actualizado correctamente', 'success')
@@ -121,8 +110,6 @@ export default function ProfilePage() {
     },
     stat: { flex: 1, padding: 20, background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' },
   }
-
-
 
   const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
 

@@ -1,18 +1,7 @@
 import { useState } from 'react'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 
-/**
- * Constantes de catálogo (idénticas a las del backend)
- */
-const PARENTESCOS = ['Hijo/a', 'Hermano/a', 'Nieto/a', 'Sobrino/a', 'Cónyuge', 'Tutor legal', 'Otro familiar']
-const DISABILIDADES = ['Motriz', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial', 'TEA / Autismo', 'Síndrome de Down', 'Lenguaje', 'Múltiple', 'Otra']
-const ETAPAS_VIDA = [
-  { id: 'infancia', label: 'Infancia (0-12)' },
-  { id: 'adolescencia', label: 'Adolescencia (13-17)' },
-  { id: 'adulto_joven', label: 'Adulto joven (18-29)' },
-  { id: 'adulto', label: 'Adulto (30-59)' },
-  { id: 'mayor', label: 'Adulto mayor (60+)' },
-]
+// Los catálogos se reciben via props (catalogos) desde el componente padre
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
 
@@ -25,10 +14,14 @@ const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-
  *                                     Inyecta aquí la mutación: (payload) => add.mutate(payload, { onSuccess, onError })
  * @param {boolean}  props.saving    - true mientras la mutación está en curso (deshabilita botones)
  */
-export default function AddDependienteModal({ onClose, onSubmit, saving = false }) {
+export default function AddDependienteModal({ onClose, onSubmit, saving = false, catalogos = {} }) {
+  const PARENTESCOS = catalogos?.parentescos ?? []
+  const DISABILIDADES = catalogos?.tiposDiscapacidad?.map(d => d.label ?? d) ?? []
+  const ETAPAS_VIDA = catalogos?.etapasVida ?? []
+
   const [form, setForm] = useState({
     nombreCompleto: '',
-    parentesco: PARENTESCOS[0],
+    parentesco: PARENTESCOS[0] ?? '',
     tiposDiscapacidad: [],
     etapaVida: '',
     notas: '',

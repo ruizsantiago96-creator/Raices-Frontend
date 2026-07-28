@@ -1,15 +1,17 @@
 import { useNavigate, Navigate } from 'react-router-dom'
-import { LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
+import { LeafIcon, Icons, BrandMark, AppFooter, CATEGORY_COLORS } from '@shared/components/shared'
 import { useAuthStore } from '@features/auth'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 
-const CATEGORIES = [
-  { name: 'Salud', color: '#C4789A', icon: Icons.heartPulse },
-  { name: 'Educación', color: '#8B6BAE', icon: Icons.graduationCap },
-  { name: 'Empleo', color: '#D4944C', icon: Icons.briefcase },
-  { name: 'Comunidad', color: '#4BA3A3', icon: Icons.users },
-  { name: 'Terapia', color: '#01ADFF', icon: Icons.activity },
-  { name: 'Recreación', color: '#7BA05B', icon: Icons.target },
-]
+// Icono por defecto para categorías del landing
+const CATEGORY_ICONS = {
+  Salud: Icons.heartPulse,
+  Educación: Icons.graduationCap,
+  Empleo: Icons.briefcase,
+  Comunidad: Icons.users,
+  Terapia: Icons.activity,
+  Recreación: Icons.target,
+}
 
 const FEATURES = [
   { icon: Icons.sparkles, title: 'Recomendaciones personalizadas', desc: 'Basadas en tus necesidades, metas y ubicación.', color: '#C4789A' },
@@ -21,16 +23,23 @@ const FEATURES = [
 export default function LandingPage() {
   const nav = useNavigate()
   const { token, user } = useAuthStore()
+  const { data: catalogos } = useCatalogos()
 
   // Si ya inició sesión, no mostrar la landing: llevar a su espacio
   if (token) {
     return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />
   }
 
+  // Categorías del backend (con colores e iconos locales)
+  const CATEGORIES = (catalogos?.categoriasInstitucion ?? []).map(c => ({
+    name: c.label ?? c,
+    color: CATEGORY_COLORS[c.value ?? c.label ?? c] ?? '#888',
+    icon: CATEGORY_ICONS[c.label ?? c] ?? Icons.building,
+  }))
+
   const s = {
     page: { background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)' },
     topbar: { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' },
-
     section: { maxWidth: 1100, margin: '0 auto', padding: '80px 48px' },
     grid4: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 },
     catCard: (_color) => ({
@@ -48,8 +57,6 @@ export default function LandingPage() {
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' },
     sectionSub: { fontSize: 18, color: 'var(--fg2)', marginBottom: 40 },
   }
-
-
 
   return (
     <div style={s.page}>
@@ -69,10 +76,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero - Responsivo con Flexbox */}
+      {/* Hero */}
       <section className="hero-section">
-        
-        {/* Columna Izquierda (Texto) */}
         <div className="hero-text">
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', borderRadius: 'var(--radius-pill)', padding: '6px 16px', fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
             <LeafIcon size={14} color="var(--primary)" /> Ecosistema digital para personas con discapacidad
@@ -98,20 +103,9 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Columna Derecha (Logo) */}
         <div className="hero-logo">
-          <img 
-            src="/images/raices.png" 
-            alt="Raíces Logo" 
-            style={{ 
-              maxWidth: '100%', 
-              height: 'auto', 
-              borderRadius: '24px', 
-              boxShadow: 'none' 
-            }} 
-          />
+          <img src="/images/raices.png" alt="Raíces Logo" style={{ maxWidth: '100%', height: 'auto', borderRadius: '24px', boxShadow: 'none' }} />
         </div>
-
       </section>
 
       {/* Categories */}

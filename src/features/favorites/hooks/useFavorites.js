@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { mapInstitucion } from '@features/institutions/hooks/useInstitutions'
 
 export function useFavorites() {
   return useQuery({
     queryKey: ['favorites'],
     queryFn: () => api.get('/favoritos').then(r => {
       const res = r.data
-      return Array.isArray(res) ? res : (res?.datos ?? [])
+      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      return data.map(mapInstitucion)
     }),
   })
 }

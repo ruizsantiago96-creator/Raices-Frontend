@@ -72,3 +72,29 @@ export function useDeleteDependent() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['dependientes'] }),
   })
 }
+
+/**
+ * Mutación: vincula una cuenta PCD al tutor actual.
+ * POST /usuarios/vincular-pcd/:pcdUserId
+ */
+export function useVincularPCD() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (pcdUserId) => api.post(`/usuarios/vincular-pcd/${pcdUserId}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dependientes'] }),
+  })
+}
+
+/**
+ * Mutación: actualiza las features configuradas para un dependiente.
+ * PUT /usuarios/dependientes/:id/features
+ */
+export function useUpdateDependentFeatures() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, features }) => api.put(`/usuarios/dependientes/${id}/features`, features).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dependientes'] }),
+  })
+}
+
+

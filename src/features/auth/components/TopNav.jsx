@@ -2,9 +2,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Icons, BrandMark, hashColor } from '@shared/components/shared'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
 
+import { useUiStore } from '@shared/stores/uiStore'
+
 export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const { darkMode, toggleDarkMode } = useA11yStore()
+  const { toggleSidebar } = useUiStore()
   const hasSidebar = !!user
   return (
     <header className={hasSidebar ? 'responsive-topnav' : 'responsive-topnav guest-topbar'} style={{
@@ -12,7 +15,30 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }),
     }}>
-      <BrandMark onClick={() => nav('/')} />
+      <div className="topnav-left-section" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {hasSidebar && (
+          <button
+            className="mobile-hamburger-btn"
+            onClick={toggleSidebar}
+            aria-label="Abrir menú de navegación"
+            style={{
+              display: 'none', // Managed by responsive CSS
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40, height: 40,
+              borderRadius: 'var(--radius-sm)',
+              background: '#001D26',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
+          </button>
+        )}
+        <BrandMark onClick={() => nav('/')} />
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Theme toggle button — solo para usuarios autenticados */}
         {user && (

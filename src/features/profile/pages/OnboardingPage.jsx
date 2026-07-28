@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSaveProfiling } from '../hooks/useProfile'
 import { useUiStore } from '@shared/stores/uiStore'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
 
 const STEPS = [
@@ -13,11 +14,6 @@ const STEPS = [
   { title: 'Estado actual', desc: 'Cómo te sientes hoy y en qué necesitas más soporte.', icon: Icons.heartPulse },
 ]
 
-const NEEDS = ['Movilidad', 'Comunicación', 'Socialización', 'Aprendizaje', 'Autonomía']
-const GOALS = ['Encontrar una escuela inclusiva', 'Centros de terapia validados', 'Actividades sociales y comunidad', 'Oportunidades de empleo / capacitación', 'Asesoría legal / trámites']
-const STAGES = ['Primera infancia', 'Edad escolar', 'Adolescencia', 'Transición a adultez', 'Adultez', 'Vida independiente']
-const DISABILITY_TYPES = ['TEA (Autismo)', 'Discapacidad motriz', 'Discapacidad visual', 'Discapacidad auditiva', 'Discapacidad intelectual', 'Psicosocial', 'Múltiple', 'Otro']
-
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState({
@@ -28,6 +24,13 @@ export default function OnboardingPage() {
   const saveProfiling = useSaveProfiling()
   const { addToast } = useUiStore()
   const nav = useNavigate()
+  const { data: catalogos } = useCatalogos()
+
+  // Catálogos del backend
+  const NEEDS = catalogos?.necesidades ?? []
+  const GOALS = catalogos?.metas ?? []
+  const STAGES = catalogos?.etapasCrecimiento ?? []
+  const DISABILITY_TYPES = catalogos?.tiposDiscapacidad?.map(d => d.label ?? d) ?? []
 
   const toggle = (key, val) => setData(d => ({
     ...d, [key]: d[key].includes(val) ? d[key].filter(x => x !== val) : [...d[key], val]
@@ -109,7 +112,7 @@ export default function OnboardingPage() {
                   <option value="cuidador">Cuidador principal</option>
                 </select>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div><label style={labelStyle}>Edad</label><input type="number" placeholder="Ej. 24" style={inputStyle} value={data.age || ''} onChange={e => setData(d => ({ ...d, age: e.target.value }))} /></div>
                 <div><label style={labelStyle}>Ciudad</label><input placeholder="Ej. Mérida, Yucatán" style={inputStyle} value={data.city || ''} onChange={e => setData(d => ({ ...d, city: e.target.value }))} /></div>
               </div>
@@ -143,7 +146,7 @@ export default function OnboardingPage() {
           {step === 3 && (
             <div>
               <label style={labelStyle}>¿En qué etapa de vida te encuentras?</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+              <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
                 {STAGES.map(s => radioCard(s, 'stage', data.stage === s, () => setData(d => ({ ...d, stage: s }))))}
               </div>
             </div>

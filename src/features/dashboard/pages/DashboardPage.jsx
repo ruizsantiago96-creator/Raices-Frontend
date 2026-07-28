@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe, useProfile } from '@features/auth'
 import { useDiscovery } from '@features/institutions'
+import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useAINextSteps } from '../../tutor/hooks/useAI'
 import { useAuthStore } from '@features/auth'
@@ -16,6 +18,13 @@ export default function DashboardPage() {
   const { data: favIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
   const { data: aiInsights, isLoading: aiLoading } = useAINextSteps()
+
+  useEffect(() => {
+    const cleanup = initScrollReveal()
+    return () => {
+      if (cleanup) cleanup()
+    }
+  }, [recommendations, isLoading])
 
   // Cálculo simple de completitud del perfil para el banner guía
   const hasProfiling = !!profile?.profiling
