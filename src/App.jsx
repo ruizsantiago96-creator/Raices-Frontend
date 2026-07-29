@@ -7,6 +7,7 @@ import { queryClient } from '@shared/lib/queryClient'
 import { ProtectedRoute } from '@features/auth'
 import ToastContainer from '@shared/components/Toast'
 import { AccessibilityBar } from '@features/a11y'
+import FCMProvider from '@features/notifications/components/FCMProvider'
 import LandingPage from '@features/landing/pages/LandingPage'
 import AuthPage from '@features/auth/pages/AuthPage'
 import OnboardingPage from '@features/profile/pages/OnboardingPage'
@@ -140,6 +141,7 @@ export default function App() {
             <RouteFocus />
             <a href="#main" className="skip-link" onClick={skipToMain}>Saltar al contenido principal</a>
             <div id="a11y-root">
+            <FCMProvider>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/design-preview" element={<DesignPreview />} />
@@ -160,6 +162,7 @@ export default function App() {
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+            </FCMProvider>
             </div>
             <ToastContainer />
             <AccessibilityBar />

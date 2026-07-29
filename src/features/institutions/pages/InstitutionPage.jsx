@@ -64,7 +64,7 @@ function ReviewActions({ review, institutionId }) {
   const { addToast } = useUiStore()
 
   const handleSave = () => {
-    updateReview.mutate({ calificacion: rating, comentario: comment }, {
+    updateReview.mutate({ calificacion: Number(rating), comentario: comment }, {
       onSuccess: () => { setEditing(false); addToast('Reseña actualizada', 'success') },
       onError: () => addToast('No se pudo actualizar', 'error'),
     })
@@ -183,7 +183,7 @@ export default function InstitutionPage() {
       return
     }
     try {
-      await submitReview.mutateAsync({ rating, comment })
+      await submitReview.mutateAsync({ calificacion: Number(rating), comentario: comment })
       setRating(5)
       setComment('')
       addToast('¡Reseña publicada con éxito!', 'success')

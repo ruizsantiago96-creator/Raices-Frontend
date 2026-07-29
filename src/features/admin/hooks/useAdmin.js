@@ -193,11 +193,38 @@ export function useChangeUserRole() {
 }
 
 /* ── Reseñas ── */
+
+/**
+ * Mapea campos en español del response de la API de reseñas
+ * a los campos en inglés que el componente ReviewsTab espera.
+ * @param {Object} r - Objeto crudo de reseña del API
+ * @returns {Object} Reseña con campos normalizados
+ */
+function mapReviewAdmin(r) {
+  return {
+    ...r,
+    id: r.id,
+    rating: r.calificacion ?? r.rating ?? 0,
+    comment: r.comentario ?? r.comment ?? '',
+    institution_name: r.nombreInstitucion ?? r.institucionNombre ?? r.institution_name ?? r.institucion?.nombre ?? 'Institución',
+    user_name: r.nombreUsuario ?? r.usuarioNombre ?? r.user_name ?? r.usuario?.nombreCompleto ?? 'Anónimo',
+    created_at: r.fechaCreacion ?? r.created_at ?? r.fecha_creacion,
+  }
+}
+
+/**
+ * Hook para listar todas las reseñas (panel admin).
+ * GET /api/administracion/resenas
+ */
 export function useAdminReviews() {
-  return useQuery({ queryKey: ['admin', 'reviews'], queryFn: () => api.get('/administracion/resenas').then(r => {
-    const res = r.data
-    return Array.isArray(res) ? res : (res?.datos ?? [])
-  }) })
+  return useQuery({
+    queryKey: ['admin', 'reviews'],
+    queryFn: () => api.get('/administracion/resenas').then(r => {
+      const res = r.data
+      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      return data.map(mapReviewAdmin)
+    }),
+  })
 }
 
 export function useDeleteReview() {
