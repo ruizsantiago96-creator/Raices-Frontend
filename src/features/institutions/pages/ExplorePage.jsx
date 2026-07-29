@@ -46,8 +46,25 @@ export default function ExplorePage() {
   const navigate = useNavigate()
   const { data: catalogos } = useCatalogos()
 
-  // Catálogos del backend
-  const CATEGORIES = catalogos?.categoriasInstitucion?.map(c => c.value ?? c) ?? Object.keys(CATEGORY_COLORS)
+  // Catálogos del backend (únicos por su valor de filtro)
+  const CATEGORIES = []
+  const seenCats = new Set()
+  const rawCats = catalogos?.categoriasInstitucion ?? [
+    { value: 'funcional', label: 'Salud y Terapia' },
+    { value: 'educativo', label: 'Educación' },
+    { value: 'laboral', label: 'Empleo' },
+    { value: 'social', label: 'Comunidad y Recreación' }
+  ]
+  for (const c of rawCats) {
+    const val = c.value ?? c
+    if (!seenCats.has(val)) {
+      seenCats.add(val)
+      CATEGORIES.push({
+        value: val,
+        label: c.label ?? (typeof c === 'string' ? c.charAt(0).toUpperCase() + c.slice(1) : val)
+      })
+    }
+  }
   const DISABILITY_TYPES = [
     { value: '', label: 'Todos' },
     ...(catalogos?.tiposDiscapacidad ?? []).map(d => ({
@@ -112,9 +129,9 @@ export default function ExplorePage() {
           <div className="explore-category-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
             <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-surface)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
             {CATEGORIES.map(cat => {
-              const active = category === cat
-              const color = CATEGORY_COLORS[cat] ?? 'var(--primary)'
-              return (<button key={cat} onClick={() => setCategory(active ? '' : cat)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-surface)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat}</button>)
+              const active = category === cat.value
+              const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
+              return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-surface)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
             })}
           </div>
           <div style={{ position: 'relative' }}>
@@ -166,9 +183,9 @@ export default function ExplorePage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-warm)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
                 {CATEGORIES.map(cat => {
-                  const active = category === cat
-                  const color = CATEGORY_COLORS[cat] ?? 'var(--primary)'
-                  return (<button key={cat} onClick={() => setCategory(active ? '' : cat)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat}</button>)
+                  const active = category === cat.value
+                  const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
+                  return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
                 })}
               </div>
             </div>

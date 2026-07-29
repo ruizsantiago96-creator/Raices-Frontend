@@ -3,15 +3,14 @@ import { LeafIcon, Icons, BrandMark, AppFooter, CATEGORY_COLORS } from '@shared/
 import { useAuthStore } from '@features/auth'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 
-// Icono por defecto para categorías del landing
-const CATEGORY_ICONS = {
-  Salud: Icons.heartPulse,
-  Educación: Icons.graduationCap,
-  Empleo: Icons.briefcase,
-  Comunidad: Icons.users,
-  Terapia: Icons.activity,
-  Recreación: Icons.target,
-}
+const LANDING_CATEGORIES = [
+  { name: 'Salud', value: 'funcional', color: '#C4789A', icon: Icons.heartPulse },
+  { name: 'Educación', value: 'educativo', color: '#8B6BAE', icon: Icons.graduationCap },
+  { name: 'Empleo', value: 'laboral', color: '#D4944C', icon: Icons.briefcase },
+  { name: 'Comunidad', value: 'social', color: '#4BA3A3', icon: Icons.users },
+  { name: 'Terapia', value: 'funcional', color: '#01ADFF', icon: Icons.activity },
+  { name: 'Recreación', value: 'social', color: '#7BA05B', icon: Icons.target },
+]
 
 const FEATURES = [
   { icon: Icons.sparkles, title: 'Recomendaciones personalizadas', desc: 'Basadas en tus necesidades, metas y ubicación.', color: '#C4789A' },
@@ -23,19 +22,15 @@ const FEATURES = [
 export default function LandingPage() {
   const nav = useNavigate()
   const { token, user } = useAuthStore()
-  const { data: catalogos } = useCatalogos()
 
   // Si ya inició sesión, no mostrar la landing: llevar a su espacio
   if (token) {
     return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />
   }
 
-  // Categorías del backend (con colores e iconos locales)
-  const CATEGORIES = (catalogos?.categoriasInstitucion ?? []).map(c => ({
-    name: c.label ?? c,
-    color: CATEGORY_COLORS[c.value ?? c.label ?? c] ?? '#888',
-    icon: CATEGORY_ICONS[c.label ?? c] ?? Icons.building,
-  }))
+  const CATEGORIES = LANDING_CATEGORIES
+
+
 
   const s = {
     page: { background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)' },
@@ -120,7 +115,7 @@ export default function LandingPage() {
               <div key={cat.name} className={`scroll-reveal scroll-reveal-delay-${i + 1}`} style={s.catCard(cat.color)}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = cat.color }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
-                onClick={() => nav(`/explore?category=${encodeURIComponent(cat.name)}`)}
+                onClick={() => nav(`/explore?category=${encodeURIComponent(cat.value)}`)}
               >
                 <div style={s.catIcon(cat.color)}>{cat.icon({ s: 22 })}</div>
                 <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--fg1)' }}>{cat.name}</div>

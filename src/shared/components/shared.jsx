@@ -56,6 +56,13 @@ export const Icons = {
   link: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
 }
 
+export const CATEGORY_LABELS = {
+  'funcional': 'Salud y Terapia',
+  'educativo': 'Educación',
+  'laboral': 'Empleo',
+  'social': 'Comunidad y Recreación',
+}
+
 export const CategoryTag = ({ label, color }) => (
   <span style={{
     padding: '4px 12px',
@@ -70,7 +77,7 @@ export const CategoryTag = ({ label, color }) => (
     color,
   }}>
     <LeafIcon size={10} color={color} />
-    {label}
+    {CATEGORY_LABELS[label] ?? label}
   </span>
 )
 
@@ -80,6 +87,12 @@ export const CATEGORY_COLORS = {
   'educativo': '#8B6BAE',
   'laboral': '#D4944C',
   'social': '#4BA3A3',
+  'Salud': '#C4789A',
+  'Terapia': '#01ADFF',
+  'Recreación': '#7BA05B',
+  'Educación': '#8B6BAE',
+  'Empleo': '#D4944C',
+  'Comunidad': '#4BA3A3',
 }
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
