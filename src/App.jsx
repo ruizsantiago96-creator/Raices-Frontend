@@ -155,11 +155,11 @@ export default function App() {
                 <Route path="/institution/nueva" element={<ProtectedRoute><CrearInstitucionPage /></ProtectedRoute>} />
                 <Route path="/institution/:id" element={<ProtectedRoute><InstitutionPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/familia" element={<ProtectedRoute><TutorPage /></ProtectedRoute>} />
+                <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-                <Route path="/institution-portal" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+                <Route path="/institution-portal" element={<ProtectedRoute role="institution"><DashboardPage /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </FCMProvider>

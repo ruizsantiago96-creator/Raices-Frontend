@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
-        <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+        <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both', position: 'relative', zIndex: 10 }}>
           <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
               {user?.avatar_url ? (

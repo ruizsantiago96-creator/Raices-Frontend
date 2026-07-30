@@ -4,15 +4,103 @@ import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
 import { setActiveEventSource, closeNotificationStream, isStreamSuspended } from '../lib/notificationStream'
 
+function detectNotificationUrl(n) {
+  // 1. Si el backend ya mandó una URL explícita, usarla
+  const explicitUrl = n.url ?? n.redirect_url ?? n.redirectUrl ?? n.ruta ?? n.path ?? n.enlace ?? n.link ?? n.redireccion
+  if (explicitUrl) return explicitUrl
+
+  // 2. Si no, deducir según las palabras clave en título o mensaje (body)
+  const text = `${n.title ?? n.titulo ?? ''} ${n.body ?? n.mensaje ?? n.contenido ?? ''}`.toLowerCase()
+  
+  if (text.includes('administra') || text.includes('admin') || text.includes('aprob') || text.includes('rechaz') || text.includes('pendiente')) {
+    return '/admin'
+  }
+  if (text.includes('mensaje') || text.includes('chat') || text.includes('grupo') || text.includes('comunidad') || text.includes('social')) {
+    return '/social'
+  }
+  if (text.includes('empleo') || text.includes('vacante') || text.includes('trabajo') || text.includes('postula')) {
+    return '/jobs'
+  }
+  if (text.includes('perfil') || text.includes('onboarding') || text.includes('datos')) {
+    return '/profile'
+  }
+  if (text.includes('instituc') || text.includes('reseñ') || text.includes('opinio')) {
+    return '/explore'
+  }
+
+  // 3. Fallback genérico a la página de notificaciones
+  return '/notifications'
+}
+
 export function useNotifications() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
+  const userRole = user?.role
 
   return useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => api.get('/notificaciones').then(r => {
+    queryKey: ['notifications', userRole],
+    queryFn: async () => {
+      const r = await api.get('/notificaciones')
       const res = r.data
-      return Array.isArray(res) ? res : (res?.datos ?? [])
-    }),
+      const rawList = Array.isArray(res) ? res : (res?.datos ?? [])
+      const mapped = rawList.map(n => {
+        const normalized = {
+          id: n.id,
+          title: n.title ?? n.titulo ?? 'Notificación',
+          body: n.body ?? n.mensaje ?? n.contenido ?? '',
+          is_read: !!(n.is_read ?? n.leido ?? n.es_leido ?? n.leida ?? n.es_leida ?? false),
+          type: n.type ?? n.tipo ?? 'info',
+          created_at: n.created_at ?? n.creado_at ?? n.fecha ?? new Date().toISOString(),
+        }
+        normalized.url = detectNotificationUrl({ ...n, ...normalized })
+        return normalized
+      })
+
+      // Filtrar para que solo el rol 'admin' vea notificaciones destinadas al panel de administración
+      const filtered = mapped.filter(n => {
+        if (n.url === '/admin' && userRole !== 'admin') {
+          return false
+        }
+        return true
+      })
+
+      // Si el usuario es administrador, inyectar dinámicamente avisos de tareas pendientes
+      if (userRole === 'admin') {
+        try {
+          const statsRes = await api.get('/administracion/estadisticas').catch(() => null)
+          if (statsRes?.data) {
+            const pendingApproval = statsRes.data.aprobacionPendiente ?? 0
+            // Excluir las que ya se contaron como pendientes de aprobación (no activas)
+            const pendingVerification = Math.max(0, (statsRes.data.totalInstituciones ?? 0) - (statsRes.data.institucionesVerificadas ?? 0) - (statsRes.data.aprobacionPendiente ?? 0))
+            const totalPending = pendingApproval + pendingVerification
+
+            if (totalPending > 0) {
+              let bodyText = ''
+              if (pendingApproval > 0 && pendingVerification > 0) {
+                bodyText = `Tienes ${pendingApproval} institución(es) por aprobar y ${pendingVerification} por verificar.`
+              } else if (pendingApproval > 0) {
+                bodyText = `Tienes ${pendingApproval} institución(es) por aprobar.`
+              } else {
+                bodyText = `Tienes ${pendingVerification} institución(es) por verificar.`
+              }
+
+              filtered.unshift({
+                id: 'virtual-admin-pending',
+                title: 'Tareas administrativas pendientes',
+                body: bodyText,
+                is_read: false,
+                type: 'warning',
+                created_at: new Date().toISOString(),
+                url: '/admin'
+              })
+            }
+          }
+        } catch (e) {
+          console.error('[Notifications] Error generating virtual admin notification:', e)
+        }
+      }
+
+      return filtered
+    },
     // 🔒 No ejecutar la petición si no hay token activo.
     //    Esto evita errores 500 del servidor durante el logout,
     //    cuando el token ya fue eliminado del store pero React

@@ -1220,14 +1220,13 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE TABLE
    ═══════════════════════════════════════════════════════════ */
-@media (max-width: 767px) {
-  .responsive-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .responsive-table-wrap table {
-    min-width: 600px;
-  }
+.responsive-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+.responsive-table {
+  min-width: 750px;
 }
 
 @media (max-width: 1199px) {

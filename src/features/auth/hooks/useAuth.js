@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -28,6 +29,27 @@ export function useLogin() {
         }
         return { source: 'backend', data, rememberMe }
       } catch (err) {
+        // Si el backend indica que el usuario está inactivo o desactivado, lanzamos el error amigable directamente.
+        const backendMessage = err.response?.data?.message ?? ''
+        const isInactive = 
+          backendMessage.toLowerCase().includes('inactiv') || 
+          backendMessage.toLowerCase().includes('desactiv') || 
+          backendMessage.toLowerCase().includes('deshabilit') ||
+          backendMessage.toLowerCase().includes('disabled') ||
+          backendMessage.toLowerCase().includes('suspende')
+          
+        if (isInactive) {
+          const customErr = new Error('Tu cuenta ha sido desactivada. Por favor, contacta al soporte.')
+          customErr.response = {
+            ...err.response,
+            data: {
+              ...err.response?.data,
+              message: 'Tu cuenta ha sido desactivada. Por favor, contacta al soporte.'
+            }
+          }
+          throw customErr
+        }
+
         // ── Solo interceptamos 401 y solo si el bridge está habilitado ──
         if (err.response?.status !== 401 || !isBridgeAvailable()) {
           throw err
@@ -68,9 +90,9 @@ export function useLogin() {
       })
 
       const role = data.user?.role
-      if (role === 'admin') nav('/admin')
-      else if (role === 'institution') nav('/institution-portal')
-      else nav('/dashboard')
+      if (role === 'admin') nav('/admin', { replace: true })
+      else if (role === 'institution') nav('/institution-portal', { replace: true })
+      else nav('/dashboard', { replace: true })
     },
   })
 }
@@ -78,11 +100,13 @@ export function useLogin() {
 export function useRegister() {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
+  const { addToast } = useUiStore()
   return useMutation({
     mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }) => {
       const body = {
         ...rest,
-        nombreCompleto: full_name,
+        // El backend usa "nombre" para instituciones y "nombreCompleto" para pcd/tutor
+        ...(role === 'institution' ? { nombre: full_name } : { nombreCompleto: full_name }),
         rol: role,
         ciudad: city,
         estado: state,
@@ -90,9 +114,20 @@ export function useRegister() {
       return api.post('/autenticacion/registro', body).then(r => r.data)
     },
     onSuccess: (raw, variables) => {
+      const rememberMe = variables?._rememberMe ?? true
+      const role = variables?.role
+
+      // Para instituciones, el backend solo confirma el registro (sin token)
+      if (role === 'institution' && !raw.tokenAcceso) {
+        console.log('[Auth] Institution registered — no token returned. Redirecting to login.')
+        addToast(raw.mensaje ?? 'Institución registrada correctamente. Inicia sesión para continuar.', 'success')
+        nav('/auth')
+        return
+      }
+
+      // Para pcd/tutor: login automático con token
       const token = raw.tokenAcceso
       const refresh = raw.tokenRefresco ?? null
-      const rememberMe = variables?._rememberMe ?? true
       const user = raw.usuario ? {
         id: raw.usuario.id,
         email: raw.usuario.email,
@@ -107,10 +142,8 @@ export function useRegister() {
         hasRefreshToken: !!refresh,
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
-      const role = user?.role
-      if (role === 'admin') nav('/admin')
-      else if (role === 'institution') nav('/institution-portal')
-      else nav('/dashboard')
+      if (role === 'admin') nav('/admin', { replace: true })
+      else nav('/dashboard', { replace: true })
     },
   })
 }

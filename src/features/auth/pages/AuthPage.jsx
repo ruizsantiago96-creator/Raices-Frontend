@@ -135,256 +135,400 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={s.page}>
-      <div style={s.inner}>
-        <header style={{ display: 'block', textAlign: 'center', marginBottom: '40px', width: '100%' }}>
-          {loading ? (
-            <div style={{ display: 'block', textAlign: 'center', padding: '8px 0' }}>
-              <span style={{ display: 'inline-block', width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} aria-label="Cargando" role="status" />
-            </div>
-          ) : (
-            <BrandMark onClick={() => nav('/')} />
-          )}
-        </header>
+    <div className="auth-split-layout" style={{ display: 'flex', minHeight: '100vh', fontFamily: 'var(--font-body)', background: 'var(--bg-warm)' }}>
+      <style>{`
+        .auth-brand-column {
+          display: flex;
+        }
+        .auth-input {
+          width: 100%;
+          padding: 15px 22px;
+          border: 1.5px solid rgba(0, 0, 0, 0.12);
+          border-radius: 8px;
+          font-size: 15px;
+          box-sizing: border-box;
+          font-family: var(--font-body);
+          color: var(--fg1);
+          background: var(--bg-surface);
+          outline: none;
+          transition: all 0.2s ease;
+        }
+        html[data-theme="dark"] .auth-input {
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+        .auth-input:focus {
+          border-color: var(--primary) !important;
+          box-shadow: 0 0 0 3px var(--primary-subtle) !important;
+        }
+        .auth-select {
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 18px center;
+          padding-right: 42px;
+        }
+        .auth-btn-primary {
+          width: 100%;
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 700;
+          padding: 16px 24px;
+          cursor: pointer;
+          font-family: var(--font-body);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s ease;
+        }
+        .auth-btn-primary:hover {
+          background: var(--primary-dark);
+        }
+        .auth-btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .auth-btn-secondary {
+          width: 100%;
+          background: transparent;
+          border: 1px solid var(--border-color);
+          color: var(--fg2);
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          padding: 14px 20px;
+          cursor: pointer;
+          font-family: var(--font-body);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.2s ease;
+        }
+        .auth-btn-secondary:hover {
+          background: var(--bg-warm);
+        }
+        .auth-pass-toggle {
+          position: absolute;
+          right: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--fg3);
+          padding: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+        }
+        .auth-pass-toggle:hover {
+          color: var(--fg2);
+        }
+        @media (max-width: 820px) {
+          .auth-brand-column {
+            display: none !important;
+          }
+          .auth-form-column {
+            padding: 40px 24px !important;
+          }
+        }
+      `}</style>
 
-        <main id="main">
-          {mode === 'login' && (
-            <>
-              <h1 style={s.title}>Iniciar sesión</h1>
-              <p style={s.sub}>Ingresa con tu correo electrónico</p>
+      {/* Columna izquierda: Formulario */}
+      <div className="auth-form-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 64px', boxSizing: 'border-box', background: 'var(--bg-surface)' }}>
+        <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
+          
+          {/* Volver al inicio */}
+          <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: 0, marginBottom: 36, fontFamily: 'var(--font-body)' }}>
+            {Icons.arrowLeft({ s: 16 })} Volver al inicio
+          </button>
+          
+          <main id="main">
+            {mode === 'login' && (
+              <>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+                  Iniciar sesión
+                </h1>
+                <p style={{ fontSize: 16, color: 'var(--fg2)', margin: '0 0 32px', lineHeight: 1.5 }}>
+                  Ingresa tu correo y contraseña para entrar a la plataforma
+                </p>
 
-              <div style={s.card}>
-                <form onSubmit={handleLogin} noValidate>
+                <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {error && (
                     <div style={s.errorBox} role="alert" aria-live="assertive">
                       {Icons.shieldAlert({ s: 18 })} {error}
                     </div>
                   )}
-                  <div style={s.inputWrap}>
-                    <label htmlFor="login-email" style={labelStyle}>Correo electrónico</label>
+                  
+                  <div>
+                    <label htmlFor="login-email" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>
+                      Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <input id="login-email" name="email" type="email" autoComplete="email"
-                      style={inputStyle} value={form.email} onChange={set('email')} required
-                      placeholder="correo@ejemplo.com" />
+                      className="auth-input" value={form.email} onChange={set('email')} required
+                      placeholder="ejemplo@correo.com" />
                   </div>
-                  <div style={s.inputWrap}>
-                    <label htmlFor="login-pass" style={labelStyle}>Contraseña</label>
+                  
+                  <div>
+                    <label htmlFor="login-pass" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>
+                      Contraseña <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <div style={s.passWrap}>
                       <input id="login-pass" name="password" type={showPass ? 'text' : 'password'} autoComplete="current-password"
-                        style={{ ...inputStyle, paddingRight: 48 }} value={form.password} onChange={set('password')} required />
-                      <button type="button" onClick={() => setShowPass(v => !v)} className="btn-pass-toggle"
+                        className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required placeholder="Ingresa tu contraseña" />
+                      <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle"
                         aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
                         {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: 'block', marginBottom: 20 }}>
-                    <input
-                      type="checkbox"
-                      id="remember-me"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer', verticalAlign: 'middle', marginRight: 8 }}
-                    />
-                    <label htmlFor="remember-me" style={{ display: 'inline-block', fontSize: 14, fontWeight: 600, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none', verticalAlign: 'middle' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        id="remember-me"
+                        checked={rememberMe}
+                        onChange={e => setRememberMe(e.target.checked)}
+                        style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                      />
                       Mantener sesión iniciada
                     </label>
-                  </div>
-                  <div style={{ display: 'block', textAlign: 'right', marginTop: '-12px', marginBottom: '20px' }}>
                     <button 
                       type="button" 
-                      style={{ ...s.link, fontSize: 14, minHeight: 'auto', padding: 0 }} 
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'var(--primary)', padding: 0 }} 
                       onClick={() => { setMode('forgot'); setError(''); }}
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
-                  <button className="btn-primary" type="submit" style={{ width: '100%', fontSize: 18, padding: '14px' }} disabled={login.isPending}>
+                  
+                  <button className="auth-btn-primary" type="submit" disabled={login.isPending} style={{ marginTop: 8 }}>
                     {login.isPending ? 'Entrando...' : 'Entrar'} {Icons.arrowRight({ s: 18 })}
                   </button>
                 </form>
-                <p style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: 'var(--fg3)' }}>v{VERSION}</p>
-              </div>
 
+                <p style={{ textAlign: 'center', marginTop: 32, fontSize: 16, color: 'var(--fg2)' }}>
+                  ¿No tienes cuenta?{' '}
+                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('register'); setError('') }}>Regístrate aquí</button>
+                </p>
+                <p style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--fg3)' }}>v{VERSION}</p>
+              </>
+            )}
 
-
-              <p style={{ textAlign: 'center', marginTop: 28, fontSize: 16, color: 'var(--fg2)' }}>
-                ¿No tienes cuenta?{' '}
-                <button style={s.link} onClick={() => { setMode('register'); setError('') }}>Regístrate aquí</button>
-              </p>
-            </>
-          )}
-
-          {mode === 'register' && (
-            <>
-              <div style={{ marginBottom: 8 }}>
-                <p style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 700, marginBottom: 8 }}>Paso {regStep} de 2</p>
-                <div style={s.progress} role="progressbar" aria-valuenow={regStep} aria-valuemin={1} aria-valuemax={2} aria-label={`Paso ${regStep} de 2`}>
-                  <div style={s.progressBar((regStep / 2) * 100)} />
+            {mode === 'register' && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso {regStep} de 2</p>
+                  <div style={s.progress} role="progressbar" aria-valuenow={regStep} aria-valuemin={1} aria-valuemax={2} aria-label={`Paso ${regStep} de 2`}>
+                    <div style={s.progressBar((regStep / 2) * 100)} />
+                  </div>
                 </div>
-              </div>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
-                {regStep === 1 ? '¿Cómo te gustaría unirte?' : 'Crea tu cuenta'}
-              </h1>
+                
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                  {regStep === 1 ? '¿Cómo te gustaría unirte?' : 'Crea tu cuenta'}
+                </h1>
+                <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '0 0 24px', lineHeight: 1.5 }}>
+                  {regStep === 1 ? 'Selecciona el tipo de cuenta que mejor se adapte a ti' : 'Ingresa tus datos personales para completar el registro'}
+                </p>
 
-              {error && (
-                <div style={{ ...s.errorBox, marginTop: 16 }} role="alert" aria-live="assertive">
-                  {Icons.shieldAlert({ s: 18 })} {error}
-                </div>
-              )}
+                {error && (
+                  <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">
+                    {Icons.shieldAlert({ s: 18 })} {error}
+                  </div>
+                )}
 
-              <div style={{ ...s.card, padding: regStep === 1 ? 20 : 28 }}>
                 {regStep === 1 && (
-                  <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+                  <fieldset style={{ border: 'none', padding: 0, margin: '0 0 24px' }}>
                     <legend className="sr-only">Selecciona tu tipo de cuenta</legend>
                     {ROLES.map(r => (
                       <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))}
                         aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
                         <span style={s.avatar(form.role === r.id)}>{r.icon({ s: 24 })}</span>
                         <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 16, width: 'calc(100% - 116px)' }}>
-                          <span style={{ display: 'block', fontSize: 17, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
-                          <span style={{ display: 'block', fontSize: 14, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
+                          <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
+                          <span style={{ display: 'block', fontSize: 13, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
                         </span>
-                        {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)' }}>{Icons.check({ s: 22 })}</span>}
+                        {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)', marginLeft: 'auto' }}>{Icons.check({ s: 22 })}</span>}
                       </button>
                     ))}
                   </fieldset>
                 )}
 
                 {regStep === 2 && (
-                  <form onSubmit={e => { e.preventDefault(); handleRegister(e) }}>
-                    <div style={s.inputWrap}>
-                      <label htmlFor="reg-name" style={labelStyle}>Nombre completo</label>
-                      <input id="reg-name" name="name" autoComplete="name" style={inputStyle} value={form.full_name} onChange={set('full_name')} required placeholder="Ej. Ana Pérez" />
+                  <form onSubmit={e => { e.preventDefault(); handleRegister(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                    <div>
+                      <label htmlFor="reg-name" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Nombre completo <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input id="reg-name" name="name" autoComplete="name" className="auth-input" value={form.full_name} onChange={set('full_name')} required placeholder="Ej. Ana Pérez" />
                     </div>
-                    <div style={s.inputWrap}>
-                      <label htmlFor="reg-email" style={labelStyle}>Correo electrónico</label>
-                      <input id="reg-email" name="email" type="email" autoComplete="email" style={inputStyle} value={form.email} onChange={set('email')} required placeholder="correo@ejemplo.com" />
+                    <div>
+                      <label htmlFor="reg-email" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input id="reg-email" name="email" type="email" autoComplete="email" className="auth-input" value={form.email} onChange={set('email')} required placeholder="ejemplo@correo.com" />
                     </div>
-                    <div style={s.inputWrap}>
-                      <label htmlFor="reg-pass" style={labelStyle}>Contraseña</label>
+                    <div>
+                      <label htmlFor="reg-pass" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Contraseña <span style={{ color: '#ef4444' }}>*</span></label>
                       <div style={s.passWrap}>
-                        <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" style={{ ...inputStyle, paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} />
-                        <button type="button" onClick={() => setShowPass(v => !v)} className="btn-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
+                        <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} placeholder="Crea una contraseña segura" />
+                        <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
                           {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                         </button>
                       </div>
-                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
+                      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
                     </div>
-                    <div style={{ display: 'block' }}>
-                      <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top', marginRight: 16 }}>
-                        <div style={s.inputWrap}>
-                          <label htmlFor="reg-state" style={labelStyle}>Estado</label>
-                          <select
-                            id="reg-state"
-                            name="state"
-                            autoComplete="address-level1"
-                            style={{ ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
-                            value={form.state}
-                            onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }}
-                            required
-                          >
-                            <option value="" disabled>Selecciona un estado</option>
-                            {STATES.map(st => (
-                              <option key={st} value={st}>{st}</option>
-                            ))}
-                          </select>
-                        </div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <label htmlFor="reg-state" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
+                        <select
+                          id="reg-state"
+                          name="state"
+                          autoComplete="address-level1"
+                          className="auth-input auth-select"
+                          value={form.state}
+                          onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }}
+                          required
+                        >
+                          <option value="" disabled>Selecciona un estado</option>
+                          {STATES.map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div style={{ display: 'inline-block', width: 'calc(50% - 8px)', verticalAlign: 'top' }}>
-                        <div style={s.inputWrap}>
-                          <label htmlFor="reg-city" style={labelStyle}>Municipio</label>
-                          <select
-                            id="reg-city"
-                            name="city"
-                            autoComplete="address-level2"
-                            style={{ ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
-                            value={form.city}
-                            onChange={set('city')}
-                            required
-                            disabled={!form.state}
-                          >
-                            <option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
-                            {form.state && getMunicipalities(form.state).map(m => (
-                              <option key={m} value={m}>{m}</option>
-                            ))}
-                          </select>
-                        </div>
+                      <div style={{ flex: 1 }}>
+                        <label htmlFor="reg-city" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
+                        <select
+                          id="reg-city"
+                          name="city"
+                          autoComplete="address-level2"
+                          className="auth-input auth-select"
+                          value={form.city}
+                          onChange={set('city')}
+                          required
+                          disabled={!form.state}
+                        >
+                          <option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
+                          {form.state && getMunicipalities(form.state).map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </form>
                 )}
 
-                
-              </div>
-
-              <div style={s.actions}>
-                {regStep > 1 && (
-                  <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setRegStep(st => st - 1)}>
-                    {Icons.arrowLeft({ s: 18 })} Volver
-                  </button>
-                )}
-                {regStep === 1
-                  ? <button className="btn-primary" style={{ width: '100%' }} onClick={() => setRegStep(st => st + 1)}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {regStep === 1 ? (
+                    <button className="auth-btn-primary" type="button" onClick={() => setRegStep(2)}>
                       Continuar {Icons.arrowRight({ s: 18 })}
                     </button>
-                  : <button className="btn-primary" type="button" style={{ width: '100%' }} onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state}>
-                      {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
-                    </button>}
-              </div>
+                  ) : (
+                    <>
+                      <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state}>
+                        {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
+                      </button>
+                      <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>
+                        {Icons.arrowLeft({ s: 16 })} Volver al paso 1
+                      </button>
+                    </>
+                  )}
+                </div>
 
-              <p style={{ textAlign: 'center', marginTop: 24, fontSize: 16, color: 'var(--fg2)' }}>
-                ¿Ya tienes cuenta?{' '}
-                <button style={s.link} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button>
-              </p>
-            </>
-          )}
+                <p style={{ textAlign: 'center', marginTop: 24, fontSize: 15, color: 'var(--fg2)' }}>
+                  ¿Ya tienes cuenta?{' '}
+                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button>
+                </p>
+              </>
+            )}
 
-          {mode === 'forgot' && (
-            <>
-              <h1 style={s.title}>Recuperar contraseña</h1>
-              <p style={s.sub}>Ingresa tu correo y te enviaremos un enlace seguro</p>
+            {mode === 'forgot' && (
+              <>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                  ¿Olvidaste tu contraseña?
+                </h1>
+                <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '0 0 28px', lineHeight: 1.5 }}>
+                  Ingresa tu correo electrónico y te enviaremos un enlace seguro para restablecerla
+                </p>
 
-              <div style={s.card}>
-                <form onSubmit={handleForgotPassword} noValidate>
+                <form onSubmit={handleForgotPassword} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {error && (
                     <div style={s.errorBox} role="alert" aria-live="assertive">
                       {Icons.shieldAlert({ s: 18 })} {error}
                     </div>
                   )}
                   
-                  <div style={s.inputWrap}>
-                    <label htmlFor="forgot-email" style={labelStyle}>Correo electrónico</label>
+                  <div>
+                    <label htmlFor="forgot-email" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 8 }}>
+                      Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <input 
                       id="forgot-email" 
                       name="email" 
                       type="email" 
                       autoComplete="email"
-                      style={inputStyle} 
+                      className="auth-input" 
                       value={form.email} 
                       onChange={set('email')} 
                       required 
-                      placeholder="correo@ejemplo.com" 
+                      placeholder="ejemplo@correo.com" 
                     />
                   </div>
                   
-                  <div style={{ display: 'block', textAlign: 'center', marginTop: '24px' }}>
-                    <button className="btn-primary" type="submit" style={{ display: 'inline-block', width: '100%', fontSize: 18, padding: '14px' }} disabled={sending}>
-                      {sending ? 'Enviando...' : 'Enviar enlace'} {Icons.arrowRight({ s: 18 })}
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <div style={{ display: 'block', textAlign: 'center', marginTop: 28 }}>
-                <p style={{ display: 'inline-block', fontSize: 16, color: 'var(--fg2)', margin: 0 }}>
-                  <button style={s.link} onClick={() => { setMode('login'); setError(''); }}>
-                    {Icons.arrowLeft({ s: 16 })} Volver al inicio de sesión
+                  <button className="auth-btn-primary" type="submit" disabled={sending} style={{ marginTop: 8 }}>
+                    {sending ? 'Enviando...' : 'Enviar enlace'} {Icons.arrowRight({ s: 18 })}
                   </button>
+                </form>
+
+                <p style={{ textAlign: 'center', marginTop: 32, fontSize: 15, color: 'var(--fg2)' }}>
+                  ¿Recordaste tu contraseña?{' '}
+                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('login'); setError(''); }}>Inicia sesión aquí</button>
                 </p>
-              </div>
-            </>
-          )}
-        </main>
+              </>
+            )}
+          </main>
+        </div>
+      </div>
+      
+      {/* Columna derecha: Branding y Gráfico */}
+      <div className="auth-brand-column" style={{ 
+        flex: 1, 
+        background: 'linear-gradient(135deg, #001D21 0%, #004E52 100%)', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        color: 'white', 
+        padding: 48,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Grid pattern overlay */}
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          opacity: 0.05, 
+          backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', 
+          backgroundSize: '24px 24px' 
+        }} />
+        
+        {/* Decorative subtle circles */}
+        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', top: '-100px', right: '-100px' }} />
+        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', bottom: '-50px', left: '-50px' }} />
+
+        <div style={{ textAlign: 'center', zIndex: 2, maxWidth: 460 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: '50% 50% 50% 14%', background: 'rgba(255,255,255,0.15)', color: 'white', marginBottom: 24, fontSize: 32 }}>
+            🌱
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, margin: '0 0 12px', color: 'white', letterSpacing: '-0.02em' }}>
+            Raíces para florecer
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+            Conectando personas con discapacidad, tutores e instituciones en un ecosistema digital de confianza, donde cada paso hacia la autonomía es celebrado y acompañado.
+          </p>
+        </div>
       </div>
     </div>
   )

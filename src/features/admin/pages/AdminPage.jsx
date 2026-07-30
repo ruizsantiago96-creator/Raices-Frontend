@@ -43,8 +43,17 @@ export default function AdminPage() {
   const [tab, setTab] = useState(() => localStorage.getItem('admin-tab') ?? 'overview')
   const onTab = (t) => { setTab(t); localStorage.setItem('admin-tab', t) }
   const { data: pending = [] } = usePendingInstitutions()
+  const { data: all = [] } = useAllInstitutions()
   const { data: alerts = [] } = useAdminAlerts()
 
+  // Deduplicar por ID para que el badge coincida con el listado de la pestaña
+  // Deduplicar por ID para que el badge coincida con el listado de la pestaña
+  const pendingVerification = all.filter(inst => !inst.is_verified && inst.is_active)
+  const pendingBadgeMap = new Map()
+  for (const inst of [...pending, ...pendingVerification]) {
+    if (!pendingBadgeMap.has(inst.id)) pendingBadgeMap.set(inst.id, inst)
+  }
+  const totalPendingCount = pendingBadgeMap.size
   const criticalCount = alerts.filter(a => a.severity === 'critica').length
 
   const TAB_TITLES = {
@@ -61,7 +70,7 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
-      <AdminSidebar tab={tab} onTab={onTab} pendingCount={pending.length} alertCritical={criticalCount} />
+      <AdminSidebar tab={tab} onTab={onTab} pendingCount={totalPendingCount} alertCritical={criticalCount} />
 
       {/* Mobile admin drawer */}
       <div className="mobile-sidebar-container">
@@ -106,7 +115,7 @@ export default function AdminPage() {
             {([
               { key: 'overview', label: 'Inicio', icon: Icons.home },
               { key: 'intelligence', label: 'Inteligencia', icon: Icons.brain },
-              { key: 'institutions', label: 'Instituciones', icon: Icons.building, badge: pending.length },
+              { key: 'institutions', label: 'Instituciones', icon: Icons.building, badge: totalPendingCount },
               { key: 'users', label: 'Usuarios', icon: Icons.users },
               { key: 'reviews', label: 'Reseñas', icon: Icons.star },
               { key: 'alerts', label: 'Alertas', icon: Icons.shieldAlert, badge: criticalCount },
@@ -429,6 +438,24 @@ function OverviewTab({ onNavigate: _onNavigate }) {
     return () => cancelAnimationFrame(animationFrameId)
   }, [activeUsersDetail, stats])
 
+  const pendingApproval = stats?.aprobacionPendiente ?? 0
+  // Excluir las que ya se contaron como pendientes de aprobación (no activas)
+  const pendingVerification = Math.max(0, (stats?.totalInstituciones ?? 0) - (stats?.institucionesVerificadas ?? 0) - (stats?.aprobacionPendiente ?? 0))
+  const totalPending = pendingApproval + pendingVerification
+
+  const getPendingSubtext = () => {
+    if (pendingApproval > 0 && pendingVerification > 0) {
+      return `${pendingApproval} por aprobar · ${pendingVerification} por verificar`
+    }
+    if (pendingApproval > 0) {
+      return `${pendingApproval} por aprobar`
+    }
+    if (pendingVerification > 0) {
+      return `${pendingVerification} por verificar`
+    }
+    return 'Al día'
+  }
+
   const statCards = [
     { 
       label: 'Usuarios', 
@@ -448,11 +475,11 @@ function OverviewTab({ onNavigate: _onNavigate }) {
     },
     { 
       label: 'Pendientes', 
-      value: stats?.aprobacionPendiente, 
-      sub: stats?.aprobacionPendiente > 0 ? 'Requiere atención' : 'Al día', 
+      value: totalPending, 
+      sub: getPendingSubtext(), 
       icon: Icons.shieldAlert, 
-      color: stats?.aprobacionPendiente > 0 ? '#D46A6A' : '#D4944C',
-      gradient: stats?.aprobacionPendiente > 0 ? 'linear-gradient(135deg, #D46A6A, #E58E8E)' : 'linear-gradient(135deg, #D4944C, #E6B075)'
+      color: totalPending > 0 ? '#D46A6A' : '#D4944C',
+      gradient: totalPending > 0 ? 'linear-gradient(135deg, #D46A6A, #E58E8E)' : 'linear-gradient(135deg, #D4944C, #E6B075)'
     },
     { 
       label: 'Reseñas', 
@@ -1287,8 +1314,16 @@ function InstitutionsTab() {
   const verify = useToggleVerifyInstitution()
   const [confirm, setConfirm] = useState(null)
 
-  const rows = filter === 'pending' ? pending : all
-  const isLoading = filter === 'pending' ? pLoad : aLoad
+  const pendingVerification = all.filter(inst => !inst.is_verified && inst.is_active)
+  // Deduplicar por ID entre ambos arrays (pendientes + por verificar)
+  const combinedPendingMap = new Map()
+  for (const inst of [...pending, ...pendingVerification]) {
+    if (!combinedPendingMap.has(inst.id)) combinedPendingMap.set(inst.id, inst)
+  }
+  const combinedPending = [...combinedPendingMap.values()]
+
+  const rows = filter === 'pending' ? combinedPending : all
+  const isLoading = filter === 'pending' ? (pLoad || aLoad) : aLoad
 
   const doApprove = (id) => approve.mutate(id, { onSuccess: () => addToast('Institución aprobada', 'success') })
   const doVerify = (id) => verify.mutate(id, { onSuccess: (d) => addToast(d.is_verified ? 'Marcada como verificada' : 'Verificación retirada', 'success') })
@@ -1299,7 +1334,7 @@ function InstitutionsTab() {
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        {[{ k: 'pending', l: `Pendientes (${pending.length})` }, { k: 'all', l: `Todas (${all.length})` }].map(f => (
+        {[{ k: 'pending', l: `Pendientes (${combinedPending.length})` }, { k: 'all', l: `Todas (${all.length})` }].map(f => (
           <button key={f.k} onClick={() => setFilter(f.k)}
             style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
               background: filter === f.k ? 'var(--primary)' : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
@@ -1313,8 +1348,8 @@ function InstitutionsTab() {
       ) : rows.length === 0 ? (
         <EmptyState icon={Icons.check({ s: 32 })} title={filter === 'pending' ? 'Sin instituciones pendientes' : 'No hay instituciones'} sub={filter === 'pending' ? 'Todas las solicitudes han sido procesadas' : null} />
       ) : (
-        <div style={{ ...card, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
+          <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
                 {['Nombre', 'Categoría', 'Ciudad', 'Estado', 'Acciones'].map(h => (
@@ -1425,8 +1460,8 @@ function UsersTab({ currentUserId }) {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Icons.users({ s: 32 })} title="No se encontraron usuarios" />
       ) : (
-        <div className="responsive-table-wrap" style={{ ...card, overflow: 'hidden' }}>
-          <table className="responsive-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
+          <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
                 {['Usuario', 'Rol', 'Estado', 'Registrado', 'Acciones'].map(h => (

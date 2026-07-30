@@ -4,6 +4,21 @@ import { useAuthStore } from '@features/auth'
 import { getDependientes, createDependiente } from '../fetchers/dependientes'
 
 /**
+ * Mapea un dependiente del backend al formato que el frontend espera.
+ *
+ * Backend devuelve: { id, tutorId, nombreCompleto, parentesco, etapaVida, necesidades[], rol, fechaCreacion }
+ * Frontend espera:  { id, nombreCompleto, parentesco, etapaVida, tiposDiscapacidad[], notas }
+ */
+function mapDependiente(dep) {
+  if (!dep) return dep
+  return {
+    ...dep,
+    // El backend devuelve "necesidades", el frontend lee "tiposDiscapacidad"
+    tiposDiscapacidad: dep.necesidades ?? dep.tiposDiscapacidad ?? [],
+  }
+}
+
+/**
  * Hook: consulta los dependientes del usuario autenticado.
  *
  * - Cache key: ['dependientes']
@@ -18,7 +33,11 @@ export function useDependientes() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dependientes'],
-    queryFn: getDependientes,
+    queryFn: async () => {
+      const raw = await getDependientes()
+      const arr = Array.isArray(raw) ? raw : (raw?.datos ?? [])
+      return arr.map(mapDependiente)
+    },
     enabled: !!token,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 1,

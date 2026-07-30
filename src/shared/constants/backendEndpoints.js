@@ -22,7 +22,15 @@ export const AUTH_ENDPOINTS = {
     method: 'POST',
     path: '/autenticacion/registro',
     body: { email: 'string', password: 'string', nombreCompleto: 'string', rol: 'pcd|tutor|institution', ciudad: 'string', estado: 'string' },
-    response: { tokenAcceso: 'string', tokenRefresco: 'string', usuario: 'Usuario' },
+    response: {
+      // Para pcd/tutor: { tokenAcceso, tokenRefresco, usuario }
+      // Para institution: { uid, email, rol, mensaje } (sin token — solo registro)
+      tokenAcceso: 'string|undefined',
+      tokenRefresco: 'string|undefined',
+      usuario: 'Usuario|undefined',
+      uid: 'string|undefined',
+      mensaje: 'string|undefined',
+    },
   },
   REFRESH_TOKEN: {
     method: 'POST',
@@ -88,8 +96,17 @@ export const DEPENDENT_ENDPOINTS = {
   CREATE: {
     method: 'POST',
     path: '/usuarios/dependientes',
-    body: { nombreCompleto: 'string', fechaNacimiento: 'string?', parentesco: 'string?', notas: 'string?' },
-    response: 'Dependiente',
+    body: { nombreCompleto: 'string', parentesco: 'string', etapaVida: 'string', necesidades: 'string[]' },
+    response: {
+      id: 'string',
+      tutorId: 'string',
+      nombreCompleto: 'string',
+      parentesco: 'string',
+      etapaVida: 'string',
+      necesidades: 'string[]',
+      rol: 'discapacitado',
+      fechaCreacion: 'string',
+    },
   },
   UPDATE: {
     method: 'PUT',
@@ -272,8 +289,19 @@ export const COMMUNITY_ENDPOINTS = {
   GET_POSTS: {
     method: 'GET',
     path: '/comunidad/publicaciones',
-    params: { grupoId: 'string?' },
-    response: 'Publicacion[]',
+    params: { grupoId: 'string?', pagina: 'number?', limite: 'number?', buscar: 'string?' },
+    response: {
+      datos: [{
+        id: 'string',
+        titulo: 'string',
+        contenido: 'string',
+        autor: { id: 'string', nombre: 'string', avatar: 'string|null' },
+        likesCount: 'number',
+        likedByMe: 'boolean',
+        fechaCreacion: 'string (ISO)',
+      }],
+      meta: { total: 'number', pagina: 'number', limite: 'number', totalPaginas: 'number' },
+    },
   },
   CREATE_POST: {
     method: 'POST',
@@ -328,23 +356,28 @@ export const MESSAGE_ENDPOINTS = {
   GET_CONVERSATIONS: {
     method: 'GET',
     path: '/mensajes/conversaciones',
-    response: 'Conversacion[]',
+    response: [{
+      socio: { id: 'string', email: 'string', rol: 'string', nombreCompleto: 'string', ciudad: 'string', estado: 'string', urlAvatar: 'string|null', activo: 'boolean', features: 'object' },
+      ultimoMensaje: 'string',
+      ultimoEn: 'string (ISO)',
+      noLeidos: 'number',
+    }],
   },
   GET_MESSAGES: {
     method: 'GET',
     path: '/mensajes/con/:partnerId',
-    response: 'Mensaje[]',
+    response: [{ id: 'string', emisorId: 'string', receptorId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)', leido: 'boolean' }],
   },
   SEND_MESSAGE: {
     method: 'POST',
-    path: '/mensajes/enviar/:toId',
+    path: '/mensajes/enviar/:institucionOwnerId',
     body: { contenido: 'string' },
-    response: 'Mensaje',
+    response: { id: 'string', emisorId: 'string', receptorId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)' },
   },
   GET_UNREAD: {
     method: 'GET',
     path: '/mensajes/no-leidos',
-    response: { cantidad: 'number' },
+    response: 'number (plain text, no JSON object)',
   },
 }
 
@@ -456,7 +489,38 @@ export const CATALOG_ENDPOINTS = {
   GET_ALL: {
     method: 'GET',
     path: '/catalogos',
-    response: { categorias: 'string[]', estados: 'string[]', ciudades: 'Record<string, string[]>' },
+    response: {
+      parentescos: 'string[]',
+      discapacidades: 'string[]',
+      etapasVida: 'string[]',
+      features: 'string[]',
+      categorias: 'string[]',
+    },
+  },
+  GET_PARENTESCOS: {
+    method: 'GET',
+    path: '/catalogos/parentescos',
+    response: 'string[]',
+  },
+  GET_DISCAPACIDADES: {
+    method: 'GET',
+    path: '/catalogos/discapacidades',
+    response: 'string[]',
+  },
+  GET_ETAPAS_VIDA: {
+    method: 'GET',
+    path: '/catalogos/etapas-vida',
+    response: '{ id: string, label: string }[]',
+  },
+  GET_FEATURES: {
+    method: 'GET',
+    path: '/catalogos/features',
+    response: '{ id: string, label: string, description: string }[]',
+  },
+  GET_CATEGORIAS: {
+    method: 'GET',
+    path: '/catalogos/categorias',
+    response: '{ id: string, label: string, color: string }[]',
   },
 }
 
@@ -554,7 +618,10 @@ export const ADMIN_ENDPOINTS = {
   GET_ACTIVE_VISITORS: {
     method: 'GET',
     path: '/administracion/visitantes-activos',
-    response: { cantidad: 'number' },
+    response: {
+      visitantesActivos: 'number',
+      ultimaActualizacion: 'string (ISO)',
+    },
   },
 }
 

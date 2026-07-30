@@ -48,7 +48,75 @@ export function useGroups() {
   })
 }
 
-export function usePosts(groupId) {
+/**
+ * Normaliza un post del backend con autor anidado.
+ *
+ * Backend: { id, titulo, contenido, autor: { id, nombre, avatar }, likesCount, likedByMe, fechaCreacion }
+ * Frontend: { id, content, author_id, author_name, author_avatar, like_count, liked_by_me, created_at, title }
+ */
+function mapPostFromBackend(p) {
+  const autor = p.autor ?? {}
+  return {
+    ...p,
+    title: p.titulo ?? p.title ?? '',
+    content: p.contenido ?? p.content ?? '',
+    author_id: autor.id ?? p.author_id ?? p.autorId ?? p.autor_id,
+    author_name: autor.nombre ?? p.author_name ?? p.nombreAutor ?? p.autorNombre ?? 'Anónimo',
+    author_avatar: autor.avatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? null,
+    like_count: p.likesCount ?? p.like_count ?? p.cantidadMeGusta ?? 0,
+    liked_by_me: p.likedByMe ?? p.liked_by_me ?? p.meGustaUsuario ?? false,
+    created_at: p.fechaCreacion ?? p.created_at,
+    group_name: p.group_name ?? p.nombreGrupo,
+    comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
+  }
+}
+
+/**
+ * Hook: consulta publicaciones de la comunidad con paginación y búsqueda.
+ *
+ * GET /api/comunidad/publicaciones
+ * Params: { grupoId?, pagina?, limite?, buscar? }
+ * Response: { datos: Publicacion[], meta: { total, pagina, limite, totalPaginas } }
+ *
+ * @param {Object} options
+ * @param {string} [options.grupoId] - Filtrar por grupo
+ * @param {number} [options.pagina=1] - Página actual
+ * @param {number} [options.limite=10] - Elementos por página
+ * @param {string} [options.buscar] - Término de búsqueda
+ */
+export function usePosts(groupIdOrOptions) {
+  // Soporte backward-compatible: si se pasa un string, es grupoId
+  const opts = typeof groupIdOrOptions === 'string'
+    ? { grupoId: groupIdOrOptions }
+    : (groupIdOrOptions ?? {})
+
+  const { grupoId, pagina = 1, limite = 10, buscar } = opts
+
+  return useQuery({
+    queryKey: ['posts', grupoId, pagina, limite, buscar],
+    queryFn: () => {
+      const params = {}
+      if (grupoId) params.grupoId = grupoId
+      if (pagina > 1) params.pagina = pagina
+      if (limite !== 10) params.limite = limite
+      if (buscar?.trim()) params.buscar = buscar.trim()
+      return api.get('/comunidad/publicaciones', { params }).then(r => {
+        const res = r.data
+        const meta = res?.meta ?? null
+        const arr = Array.isArray(res) ? res.map(mapPostFromBackend) : (res?.datos ?? []).map(mapPostFromBackend)
+        return { posts: arr, meta }
+      })
+    },
+    // Mantener compatibilidad: si el caller espera un array plano, lo desempaquetamos
+    select: (data) => data.posts,
+  })
+}
+
+/**
+ * Hook: consulta publicaciones de la comunidad (legacy, sin paginación).
+ * Mantiene compatibilidad con componentes que esperan un array simple.
+ */
+export function usePostsLegacy(groupId) {
   return useQuery({
     queryKey: ['posts', groupId],
     queryFn: () => api.get('/comunidad/publicaciones', { params: groupId ? { grupoId: groupId } : {} }).then(r => {

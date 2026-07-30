@@ -17,12 +17,10 @@ function isPublicRoute() {
 function forceLogout(message) {
   clearAllAuth()
   useAuthStore.getState().logout()
-
-  const path = window.location.pathname
-  if (path !== '/' && path !== '/auth') {
-    // Pass message via query param para que AuthPage pueda mostrarlo
-    window.location.href = '/auth?reason=' + encodeURIComponent(message ?? 'session_expired')
-  }
+  // NO usamos window.location.href porque eso hace push al historial
+  // del navegador. En su lugar, el cambio de estado en el store provoca
+  // que ProtectedRoute detecte la ausencia de token y redirija a '/'
+  // con <Navigate replace />, manteniendo el historial limpio.
 }
 
 /* ─── Axios instance ──────────────────────────────────────────────── */

@@ -75,6 +75,16 @@ export const JOBS_UI = {
   STATUS_ACCEPTED: 'Aceptada',
   STATUS_REJECTED: 'No seleccionado',
   
+  // Mensajería
+  MESSAGE_BUTTON: 'Enviar mensaje',
+  MESSAGE_TITLE: 'Mensaje a',
+  MESSAGE_PLACEHOLDER: 'Escribe tu mensaje...',
+  MESSAGE_SEND: 'Enviar',
+  MESSAGE_SENT: '¡Mensaje enviado!',
+  MESSAGE_FAILED: 'No se pudo enviar el mensaje',
+  MESSAGE_MODAL_HINT: 'Conversa directamente con la institución sobre esta vacante',
+  MESSAGE_NO_OWNER: 'No se pudo identificar al responsable de la institución',
+  
   // Vacío
   NO_JOBS: 'No hay vacantes disponibles',
   NO_JOBS_HINT: 'Pronto las instituciones publicarán sus oportunidades de empleo',

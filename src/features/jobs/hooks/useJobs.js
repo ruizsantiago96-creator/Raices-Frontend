@@ -1,8 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
-
 function mapJob(job) {
   if (!job) return job
+
+  let status = job.status ?? job.estadoPostulacion ?? job.estado ?? 'pending'
+  if (status === 'pendiente') status = 'pending'
+  if (status === 'en revisión' || status === 'en_revision' || status === 'revision') status = 'reviewed'
+  if (status === 'aceptada' || status === 'aceptado') status = 'accepted'
+  if (status === 'rechazada' || status === 'rechazado' || status === 'no seleccionado') status = 'rejected'
+
   return {
     ...job,
     title: job.title ?? job.titulo,
@@ -16,7 +22,11 @@ function mapJob(job) {
     disability_inclusive: job.disability_inclusive ?? job.inclusivaDiscapacidad,
     institution_name: job.institution_name ?? job.nombreInstitucion ?? job.institucionNombre ?? job.institucion?.nombre ?? job.nombre_institucion,
     institution_verified: job.institution_verified ?? job.verificada ?? job.institucionVerificada ?? job.institucion?.verificada,
+    institution_id: job.institution_id ?? job.institucionId ?? job.institucion?.id,
+    institution_owner_id: job.institution_owner_id ?? job.institucionOwnerId ?? job.institucion?.owner_id ?? job.institucion?.propietarioId,
     disability_types: job.disability_types ?? job.tiposDiscapacidad,
+    cover_letter: job.cover_letter ?? job.cartaPresentacion ?? job.carta_presentacion ?? job.mensaje,
+    status,
   }
 }
 

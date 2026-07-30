@@ -22,9 +22,8 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const [form, setForm] = useState({
     nombreCompleto: '',
     parentesco: PARENTESCOS[0] ?? '',
-    tiposDiscapacidad: [],
+    necesidades: [],
     etapaVida: '',
-    notas: '',
     // Campos para crear cuenta Firebase
     crearCuenta: false,
     email: '',
@@ -36,9 +35,9 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const toggleDiscapacidad = (d) =>
     setForm((f) => ({
       ...f,
-      tiposDiscapacidad: f.tiposDiscapacidad.includes(d)
-        ? f.tiposDiscapacidad.filter((x) => x !== d)
-        : [...f.tiposDiscapacidad, d],
+      necesidades: f.necesidades.includes(d)
+        ? f.necesidades.filter((x) => x !== d)
+        : [...f.necesidades, d],
     }))
 
   const handleSubmit = (e) => {
@@ -48,9 +47,8 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
     const payload = {
       nombreCompleto: form.nombreCompleto.trim(),
       parentesco: form.parentesco,
-      tiposDiscapacidad: form.tiposDiscapacidad,
+      necesidades: form.necesidades,
       etapaVida: form.etapaVida || null,
-      notas: form.notas,
     }
 
     // Incluir datos de cuenta si se activó la opción
@@ -137,7 +135,7 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
             <legend style={{ ...labelStyle, padding: 0 }}>Tipo(s) de discapacidad</legend>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
               {DISABILIDADES.map((d) => {
-                const active = form.tiposDiscapacidad.includes(d)
+                const active = form.necesidades.includes(d)
                 return (
                   <button
                     key={d}
@@ -215,18 +213,7 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
             )}
           </div>
 
-          {/* ── Notas ── */}
-          <div style={{ marginBottom: 24 }}>
-            <label htmlFor="dep-notas" style={labelStyle}>Notas (opcional)</label>
-            <textarea
-              id="dep-notas"
-              value={form.notas}
-              onChange={set('notas')}
-              rows={3}
-              placeholder="Información útil: terapias actuales, intereses, lo que necesita..."
-              style={{ ...inputStyle, height: 'auto', paddingTop: 12, paddingBottom: 12, resize: 'vertical', lineHeight: 1.5 }}
-            />
-          </div>
+
 
           {/* ── Acciones ── */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
