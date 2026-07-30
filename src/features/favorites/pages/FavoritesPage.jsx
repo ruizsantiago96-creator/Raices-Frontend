@@ -3,9 +3,11 @@ import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
 import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import { useMe, useAuthStore } from '@features/auth'
+import BackendFallback from '@shared/components/BackendFallback'
+import { FAVORITE_ENDPOINTS } from '@shared/constants/backendEndpoints'
 
 export default function FavoritesPage() {
-  const { data: favorites = [], isLoading } = useFavorites()
+  const { data: favorites = [], isLoading, isError, refetch } = useFavorites()
   const toggle = useToggleFavorite()
   const { data: user } = useMe()
   const { logout } = useAuthStore()
@@ -23,7 +25,9 @@ export default function FavoritesPage() {
           {isLoading ? '' : `${favorites.length} institución${favorites.length !== 1 ? 'es' : ''} guardada${favorites.length !== 1 ? 's' : ''}`}
         </p>
 
-        {isLoading ? (
+        {isError ? (
+          <BackendFallback method={FAVORITE_ENDPOINTS.LIST.method} endpoint={FAVORITE_ENDPOINTS.LIST.path} onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--fg3)', padding: 40 }}>
             {Icons.loader({ s: 20 })} Cargando...
           </div>

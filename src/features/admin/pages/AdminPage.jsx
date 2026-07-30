@@ -55,9 +55,90 @@ export default function AdminPage() {
     settings: 'Configuración de plataforma',
   }
 
+  const [adminDrawerOpen, setAdminDrawerOpen] = useState(false)
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
       <AdminSidebar tab={tab} onTab={onTab} pendingCount={pending.length} alertCritical={criticalCount} />
+
+      {/* Mobile admin drawer */}
+      <div className="mobile-sidebar-container">
+        <div
+          className="mobile-sidebar-overlay"
+          onClick={() => setAdminDrawerOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 999,
+            opacity: adminDrawerOpen ? 1 : 0,
+            visibility: adminDrawerOpen ? 'visible' : 'hidden',
+            transition: 'opacity 0.25s ease, visibility 0.25s ease',
+          }}
+        />
+        <nav
+          aria-label="Navegación admin móvil"
+          className="mobile-sidebar-drawer"
+          style={{
+            position: 'fixed', left: 0, top: 0, bottom: 0,
+            width: 270, background: '#001D26', zIndex: 1000,
+            display: 'flex', flexDirection: 'column',
+            padding: '20px 16px', boxSizing: 'border-box',
+            transform: adminDrawerOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.25s ease',
+            boxShadow: '4px 0 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '0 8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {Icons.shield({ s: 16 })}
+              </div>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Admin</span>
+            </div>
+            <button onClick={() => setAdminDrawerOpen(false)} aria-label="Cerrar menú"
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+            {([
+              { key: 'overview', label: 'Inicio', icon: Icons.home },
+              { key: 'intelligence', label: 'Inteligencia', icon: Icons.brain },
+              { key: 'institutions', label: 'Instituciones', icon: Icons.building, badge: pending.length },
+              { key: 'users', label: 'Usuarios', icon: Icons.users },
+              { key: 'reviews', label: 'Reseñas', icon: Icons.star },
+              { key: 'alerts', label: 'Alertas', icon: Icons.shieldAlert, badge: criticalCount },
+              { key: 'settings', label: 'Config', icon: Icons.target },
+            ]).map(item => {
+              const active = tab === item.key
+              return (
+                <button key={item.key} onClick={() => { onTab(item.key); setAdminDrawerOpen(false) }}
+                  aria-current={active ? 'page' : undefined}
+                  style={{
+                    background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    color: active ? '#fff' : 'rgba(255,255,255,0.55)',
+                    transition: 'all 0.2s ease', padding: '12px 14px',
+                    fontFamily: 'var(--font-body)', fontWeight: active ? 700 : 500, fontSize: 15, textAlign: 'left',
+                  }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+                  <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+                  {(item.badge > 0) && (
+                    <span style={{ marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 9, background: item.key === 'alerts' ? '#D46A6A' : '#D4944C', color: '#fff', fontSize: 10, fontWeight: 700, padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.badge > 9 ? '9+' : item.badge}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+            <Link to="/dashboard" onClick={() => setAdminDrawerOpen(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, padding: '10px 12px', borderRadius: 'var(--radius-md)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
+              <span>Ir a app</span>
+            </Link>
+          </div>
+        </nav>
+      </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Top bar */}
@@ -68,14 +149,29 @@ export default function AdminPage() {
           padding: '0 32px', fontFamily: 'var(--font-body)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button
+              className="mobile-hamburger-btn"
+              onClick={() => setAdminDrawerOpen(true)}
+              aria-label="Abrir menú de administración"
+              style={{
+                display: 'none',
+                alignItems: 'center', justifyContent: 'center',
+                width: 40, height: 40,
+                borderRadius: 'var(--radius-sm)',
+                background: '#001D26', border: 'none',
+                color: '#fff', cursor: 'pointer', padding: 0,
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
+            </button>
+            <div className="admin-topbar-brand" style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {Icons.shield({ s: 16 })}
             </div>
-            <div>
+            <div className="admin-topbar-title">
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--fg1)' }}>
                 Panel de administración
               </span>
-              <span style={{ fontSize: 13, color: 'var(--fg3)', marginLeft: 12 }}>
+              <span className="admin-topbar-subtitle" style={{ fontSize: 13, color: 'var(--fg3)', marginLeft: 12 }}>
                 {TAB_TITLES[tab]}
               </span>
             </div>
@@ -83,12 +179,13 @@ export default function AdminPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {criticalCount > 0 && (
               <button onClick={() => onTab('alerts')}
+                className="admin-alert-badge"
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: '1.5px solid #D46A6A', background: 'color-mix(in oklch, #D46A6A 10%, transparent)', color: '#D46A6A', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)' }}>
-                {Icons.shieldAlert({ s: 15 })} {criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica{criticalCount !== 1 ? 's' : ''}
+                {Icons.shieldAlert({ s: 15 })} <span className="admin-alert-text">{criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica{criticalCount !== 1 ? 's' : ''}</span>
               </button>
             )}
-            <span style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 600 }}>{user?.full_name ?? user?.email}</span>
-            <button onClick={logout} style={{ fontSize: 13, padding: '8px 16px', minHeight: 36, borderRadius: 'var(--radius-pill)', border: '1.5px solid var(--border-strong)', background: 'transparent', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+            <span className="admin-topbar-username" style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 600 }}>{user?.full_name ?? user?.email}</span>
+            <button onClick={logout} className="admin-logout-btn" style={{ fontSize: 13, padding: '8px 16px', minHeight: 36, borderRadius: 'var(--radius-pill)', border: '1.5px solid var(--border-strong)', background: 'transparent', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
               Cerrar sesión
             </button>
           </div>
@@ -108,7 +205,7 @@ export default function AdminPage() {
   )
 }
 
-/* ════════════════════ Admin Sidebar ════════════════════ */
+/* ════════════════════ Admin Sidebar (Desktop) ════════════════════ */
 function AdminSidebar({ tab, onTab, pendingCount, alertCritical }) {
   const NAV = [
     { key: 'overview',      label: 'Inicio',         icon: Icons.home },

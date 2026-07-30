@@ -9,12 +9,14 @@ import { useAuthStore } from '@features/auth'
 import { Icons, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import { NotificationBell } from '@features/notifications'
+import BackendFallback from '@shared/components/BackendFallback'
+import { DISCOVERY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 
 export default function DashboardPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
   const { data: profile } = useProfile()
-  const { data: recommendations = [], isLoading } = useDiscovery()
+  const { data: recommendations = [], isLoading, isError: discoveryError, refetch: refetchDiscovery } = useDiscovery()
   const { data: favIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
   const { data: aiInsights, isLoading: aiLoading } = useAINextSteps()
@@ -160,7 +162,9 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {isLoading ? (            <div className="responsive-grid-cards">
+        {discoveryError ? (
+          <BackendFallback method={DISCOVERY_ENDPOINTS.SEARCH.method} endpoint={DISCOVERY_ENDPOINTS.SEARCH.path} onRetry={() => refetchDiscovery()} />
+        ) : isLoading ? (            <div className="responsive-grid-cards">
             {[0, 1, 2].map(i => (
               <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

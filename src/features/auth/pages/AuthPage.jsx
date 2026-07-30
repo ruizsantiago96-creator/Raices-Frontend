@@ -7,11 +7,12 @@ import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/sha
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
+import { AUTH_MESSAGES, AUTH_UI, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
 
 const ROLES = [
-  { id: 'pcd', icon: Icons.heart, title: 'Persona con discapacidad', desc: 'Accede a tu ecosistema personalizado' },
-  { id: 'tutor', icon: Icons.users, title: 'Tutor o familiar', desc: 'Apoya el desarrollo de quien cuidas' },
-  { id: 'institution', icon: Icons.building, title: 'Institución', desc: 'Ofrece servicios, terapia o educación' },
+  { id: 'pcd', icon: Icons.heart, title: AUTH_UI.ROLE_PCD_TITLE, desc: AUTH_UI.ROLE_PCD_DESC },
+  { id: 'tutor', icon: Icons.users, title: AUTH_UI.ROLE_TUTOR_TITLE, desc: AUTH_UI.ROLE_TUTOR_DESC },
+  { id: 'institution', icon: Icons.building, title: AUTH_UI.ROLE_INSTITUTION_TITLE, desc: AUTH_UI.ROLE_INSTITUTION_DESC },
 ]
 
 
@@ -41,17 +42,15 @@ export default function AuthPage() {
   const doLogin = async () => {
     setError('')
     if (!form.email || !form.password) {
-      const msg = 'Ingresa tu correo y contraseña'
-      setError(msg)
-      addToast(msg, 'error')
+      setError(AUTH_MESSAGES.LOGIN_FIELDS_REQUIRED)
+      addToast(AUTH_MESSAGES.LOGIN_FIELDS_REQUIRED, 'error')
       return
     }
     try {
       await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
-      // Token guardado en onSuccess del hook
-      addToast('¡Bienvenido!', 'success')
+      addToast(AUTH_MESSAGES.LOGIN_SUCCESS, 'success')
     } catch (err) {
-      const msg = err.response?.data?.message ?? 'Correo o contraseña incorrectos'
+      const msg = err.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
       setError(msg)
       addToast(msg, 'error')
     }
@@ -67,9 +66,9 @@ export default function AuthPage() {
     setError('')
     try {
       await register.mutateAsync({ ...form, _rememberMe: rememberMe })
-      addToast('¡Cuenta creada!', 'success')
+      addToast(AUTH_MESSAGES.REGISTER_SUCCESS, 'success')
     } catch (err) {
-      const msg = err.response?.data?.message ?? 'No se pudo crear la cuenta'
+      const msg = err.response?.data?.message ?? AUTH_MESSAGES.REGISTER_FAILED
       setError(msg)
       addToast(msg, 'error')
     }
@@ -80,26 +79,28 @@ export default function AuthPage() {
     setError('');
     
     if (!form.email) {
-      const msg = 'Ingresa tu correo para recuperar la contraseña';
-      setError(msg);
-      addToast(msg, 'error');
+      setError(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED);
+      addToast(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED, 'error');
       return;
     }
 
     setSending(true);
     try {
-      const url = 'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyBWG0VGwewzap1Ls3HVH-yGsNE323XYxLc';
+      const firebaseKey = import.meta.env.VITE_FIREBASE_API_KEY;
+      if (!firebaseKey) {
+        throw new Error('Firebase API key not configured');
+      }
+      const url = `${FIREBASE_PASSWORD_RESET_URL}?key=${firebaseKey}`;
       await axios.post(url, {
         requestType: "PASSWORD_RESET",
         email: form.email
       });
       
-      addToast('Enlace enviado. Revisa tu bandeja de entrada.', 'success');
+      addToast(AUTH_MESSAGES.FORGOT_SEND_SUCCESS, 'success');
       setMode('login'); 
     } catch {
-      const msg = 'No pudimos enviar el correo. Verifica tu dirección e intenta de nuevo.';
-      setError(msg);
-      addToast(msg, 'error');
+      setError(AUTH_MESSAGES.FORGOT_SEND_FAILED);
+      addToast(AUTH_MESSAGES.FORGOT_SEND_FAILED, 'error');
     } finally {
       setSending(false);
     }

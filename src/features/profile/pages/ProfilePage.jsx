@@ -4,6 +4,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
+import { PROFILE_TOAST, PROFILE_UI, PROFILE_VALIDATION, ROLE_LABELS } from '../constants/profileMessages'
 
 export default function ProfilePage() {
   const { logout } = useAuthStore()
@@ -37,13 +38,13 @@ export default function ProfilePage() {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
+    const allowedTypes = PROFILE_VALIDATION.ALLOWED_AVATAR_TYPES
     if (!allowedTypes.includes(file.type)) {
-      addToast('Formato no permitido. Usa PNG, JPG o JPEG', 'error')
+      addToast(PROFILE_TOAST.AVATAR_INVALID_FORMAT, 'error')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      addToast('La imagen no puede superar 5MB', 'error')
+    if (file.size > PROFILE_VALIDATION.MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+      addToast(PROFILE_TOAST.AVATAR_TOO_LARGE, 'error')
       return
     }
     const reader = new FileReader()
@@ -51,10 +52,10 @@ export default function ProfilePage() {
     reader.readAsDataURL(file)
     try {
       await uploadAvatar.mutateAsync(file)
-      addToast('Avatar actualizado correctamente', 'success')
+      addToast(PROFILE_TOAST.AVATAR_UPDATED, 'success')
     } catch (err) {
       setAvatarPreview(null)
-      addToast(err.response?.data?.mensaje ?? 'Error al subir la foto', 'error')
+      addToast(err.response?.data?.mensaje ?? PROFILE_TOAST.AVATAR_UPDATE_ERROR, 'error')
     }
     e.target.value = ''
   }
@@ -66,23 +67,23 @@ export default function ProfilePage() {
         ciudad: form.city,
         estado: form.state,
       })
-      addToast('Perfil actualizado', 'success')
+      addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
       setEditing(false)
     } catch {
-      addToast('Error al guardar', 'error')
+      addToast(PROFILE_TOAST.PROFILE_UPDATE_ERROR, 'error')
     }
   }
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   const handleDeleteAvatar = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')) return
+    if (!window.confirm(PROFILE_UI.CONFIRM_DELETE_AVATAR)) return
     try {
       const result = await deleteAvatar.mutateAsync()
       setAvatarPreview(null)
-      addToast(result.mensaje ?? 'Foto de perfil eliminada correctamente', 'success')
+      addToast(result.mensaje ?? PROFILE_TOAST.AVATAR_DELETED, 'success')
     } catch (err) {
-      addToast(err.message ?? err.response?.data?.mensaje ?? 'Error al eliminar la foto', 'error')
+      addToast(err.message ?? err.response?.data?.mensaje ?? PROFILE_TOAST.AVATAR_DELETE_ERROR, 'error')
     }
   }
 
@@ -120,7 +121,7 @@ export default function ProfilePage() {
       <main className="responsive-main">
         <div style={{ maxWidth: 800, width: '100%', margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
-          Mi perfil
+          {PROFILE_UI.PAGE_TITLE}
         </h1>
 
         {isLoading ? (
@@ -135,8 +136,8 @@ export default function ProfilePage() {
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--danger-subtle, #fdecea)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 {Icons.shieldAlert({ s: 22 })}
               </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>No se pudo cargar el perfil</h3>
-              <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>Verifica tu conexión e intenta de nuevo</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.ERROR_TITLE}</h3>
+              <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.ERROR_DESCRIPTION}</p>
             </div>
           </div>
         ) : (
@@ -161,7 +162,7 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {Icons.upload({ s: 14 })} Subir foto
+                    {Icons.upload({ s: 14 })} {PROFILE_UI.UPLOAD_PHOTO}
                   </button>
                   {(avatarPreview || data?.urlAvatar) && (
                     <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'none', border: 'none', color: '#DC3545', fontSize: 13, fontWeight: 600, cursor: deleteAvatar.isPending ? 'not-allowed' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
@@ -169,7 +170,7 @@ export default function ProfilePage() {
                         <span style={{ width: 14, height: 14, border: '2px solid #DC3545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
                       ) : (
                         Icons.x({ s: 14 })
-                      )} Eliminar foto
+                      )} {PROFILE_UI.DELETE_PHOTO}
                     </button>
                   )}
                 </div>
@@ -178,7 +179,7 @@ export default function ProfilePage() {
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                       {data?.nombreCompleto ?? '—'}
                     </h2>
-                    <span style={s.roleBadge}>{roleLabels[data?.role] ?? data?.role}</span>
+                    <span style={s.roleBadge}>{ROLE_LABELS[data?.role] ?? data?.role}</span>
                   </div>
                   <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -194,32 +195,31 @@ export default function ProfilePage() {
                 {!editing && (
                   <div className="profile-header-actions">
                     <button className="btn-secondary" style={{ fontSize: 14, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={startEdit}>
-                      {Icons.edit({ s: 14 })} Editar
+                      {Icons.edit({ s: 14 })} {PROFILE_UI.EDIT_BUTTON}
                     </button>
                   </div>
                 )}
               </div>
 
               {/* Stats row */}
-              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>
-                <div style={s.stat}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                    {data?.perfilNecesidades?.tiposDiscapacidad?.length || 0}
+              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>                  <div style={s.stat}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                      {data?.perfilNecesidades?.tiposDiscapacidad?.length || 0}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.DISABILITY_STAT_LABEL}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>tipo{disabilities.length !== 1 ? 's' : ''} de discapacidad</div>
-                </div>
-                <div style={s.stat}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                    {(data?.perfilNecesidades?.necesidades?.length || 0) + (data?.perfilNecesidades?.metasActuales?.length || 0)}
+                  <div style={s.stat}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                      {(data?.perfilNecesidades?.necesidades?.length || 0) + (data?.perfilNecesidades?.metasActuales?.length || 0)}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.NEEDS_STAT_LABEL}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>perfil de necesidades</div>
-                </div>
-                <div style={s.stat}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                    {data?.verificado ? '✓' : 'No'}
+                  <div style={s.stat}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
+                      {data?.verificado ? '✓' : 'No'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.VERIFIED_STAT_LABEL}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>identidad verificada</div>
-                </div>
               </div>
             </div>
 
@@ -227,28 +227,28 @@ export default function ProfilePage() {
             {editing && (
               <div style={s.card}>
                 <div style={s.sectionTitle}>
-                  <span>Editar datos personales</span>
+                  <span>{PROFILE_UI.EDIT_TITLE}</span>
                 </div>
                 <div style={s.row}>
                   <div style={s.field}>
-                    <label style={labelStyle}>Nombre completo</label>
+                    <label style={labelStyle}>{PROFILE_UI.NAME_LABEL}</label>
                     <input style={inputStyle} value={form.full_name} onChange={set('full_name')} />
                   </div>
                 </div>
                 <div style={s.row}>
                   <div style={s.field}>
-                    <label style={labelStyle}>Ciudad</label>
-                    <input style={inputStyle} value={form.city} onChange={set('city')} placeholder="Mérida" />
+                    <label style={labelStyle}>{PROFILE_UI.CITY_LABEL}</label>
+                    <input style={inputStyle} value={form.city} onChange={set('city')} placeholder={PROFILE_UI.CITY_PLACEHOLDER} />
                   </div>
                   <div style={s.field}>
-                    <label style={labelStyle}>Estado</label>
-                    <input style={inputStyle} value={form.state} onChange={set('state')} placeholder="Yucatán" />
+                    <label style={labelStyle}>{PROFILE_UI.STATE_LABEL}</label>
+                    <input style={inputStyle} value={form.state} onChange={set('state')} placeholder={PROFILE_UI.STATE_PLACEHOLDER} />
                   </div>
                 </div>
                 <div className="profile-edit-actions" style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                  <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={() => setEditing(false)}>Cancelar</button>
+                  <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={() => setEditing(false)}>{PROFILE_UI.CANCEL_BUTTON}</button>
                   <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={handleSave} disabled={update.isPending}>
-                    {update.isPending ? 'Guardando...' : 'Guardar cambios'}
+                    {update.isPending ? PROFILE_UI.SAVE_BUTTON_LOADING : PROFILE_UI.SAVE_BUTTON}
                   </button>
                 </div>
               </div>
@@ -258,20 +258,20 @@ export default function ProfilePage() {
             {data?.perfilNecesidades ? (
               <div style={s.card}>
                 <div style={s.sectionTitle}>
-                  <span>Perfil de necesidades</span>
+                  <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
                   <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {Icons.edit({ s: 13 })} Actualizar
+                    {Icons.edit({ s: 13 })} {PROFILE_UI.UPDATE_LINK}
                   </a>
                 </div>
                 {stage && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Etapa de vida</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
                     <span style={s.chip('var(--primary)')}>{stage.label}</span>
                   </div>
                 )}
                 {disabilities.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipos de discapacidad</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {disabilities.map((d, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
@@ -281,7 +281,7 @@ export default function ProfilePage() {
                 )}
                 {data?.perfilNecesidades?.modosComunicacion?.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modos de comunicación</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {data?.perfilNecesidades?.modosComunicacion?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
@@ -291,7 +291,7 @@ export default function ProfilePage() {
                 )}
                 {data?.perfilNecesidades?.necesidadesMovilidad?.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Necesidades de movilidad</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {data?.perfilNecesidades?.necesidadesMovilidad?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
@@ -305,11 +305,11 @@ export default function ProfilePage() {
                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   {Icons.target({ s: 22 })}
                 </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Completa tu perfil de necesidades</h3>
-                <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>Con esta información la IA puede recomendarte instituciones que realmente encajen contigo</p>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.EMPTY_TITLE}</h3>
+                <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.EMPTY_DESCRIPTION}</p>
                 <a href="/onboarding">
                   <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }}>
-                    Completar ahora {Icons.arrowRight({ s: 14 })}
+                    {PROFILE_UI.COMPLETE_NOW_BUTTON} {Icons.arrowRight({ s: 14 })}
                   </button>
                 </a>
               </div>

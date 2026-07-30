@@ -8,6 +8,8 @@ import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
 import MapView from '../components/MapView'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
+import BackendFallback from '@shared/components/BackendFallback'
+import { INSTITUTION_ENDPOINTS } from '@shared/constants/backendEndpoints'
 
 const PAGE_SIZE = 50
 
@@ -91,7 +93,7 @@ export default function ExplorePage() {
     setVisibleCount(PAGE_SIZE)
   }
 
-  const { data: apiInstitutions = [], isLoading: loadingInstitutions, error } = useInstitutions(filters)
+  const { data: apiInstitutions = [], isLoading: loadingInstitutions, error, refetch } = useInstitutions(filters)
   const { data: favIds = new Set() } = useFavoriteIds()
   const toggle = useToggleFavorite()
 
@@ -226,7 +228,7 @@ export default function ExplorePage() {
           </div>
         </div>
         {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
-        {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
+        {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
             {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
@@ -254,8 +256,8 @@ function EmptyState() {
   return <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 60, textAlign: 'center' }}><div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>{Icons.search({ s: 24 })}</div><h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', fontFamily: 'var(--font-display)' }}>Sin resultados</h3><p style={{ fontSize: 15, color: 'var(--fg3)', margin: 0 }}>Intenta con otro término o categoría</p></div>
 }
 
-function ErrorState() {
-  return <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 48, textAlign: 'center' }}><p style={{ color: 'var(--fg3)', fontSize: 15 }}>Ocurrió un error al cargar las instituciones. Intenta de nuevo.</p></div>
+function ErrorState({ onRetry }) {
+  return <BackendFallback method={INSTITUTION_ENDPOINTS.LIST.method} endpoint={INSTITUTION_ENDPOINTS.LIST.path} onRetry={onRetry} />
 }
 
 function InstitutionCard({ inst, isFav, onToggleFav }) {

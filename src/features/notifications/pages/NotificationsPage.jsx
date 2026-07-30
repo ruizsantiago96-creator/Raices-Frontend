@@ -3,6 +3,9 @@ import { useNotifications, useMarkRead, useMarkAllRead } from '../hooks/useNotif
 import { useAuthStore } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
+import BackendFallback from '@shared/components/BackendFallback'
+import { NOTIFICATION_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import { NOTIFICATION_UI } from '../constants/notificationMessages'
 
 const TYPE_META = {
   info: { color: '#01ADFF', icon: Icons.info, label: 'Info' },
@@ -14,12 +17,12 @@ const TYPE_META = {
 function relativeDate(d) {
   const diff = Date.now() - new Date(d)
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Ahora mismo'
-  if (mins < 60) return `Hace ${mins}m`
+  if (mins < 1) return NOTIFICATION_UI.TIME_NOW
+  if (mins < 60) return `${NOTIFICATION_UI.TIME_MINUTES} ${mins}m`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `Hace ${hours}h`
+  if (hours < 24) return `${NOTIFICATION_UI.TIME_HOURS} ${hours}h`
   const days = Math.floor(hours / 24)
-  return `Hace ${days}d`
+  return `${NOTIFICATION_UI.TIME_DAYS} ${days}d`
 }
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
@@ -27,7 +30,7 @@ const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-
 export default function NotificationsPage() {
   const { logout } = useAuthStore()
   const { data: user } = { data: useAuthStore.getState().user }
-  const { data: notifications = [], isLoading } = useNotifications()
+  const { data: notifications = [], isLoading, isError, refetch } = useNotifications()
   const markRead = useMarkRead()
   const markAll = useMarkAllRead()
   const [filter, setFilter] = useState('all')
@@ -55,16 +58,16 @@ export default function NotificationsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Notificaciones
+              {NOTIFICATION_UI.PAGE_TITLE}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>
-              {unread > 0 ? `${unread} sin leer` : 'Todo al día'}
+              {unread > 0 ? `${unread} ${NOTIFICATION_UI.UNREAD_SUFFIX}` : NOTIFICATION_UI.ALL_READ}
             </p>
           </div>
           {unread > 0 && (
             <button onClick={handleMarkAllRead} disabled={markAll.isPending}
               style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {Icons.check({ s: 14 })} Marcar todas leídas
+              {Icons.check({ s: 14 })} {NOTIFICATION_UI.MARK_ALL_READ}
             </button>
           )}
         </div>
@@ -83,7 +86,9 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notifications list */}
-        {isLoading ? (
+        {isError ? (
+          <BackendFallback method={NOTIFICATION_ENDPOINTS.GET_ALL.method} endpoint={NOTIFICATION_ENDPOINTS.GET_ALL.path} onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2, 3].map(i => (
               <div key={i} style={{ ...card, padding: 20, animation: 'pulse 1.5s ease-in-out infinite' }}>
@@ -102,11 +107,10 @@ export default function NotificationsPage() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               {Icons.bell({ s: 24 })}
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
-              {filter === 'unread' ? '¡Todo leído!' : 'Sin notificaciones'}
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>              { filter === 'unread' ? NOTIFICATION_UI.EMPTY_UNREAD_TITLE : NOTIFICATION_UI.EMPTY_ALL_TITLE}
             </h3>
             <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
-              {filter === 'unread' ? 'No tienes notificaciones pendientes' : 'Cuando haya actividad en tu cuenta aparecerán aquí'}
+              {filter === 'unread' ? NOTIFICATION_UI.EMPTY_UNREAD_DESC : NOTIFICATION_UI.EMPTY_ALL_DESC}
             </p>
           </div>
         ) : (
