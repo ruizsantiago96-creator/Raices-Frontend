@@ -1,4 +1,3 @@
-onlyBuiltDependencies:
-  - '@firebase/util'
-  - esbuild
-  - protobufjs
+allowBuilds:
+  '@firebase/util': true
+  protobufjs: true
