@@ -118,7 +118,7 @@ export default function CrearInstitucionPage() {
           {Icons.arrowLeft({ s: 16 })} Volver
         </button>
 
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
+        <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
           Registrar nueva institución
         </h1>
         <p style={{ fontSize: 15, color: 'var(--fg3)', margin: '0 0 32px', lineHeight: 1.5 }}>
@@ -134,7 +134,7 @@ export default function CrearInstitucionPage() {
 
         <form onSubmit={handleSubmit}>
           {/* Sección: Datos básicos */}
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+          <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
               {Icons.building({ s: 18 })} Datos básicos
             </h3>
@@ -168,7 +168,7 @@ export default function CrearInstitucionPage() {
           </div>
 
           {/* Sección: Ubicación */}
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+          <div className="animate-fade-in-up delay-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
               {Icons.mapPin({ s: 18 })} Ubicación
             </h3>
@@ -191,7 +191,7 @@ export default function CrearInstitucionPage() {
           </div>
 
           {/* Sección: Contacto */}
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+          <div className="animate-fade-in-up delay-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
               {Icons.phone({ s: 18 })} Contacto
             </h3>
@@ -214,7 +214,7 @@ export default function CrearInstitucionPage() {
           </div>
 
           {/* Sección: Discapacidades */}
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 28 }}>
+          <div className="animate-fade-in-up delay-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 28 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
               {Icons.heartPulse({ s: 18 })} Tipos de discapacidad que atiende
             </h3>

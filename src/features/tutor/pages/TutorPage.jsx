@@ -96,13 +96,13 @@ export default function TutorPage() {
       <TopNav user={user} onLogout={logout} currentPage="tutor" />
 
       <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' }}>
-        <div className="tutor-header responsive-header" style={{ marginBottom: 8 }}>
+        <div className="tutor-header responsive-header animate-fade-in-up" style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.users({ s: 24 })}
             </div>
             <div>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{TUTOR_UI.PAGE_TITLE}</h1>
+              <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{TUTOR_UI.PAGE_TITLE}</h1>
               <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '2px 0 0' }}>{TUTOR_UI.SUBTITLE}</p>
             </div>
           </div>
@@ -143,9 +143,9 @@ export default function TutorPage() {
               </button>
             </div>
           ) : (
-            <div className="tutor-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+            <div className="tutor-cards-grid stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <DependentCard key={dep?.id} dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} />
+                <div key={dep?.id} className="animate-scale-in"><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} />
               ))}
             </div>
           )}

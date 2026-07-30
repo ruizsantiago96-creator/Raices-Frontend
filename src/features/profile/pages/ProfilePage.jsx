@@ -120,7 +120,7 @@ export default function ProfilePage() {
       <TopNav user={data} onLogout={logout} currentPage="profile" />
       <main className="responsive-main">
         <div style={{ maxWidth: 800, width: '100%', margin: '0 auto' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
+        <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
           {PROFILE_UI.PAGE_TITLE}
         </h1>
 
@@ -143,7 +143,7 @@ export default function ProfilePage() {
         ) : (
           <>
             {/* Header card */}
-            <div className="profile-card" style={s.card}>
+            <div className="profile-card animate-fade-in-up delay-1" style={s.card}>
               <div className="profile-header-row" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
                 <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
 
             {/* Edit form */}
             {editing && (
-              <div style={s.card}>
+              <div className="animate-tab-in" style={s.card}>
                 <div style={s.sectionTitle}>
                   <span>{PROFILE_UI.EDIT_TITLE}</span>
                 </div>
@@ -256,7 +256,7 @@ export default function ProfilePage() {
 
             {/* Perfil de necesidades */}
             {data?.perfilNecesidades ? (
-              <div style={s.card}>
+              <div className="animate-fade-in-up delay-2" style={s.card}>
                 <div style={s.sectionTitle}>
                   <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
                   <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>

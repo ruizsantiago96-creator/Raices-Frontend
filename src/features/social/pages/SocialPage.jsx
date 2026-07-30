@@ -242,7 +242,7 @@ function CreateGroupModal({ onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 480, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+      <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 480, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px' }}>{SOCIAL_UI.CREATE_GROUP_TITLE}</h2>
         <form onSubmit={handleSubmit}>
           <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>{SOCIAL_UI.FORM_NAME_LABEL}</label>
@@ -281,7 +281,7 @@ function AboutCommunity() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div style={{ ...card, padding: 32, textAlign: 'center' }}>
+      <div className="animate-fade-in-up" style={{ ...card, padding: 32, textAlign: 'center' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           {Icons.users({ s: 28 })}
         </div>
@@ -504,7 +504,7 @@ export default function SocialPage() {
       <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
 
         {/* Tab selector */}
-        <div className="social-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <div className="social-tabs animate-fade-in-up" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[
             { key: 'community', label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
             { key: 'messages', label: SOCIAL_UI.TAB_MESSAGES, icon: Icons.message },
@@ -581,7 +581,7 @@ export default function SocialPage() {
 
             {/* ── Main column ── */}
             <div>
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
+              <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <Avatar name={user?.name} src={user?.avatar_url} />
                   <form onSubmit={handleSubmit} style={{ flex: 1 }}>
@@ -615,8 +615,9 @@ export default function SocialPage() {
                   <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>{SOCIAL_UI.EMPTY_POSTS_DESC}</p>
                 </div>
               ) : (
-                posts.map((post) => (
-                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
+                <div className="stagger-children">
+                {posts.map((post) => (
+                  <div key={post.id} className="animate-fade-in-up"><PostCard post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
                 ))
               )}
             </div>
