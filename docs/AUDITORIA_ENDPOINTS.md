@@ -325,24 +325,144 @@ Response 200: { "message": "Reseña actualizada", "review": {...} }
 
 ---
 
-#### 2.2.4 Estadísticas de la Comunidad (Datos Hardcoded)
+#### 2.2.4 Estadísticas de la Comunidad
 
-**Problema:** En `SocialPage.jsx` (AboutCommunity), las estadísticas están hardcodeadas:
-```javascript
-{ label: 'Miembros activos', value: '2,400+' },
-{ label: 'Grupos', value: '12' },
-{ label: 'Historias compartidas', value: '850+' },
+**Estado:** Endpoint definido en `backendEndpoints.js` y consumido por `useCommunityStats()` en `useCommunity.js`. El componente `AboutCommunity` en `SocialPage.jsx` ya usa este hook para mostrar datos reales.
+
+**Endpoint:**
+```
+GET /comunidad/estadisticas
 ```
 
-```
-GET /community/stats
-Response 200:
+**Autenticación:** Requiere token JWT (cualquier usuario autenticado).
+
+**Respuesta exitosa (200):**
+```json
 {
-  "active_members": 2400,
-  "groups_count": 12,
-  "posts_count": 850
+  "totalMiembros": 2400,
+  "totalGrupos": 12,
+  "totalPublicaciones": 850
 }
 ```
+
+**Campos:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `totalMiembros` | `number` | Total de usuarios registrados |
+| `totalGrupos` | `number` | Total de grupos activos |
+| `totalPublicaciones` | `number` | Total de publicaciones creadas |
+
+**Errores posibles:**
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | No autenticado |
+| 500 | Error interno del servidor |
+
+**Ejemplo curl:**
+```bash
+curl -X GET https://tu-api.com/comunidad/estadisticas \
+  -H "Authorization: Bearer <token>"
+```
+
+**Implementación sugerida (backend):**
+```sql
+-- Contar usuarios activos
+SELECT COUNT(*) FROM usuarios WHERE activo = true;
+
+-- Contar grupos activos
+SELECT COUNT(*) FROM grupos WHERE activo = true;
+
+-- Contar publicaciones totales
+SELECT COUNT(*) FROM publicaciones;
+```
+
+---
+
+#### 2.2.5 Miembros Destacados de la Comunidad
+
+**Estado:** Endpoint definido en `backendEndpoints.js`. Pendiente de crear hook `useMiembrosDestacados()` y conectar a `AboutCommunity`.
+
+**Endpoint:**
+```
+GET /comunidad/miembros-destacados
+```
+
+**Autenticación:** Requiere token JWT (cualquier usuario autenticado).
+
+**Query params:**
+
+| Param | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `limite` | `number` | No | Cantidad máxima de miembros (default: 6) |
+
+**Respuesta exitosa (200):**
+```json
+{
+  "miembros": [
+    {
+      "id": "uuid-1",
+      "nombreCompleto": "María García",
+      "rol": "tutor",
+      "ciudad": "Mérida",
+      "estado": "Yucatán",
+      "urlAvatar": "https://...",
+      "biografia": "Mamá de Santiago (8 años, TEA). Comparte experiencias sobre terapia ABA y escuela inclusiva."
+    },
+    {
+      "id": "uuid-2",
+      "nombreCompleto": "Carlos Hernández",
+      "rol": "pcd",
+      "ciudad": "Ciudad de México",
+      "estado": "CDMX",
+      "urlAvatar": null,
+      "biografia": "Ingeniero en sistemas. Busca oportunidades de empleo inclusivo."
+    }
+  ]
+}
+```
+
+**Campos del usuario:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | `string` | UUID del usuario |
+| `nombreCompleto` | `string` | Nombre completo |
+| `rol` | `string` | `pcd`, `tutor` o `institution` |
+| `ciudad` | `string` | Ciudad del usuario |
+| `estado` | `string` | Estado del usuario |
+| `urlAvatar` | `string\|null` | URL del avatar (puede ser null) |
+| `biografia` | `string` | Breve descripción del usuario |
+
+**Errores posibles:**
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | No autenticado |
+| 500 | Error interno del servidor |
+
+**Ejemplo curl:**
+```bash
+curl -X GET "https://tu-api.com/comunidad/miembros-destacados?limite=6" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Implementación sugerida (backend):**
+```sql
+-- Seleccionar usuarios más activos (con más publicaciones o reseñas)
+SELECT u.id, u.nombre_completo, u.rol, u.ciudad, u.estado, u.url_avatar,
+       u.biografia
+FROM usuarios u
+WHERE u.activo = true AND u.biografia IS NOT NULL AND u.biografia != ''
+ORDER BY (
+  (SELECT COUNT(*) FROM publicaciones WHERE autor_id = u.id) +
+  (SELECT COUNT(*) FROM resenas WHERE autor_id = u.id)
+) DESC
+LIMIT ?;  -- parámetro 'limite', default 6
+```
+
+**Nota:** Se recomienda excluir al usuario actual de los resultados para que cada usuario vea a otros miembros.
 
 ---
 

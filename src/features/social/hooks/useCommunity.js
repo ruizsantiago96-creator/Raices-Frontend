@@ -169,3 +169,22 @@ export function useCommunityStats() {
     queryFn: () => api.get('/comunidad/estadisticas').then(r => r.data),
   })
 }
+
+export function useMiembrosDestacados(limite = 6) {
+  return useQuery({
+    queryKey: ['miembrosDestacados', limite],
+    queryFn: () => api.get('/comunidad/miembros-destacados', { params: { limite } }).then(r => {
+      const res = r.data
+      const arr = res?.miembros ?? (Array.isArray(res) ? res : [])
+      return arr.map(m => ({
+        id: m.id,
+        nombreCompleto: m.nombreCompleto ?? m.nombre_completo ?? m.full_name ?? 'Sin nombre',
+        rol: m.rol ?? m.role ?? '',
+        ciudad: m.ciudad ?? m.city ?? '',
+        estado: m.estado ?? m.state ?? '',
+        urlAvatar: m.urlAvatar ?? m.url_avatar ?? m.avatar_url ?? null,
+        biografia: m.biografia ?? m.bio ?? '',
+      }))
+    }),
+  })
+}

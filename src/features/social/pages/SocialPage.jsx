@@ -13,6 +13,7 @@ import {
   useUpdatePost,
   useDeletePost,
   useCommunityStats,
+  useMiembrosDestacados,
 } from '../hooks/useCommunity'
 import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
 import { useAuthStore } from '@features/auth'
@@ -264,8 +265,18 @@ function CreateGroupModal({ onClose }) {
 
 
 
+function hashColor(str = '') {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
+  const colors = ['#01ADFF', '#B85C84', '#7857A0', '#BE7C34', '#5F8043', '#3A8C8C', '#5A6C8C', '#D46A6A']
+  return colors[Math.abs(h) % colors.length]
+}
+
+const ROLE_LABELS = { pcd: 'Persona con discapacidad', tutor: 'Tutor / familiar', institution: 'Institución' }
+
 function AboutCommunity() {
   const { data: stats, isLoading: statsLoading, isError: statsError } = useCommunityStats()
+  const { data: miembros = [], isLoading: miembrosLoading, isError: miembrosError } = useMiembrosDestacados(6)
   const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)' }
 
   return (
@@ -297,6 +308,59 @@ function AboutCommunity() {
           )}
         </div>
       </div>
+
+      {/* Miembros destacados */}
+      {miembrosLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ ...card, padding: 20, animation: 'pulse 1.5s infinite' }}>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--border-color)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: 16, width: '60%', background: 'var(--border-color)', borderRadius: 6, marginBottom: 6 }} />
+                  <div style={{ height: 12, width: '40%', background: 'var(--border-color)', borderRadius: 6 }} />
+                </div>
+              </div>
+              <div style={{ height: 12, background: 'var(--border-color)', borderRadius: 6, marginBottom: 6 }} />
+              <div style={{ height: 12, width: '80%', background: 'var(--border-color)', borderRadius: 6 }} />
+            </div>
+          ))}
+        </div>
+      ) : miembrosError ? (
+        <BackendFallback method={COMMUNITY_ENDPOINTS.GET_MIEMBROS.method} endpoint={COMMUNITY_ENDPOINTS.GET_MIEMBROS.path} />
+      ) : miembros.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+          {miembros.map(m => {
+            const color = hashColor(m.nombreCompleto)
+            const initials = m.nombreCompleto.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
+            return (
+              <div key={m.id} style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {m.urlAvatar ? (
+                    <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={m.urlAvatar} alt={m.nombreCompleto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, flexShrink: 0 }}>
+                      {initials}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{m.nombreCompleto}</div>
+                    <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>{ROLE_LABELS[m.rol] ?? m.rol}</div>
+                  </div>
+                </div>
+                {m.biografia && <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>{m.biografia}</p>}
+                {(m.ciudad || m.estado) && (
+                  <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {Icons.mapPin({ s: 12 })} {[m.ciudad, m.estado].filter(Boolean).join(', ')}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }

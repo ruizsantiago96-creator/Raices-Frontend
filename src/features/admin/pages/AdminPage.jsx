@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, hashColor, BrandMark } from '@shared/components/shared'
+import { useA11yStore } from '@features/a11y/store/a11yStore'
 import {
   useAdminStats, useNeedsIntelligence, useAdminDetailedAnalytics,
   useAdminActiveUsersDetail,
@@ -38,6 +39,7 @@ const SEVERITY_META = {
 export default function AdminPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
+  const { darkMode, toggleDarkMode } = useA11yStore()
   const [tab, setTab] = useState(() => localStorage.getItem('admin-tab') ?? 'overview')
   const onTab = (t) => { setTab(t); localStorage.setItem('admin-tab', t) }
   const { data: pending = [] } = usePendingInstitutions()
@@ -142,11 +144,8 @@ export default function AdminPage() {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Top bar */}
-        <header className="admin-topbar" style={{
-          position: 'sticky', top: 0, zIndex: 50, height: 64,
-          background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 32px', fontFamily: 'var(--font-body)',
+        <header className="admin-topbar responsive-topnav" style={{
+          borderBottom: '1px solid var(--border-color)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
@@ -164,17 +163,8 @@ export default function AdminPage() {
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
             </button>
-            <div className="admin-topbar-brand" style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {Icons.shield({ s: 16 })}
-            </div>
-            <div className="admin-topbar-title">
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--fg1)' }}>
-                Panel de administración
-              </span>
-              <span className="admin-topbar-subtitle" style={{ fontSize: 13, color: 'var(--fg3)', marginLeft: 12 }}>
-                {TAB_TITLES[tab]}
-              </span>
-            </div>
+            {/* Brand mark logo */}
+            <BrandMark onClick={() => onTab('overview')} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {criticalCount > 0 && (
@@ -184,21 +174,77 @@ export default function AdminPage() {
                 {Icons.shieldAlert({ s: 15 })} <span className="admin-alert-text">{criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica{criticalCount !== 1 ? 's' : ''}</span>
               </button>
             )}
-            <span className="admin-topbar-username" style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 600 }}>{user?.full_name ?? user?.email}</span>
-            <button onClick={logout} className="admin-logout-btn" style={{ fontSize: 13, padding: '8px 16px', minHeight: 36, borderRadius: 'var(--radius-pill)', border: '1.5px solid var(--border-strong)', background: 'transparent', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
-              Cerrar sesión
+            
+            {/* Theme toggle button */}
+            <button
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+              style={{
+                width: 40, height: 40, borderRadius: 'var(--radius-sm)',
+                background: darkMode ? 'rgba(255,255,255,0.1)' : 'var(--primary-subtle)',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: darkMode ? '#F1FA3F' : 'var(--primary)',
+                transition: 'all 0.2s ease',
+                marginRight: 4,
+              }}
+            >
+              {darkMode ? (
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+              ) : (
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                </svg>
+              )}
+            </button>
+
+            {/* Profile Avatar & Name Link */}
+            <Link to="/profile" className="topnav-profile-link" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 8 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-display)',
+                overflow: 'hidden', flexShrink: 0,
+                border: '1.5px solid var(--border-color)',
+              }}>
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  (user?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                )}
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg2)' }} className="topnav-username">
+                {user?.full_name?.split(' ')[0] ?? 'Admin'}
+              </span>
+            </Link>
+
+            {/* Logout button */}
+            <button onClick={logout} style={{ background: 'none', border: '2px solid var(--border-color)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', color: 'var(--fg2)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-body)', padding: '8px 18px', minHeight: 44 }}>
+              {Icons.logout({ s: 18 })} Salir
             </button>
           </div>
         </header>
 
         <main id="main" className="responsive-main" style={{ '--main-max-width': '1200px' }}>
-          {tab === 'overview' && <OverviewTab onNavigate={onTab} />}
-          {tab === 'intelligence' && <IntelligenceTab />}
-          {tab === 'institutions' && <InstitutionsTab />}
-          {tab === 'users' && <UsersTab currentUserId={user?.id} />}
-          {tab === 'reviews' && <ReviewsTab />}
-          {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
-          {tab === 'settings' && <SettingsTab />}
+          {/* Section Title */}
+          <h1 key={tab} className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', marginBottom: 28, letterSpacing: '-0.02em' }}>
+            {TAB_TITLES[tab]}
+          </h1>
+
+          <div key={`content-${tab}`} className="animate-tab-in">
+            {tab === 'overview' && <OverviewTab onNavigate={onTab} />}
+            {tab === 'intelligence' && <IntelligenceTab />}
+            {tab === 'institutions' && <InstitutionsTab />}
+            {tab === 'users' && <UsersTab currentUserId={user?.id} />}
+            {tab === 'reviews' && <ReviewsTab />}
+            {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
+            {tab === 'settings' && <SettingsTab />}
+          </div>
         </main>
       </div>
     </div>
@@ -312,6 +358,40 @@ function EmptyState({ icon, title, sub }) {
       {sub && <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 4 }}>{sub}</p>}
     </Card>
   )
+}
+
+/* ════════════════════ Animated Counter ════════════════════ */
+function AnimatedCounter({ value, duration = 800, style }) {
+  const [display, setDisplay] = useState(0)
+  const ref = useRef(null)
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    if (value == null || value === 0) { setDisplay(0); return }
+    const numVal = typeof value === 'number' ? value : parseInt(value, 10)
+    if (isNaN(numVal)) { setDisplay(value); return }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !hasAnimated.current) {
+        hasAnimated.current = true
+        const start = performance.now()
+        const animate = (now) => {
+          const elapsed = now - start
+          const progress = Math.min(elapsed / duration, 1)
+          // easeOutCubic
+          const eased = 1 - Math.pow(1 - progress, 3)
+          setDisplay(Math.round(eased * numVal))
+          if (progress < 1) requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
+      }
+    }, { threshold: 0.3 })
+
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [value, duration])
+
+  return <span ref={ref} style={style} className="animate-counter">{display}</span>
 }
 
 /* ── Barra horizontal con etiqueta ── */
@@ -593,7 +673,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Grid de KPIs con animaciones y gradientes */}
-      <div className="grid-3-responsive" style={{ gap: 20 }}>
+      <div className="admin-kpi-grid">
         {statCards.map((c, idx) => (
           <div 
             key={c.label} 
@@ -623,7 +703,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
               filter: 'blur(20px)'
             }} />
             
-            <div style={{ 
+            <div className="kpi-icon-container" style={{ 
               width: 52, height: 52, 
               borderRadius: '16px', 
               background: c.gradient,
@@ -637,11 +717,11 @@ function OverviewTab({ onNavigate: _onNavigate }) {
               {c.icon({ s: 24 })}
             </div>
             <div>
-              <div style={{ fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--fg1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-                {isLoading ? <Skeleton w={50} h={30} /> : (c.value ?? 0)}
+              <div className="kpi-value" style={{ fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--fg1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                {isLoading ? <Skeleton w={50} h={30} /> : <AnimatedCounter value={c.value} />}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginTop: 4 }}>{c.label}</div>
-              <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2, fontWeight: 500 }}>{c.sub}</div>
+              <div className="kpi-label" style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginTop: 4 }}>{c.label}</div>
+              <div className="kpi-sub" style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2, fontWeight: 500 }}>{c.sub}</div>
             </div>
           </div>
         ))}
