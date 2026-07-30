@@ -39,7 +39,7 @@ function CreateJobModal({ onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
+      <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px' }}>{JOBS_UI.CREATE_JOB_TITLE}</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div><label style={labelStyle}>{JOBS_UI.JOB_TITLE_LABEL}</label><input required value={form.titulo} onChange={e => update('titulo', e.target.value)} placeholder={JOBS_UI.JOB_TITLE_PLACEHOLDER} style={inputStyle} /></div>
@@ -89,7 +89,7 @@ function ApplicationModal({ job, onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 520, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+      <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 520, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
           {JOBS_UI.APPLY_TITLE} {job.title}
         </h2>
@@ -214,9 +214,9 @@ export default function JobsPage() {
       <TopNav user={user} onLogout={logout} currentPage="jobs" />
 
       <main className="responsive-main" style={{ '--main-max-width': '900px' }}>
-        <div className="jobs-header responsive-header" style={{ marginBottom: 28 }}>
+        <div className="jobs-header responsive-header animate-fade-in-up" style={{ marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
+            <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
               {JOBS_UI.PAGE_TITLE}
             </h1>
             <p style={{ fontSize: 15, color: 'var(--fg3)', margin: 0 }}>{JOBS_UI.PAGE_SUBTITLE}</p>
@@ -238,7 +238,7 @@ export default function JobsPage() {
 
         {tab === 'board' ? (
           <>
-            <div className="jobs-filters" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div className="jobs-filters animate-fade-in-up delay-2" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
               {MODALITIES.map(m => (
                 <button key={m} onClick={() => setModality(m)}
                   style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: modality === m ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: modality === m ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: modality === m ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: modality === m ? 700 : 500, fontSize: 13, fontFamily: 'var(--font-body)', textTransform: 'capitalize' }}>
@@ -264,9 +264,9 @@ export default function JobsPage() {
                 <p style={{ color: 'var(--fg3)', fontSize: 14, margin: 0 }}>{JOBS_UI.NO_JOBS_HINT}</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {jobs.map(job => (
-                  <JobCard key={job.id} job={job} applied={appliedIds.includes(job.id)} onApply={() => setApplyTarget(job)} />
+                  <div key={job.id} className="animate-fade-in-up"><JobCard job={job} applied={appliedIds.includes(job.id)} onApply={() => setApplyTarget(job)} /></div>
                 ))}
               </div>
             )}
@@ -278,9 +278,9 @@ export default function JobsPage() {
                 <p style={{ color: 'var(--fg3)', fontSize: 15 }}>{JOBS_UI.NO_APPLICATIONS}</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {applications.map(app => (
-                  <div key={app.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', boxShadow: 'var(--shadow-sm)' }}>
+                  <div key={app.id} className="animate-fade-in-up" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', boxShadow: 'var(--shadow-sm)' }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--fg1)', marginBottom: 4 }}>{app.title}</div>
                       <div style={{ fontSize: 14, color: 'var(--fg3)' }}>{app.institution_name} · {app.modality}</div>

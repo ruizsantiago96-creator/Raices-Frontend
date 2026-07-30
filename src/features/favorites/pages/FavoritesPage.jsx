@@ -18,10 +18,10 @@ export default function FavoritesPage() {
       <TopNav user={user} onLogout={logout} currentPage="favorites" />
 
       <main className="responsive-main">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
+        <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
           Instituciones guardadas
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--fg3)', margin: '0 0 32px' }}>
+        <p className="animate-fade-in-up delay-1" style={{ fontSize: 15, color: 'var(--fg3)', margin: '0 0 32px' }}>
           {isLoading ? '' : `${favorites.length} institución${favorites.length !== 1 ? 'es' : ''} guardada${favorites.length !== 1 ? 's' : ''}`}
         </p>
 
@@ -46,10 +46,10 @@ export default function FavoritesPage() {
           </div>
         ) : (
           <div className="responsive-grid-cards">
-            {favorites.map(inst => {
+            {favorites.map((inst, i) => {
               const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
               return (
-                <div key={inst.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div key={inst.id} className="animate-scale-in" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${i * 0.07}s` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <CategoryTag label={inst.category} color={color} />
                     <button onClick={() => toggle.mutate(inst.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-salud)', padding: 0, display: 'flex' }}>

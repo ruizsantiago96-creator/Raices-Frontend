@@ -55,9 +55,9 @@ export default function NotificationsPage() {
 
       <main className="responsive-main" style={{ '--main-max-width': '800px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
+            <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
               {NOTIFICATION_UI.PAGE_TITLE}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>
@@ -73,7 +73,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className="animate-fade-in-up delay-1" style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
           {[
             { k: 'all', label: `Todas (${notifications.length})` },
             { k: 'unread', label: `Sin leer (${unread})` },
@@ -114,11 +114,11 @@ export default function NotificationsPage() {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {filtered.map(n => {
               const meta = TYPE_META[n.type] ?? TYPE_META.info
               return (
-                <div key={n.id}
+                <div key={n.id} className="animate-fade-in-up"
                   onClick={() => !n.is_read && handleMarkRead(n.id)}
                   style={{
                     ...card,
