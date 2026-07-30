@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
 import { useUiStore } from '@shared/stores/uiStore'
+import { useAuthStore } from '../store/authStore'
 import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
@@ -31,6 +32,15 @@ export default function AuthPage() {
   const login = useLogin()
   const register = useRegister()
   const { addToast } = useUiStore()
+  const { token, user } = useAuthStore()
+
+  
+  // Si el usuario ya está logueado, redirigir a su página principal
+  if (token) {
+    if (user?.role === 'admin') return <Navigate to="/admin" replace />
+    if (user?.role === 'institution') return <Navigate to="/institution-portal" replace />
+    return <Navigate to="/dashboard" replace />
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600)
