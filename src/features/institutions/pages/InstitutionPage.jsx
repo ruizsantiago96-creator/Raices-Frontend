@@ -244,7 +244,7 @@ export default function InstitutionPage() {
       <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
 
         {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, fontSize: 14, color: 'var(--fg3)' }}>
+        <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, fontSize: 14, color: 'var(--fg3)' }}>
           <Link to="/explore" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
             Explorar
           </Link>
@@ -253,7 +253,7 @@ export default function InstitutionPage() {
         </div>
 
         {/* ── 1. Header card ── */}
-        <div style={{
+        <div className="animate-fade-in-up delay-1" style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
           borderRadius: 'var(--radius-md)',
@@ -427,7 +427,7 @@ export default function InstitutionPage() {
         </div>
 
         {/* ── 2. AI Chat panel ── */}
-        <div style={{
+        <div className="animate-fade-in-up delay-2" style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
           borderRadius: 'var(--radius-md)',
@@ -535,7 +535,7 @@ export default function InstitutionPage() {
         </div>
 
         {/* ── 3 & 4. Reviews section ── */}
-        <div style={{
+        <div className="animate-fade-in-up delay-3" style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
           borderRadius: 'var(--radius-md)',
