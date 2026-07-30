@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
-        <div className="scroll-reveal" style={{ marginBottom: 36 }}>
+        <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
               {user?.avatar_url ? (
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
         {/* Banner guía: completar perfil (persistente hasta completar) */}
         {!profileComplete && (
-          <div className="dashboard-banner" style={{ marginBottom: 32, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: 'var(--radius-md)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 24, boxShadow: 'var(--shadow-md)', flexWrap: 'wrap' }}>
+          <div className="dashboard-banner animate-banner-shimmer animate-fade-in-up delay-1" style={{ marginBottom: 32, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: 'var(--radius-md)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 24, boxShadow: 'var(--shadow-md)', flexWrap: 'wrap' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 16%', background: 'rgba(255,255,255,0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {Icons.target({ s: 28 })}
             </div>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         )}
 
         {/* AI Analysis Panel */}
-        <div className="scroll-reveal" style={{ marginBottom: 40 }}>
+        <div className="scroll-reveal animate-fade-in-up delay-2" style={{ marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {Icons.brain({ s: 16 })}
@@ -108,7 +108,7 @@ export default function DashboardPage() {
           {aiLoading ? (
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 24, boxShadow: 'var(--shadow-sm)' }}>
               {[0, 1, 2].map(i => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: i < 2 ? 16 : 0 }}>
+                <div key={i} className="animate-step" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: i < 2 ? 16 : 0, animationDelay: `${i * 0.12}s` }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--border-color)', flexShrink: 0, animation: 'pulse 1.5s ease-in-out infinite' }} />
                   <div style={{ width: `${70 - i * 10}%`, height: 16, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                 </div>
@@ -118,8 +118,8 @@ export default function DashboardPage() {
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 24, boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {aiInsights.next_steps.map((step, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: 'var(--font-display)' }}>
+                  <div key={i} className={`animate-step`} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, animationDelay: `${i * 0.1}s` }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: 'var(--font-display)', animation: `bounceIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both` }}>
                       {i + 1}
                     </div>
                     <div style={{ fontSize: 15, color: 'var(--fg1)', lineHeight: 1.5, paddingTop: 4 }}>{step}</div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recommendations */}
-        <div className="scroll-reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 12 }}>
+        <div className="scroll-reveal animate-fade-in-up delay-3" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 12 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
             Recomendaciones para ti
           </h2>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
           </div>
         ) : (            <div className="responsive-grid-cards">
             {recommendations.slice(0, 6).map((inst, i) => (
-              <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionCard inst={inst} isFav={favIds.includes(inst.id)} onToggleFav={() => toggle.mutate(inst.id)} /></div>
+              <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)} animate-scale-in`} style={{ animationDelay: `${i * 0.08}s` }}><InstitutionCard inst={inst} isFav={favIds.includes(inst.id)} onToggleFav={() => toggle.mutate(inst.id)} /></div>
             ))}
           </div>
         )}
