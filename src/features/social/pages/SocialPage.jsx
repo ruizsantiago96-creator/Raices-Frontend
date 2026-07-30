@@ -617,8 +617,9 @@ export default function SocialPage() {
               ) : (
                 <div className="stagger-children">
                 {posts.map((post) => (
-                  <div key={post.id} className="animate-fade-in-up"><PostCard post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
-                ))
+                  <div key={post.id} className="animate-fade-in-up"><PostCard post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} /></div>
+                ))}
+              </div>
               )}
             </div>
           </div>

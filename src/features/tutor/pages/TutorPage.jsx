@@ -145,7 +145,7 @@ export default function TutorPage() {
           ) : (
             <div className="tutor-cards-grid stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <div key={dep?.id} className="animate-scale-in"><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} />
+                <div key={dep?.id} className="animate-scale-in"><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} /></div>
               ))}
             </div>
           )}

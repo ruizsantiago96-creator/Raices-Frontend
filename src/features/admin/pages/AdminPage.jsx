@@ -362,14 +362,14 @@ function EmptyState({ icon, title, sub }) {
 
 /* ════════════════════ Animated Counter ════════════════════ */
 function AnimatedCounter({ value, duration = 800, style }) {
-  const [display, setDisplay] = useState(0)
+  const numVal = typeof value === 'number' ? value : parseInt(value, 10)
+  const safeVal = (value == null || value === 0) ? 0 : (isNaN(numVal) ? 0 : numVal)
+  const [display, setDisplay] = useState(safeVal)
   const ref = useRef(null)
   const hasAnimated = useRef(false)
 
   useEffect(() => {
-    if (value == null || value === 0) { setDisplay(0); return }
-    const numVal = typeof value === 'number' ? value : parseInt(value, 10)
-    if (isNaN(numVal)) { setDisplay(value); return }
+    if (safeVal === 0) return
 
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !hasAnimated.current) {
@@ -378,9 +378,8 @@ function AnimatedCounter({ value, duration = 800, style }) {
         const animate = (now) => {
           const elapsed = now - start
           const progress = Math.min(elapsed / duration, 1)
-          // easeOutCubic
           const eased = 1 - Math.pow(1 - progress, 3)
-          setDisplay(Math.round(eased * numVal))
+          setDisplay(Math.round(eased * safeVal))
           if (progress < 1) requestAnimationFrame(animate)
         }
         requestAnimationFrame(animate)
@@ -389,7 +388,7 @@ function AnimatedCounter({ value, duration = 800, style }) {
 
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
-  }, [value, duration])
+  }, [safeVal, duration])
 
   return <span ref={ref} style={style} className="animate-counter">{display}</span>
 }
