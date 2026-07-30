@@ -4,11 +4,36 @@ import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
+import { Icons } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { AUTH_MESSAGES, AUTH_UI, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
+
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function getPasswordStrength(password) {
+  if (!password) return { label: '', color: 'transparent', score: 0, width: '0%' }
+  if (password.length < 8) return { label: 'Débil (muy corta)', color: '#ef4444', score: 1, width: '33%' }
+  
+  let score = 1
+  const hasUpper = /[A-Z]/.test(password)
+  const hasNumber = /[0-9]/.test(password)
+  const hasSpecial = /[^A-Za-z0-9]/.test(password)
+  
+  if (hasUpper) score++
+  if (hasNumber) score++
+  if (hasSpecial) score++
+  
+  if (score <= 2) {
+    return { label: 'Débil', color: '#ef4444', score: 1, width: '33%' }
+  } else if (score === 3) {
+    return { label: 'Media', color: '#f97316', score: 2, width: '66%' }
+  } else {
+    return { label: 'Fuerte', color: '#22c55e', score: 3, width: '100%' }
+  }
+}
 
 const ROLES = [
   { id: 'pcd', icon: Icons.heart, title: AUTH_UI.ROLE_PCD_TITLE, desc: AUTH_UI.ROLE_PCD_DESC },
@@ -34,18 +59,17 @@ export default function AuthPage() {
   const { addToast } = useUiStore()
   const { token, user } = useAuthStore()
 
-  
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 600)
+    return () => clearTimeout(timer)
+  }, [])
+
   // Si el usuario ya está logueado, redirigir a su página principal
   if (token) {
     if (user?.role === 'admin') return <Navigate to="/admin" replace />
     if (user?.role === 'institution') return <Navigate to="/institution-portal" replace />
     return <Navigate to="/dashboard" replace />
   }
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const set = k => e => { setForm(f => ({ ...f, [k]: e.target.value })); setError('') }
 
@@ -54,6 +78,11 @@ export default function AuthPage() {
     if (!form.email || !form.password) {
       setError(AUTH_MESSAGES.LOGIN_FIELDS_REQUIRED)
       addToast(AUTH_MESSAGES.LOGIN_FIELDS_REQUIRED, 'error')
+      return
+    }
+    if (!EMAIL_REGEX.test(form.email)) {
+      setError('Por favor, ingresa un correo electrónico válido.')
+      addToast('Por favor, ingresa un correo electrónico válido.', 'error')
       return
     }
     try {
@@ -74,6 +103,11 @@ export default function AuthPage() {
   const handleRegister = async e => {
     e.preventDefault()
     setError('')
+    if (!EMAIL_REGEX.test(form.email)) {
+      setError('Por favor, ingresa un correo electrónico válido.')
+      addToast('Por favor, ingresa un correo electrónico válido.', 'error')
+      return
+    }
     try {
       await register.mutateAsync({ ...form, _rememberMe: rememberMe })
       addToast(AUTH_MESSAGES.REGISTER_SUCCESS, 'success')
@@ -91,6 +125,11 @@ export default function AuthPage() {
     if (!form.email) {
       setError(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED);
       addToast(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED, 'error');
+      return;
+    }
+    if (!EMAIL_REGEX.test(form.email)) {
+      setError('Por favor, ingresa un correo electrónico válido.');
+      addToast('Por favor, ingresa un correo electrónico válido.', 'error');
       return;
     }
 
@@ -115,6 +154,9 @@ export default function AuthPage() {
       setSending(false);
     }
   };
+
+  const strength = getPasswordStrength(form.password);
+  const isPasswordValid = form.password.length >= 8 && /[A-Z]/.test(form.password) && /[0-9]/.test(form.password) && /[^A-Za-z0-9]/.test(form.password);
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', display: 'block', fontFamily: 'var(--font-body)' },
@@ -388,7 +430,19 @@ export default function AuthPage() {
                           {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                         </button>
                       </div>
-                      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres</p>
+                      
+                      {form.password && (
+                        <div style={{ marginTop: 8 }}>
+                          <div style={{ display: 'flex', gap: 4, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
+                            <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: strength.color }}>
+                            Seguridad: {strength.label}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres (requiere mayúsculas, números y símbolos)</p>
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <div style={{ flex: 1 }}>
@@ -437,7 +491,7 @@ export default function AuthPage() {
                     </button>
                   ) : (
                     <>
-                      <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || form.password.length < 8 || !form.city || !form.state}>
+                      <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || !isPasswordValid || !form.city || !form.state}>
                         {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
                       </button>
                       <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>
