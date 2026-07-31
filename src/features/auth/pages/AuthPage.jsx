@@ -265,21 +265,24 @@ export default function AuthPage() {
         }
         .auth-pass-toggle {
           position: absolute;
-          right: 16px;
+          right: 12px;
           top: 50%;
           transform: translateY(-50%);
           background: none;
           border: none;
           cursor: pointer;
-          color: var(--fg3);
+          color: var(--fg2);
           padding: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 6px;
+          z-index: 2;
+          transition: all 0.15s ease;
         }
         .auth-pass-toggle:hover {
-          color: var(--fg2);
+          color: var(--fg1);
+          background: color-mix(in oklch, var(--primary) 10%, transparent);
         }
         @media (max-width: 820px) {
           .auth-brand-column {
