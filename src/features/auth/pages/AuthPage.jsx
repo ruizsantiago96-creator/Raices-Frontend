@@ -41,7 +41,29 @@ const ROLES = [
   { id: 'institution', icon: Icons.building, title: AUTH_UI.ROLE_INSTITUTION_TITLE, desc: AUTH_UI.ROLE_INSTITUTION_DESC },
 ]
 
-
+function mapErrorMessage(msg) {
+  if (!msg) return '';
+  const lower = msg.toLowerCase();
+  if (lower.includes('nombrecompleto must be a string') || lower.includes('nombrecompleto is required')) {
+    return 'El nombre completo debe ser un texto válido (solo letras).';
+  }
+  if (lower.includes('email must be a valid email') || lower.includes('email must be an email')) {
+    return 'Por favor, ingresa un correo electrónico válido.';
+  }
+  if (lower.includes('password must be')) {
+    return 'La contraseña no cumple con los requisitos de seguridad.';
+  }
+  if (lower.includes('ciudad must be') || lower.includes('ciudad is required')) {
+    return 'El municipio es obligatorio.';
+  }
+  if (lower.includes('estado must be') || lower.includes('estado is required')) {
+    return 'El estado es obligatorio.';
+  }
+  if (lower.includes('email already exists') || lower.includes('email ya registrado') || lower.includes('already in use')) {
+    return 'Este correo electrónico ya está registrado.';
+  }
+  return msg;
+}
 
 export default function AuthPage() {
   const [params] = useSearchParams()
@@ -71,7 +93,14 @@ export default function AuthPage() {
     return <Navigate to="/dashboard" replace />
   }
 
-  const set = k => e => { setForm(f => ({ ...f, [k]: e.target.value })); setError('') }
+  const set = k => e => {
+    let val = e.target.value
+    if (k === 'full_name' && form.role !== 'institution') {
+      val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '')
+    }
+    setForm(f => ({ ...f, [k]: val }))
+    setError('')
+  }
 
   const doLogin = async () => {
     setError('')
@@ -90,8 +119,9 @@ export default function AuthPage() {
       addToast(AUTH_MESSAGES.LOGIN_SUCCESS, 'success')
     } catch (err) {
       const msg = err.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
-      setError(msg)
-      addToast(msg, 'error')
+      const translatedMsg = mapErrorMessage(msg)
+      setError(translatedMsg)
+      addToast(translatedMsg, 'error')
     }
   }
 
@@ -113,8 +143,9 @@ export default function AuthPage() {
       addToast(AUTH_MESSAGES.REGISTER_SUCCESS, 'success')
     } catch (err) {
       const msg = err.response?.data?.message ?? AUTH_MESSAGES.REGISTER_FAILED
-      setError(msg)
-      addToast(msg, 'error')
+      const translatedMsg = mapErrorMessage(msg)
+      setError(translatedMsg)
+      addToast(translatedMsg, 'error')
     }
   }
 
@@ -582,13 +613,11 @@ export default function AuthPage() {
         }} />
         
         {/* Decorative subtle circles */}
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', top: '-100px', right: '-100px' }} />
-        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', bottom: '-50px', left: '-50px' }} />
+        <div className="animate-bubble-1" style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', top: '-100px', right: '-100px' }} />
+        <div className="animate-bubble-2" style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', bottom: '-50px', left: '-50px' }} />
 
         <div style={{ textAlign: 'center', zIndex: 2, maxWidth: 460 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: '50% 50% 50% 14%', background: 'rgba(255,255,255,0.15)', color: 'white', marginBottom: 24, fontSize: 32 }}>
-            🌱
-          </div>
+
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, margin: '0 0 12px', color: 'white', letterSpacing: '-0.02em' }}>
             Raíces para florecer
           </h2>

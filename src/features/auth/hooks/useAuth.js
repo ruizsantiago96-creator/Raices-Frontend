@@ -105,8 +105,8 @@ export function useRegister() {
     mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }) => {
       const body = {
         ...rest,
-        // El backend usa "nombre" para instituciones y "nombreCompleto" para pcd/tutor
-        ...(role === 'institution' ? { nombre: full_name } : { nombreCompleto: full_name }),
+        // El backend usa "nombreCompleto" para validación y "nombre" internamente para instituciones
+        ...(role === 'institution' ? { nombre: full_name, nombreCompleto: full_name } : { nombreCompleto: full_name }),
         rol: role,
         ciudad: city,
         estado: state,

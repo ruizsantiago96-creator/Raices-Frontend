@@ -1384,6 +1384,39 @@ html[data-large-cursor="true"] textarea {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4l14.14 28.47 3.35-9.86L30 13.86z' fill='%23004E52' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") 4 4, pointer !important;
 }
 
+/* Decorative bubble animations */
+@keyframes floatBubble1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-50px, 60px) scale(1.08);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes floatBubble2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(60px, -50px) scale(0.92);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.animate-bubble-1 {
+  animation: floatBubble1 3s ease-in-out infinite;
+}
+
+.animate-bubble-2 {
+  animation: floatBubble2 4s ease-in-out infinite;
+}
+
 /* Reading Guide */
 html[data-reading-guide="true"] #a11y-root {
   position: relative;
@@ -1626,3 +1659,35 @@ html[data-contrast="high"][data-theme="dark"] {
   }
 }
 
+/* Decorative bubble animations */
+@keyframes floatBubble1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-45px, 50px) scale(1.08);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes floatBubble2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(50px, -45px) scale(0.92);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.animate-bubble-1 {
+  animation: floatBubble1 3.5s ease-in-out infinite;
+}
+
+.animate-bubble-2 {
+  animation: floatBubble2 4.5s ease-in-out infinite;
+}

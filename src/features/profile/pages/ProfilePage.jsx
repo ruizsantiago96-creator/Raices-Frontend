@@ -23,9 +23,9 @@ export default function ProfilePage() {
 
   const startEdit = () => {
     setForm({
-      full_name: data?.nombreCompleto ?? '',
-      city: data?.ciudad ?? '',
-      state: data?.estado ?? '',
+      full_name: data?.full_name ?? '',
+      city: data?.city ?? '',
+      state: data?.state ?? '',
       avatar_url: avatarPreview || data?.avatar_url || '',
     })
     setEditing(true)
@@ -87,10 +87,10 @@ export default function ProfilePage() {
     }
   }
 
-  const avatarColor = hashColor(data?.nombreCompleto ?? '')
-  const initials = (data?.nombreCompleto ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const disabilities = data?.perfilNecesidades?.tiposDiscapacidad ?? []
-  const stage = LIFE_STAGES.find(l => l.id === data?.perfilNecesidades?.life_stage)
+  const avatarColor = hashColor(data?.full_name ?? '')
+  const initials = (data?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const disabilities = data?.profiling?.disability_types ?? []
+  const stage = LIFE_STAGES.find(l => l.id === data?.profiling?.life_stage)
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
                     {(avatarPreview || data?.avatar_url) ? (
-                      <img src={avatarPreview || data?.avatar_url} alt={data?.nombreCompleto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={avatarPreview || data?.avatar_url} alt={data?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : initials}
                   </button>
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
@@ -177,7 +177,7 @@ export default function ProfilePage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                      {data?.nombreCompleto ?? '—'}
+                      {data?.full_name ?? '—'}
                     </h2>
                     <span style={s.roleBadge}>{ROLE_LABELS[data?.role] ?? data?.role}</span>
                   </div>
@@ -185,9 +185,9 @@ export default function ProfilePage() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {Icons.mail({ s: 14 })} {data?.email}
                     </span>
-                    {(data?.ciudad || data?.estado) && (
+                    {(data?.city || data?.state) && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {Icons.mapPin({ s: 14 })} {[data?.ciudad, data?.estado].filter(Boolean).join(', ')}
+                        {Icons.mapPin({ s: 14 })} {[data?.city, data?.state].filter(Boolean).join(', ')}
                       </span>
                     )}
                   </div>
@@ -202,21 +202,22 @@ export default function ProfilePage() {
               </div>
 
               {/* Stats row */}
-              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>                  <div style={s.stat}>
+              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>
+                  <div style={s.stat}>
                     <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {data?.perfilNecesidades?.tiposDiscapacidad?.length || 0}
+                      {data?.profiling?.disability_types?.length || 0}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.DISABILITY_STAT_LABEL}</div>
                   </div>
                   <div style={s.stat}>
                     <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {(data?.perfilNecesidades?.necesidades?.length || 0) + (data?.perfilNecesidades?.metasActuales?.length || 0)}
+                      {(data?.profiling?.needs?.length || 0) + (data?.profiling?.goals?.length || 0)}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.NEEDS_STAT_LABEL}</div>
                   </div>
                   <div style={s.stat}>
                     <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {data?.verificado ? '✓' : 'No'}
+                      {data?.is_verified ? '✓' : 'No'}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.VERIFIED_STAT_LABEL}</div>
                   </div>
@@ -255,7 +256,7 @@ export default function ProfilePage() {
             )}
 
             {/* Perfil de necesidades */}
-            {data?.perfilNecesidades ? (
+            {data?.profiling ? (
               <div className="animate-fade-in-up delay-2" style={s.card}>
                 <div style={s.sectionTitle}>
                   <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
@@ -279,21 +280,21 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
-                {data?.perfilNecesidades?.modosComunicacion?.length > 0 && (
+                {data?.profiling?.communication_modes?.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.perfilNecesidades?.modosComunicacion?.map((m, i) => (
+                      {data?.profiling?.communication_modes?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {data?.perfilNecesidades?.necesidadesMovilidad?.length > 0 && (
+                {data?.profiling?.mobility_needs?.length > 0 && (
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.perfilNecesidades?.necesidadesMovilidad?.map((m, i) => (
+                      {data?.profiling?.mobility_needs?.map((m, i) => (
                         <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
                       ))}
                     </div>
