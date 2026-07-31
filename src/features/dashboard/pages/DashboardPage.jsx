@@ -1,14 +1,11 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useMe, useProfile } from '@features/auth'
+import { useMe, useProfile, useAuthStore, AppSidebar, TopNav } from '@features/auth'
 import { useDiscovery } from '@features/institutions'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useAINextSteps } from '../../tutor/hooks/useAI'
-import { useAuthStore } from '@features/auth'
 import { Icons, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
-import { AppSidebar, TopNav } from '@features/auth'
-import { NotificationBell } from '@features/notifications'
 import BackendFallback from '@shared/components/BackendFallback'
 import { DISCOVERY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 
@@ -56,9 +53,6 @@ export default function DashboardPage() {
                 Hola, {user?.full_name?.split(' ')[0] ?? 'bienvenid@'}
               </h1>
               <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>Tu ecosistema personalizado</p>
-            </div>
-            <div style={{ marginLeft: 'auto' }}>
-              <NotificationBell />
             </div>
           </div>
         </div>

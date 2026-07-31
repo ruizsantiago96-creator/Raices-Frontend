@@ -4,19 +4,19 @@ import { useAuthStore } from '@features/auth'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 
 const LANDING_CATEGORIES = [
-  { name: 'Salud', value: 'funcional', color: '#C4789A', icon: Icons.heartPulse },
-  { name: 'Educación', value: 'educativo', color: '#8B6BAE', icon: Icons.graduationCap },
-  { name: 'Empleo', value: 'laboral', color: '#D4944C', icon: Icons.briefcase },
-  { name: 'Comunidad', value: 'social', color: '#4BA3A3', icon: Icons.users },
-  { name: 'Terapia', value: 'funcional', color: '#01ADFF', icon: Icons.activity },
-  { name: 'Recreación', value: 'social', color: '#7BA05B', icon: Icons.target },
+  { name: 'Salud', value: 'funcional', color: 'var(--color-salud)', icon: Icons.heartPulse },
+  { name: 'Educación', value: 'educativo', color: 'var(--color-educacion)', icon: Icons.graduationCap },
+  { name: 'Empleo', value: 'laboral', color: 'var(--color-empleo)', icon: Icons.briefcase },
+  { name: 'Comunidad', value: 'social', color: 'var(--color-comunidad)', icon: Icons.users },
+  { name: 'Terapia', value: 'funcional', color: 'var(--color-salud)', icon: Icons.activity },
+  { name: 'Recreación', value: 'social', color: 'var(--color-artes)', icon: Icons.target },
 ]
 
 const FEATURES = [
-  { icon: Icons.sparkles, title: 'Recomendaciones personalizadas', desc: 'Basadas en tus necesidades, metas y ubicación.', color: '#C4789A' },
-  { icon: Icons.shield, title: 'Confianza y seguridad', desc: 'Cada institución es verificada para ingresar a la comunidad.', color: '#8B6BAE' },
-  { icon: Icons.users, title: 'Centrado en la familia', desc: 'Diseñado junto a familias, cuidadores y personas con discapacidad.', color: '#4BA3A3' },
-  { icon: Icons.activity, title: 'Seguimiento de tu progreso', desc: 'Celebramos cada logro y compartimos historias que inspiran.', color: '#7BA05B' },
+  { icon: Icons.sparkles, title: 'Recomendaciones personalizadas', desc: 'Basadas en tus necesidades, metas y ubicación.', color: 'var(--color-salud)' },
+  { icon: Icons.shield, title: 'Confianza y seguridad', desc: 'Cada institución es verificada para ingresar a la comunidad.', color: 'var(--color-educacion)' },
+  { icon: Icons.users, title: 'Centrado en la familia', desc: 'Diseñado junto a familias, cuidadores y personas con discapacidad.', color: 'var(--color-comunidad)' },
+  { icon: Icons.activity, title: 'Seguimiento de tu progreso', desc: 'Celebramos cada logro y compartimos historias que inspiran.', color: 'var(--color-artes)' },
 ]
 
 export default function LandingPage() {

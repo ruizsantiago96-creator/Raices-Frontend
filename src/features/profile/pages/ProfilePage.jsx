@@ -26,7 +26,7 @@ export default function ProfilePage() {
       full_name: data?.nombreCompleto ?? '',
       city: data?.ciudad ?? '',
       state: data?.estado ?? '',
-      avatar_url: avatarPreview || data?.urlAvatar || '',
+      avatar_url: avatarPreview || data?.avatar_url || '',
     })
     setEditing(true)
   }
@@ -147,9 +147,9 @@ export default function ProfilePage() {
               <div className="profile-header-row" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || data?.urlAvatar) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
-                    {(avatarPreview || data?.urlAvatar) ? (
-                      <img src={avatarPreview || data?.urlAvatar} alt={data?.nombreCompleto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
+                    {(avatarPreview || data?.avatar_url) ? (
+                      <img src={avatarPreview || data?.avatar_url} alt={data?.nombreCompleto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : initials}
                   </button>
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
@@ -164,7 +164,7 @@ export default function ProfilePage() {
                   <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                     {Icons.upload({ s: 14 })} {PROFILE_UI.UPLOAD_PHOTO}
                   </button>
-                  {(avatarPreview || data?.urlAvatar) && (
+                  {(avatarPreview || data?.avatar_url) && (
                     <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'none', border: 'none', color: '#DC3545', fontSize: 13, fontWeight: 600, cursor: deleteAvatar.isPending ? 'not-allowed' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
                       {deleteAvatar.isPending ? (
                         <span style={{ width: 14, height: 14, border: '2px solid #DC3545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />

@@ -29,8 +29,8 @@
   --fg3: #5F7070;
   
   /* Colors - Borders */
-  --border-color: transparent;
-  --border-strong: transparent;
+  --border-color: #E2E8F0;
+  --border-strong: #CBD5E1;
   
   /* Border Radius */
   --radius-sm: 8px;
@@ -579,6 +579,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.15) transparent;
+  border-right: 1px solid var(--border-color);
 }
 
 .responsive-main {
@@ -603,7 +604,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
   background: var(--bg-surface);
-  border-bottom: none;
+  border-bottom: 1px solid var(--border-color);
   font-family: var(--font-body);
   box-sizing: border-box;
   transition: background-color 0.3s ease;
@@ -1468,8 +1469,8 @@ html[data-theme="dark"] {
   --primary: #007A7F;
   --primary-dark: #004E52;
   --primary-subtle: rgba(0, 122, 127, 0.18);
-  --secondary: #4ADE80;
-  --secondary-dark: #22C55E;
+  --secondary: #36724c;
+  --secondary-dark: #36724c;
   --bg-warm: #121418;
   --bg-cool: #1A1D21;
   --bg-surface: #1E2025;

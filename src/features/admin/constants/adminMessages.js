@@ -144,22 +144,22 @@ export const ADMIN_UI = {
 
 // ─── Roles y estados ──────────────────────────────────────
 export const ADMIN_ROLES = {
-  admin: { bg: '#8B6BAE', label: 'Admin' },
-  institution: { bg: '#01ADFF', label: 'Institución' },
-  tutor: { bg: '#D4944C', label: 'Tutor' },
-  pcd: { bg: '#C4789A', label: 'Persona c/ disc.' },
-  user: { bg: '#5A6C8C', label: 'Usuario' },
+  admin: { bg: 'color-mix(in oklch, var(--primary) 90%, white)', label: 'Admin' },
+  institution: { bg: 'color-mix(in oklch, var(--primary) 70%, white)', label: 'Institución' },
+  tutor: { bg: 'color-mix(in oklch, var(--primary) 50%, white)', label: 'Tutor' },
+  pcd: { bg: 'color-mix(in oklch, var(--primary) 35%, white)', label: 'Persona c/ disc.' },
+  user: { bg: 'var(--fg3)', label: 'Usuario' },
 }
 
 export const ADMIN_STATUS = {
-  critica: { color: '#D46A6A', label: 'Crítica' },
-  media: { color: '#D4944C', label: 'Media' },
-  adecuada: { color: '#7BA05B', label: 'Adecuada' },
+  critica: { color: 'var(--color-error)', label: 'Crítica' },
+  media: { color: 'var(--color-empleo)', label: 'Media' },
+  adecuada: { color: 'var(--color-artes)', label: 'Adecuada' },
   sin_demanda: { color: 'var(--fg3)', label: 'Sin demanda' },
 }
 
 export const ADMIN_SEVERITY = {
-  alta: { color: '#D46A6A' },
-  media: { color: '#D4944C' },
-  info: { color: '#01ADFF' },
+  alta: { color: 'var(--color-error)' },
+  media: { color: 'var(--color-empleo)' },
+  info: { color: 'var(--color-comunidad)' },
 }

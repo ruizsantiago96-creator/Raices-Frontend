@@ -84,16 +84,16 @@ export const CategoryTag = ({ label, color }) => (
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const CATEGORY_COLORS = {
-  'funcional': '#01ADFF',
-  'educativo': '#8B6BAE',
-  'laboral': '#D4944C',
-  'social': '#4BA3A3',
-  'Salud': '#C4789A',
-  'Terapia': '#01ADFF',
-  'Recreación': '#7BA05B',
-  'Educación': '#8B6BAE',
-  'Empleo': '#D4944C',
-  'Comunidad': '#4BA3A3',
+  'funcional': 'color-mix(in oklch, var(--primary) 70%, white)',
+  'educativo': 'color-mix(in oklch, var(--primary) 55%, white)',
+  'laboral': 'color-mix(in oklch, var(--primary) 85%, white)',
+  'social': 'color-mix(in oklch, var(--primary) 40%, white)',
+  'Salud': 'color-mix(in oklch, var(--primary) 70%, white)',
+  'Terapia': 'color-mix(in oklch, var(--primary) 70%, white)',
+  'Recreación': 'color-mix(in oklch, var(--primary) 40%, white)',
+  'Educación': 'color-mix(in oklch, var(--primary) 55%, white)',
+  'Empleo': 'color-mix(in oklch, var(--primary) 85%, white)',
+  'Comunidad': 'color-mix(in oklch, var(--primary) 40%, white)',
 }
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
@@ -118,7 +118,7 @@ export const BrandMark = ({ onClick, size = 22, light = false }) => (
 export function hashColor(str = '') {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
-  const colors = ['#01ADFF', '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B', '#4BA3A3', '#5A6C8C']
+  const colors = ['var(--primary)', 'color-mix(in oklch, var(--primary) 85%, white)', 'color-mix(in oklch, var(--primary) 70%, white)', 'color-mix(in oklch, var(--primary) 55%, white)', 'color-mix(in oklch, var(--primary) 40%, white)', 'color-mix(in oklch, var(--primary) 25%, white)', 'var(--fg3)']
   return colors[Math.abs(h) % colors.length]
 }
 

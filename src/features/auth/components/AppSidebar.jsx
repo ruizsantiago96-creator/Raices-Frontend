@@ -9,12 +9,12 @@ export const AppSidebar = ({ currentPage }) => {
   const items = [
     { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
     { id: 'explore', label: 'Explorar', icon: Icons.search, path: '/explore' },
-    { id: 'jobs', label: 'Empleo', icon: Icons.briefcase, path: '/jobs' },
+    { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs' },
     { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites' },
     { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social' },
   ]
   if (user?.role === 'tutor') {
-    items.push({ id: 'tutor', label: 'Mi familia', icon: Icons.users, path: '/familia' })
+    items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/familia' })
   }
   items.push({ id: 'profile', label: 'Mi perfil', icon: Icons.user, path: '/profile' })
   if (user?.role === 'admin') {

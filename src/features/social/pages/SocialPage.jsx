@@ -268,7 +268,7 @@ function CreateGroupModal({ onClose }) {
 function hashColor(str = '') {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
-  const colors = ['#01ADFF', '#B85C84', '#7857A0', '#BE7C34', '#5F8043', '#3A8C8C', '#5A6C8C', '#D46A6A']
+  const colors = ['var(--primary)', 'color-mix(in oklch, var(--primary) 85%, white)', 'color-mix(in oklch, var(--primary) 70%, white)', 'color-mix(in oklch, var(--primary) 55%, white)', 'color-mix(in oklch, var(--primary) 40%, white)', 'color-mix(in oklch, var(--primary) 25%, white)', 'var(--fg3)']
   return colors[Math.abs(h) % colors.length]
 }
 

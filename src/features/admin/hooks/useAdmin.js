@@ -271,6 +271,25 @@ export function useDeleteUser() {
   })
 }
 
+export function useUpdateUserAdmin() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }) => api.put(`/administracion/usuarios/${id}`, data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useUpdateAdminInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }) => api.put(`/administracion/instituciones/${id}`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'institutions'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'pending'] })
+    },
+  })
+}
+
 export function useAdminDetailedAnalytics() {
   return useQuery({
     queryKey: ['admin', 'detailed-analytics'],

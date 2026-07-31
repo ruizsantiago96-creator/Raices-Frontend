@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, hashColor, BrandMark } from '@shared/components/shared'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
+import { useNotifications, useMarkRead } from '@features/notifications'
 import {
   useAdminStats, useNeedsIntelligence, useAdminDetailedAnalytics,
   useAdminActiveUsersDetail,
   useAllInstitutions, usePendingInstitutions, useApproveInstitution,
-  useRejectInstitution, useToggleVerifyInstitution,
-  useAdminUsers, useToggleUserActive, useChangeUserRole,
+  useRejectInstitution, useToggleVerifyInstitution, useUpdateAdminInstitution,
+  useAdminUsers, useToggleUserActive, useChangeUserRole, useDeleteUser, useUpdateUserAdmin,
   useAdminReviews, useDeleteReview,
   useAdminSettings, useUpdateSettings,
   useAdminAlerts,
@@ -17,27 +19,43 @@ import {
 
 /* ════════════════════ Paleta y helpers ════════════════════ */
 const ROLE_META = {
-  admin: { bg: '#8B6BAE', label: 'Admin' },
-  institution: { bg: '#01ADFF', label: 'Institución' },
-  tutor: { bg: '#D4944C', label: 'Tutor' },
-  pcd: { bg: '#C4789A', label: 'Persona c/ disc.' },
-  user: { bg: '#5A6C8C', label: 'Usuario' },
+  admin: { bg: '#C4789A', fg: '#C4789A', label: 'Admin' },
+  institution: { bg: '#01ADFF', fg: '#01ADFF', label: 'Institución' },
+  tutor: { bg: '#D4944C', fg: '#D4944C', label: 'Tutor' },
+  pcd: { bg: '#7BA05B', fg: '#7BA05B', label: 'Persona c/ disc.' },
+  user: { bg: '#6b7280', fg: '#6b7280', label: 'Usuario' },
 }
 const STATUS_META = {
-  critica: { color: '#D46A6A', label: 'Crítica' },
-  media: { color: '#D4944C', label: 'Media' },
-  adecuada: { color: '#7BA05B', label: 'Adecuada' },
+  critica: { color: 'var(--color-error)', label: 'Crítica' },
+  media: { color: 'var(--color-empleo)', label: 'Media' },
+  adecuada: { color: 'var(--color-artes)', label: 'Adecuada' },
   sin_demanda: { color: 'var(--fg3)', label: 'Sin demanda' },
 }
 const SEVERITY_META = {
-  alta: { color: '#D46A6A', icon: Icons.shieldAlert },
-  media: { color: '#D4944C', icon: Icons.target },
-  info: { color: '#01ADFF', icon: Icons.sparkles },
+  alta: { color: 'var(--color-error)', icon: Icons.shieldAlert },
+  media: { color: 'var(--color-empleo)', icon: Icons.target },
+  info: { color: 'var(--color-comunidad)', icon: Icons.sparkles },
 }
-
+function formatTimeAgo(dateString) {
+  try {
+    const d = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - d
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return 'Ahora mismo'
+    if (diffMins < 60) return `Hace ${diffMins} min`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `Hace ${diffHours} h`
+    const diffDays = Math.floor(diffHours / 24)
+    return `Hace ${diffDays} d`
+  } catch {
+    return ''
+  }
+}
 
 export default function AdminPage() {
   const { logout } = useAuthStore()
+  const navigate = useNavigate()
   const { data: user } = useMe()
   const { darkMode, toggleDarkMode } = useA11yStore()
   const [tab, setTab] = useState(() => localStorage.getItem('admin-tab') ?? 'overview')
@@ -45,6 +63,45 @@ export default function AdminPage() {
   const { data: pending = [] } = usePendingInstitutions()
   const { data: all = [] } = useAllInstitutions()
   const { data: alerts = [] } = useAdminAlerts()
+
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const notifDropdownRef = useRef(null)
+
+  const { data: notificationsRaw } = useNotifications()
+  const notifications = notificationsRaw ?? []
+  const unreadCount = notifications.filter(n => !n.is_read).length
+  const { mutate: markRead } = useMarkRead()
+
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+  }, [dropdownOpen])
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
+        setNotifDropdownOpen(false)
+      }
+    }
+    if (notifDropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+  }, [notifDropdownOpen])
 
   // Deduplicar por ID para que el badge coincida con el listado de la pestaña
   // Deduplicar por ID para que el badge coincida con el listado de la pestaña
@@ -174,68 +231,303 @@ export default function AdminPage() {
             </button>
             {/* Brand mark logo */}
             <BrandMark onClick={() => onTab('overview')} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {criticalCount > 0 && (
               <button onClick={() => onTab('alerts')}
                 className="admin-alert-badge"
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: '1.5px solid #D46A6A', background: 'color-mix(in oklch, #D46A6A 10%, transparent)', color: '#D46A6A', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)' }}>
-                {Icons.shieldAlert({ s: 15 })} <span className="admin-alert-text">{criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica{criticalCount !== 1 ? 's' : ''}</span>
+                {Icons.shieldAlert({ s: 15 })} <span className="admin-alert-text">{criticalCount} alerta{criticalCount !== 1 ? 's' : ''} crítica</span>
               </button>
             )}
-            
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Theme toggle button */}
             <button
               onClick={toggleDarkMode}
               aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               title={darkMode ? 'Modo claro' : 'Modo oscuro'}
               style={{
-                width: 40, height: 40, borderRadius: 'var(--radius-sm)',
-                background: darkMode ? 'rgba(255,255,255,0.1)' : 'var(--primary-subtle)',
-                border: 'none', cursor: 'pointer',
+                width: 40, height: 40, borderRadius: '50%',
+                background: 'transparent',
+                border: '1px solid var(--border-color)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: darkMode ? '#F1FA3F' : 'var(--primary)',
+                color: 'var(--fg2)',
                 transition: 'all 0.2s ease',
-                marginRight: 4,
               }}
             >
               {darkMode ? (
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="4"/>
                   <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
                 </svg>
               ) : (
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
                 </svg>
               )}
             </button>
 
-            {/* Profile Avatar & Name Link */}
-            <Link to="/profile" className="topnav-profile-link" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 8 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''),
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-display)',
-                overflow: 'hidden', flexShrink: 0,
-                border: '1.5px solid var(--border-color)',
-              }}>
-                {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  (user?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+            {/* Notifications button — circular, with border & dropdown */}
+            <div style={{ position: 'relative' }} ref={notifDropdownRef}>
+              <button
+                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                aria-label="Notificaciones"
+                title="Notificaciones"
+                style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--fg2)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                }}
+              >
+                {Icons.bell({ s: 18 })}
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 10, right: 10,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#ef4444',
+                  }} />
+                )}
+              </button>
+
+              {notifDropdownOpen && (
+                <div style={{
+                  position: 'absolute', right: -60, top: 'calc(100% + 8px)',
+                  width: 320, background: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)',
+                  boxShadow: 'var(--shadow-lg)', zIndex: 100,
+                  display: 'flex', flexDirection: 'column',
+                  animation: 'fade-in 0.15s ease-out'
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--fg1)' }}>Notificaciones</span>
+                    <button
+                      onClick={() => setNotifDropdownOpen(false)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', display: 'flex', alignItems: 'center', padding: 4 }}
+                    >
+                      {Icons.x({ s: 14 })}
+                    </button>
+                  </div>
+
+                  {/* List */}
+                  <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 320, overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '24px 18px', textAlign: 'center', color: 'var(--fg3)', fontSize: 13.5 }}>
+                        Sin notificaciones nuevas
+                      </div>
+                    ) : (
+                      notifications.slice(0, 5).map(n => {
+                        const timeStr = formatTimeAgo(n.created_at)
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              setNotifDropdownOpen(false)
+                              markRead(n.id)
+                              navigate(n.url)
+                            }}
+                            style={{
+                              display: 'flex', gap: 12, padding: '14px 18px',
+                              borderBottom: '1px solid var(--border-color)',
+                              cursor: 'pointer', background: n.is_read ? 'transparent' : 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))',
+                              transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-cool)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = n.is_read ? 'transparent' : 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))'}
+                          >
+                            {/* Avatar block with status dot */}
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                              <div style={{
+                                width: 38, height: 38, borderRadius: '50%',
+                                background: 'var(--primary-subtle)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'var(--primary)', fontWeight: 700, fontSize: 13
+                              }}>
+                                {n.title.slice(0, 2).toUpperCase()}
+                              </div>
+                              <span style={{
+                                position: 'absolute', bottom: 0, right: 0,
+                                width: 8, height: 8, borderRadius: '50%',
+                                border: '1.5px solid var(--bg-surface)',
+                                background: n.is_read ? '#9ca3af' : '#10b981',
+                              }} />
+                            </div>
+
+                            {/* Content block */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <div style={{ fontSize: 13, color: 'var(--fg1)', lineHeight: 1.4, fontWeight: n.is_read ? 500 : 600 }}>
+                                <span style={{ fontWeight: 700 }}>{n.title}</span> {n.body}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: 'var(--fg3)' }}>{timeStr}</div>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  {/* Footer button */}
+                  <div style={{ padding: 12, borderTop: '1px solid var(--border-color)', display: 'flex' }}>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotifDropdownOpen(false)}
+                      style={{
+                        width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-color)', background: 'transparent',
+                        color: 'var(--fg2)', fontSize: 13.5, fontWeight: 700,
+                        textAlign: 'center', textDecoration: 'none', transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--bg-cool)'
+                        e.currentTarget.style.color = 'var(--fg1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent'
+                        e.currentTarget.style.color = 'var(--fg2)'
+                      }}
+                    >
+                      Ver todas las notificaciones
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User profile dropdown trigger */}
+            {user && (
+              <div style={{ position: 'relative' }} ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: '4px 8px', borderRadius: 'var(--radius-md)',
+                    transition: 'background-color 0.2s',
+                  }}
+                >
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: user.avatar_url ? 'transparent' : hashColor(user.full_name ?? ''),
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-display)',
+                    overflow: 'hidden', flexShrink: 0,
+                  }}>
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      (user.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                    )}
+                  </div>
+                  <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg2)' }} className="topnav-username">
+                    {user.full_name?.split(' ')[0] ?? 'Admin'}
+                  </span>
+                  <span style={{ color: 'var(--fg3)', display: 'flex', alignItems: 'center', transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>
+                    {Icons.chevronDown({ s: 14 })}
+                  </span>
+                </button>
+
+                {dropdownOpen && (
+                  <div style={{
+                    position: 'absolute', right: 0, top: 'calc(100% + 8px)',
+                    width: 240, background: 'var(--bg-surface)',
+                    borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)',
+                    boxShadow: 'var(--shadow-lg)', zIndex: 100,
+                    display: 'flex', flexDirection: 'column',
+                    padding: '16px 0',
+                    animation: 'fade-in 0.15s ease-out'
+                  }}>
+                    {/* User info header */}
+                    <div style={{ padding: '0 20px 14px', borderBottom: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg1)' }}>{user.full_name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2, wordBreak: 'break-all' }}>{user.email}</div>
+                    </div>
+
+                    {/* Options list */}
+                    <div style={{ padding: '8px 8px 0', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Link
+                        to="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                          textDecoration: 'none', color: 'var(--fg2)',
+                          fontSize: 14, fontWeight: 600,
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-cool)'
+                          e.currentTarget.style.color = 'var(--fg1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = 'var(--fg2)'
+                        }}
+                      >
+                        <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.user({ s: 18 })}</span>
+                        Ver perfil
+                      </Link>
+
+                      <Link
+                        to="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                          textDecoration: 'none', color: 'var(--fg2)',
+                          fontSize: 14, fontWeight: 600,
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-cool)'
+                          e.currentTarget.style.color = 'var(--fg1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = 'var(--fg2)'
+                        }}
+                      >
+                        <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.sliders({ s: 18 })}</span>
+                        Configuración
+                      </Link>
+
+                      {/* Horizontal line divider */}
+                      <div style={{ height: 1, background: 'var(--border-color)', margin: '8px 12px' }} />
+
+                      <button
+                        onClick={() => {
+                          setDropdownOpen(false)
+                          logout()
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                          border: 'none', background: 'transparent',
+                          color: 'var(--fg2)', cursor: 'pointer',
+                          fontSize: 14, fontWeight: 600, textAlign: 'left',
+                          width: '100%', transition: 'all 0.2s',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-cool)'
+                          e.currentTarget.style.color = 'var(--color-error)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = 'var(--fg2)'
+                        }}
+                      >
+                        <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.logout({ s: 18 })}</span>
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg2)' }} className="topnav-username">
-                {user?.full_name?.split(' ')[0] ?? 'Admin'}
-              </span>
-            </Link>
-
-            {/* Logout button */}
-            <button onClick={logout} style={{ background: 'none', border: '2px solid var(--border-color)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', color: 'var(--fg2)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-body)', padding: '8px 18px', minHeight: 44 }}>
-              {Icons.logout({ s: 18 })} Salir
-            </button>
+            )}
           </div>
         </header>
 
@@ -265,10 +557,10 @@ function AdminSidebar({ tab, onTab, pendingCount, alertCritical }) {
   const NAV = [
     { key: 'overview',      label: 'Inicio',         icon: Icons.home },
     { key: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
-    { key: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: '#D4944C' },
+    { key: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: 'var(--color-empleo)' },
     { key: 'users',         label: 'Usuarios',       icon: Icons.users },
     { key: 'reviews',       label: 'Reseñas',        icon: Icons.star },
-    { key: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: '#D46A6A' },
+    { key: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
     { key: 'settings',      label: 'Config',         icon: Icons.target },
   ]
 
@@ -403,7 +695,7 @@ function AnimatedCounter({ value, duration = 800, style }) {
 }
 
 /* ── Barra horizontal con etiqueta ── */
-function HBar({ label, value, max, color = '#01ADFF', suffix }) {
+function HBar({ label, value, max, color = 'var(--primary)', suffix }) {
   const pct = max > 0 ? (value / max) * 100 : 0
   return (
     <div style={{ marginBottom: 12 }}>
@@ -462,48 +754,42 @@ function OverviewTab({ onNavigate: _onNavigate }) {
       value: stats?.totalUsuarios, 
       sub: `${stats?.usuariosActivos ?? 0} activos`, 
       icon: Icons.users, 
-      color: '#8B6BAE',
-      gradient: 'linear-gradient(135deg, #8B6BAE, #A992C4)'
+      color: 'var(--primary)',
     },
     { 
       label: 'Instituciones', 
       value: stats?.totalInstituciones, 
       sub: `${stats?.institucionesVerificadas ?? 0} verificadas`, 
       icon: Icons.building, 
-      color: '#01ADFF',
-      gradient: 'linear-gradient(135deg, #01ADFF, #40CFFF)'
+      color: 'color-mix(in oklch, var(--primary) 82%, #0ea5e9)',
     },
     { 
       label: 'Pendientes', 
       value: totalPending, 
       sub: getPendingSubtext(), 
       icon: Icons.shieldAlert, 
-      color: totalPending > 0 ? '#D46A6A' : '#D4944C',
-      gradient: totalPending > 0 ? 'linear-gradient(135deg, #D46A6A, #E58E8E)' : 'linear-gradient(135deg, #D4944C, #E6B075)'
+      color: 'color-mix(in oklch, var(--primary) 82%, #10b981)',
     },
     { 
       label: 'Reseñas', 
       value: stats?.totalResenas, 
       sub: stats?.calificacionPromedio != null ? `${stats.calificacionPromedio}★ promedio` : 'Sin calificaciones', 
       icon: Icons.star, 
-      color: '#C4789A',
-      gradient: 'linear-gradient(135deg, #C4789A, #DC9CB6)'
+      color: 'color-mix(in oklch, var(--primary) 78%, #06b6d4)',
     },
     { 
       label: 'Publicaciones', 
       value: stats?.totalPublicaciones, 
       sub: `${stats?.totalGrupos ?? 0} grupos`, 
       icon: Icons.message, 
-      color: '#7BA05B',
-      gradient: 'linear-gradient(135deg, #7BA05B, #96BE76)'
+      color: 'color-mix(in oklch, var(--primary) 75%, #84cc16)',
     },
     { 
       label: 'Perfiles completos', 
       value: stats?.perfilesCompletados, 
       sub: 'con datos de necesidades', 
       icon: Icons.target, 
-      color: '#4BA3A3',
-      gradient: 'linear-gradient(135deg, #4BA3A3, #6BC0C0)'
+      color: 'color-mix(in oklch, var(--primary) 88%, #14b8a6)',
     },
   ]
 
@@ -717,28 +1003,16 @@ function OverviewTab({ onNavigate: _onNavigate }) {
               cursor: 'default'
             }}
           >
-            {/* Gradiente de fondo sutil decorativo en la esquina */}
-            <div style={{
-              position: 'absolute',
-              right: '-10%',
-              top: '-10%',
-              width: 100, height: 100,
-              borderRadius: '50%',
-              background: c.gradient,
-              opacity: 0.04,
-              filter: 'blur(20px)'
-            }} />
-            
+
             <div className="kpi-icon-container" style={{ 
               width: 52, height: 52, 
               borderRadius: '16px', 
-              background: c.gradient,
-              color: '#fff', 
+              background: `color-mix(in oklch, ${c.color} 8%, var(--bg-surface))`,
+              color: c.color, 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
               flexShrink: 0,
-              boxShadow: '0 8px 16px rgba(0,0,0,0.06)'
             }}>
               {c.icon({ s: 24 })}
             </div>
@@ -766,19 +1040,19 @@ function OverviewTab({ onNavigate: _onNavigate }) {
             {/* Leyenda al estilo del mockup */}
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', background: 'var(--bg-cool)', padding: '6px 16px', borderRadius: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--fg2)' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#1d35cc' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)' }} />
                 <span>Usuarios</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--fg2)' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#3e63ff' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 70%, white)' }} />
                 <span>Instituciones</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--fg2)' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c9cff' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 45%, white)' }} />
                 <span>Reseñas</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--fg2)' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#bfdbfe' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 20%, white)' }} />
                 <span>Publicaciones</span>
               </div>
             </div>
@@ -859,10 +1133,10 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                             }}
                           >
                             <b style={{ marginBottom: 2, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 2 }}>{p.label}</b>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1d35cc' }} /> Usuarios: {p.usuarios}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3e63ff' }} /> Instituciones: {p.instituciones}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#7c9cff' }} /> Reseñas: {p.resenas}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#bfdbfe' }} /> Publicaciones: {p.publicaciones}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)' }} /> Usuarios: {p.usuarios}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 70%, white)' }} /> Instituciones: {p.instituciones}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 45%, white)' }} /> Reseñas: {p.resenas}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 20%, white)' }} /> Publicaciones: {p.publicaciones}</div>
                           </div>
                         )}
                         
@@ -881,10 +1155,10 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                         >
                           {total > 0 && (
                             <>
-                              <div style={{ height: `${(p.usuarios / total) * 100}%`, background: '#1d35cc', transition: 'all 0.2s' }} />
-                              <div style={{ height: `${(p.instituciones / total) * 100}%`, background: '#3e63ff', transition: 'all 0.2s' }} />
-                              <div style={{ height: `${(p.resenas / total) * 100}%`, background: '#7c9cff', transition: 'all 0.2s' }} />
-                              <div style={{ height: `${(p.publicaciones / total) * 100}%`, background: '#bfdbfe', transition: 'all 0.2s' }} />
+                              <div style={{ height: `${(p.usuarios / total) * 100}%`, background: 'var(--primary)', transition: 'all 0.2s' }} />
+                              <div style={{ height: `${(p.instituciones / total) * 100}%`, background: 'color-mix(in oklch, var(--primary) 70%, white)', transition: 'all 0.2s' }} />
+                              <div style={{ height: `${(p.resenas / total) * 100}%`, background: 'color-mix(in oklch, var(--primary) 45%, white)', transition: 'all 0.2s' }} />
+                              <div style={{ height: `${(p.publicaciones / total) * 100}%`, background: 'color-mix(in oklch, var(--primary) 20%, white)', transition: 'all 0.2s' }} />
                             </>
                           )}
                         </div>
@@ -933,12 +1207,12 @@ function OverviewTab({ onNavigate: _onNavigate }) {
             <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
               <defs>
                 <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path d={areaD} fill="url(#area-grad)" />
-              <path d={lineD} fill="none" stroke="#4F46E5" strokeWidth="1.3" strokeLinecap="round" />
+              <path d={lineD} fill="none" stroke="var(--primary)" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -984,7 +1258,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                       {uVal > 0 && (
                         <circle 
                           cx="50" cy="50" r={donutR} 
-                          fill="none" stroke="#1d35cc" 
+                          fill="none" stroke="var(--primary)" 
                           strokeWidth={hoveredDonut === 'usuarios' ? 18 : 14} 
                           strokeDasharray={`${uLen} ${donutCirc}`} 
                           strokeDashoffset={uOffset}
@@ -1002,7 +1276,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                       {iVal > 0 && (
                         <circle 
                           cx="50" cy="50" r={donutR} 
-                          fill="none" stroke="#3e63ff" 
+                          fill="none" stroke="color-mix(in oklch, var(--primary) 70%, white)" 
                           strokeWidth={hoveredDonut === 'instituciones' ? 18 : 14} 
                           strokeDasharray={`${iLen} ${donutCirc}`} 
                           strokeDashoffset={iOffset}
@@ -1020,7 +1294,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                       {rVal > 0 && (
                         <circle 
                           cx="50" cy="50" r={donutR} 
-                          fill="none" stroke="#7c9cff" 
+                          fill="none" stroke="color-mix(in oklch, var(--primary) 45%, white)" 
                           strokeWidth={hoveredDonut === 'resenas' ? 18 : 14} 
                           strokeDasharray={`${rLen} ${donutCirc}`} 
                           strokeDashoffset={rOffset}
@@ -1038,7 +1312,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                       {pVal > 0 && (
                         <circle 
                           cx="50" cy="50" r={donutR} 
-                          fill="none" stroke="#bfdbfe" 
+                          fill="none" stroke="color-mix(in oklch, var(--primary) 20%, white)" 
                           strokeWidth={hoveredDonut === 'publicaciones' ? 18 : 14} 
                           strokeDasharray={`${pLen} ${donutCirc}`} 
                           strokeDashoffset={pOffset}
@@ -1080,7 +1354,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                     boxShadow: hoveredDonut === 'usuarios' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#1d35cc', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.2 }}>{uVal} Usuarios</span>
                     <span style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 2 }}>{donutTotal > 0 ? Math.round(uPct * 100) : 0}% del total</span>
@@ -1103,7 +1377,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                     boxShadow: hoveredDonut === 'instituciones' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#3e63ff', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 70%, white)', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.2 }}>{iVal} Insts.</span>
                     <span style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 2 }}>{donutTotal > 0 ? Math.round(iPct * 100) : 0}% del total</span>
@@ -1126,7 +1400,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                     boxShadow: hoveredDonut === 'resenas' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c9cff', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 45%, white)', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.2 }}>{rVal} Reseñas</span>
                     <span style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 2 }}>{donutTotal > 0 ? Math.round(rPct * 100) : 0}% del total</span>
@@ -1149,7 +1423,7 @@ function OverviewTab({ onNavigate: _onNavigate }) {
                     boxShadow: hoveredDonut === 'publicaciones' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#bfdbfe', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'color-mix(in oklch, var(--primary) 20%, white)', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.2 }}>{pVal} Pubs.</span>
                     <span style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 2 }}>{donutTotal > 0 ? Math.round(pPct * 100) : 0}% del total</span>
@@ -1168,17 +1442,17 @@ function OverviewTab({ onNavigate: _onNavigate }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1, justifyContent: 'center' }}>
               <div>
-                <HBar label="Tasa de Cuentas Activas" value={activePct} max={100} color="#8B6BAE" suffix="%" />
+                <HBar label="Tasa de Cuentas Activas" value={activePct} max={100} color="var(--primary)" suffix="%" />
                 <div style={{ fontSize: 11.5, color: 'var(--fg3)', marginTop: -6 }}>Porcentaje de usuarios registrados con cuentas habilitadas</div>
               </div>
 
               <div>
-                <HBar label="Instituciones Verificadas" value={verifiedPct} max={100} color="#01ADFF" suffix="%" />
+                <HBar label="Instituciones Verificadas" value={verifiedPct} max={100} color="color-mix(in oklch, var(--primary) 70%, white)" suffix="%" />
                 <div style={{ fontSize: 11.5, color: 'var(--fg3)', marginTop: -6 }}>Porcentaje de instituciones que han completado su verificación</div>
               </div>
 
               <div>
-                <HBar label="Perfiles con Diagnóstico IA" value={completedPct} max={100} color="#4BA3A3" suffix="%" />
+                <HBar label="Perfiles con Diagnóstico IA" value={completedPct} max={100} color="color-mix(in oklch, var(--primary) 45%, white)" suffix="%" />
                 <div style={{ fontSize: 11.5, color: 'var(--fg3)', marginTop: -6 }}>Usuarios que completaron el onboarding de necesidades</div>
               </div>
             </div>
@@ -1261,13 +1535,13 @@ function IntelligenceTab() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: 'var(--fg3)', marginBottom: 3 }}>Demanda · {c.demand}</div>
                       <div style={{ height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${(c.demand / maxDemand) * 100}%`, height: '100%', background: '#C4789A', borderRadius: 4 }} />
+                        <div style={{ width: `${(c.demand / maxDemand) * 100}%`, height: '100%', background: 'var(--color-salud)', borderRadius: 4 }} />
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: 'var(--fg3)', marginBottom: 3 }}>Oferta · {c.supply}</div>
                       <div style={{ height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${(c.supply / maxSupply) * 100}%`, height: '100%', background: '#01ADFF', borderRadius: 4 }} />
+                        <div style={{ width: `${(c.supply / maxSupply) * 100}%`, height: '100%', background: 'var(--primary)', borderRadius: 4 }} />
                       </div>
                     </div>
                   </div>
@@ -1285,7 +1559,7 @@ function IntelligenceTab() {
           {(data?.demand?.needs?.length ?? 0) === 0 ? <p style={{ fontSize: 13, color: 'var(--fg3)' }}>Sin datos</p> : (
             data.demand.needs.slice(0, 6).map((n, i) => {
               const max = Math.max(...data.demand.needs.map(x => x.count), 1)
-              return <HBar key={i} label={n.need} value={n.count} max={max} color="#C4789A" />
+              return <HBar key={i} label={n.need} value={n.count} max={max} color="var(--color-salud)" />
             })
           )}
         </Card>
@@ -1294,7 +1568,7 @@ function IntelligenceTab() {
           {(data?.demand?.goals?.length ?? 0) === 0 ? <p style={{ fontSize: 13, color: 'var(--fg3)' }}>Sin datos</p> : (
             data.demand.goals.slice(0, 6).map((g, i) => {
               const max = Math.max(...data.demand.goals.map(x => x.count), 1)
-              return <HBar key={i} label={g.goal} value={g.count} max={max} color="#8B6BAE" />
+              return <HBar key={i} label={g.goal} value={g.count} max={max} color="var(--color-educacion)" />
             })
           )}
         </Card>
@@ -1304,43 +1578,93 @@ function IntelligenceTab() {
 }
 
 /* ════════════════════ TAB: Instituciones ════════════════════ */
+const INST_PAGE_SIZE = 8
 function InstitutionsTab() {
   const { addToast } = useUiStore()
   const [filter, setFilter] = useState('pending')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [actionMenuId, setActionMenuId] = useState(null)
+  const [confirm, setConfirm] = useState(null)
+  const [editInst, setEditInst] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', email: '' })
+  const actionMenuRef = useRef(null)
+  const [menuPos, setMenuPos] = useState(null)
+
   const { data: pending = [], isLoading: pLoad } = usePendingInstitutions()
   const { data: all = [], isLoading: aLoad } = useAllInstitutions()
   const approve = useApproveInstitution()
   const reject = useRejectInstitution()
   const verify = useToggleVerifyInstitution()
-  const [confirm, setConfirm] = useState(null)
+  const updateInst = useUpdateAdminInstitution()
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) { setActionMenuId(null) }
+    }
+    if (actionMenuId) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [actionMenuId])
+
+
 
   const pendingVerification = all.filter(inst => !inst.is_verified && inst.is_active)
-  // Deduplicar por ID entre ambos arrays (pendientes + por verificar)
   const combinedPendingMap = new Map()
   for (const inst of [...pending, ...pendingVerification]) {
     if (!combinedPendingMap.has(inst.id)) combinedPendingMap.set(inst.id, inst)
   }
   const combinedPending = [...combinedPendingMap.values()]
 
-  const rows = filter === 'pending' ? combinedPending : all
+  const baseRows = filter === 'pending' ? combinedPending : all
+  const rows = search.trim()
+    ? baseRows.filter(inst => {
+        const q = search.toLowerCase()
+        return (inst.name ?? '').toLowerCase().includes(q) || (inst.city ?? '').toLowerCase().includes(q) || (inst.category ?? '').toLowerCase().includes(q)
+      })
+    : baseRows
   const isLoading = filter === 'pending' ? (pLoad || aLoad) : aLoad
+  const totalPages = Math.max(1, Math.ceil(rows.length / INST_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = rows.slice((safePage - 1) * INST_PAGE_SIZE, safePage * INST_PAGE_SIZE)
 
   const doApprove = (id) => approve.mutate(id, { onSuccess: () => addToast('Institución aprobada', 'success') })
-  const doVerify = (id) => verify.mutate(id, { onSuccess: (d) => addToast(d.is_verified ? 'Marcada como verificada' : 'Verificación retirada', 'success') })
+  const doVerify = (id) => verify.mutate(id, { onSuccess: (d) => { addToast(d.is_verified ? 'Marcada como verificada' : 'Verificación retirada', 'success'); setActionMenuId(null) } })
   const doReject = () => {
-    reject.mutate(confirm.id, { onSuccess: () => { addToast('Institución eliminada', 'success'); setConfirm(null) } })
+    reject.mutate(confirm.id, { onSuccess: () => { addToast('Institución eliminada', 'success'); setConfirm(null); setActionMenuId(null) } })
   }
+  const doEdit = () => {
+    if (!editInst) return
+    updateInst.mutate({ id: editInst.id, ...editForm }, {
+      onSuccess: () => { addToast('Institución actualizada', 'success'); setEditInst(null) },
+      onError: (e) => addToast(e.response?.data?.message ?? 'Error al actualizar', 'error'),
+    })
+  }
+  const openEdit = (inst) => {
+    setEditInst(inst)
+    setEditForm({ name: inst.name ?? '', email: inst.email ?? '' })
+    setActionMenuId(null)
+  }
+
+  const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        {[{ k: 'pending', l: `Pendientes (${combinedPending.length})` }, { k: 'all', l: `Todas (${all.length})` }].map(f => (
-          <button key={f.k} onClick={() => setFilter(f.k)}
-            style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-              background: filter === f.k ? 'var(--primary)' : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
-            {f.l}
-          </button>
-        ))}
+      {/* Toolbar: filters + search */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[{ k: 'pending', l: `Pendientes (${combinedPending.length})` }, { k: 'all', l: `Todas (${all.length})` }].map(f => (
+            <button key={f.k} onClick={() => setFilter(f.k)}
+              style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+                background: filter === f.k ? 'var(--primary)' : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
+              {f.l}
+            </button>
+          ))}
+        </div>
+        <div style={{ position: 'relative', flex: 1, minWidth: 220, marginLeft: 'auto' }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)' }}>{Icons.search({ s: 16 })}</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, ciudad o categoría..."
+            style={inputStyle} />
+        </div>
       </div>
 
       {isLoading ? (
@@ -1348,56 +1672,146 @@ function InstitutionsTab() {
       ) : rows.length === 0 ? (
         <EmptyState icon={Icons.check({ s: 32 })} title={filter === 'pending' ? 'Sin instituciones pendientes' : 'No hay instituciones'} sub={filter === 'pending' ? 'Todas las solicitudes han sido procesadas' : null} />
       ) : (
-        <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
-          <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
-                {['Nombre', 'Categoría', 'Ciudad', 'Estado', 'Acciones'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((inst, i) => (
-                <tr key={inst.id} style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {inst.name}
-                      {inst.is_verified ? <span style={{ color: '#7BA05B' }} title="Verificada">{Icons.shield({ s: 14 })}</span> : null}
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg2)' }}>{inst.category ?? '—'}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg2)' }}>{inst.city ?? '—'}</td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
-                      background: inst.is_active ? 'color-mix(in oklch, #7BA05B 18%, transparent)' : 'color-mix(in oklch, #D4944C 18%, transparent)',
-                      color: inst.is_active ? '#5f8043' : '#b07636' }}>
-                      {inst.is_active ? 'Activa' : 'Pendiente'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {!inst.is_active && (
-                        <button onClick={() => doApprove(inst.id)} disabled={approve.isPending}
-                          style={btn('#22c55e')}>{Icons.check({ s: 14 })} Aprobar</button>
-                      )}
-                      {inst.is_active && (
-                        <button onClick={() => doVerify(inst.id)} disabled={verify.isPending}
-                          style={btn(inst.is_verified ? '#5A6C8C' : '#01ADFF')}>
-                          {Icons.shield({ s: 14 })} {inst.is_verified ? 'Quitar verif.' : 'Verificar'}
-                        </button>
-                      )}
-                      <button onClick={() => setConfirm(inst)} disabled={reject.isPending}
-                        style={btn('#ef4444')}>{Icons.x({ s: 14 })} Eliminar</button>
-                    </div>
-                  </td>
+        <>
+          <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
+            <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
+                  {['Institución', 'Categoría', 'Ciudad', 'Estado', 'Verificada', 'Acciones'].map(h => (
+                    <th key={h + 'inst'} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
                 </tr>
+              </thead>
+              <tbody>
+                {paged.map((inst, i) => (
+                  <tr key={inst.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'color-mix(in oklch, var(--primary) 2%, var(--bg-surface))'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: hashColor(inst.name ?? ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                          {(inst.name ?? '?')[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{inst.name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--fg3)' }}>{inst.email ?? '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: 'color-mix(in oklch, var(--color-comunidad) 14%, transparent)', color: 'var(--color-comunidad)' }}>{inst.category ?? '—'}</span>
+                    </td>
+                    <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg2)' }}>{inst.city ?? '—'}</td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
+                        background: inst.is_active ? 'color-mix(in oklch, var(--color-artes) 14%, transparent)' : 'color-mix(in oklch, var(--color-empleo) 14%, transparent)',
+                        color: inst.is_active ? 'var(--color-artes)' : 'var(--color-empleo)' }}>
+                        {inst.is_active ? 'Activa' : 'Pendiente'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
+                        background: inst.is_verified ? 'color-mix(in oklch, var(--color-artes) 14%, transparent)' : 'color-mix(in oklch, var(--fg3) 10%, transparent)',
+                        color: inst.is_verified ? 'var(--color-artes)' : 'var(--fg3)' }}>
+                        {inst.is_verified ? 'Verificada' : 'No verificada'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px', position: 'relative' }}>
+                      <button onClick={(e) => { if (actionMenuId === inst.id) { setActionMenuId(null); setMenuPos(null) } else { const r = e.currentTarget.getBoundingClientRect(); setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right - 16 }); setActionMenuId(inst.id) } }}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg3)', transition: 'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-cool)'; e.currentTarget.style.color = 'var(--fg1)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.color = 'var(--fg3)' }}>
+                        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                      </button>
+                      {actionMenuId === inst.id && menuPos && createPortal(
+                        <div ref={actionMenuRef} style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, width: 200, background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)', zIndex: 9999, padding: '6px 0', animation: 'fade-in 0.12s ease-out' }}>
+                          <button onClick={() => openEdit(inst)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--fg2)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            {Icons.sliders({ s: 15 })} Configuración
+                          </button>
+                          {!inst.is_active && (
+                            <button onClick={() => { doApprove(inst.id); setActionMenuId(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--color-artes)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {Icons.check({ s: 15 })} Aprobar
+                            </button>
+                          )}
+                          {inst.is_active && (
+                            <button onClick={() => doVerify(inst.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--primary)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {Icons.shield({ s: 15 })} {inst.is_verified ? 'Quitar verificación' : 'Verificar'}
+                            </button>
+                          )}
+                          <div style={{ height: 1, background: 'var(--border-color)', margin: '4px 12px' }} />
+                          <button onClick={() => { setConfirm(inst); setActionMenuId(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--color-error)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            {Icons.x({ s: 15 })} Eliminar
+                          </button>
+                        </div>,
+                        document.body
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 18 }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === 1 ? 'transparent' : 'var(--bg-surface)', color: safePage === 1 ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
+                Anterior
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} onClick={() => setPage(p)}
+                  style={{ width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)',
+                    background: p === safePage ? 'var(--primary)' : 'transparent', color: p === safePage ? '#fff' : 'var(--fg3)', transition: 'all 0.15s' }}>
+                  {p}
+                </button>
               ))}
-            </tbody>
-          </table>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === totalPages ? 'transparent' : 'var(--bg-surface)', color: safePage === totalPages ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Edit Modal */}
+      {editInst && (
+        <div onClick={() => setEditInst(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {Icons.sliders({ s: 20 })}
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Editar institución</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Nombre</label>
+                <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Correo</label>
+                <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+              <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setEditInst(null)}>Cancelar</button>
+              <button className="btn-primary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={doEdit} disabled={updateInst.isPending}>
+                {updateInst.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Delete Confirm */}
       {confirm && (
         <ConfirmDialog
           title="Eliminar institución"
@@ -1413,45 +1827,89 @@ function InstitutionsTab() {
 }
 
 /* ════════════════════ TAB: Usuarios ════════════════════ */
+const USER_PAGE_SIZE = 8
 function UsersTab({ currentUserId }) {
   const { addToast } = useUiStore()
   const { data: users = [], isLoading } = useAdminUsers()
   const toggleActive = useToggleUserActive()
   const changeRole = useChangeUserRole()
+  const deleteUser = useDeleteUser()
+  const updateUser = useUpdateUserAdmin()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [actionMenuId, setActionMenuId] = useState(null)
+  const [confirm, setConfirm] = useState(null)
+  const [roleConfirm, setRoleConfirm] = useState(null)
+  const [pendingRoleChange, setPendingRoleChange] = useState(null)
+  const [editUser, setEditUser] = useState(null)
+  const [editForm, setEditForm] = useState({ full_name: '', email: '' })
+  const actionMenuRef = useRef(null)
+  const [menuPos, setMenuPos] = useState(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
+        setActionMenuId(null); setMenuPos(null)
+      }
+    }
+    if (actionMenuId) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [actionMenuId])
+
+
 
   const filtered = users.filter(u => {
     const matchSearch = !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
     const matchRole = roleFilter === 'all' || u.role === roleFilter
     return matchSearch && matchRole
   })
+  const totalPages = Math.max(1, Math.ceil(filtered.length / USER_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * USER_PAGE_SIZE, safePage * USER_PAGE_SIZE)
 
   const onToggle = (u) => toggleActive.mutate(u.id, {
-    onSuccess: (d) => addToast(d.is_active ? 'Usuario activado' : 'Usuario desactivado', 'success'),
+    onSuccess: (d) => { addToast(d.is_active ? 'Usuario activado' : 'Usuario desactivado', 'success'); setActionMenuId(null) },
     onError: (e) => addToast(e.response?.data?.message ?? 'Error', 'error'),
   })
   const onRole = (id, role) => changeRole.mutate({ id, role }, {
-    onSuccess: () => addToast('Rol actualizado', 'success'),
+    onSuccess: () => { addToast('Rol actualizado', 'success'); setRoleConfirm(null); setActionMenuId(null) },
     onError: (e) => addToast(e.response?.data?.message ?? 'Error', 'error'),
   })
+  const doDelete = () => {
+    deleteUser.mutate(confirm.id, { onSuccess: () => { addToast('Usuario eliminado', 'success'); setConfirm(null); setActionMenuId(null) } })
+  }
+  const openEdit = (u) => {
+    setEditUser(u)
+    setEditForm({ full_name: u.full_name ?? '', email: u.email ?? '' })
+    setActionMenuId(null)
+  }
+  const doEdit = () => {
+    if (!editUser) return
+    updateUser.mutate({ id: editUser.id, ...editForm }, {
+      onSuccess: () => { addToast('Usuario actualizado', 'success'); setEditUser(null) },
+      onError: (e) => addToast(e.response?.data?.message ?? 'Error al actualizar', 'error'),
+    })
+  }
+
+  const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
 
   return (
     <div>
-      {/* Toolbar */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
+      {/* Toolbar: unified search + role filter */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)' }}>{Icons.search({ s: 16 })}</span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre o email..."
-            style={{ width: '100%', height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+            style={inputStyle} />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          style={{ height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg2)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+          style={{ height: 40, padding: '0 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, fontWeight: 500, color: 'var(--fg2)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
           <option value="all">Todos los roles</option>
-          <option value="pcd">Persona c/ disc.</option>
-          <option value="tutor">Tutor</option>
-          <option value="institution">Institución</option>
           <option value="admin">Admin</option>
+          <option value="institution">Institución</option>
+          <option value="tutor">Tutor</option>
+          <option value="pcd">Persona c/ disc.</option>
         </select>
       </div>
 
@@ -1460,61 +1918,209 @@ function UsersTab({ currentUserId }) {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Icons.users({ s: 32 })} title="No se encontraron usuarios" />
       ) : (
-        <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
-          <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
-                {['Usuario', 'Rol', 'Estado', 'Registrado', 'Acciones'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((u, i) => {
-                const isSelf = u.id === currentUserId
-                const meta = ROLE_META[u.role] ?? ROLE_META.user
-                return (
-                  <tr key={u.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ width: 34, height: 34, borderRadius: '50% 50% 50% 12%', background: meta.bg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
-                          {(u.full_name ?? u.email ?? '?')[0]?.toUpperCase()}
-                        </span>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{u.full_name ?? '—'} {isSelf && <span style={{ fontSize: 11, color: 'var(--fg3)' }}>(tú)</span>}</div>
-                          <div style={{ fontSize: 12, color: 'var(--fg3)' }}>{u.email}</div>
+        <>
+          <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
+            <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
+                  {['Usuario', 'Rol', 'Estado', 'Registrado', 'Acciones'].map(h => (
+                    <th key={h + 'user'} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((u, i) => {
+                  const isSelf = u.id === currentUserId
+                  const meta = ROLE_META[u.role] ?? ROLE_META.user
+                  return (
+                    <tr key={u.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'color-mix(in oklch, var(--primary) 2%, var(--bg-surface))'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 38, height: 38, borderRadius: '50%', background: hashColor(u.full_name ?? u.email ?? ''), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                            {(u.full_name ?? u.email ?? '?')[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{u.full_name ?? '—'} {isSelf && <span style={{ fontSize: 11, color: 'var(--fg3)' }}>(tú)</span>}</div>
+                            <div style={{ fontSize: 12, color: 'var(--fg3)' }}>{u.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <select value={u.role} disabled={isSelf || changeRole.isPending} onChange={e => onRole(u.id, e.target.value)}
-                        style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: 12.5, fontWeight: 600, color: meta.bg, background: `color-mix(in oklch, ${meta.bg} 12%, transparent)`, cursor: isSelf ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', opacity: isSelf ? 0.6 : 1 }}>
-                        <option value="pcd">Persona c/ disc.</option>
-                        <option value="tutor">Tutor</option>
-                        <option value="institution">Institución</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
-                        background: u.is_active ? 'color-mix(in oklch, #7BA05B 18%, transparent)' : 'color-mix(in oklch, #D46A6A 18%, transparent)',
-                        color: u.is_active ? '#5f8043' : '#c0524f' }}>
-                        {u.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--fg3)' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : '—'}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <button onClick={() => onToggle(u)} disabled={isSelf || toggleActive.isPending}
-                        style={{ ...btn(u.is_active ? '#D46A6A' : '#7BA05B'), opacity: isSelf ? 0.5 : 1, cursor: isSelf ? 'not-allowed' : 'pointer' }}>
-                        {u.is_active ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: `color-mix(in oklch, ${meta.bg} 14%, transparent)`, color: meta.fg }}>
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
+                          background: u.is_active ? 'color-mix(in oklch, var(--color-artes) 14%, transparent)' : 'color-mix(in oklch, var(--color-error) 14%, transparent)',
+                          color: u.is_active ? 'var(--color-artes)' : 'var(--color-error)' }}>
+                          {u.is_active ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg3)' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : '—'}</td>
+                      <td style={{ padding: '14px 16px', position: 'relative' }}>
+                        <button onClick={(e) => { if (actionMenuId === u.id) { setActionMenuId(null); setMenuPos(null) } else { const r = e.currentTarget.getBoundingClientRect(); setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right - 16 }); setActionMenuId(u.id) } }}
+                          style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg3)', transition: 'all 0.15s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-cool)'; e.currentTarget.style.color = 'var(--fg1)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.color = 'var(--fg3)' }}>
+                          <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                        </button>
+                        {actionMenuId === u.id && menuPos && createPortal(
+                          <div ref={actionMenuRef} style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, width: 210, background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)', zIndex: 9999, padding: '6px 0', animation: 'fade-in 0.12s ease-out' }}>
+                            <button onClick={() => openEdit(u)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--fg2)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {Icons.sliders({ s: 15 })} Configuración
+                            </button>
+                            {!isSelf && (
+                              <button onClick={() => { setRoleConfirm(u); setActionMenuId(null) }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--fg2)', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-cool)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                {Icons.shield({ s: 15 })} Cambiar rol
+                              </button>
+                            )}
+                            <button onClick={() => { onToggle(u) }} disabled={isSelf}
+                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: isSelf ? 'not-allowed' : 'pointer', fontSize: 13.5, fontWeight: 600, color: u.is_active ? 'var(--color-error)' : 'var(--color-artes)', fontFamily: 'var(--font-body)', textAlign: 'left', opacity: isSelf ? 0.4 : 1 }}
+                              onMouseEnter={e => { if (!isSelf) e.currentTarget.style.background = 'var(--bg-cool)' }} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {u.is_active ? Icons.x({ s: 15 }) : Icons.check({ s: 15 })} {u.is_active ? 'Desactivar' : 'Activar'}
+                            </button>
+                            <div style={{ height: 1, background: 'var(--border-color)', margin: '4px 12px' }} />
+                            <button onClick={() => { if (!isSelf) { setConfirm(u); setActionMenuId(null) } }} disabled={isSelf}
+                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', border: 'none', background: 'transparent', cursor: isSelf ? 'not-allowed' : 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--color-error)', fontFamily: 'var(--font-body)', textAlign: 'left', opacity: isSelf ? 0.4 : 1 }}
+                              onMouseEnter={e => { if (!isSelf) e.currentTarget.style.background = 'var(--bg-cool)' }} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {Icons.x({ s: 15 })} Eliminar
+                            </button>
+                          </div>,
+                          document.body
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 18 }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === 1 ? 'transparent' : 'var(--bg-surface)', color: safePage === 1 ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
+                Anterior
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} onClick={() => setPage(p)}
+                  style={{ width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)',
+                    background: p === safePage ? 'var(--primary)' : 'transparent', color: p === safePage ? '#fff' : 'var(--fg3)', transition: 'all 0.15s' }}>
+                  {p}
+                </button>
+              ))}
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === totalPages ? 'transparent' : 'var(--bg-surface)', color: safePage === totalPages ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Edit Modal */}
+      {editUser && (
+        <div onClick={() => setEditUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {Icons.user({ s: 20 })}
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Editar usuario</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Nombre completo</label>
+                <input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>Correo electrónico</label>
+                <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+              <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setEditUser(null)}>Cancelar</button>
+              <button className="btn-primary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={doEdit} disabled={updateUser.isPending}>
+                {updateUser.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Role Change Confirm */}
+      {roleConfirm && (
+        <div onClick={() => setRoleConfirm(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 440, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {Icons.shield({ s: 20 })}
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Cambiar rol</h3>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.5, margin: '0 0 16px' }}>
+              Selecciona el nuevo rol para <strong>{roleConfirm.full_name ?? roleConfirm.email}</strong>:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {[{ k: 'admin', l: 'Admin', c: ROLE_META.admin.bg }, { k: 'institution', l: 'Institución', c: ROLE_META.institution.bg }, { k: 'tutor', l: 'Tutor', c: ROLE_META.tutor.bg }, { k: 'pcd', l: 'Persona c/ disc.', c: ROLE_META.pcd.bg }].filter(r => r.k !== roleConfirm.role).map(r => (
+                <button key={r.k} onClick={() => setPendingRoleChange({ user: roleConfirm, newRole: r.k, newLabel: r.l })} disabled={changeRole.isPending}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${r.c}`, background: `color-mix(in oklch, ${r.c} 8%, var(--bg-surface))`, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: r.c, fontFamily: 'var(--font-body)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `color-mix(in oklch, ${r.c} 14%, var(--bg-surface))` }}
+                  onMouseLeave={e => { e.currentTarget.style.background = `color-mix(in oklch, ${r.c} 8%, var(--bg-surface))` }}>
+                  {Icons.arrowRight({ s: 14 })} {r.l}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setRoleConfirm(null)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Change Final Confirmation */}
+      {pendingRoleChange && (
+        <div onClick={() => setPendingRoleChange(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {Icons.shieldAlert({ s: 20 })}
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Confirmar cambio de rol</h3>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.5, margin: '0 0 20px' }}>
+              ¿Seguro que quieres cambiar el rol de <strong>{pendingRoleChange.user.full_name ?? pendingRoleChange.user.email}</strong> de <strong>{ROLE_META[pendingRoleChange.user.role]?.label ?? pendingRoleChange.user.role}</strong> a <strong>{pendingRoleChange.newLabel}</strong>?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setPendingRoleChange(null)}>Cancelar</button>
+              <button onClick={() => onRole(pendingRoleChange.user.id, pendingRoleChange.newRole)} disabled={changeRole.isPending}
+                style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-body)', background: 'var(--primary)', color: '#fff' }}>
+                {changeRole.isPending ? 'Cambiando...' : 'Sí, cambiar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
+      {confirm && (
+        <ConfirmDialog
+          title="Eliminar usuario"
+          message={`¿Seguro que quieres eliminar a "${confirm.full_name ?? confirm.email}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Sí, eliminar"
+          danger
+          onConfirm={doDelete}
+          onCancel={() => setConfirm(null)}
+        />
       )}
     </div>
   )
@@ -1541,7 +2147,7 @@ function ReviewsTab() {
             <div key={r.id} style={{ ...card, padding: 18, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                  <span style={{ display: 'flex', gap: 1, color: '#D4944C' }}>
+                  <span style={{ display: 'flex', gap: 1, color: 'var(--color-empleo)' }}>
                     {[1, 2, 3, 4, 5].map(n => Icons.star({ s: 14, filled: n <= r.rating }))}
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>{r.institution_name ?? 'Institución eliminada'}</span>
@@ -1551,7 +2157,7 @@ function ReviewsTab() {
                   {r.user_name ?? 'Anónimo'} · {r.created_at ? new Date(r.created_at).toLocaleDateString('es-MX') : ''}
                 </div>
               </div>
-              <button onClick={() => setConfirm(r)} style={btn('#ef4444')}>{Icons.x({ s: 14 })} Eliminar</button>
+              <button onClick={() => setConfirm(r)} style={btn('var(--color-error)')}>{Icons.x({ s: 14 })} Eliminar</button>
             </div>
           ))}
         </div>
@@ -1642,9 +2248,9 @@ function btn(color) {
 
 /* ════════════════════ TAB: Alertas de riesgo ════════════════════ */
 const ALERT_SEVERITY = {
-  critica: { color: '#D46A6A', bg: 'color-mix(in oklch, #D46A6A 10%, transparent)', border: 'color-mix(in oklch, #D46A6A 30%, transparent)', label: 'Crítica', icon: Icons.shieldAlert },
-  media:   { color: '#D4944C', bg: 'color-mix(in oklch, #D4944C 10%, transparent)', border: 'color-mix(in oklch, #D4944C 30%, transparent)', label: 'Media',   icon: Icons.target },
-  info:    { color: '#01ADFF', bg: 'color-mix(in oklch, #01ADFF 10%, transparent)', border: 'color-mix(in oklch, #01ADFF 30%, transparent)', label: 'Info',    icon: Icons.sparkles },
+  critica: { color: 'var(--color-error)', bg: 'color-mix(in oklch, var(--color-error) 10%, transparent)', border: 'color-mix(in oklch, var(--color-error) 30%, transparent)', label: 'Crítica', icon: Icons.shieldAlert },
+  media:   { color: 'var(--color-empleo)', bg: 'color-mix(in oklch, var(--color-empleo) 10%, transparent)', border: 'color-mix(in oklch, var(--color-empleo) 30%, transparent)', label: 'Media',   icon: Icons.target },
+  info:    { color: 'var(--color-comunidad)', bg: 'color-mix(in oklch, var(--color-comunidad) 10%, transparent)', border: 'color-mix(in oklch, var(--color-comunidad) 30%, transparent)', label: 'Info',    icon: Icons.sparkles },
 }
 const ALERT_ACTION_TAB = {
   institution: 'institutions', institutions: 'institutions', institutions_pending: 'institutions',

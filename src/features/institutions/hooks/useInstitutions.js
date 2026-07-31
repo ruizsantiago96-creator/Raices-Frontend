@@ -42,6 +42,8 @@ export function mapInstitucion(inst) {
     address: inst.address ?? inst.direccion,
     phone: inst.phone ?? inst.telefono,
     website: inst.website ?? inst.sitioWeb,
+    rating_avg: inst.rating_avg ?? inst.calificacionPromedio,
+    rating_count: inst.rating_count ?? inst.cantidadCalificaciones,
   }
 }
 
