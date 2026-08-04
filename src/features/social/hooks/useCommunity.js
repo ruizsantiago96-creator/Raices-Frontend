@@ -241,7 +241,7 @@ export function useCommunityStats() {
 export function useMiembrosDestacados(limite = 6) {
   return useQuery({
     queryKey: ['miembrosDestacados', limite],
-    queryFn: () => api.get('/comunidad/miembros-destacados', { params: { limite } }).then(r => {
+    queryFn: () => api.get('/comunidad/miembros', { params: { limite } }).then(r => {
       const res = r.data
       const arr = res?.miembros ?? (Array.isArray(res) ? res : [])
       return arr.map(m => ({
