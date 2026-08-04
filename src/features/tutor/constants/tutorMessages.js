@@ -78,9 +78,9 @@ export const TUTOR_UI = {
   DISABILITY_LABEL: 'Tipo(s) de discapacidad',
   NOTES_LABEL: 'Notas (opcional)',
   NOTES_PLACEHOLDER: 'Información útil: terapias actuales, intereses, lo que necesita...',
-  PCD_ID_LABEL: 'ID de usuario PCD',
-  PCD_ID_PLACEHOLDER: 'Pega el ID del usuario',
-  PCD_ID_HINT: 'La persona con discapacidad debe proporcionarte su ID de usuario.',
+  PCD_EMAIL_LABEL: 'Correo electrónico de la persona',
+  PCD_EMAIL_PLACEHOLDER: 'ejemplo@correo.com',
+  PCD_EMAIL_HINT: 'Ingresa el correo con el que la persona está registrada en la plataforma.',
   
   // Estados
   NO_NAME: 'Sin nombre',

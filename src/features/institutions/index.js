@@ -2,7 +2,7 @@
  * Institutions Feature — Public API
  *
  * Exports components and hooks used by other features.
- * Pages (ExplorePage, InstitutionPage) are kept private — imported directly by App.jsx.
+ * Pages (ExplorePage, InstitutionPage, InstitutionPortalPage) are kept private — imported directly by App.jsx.
  */
 
 // ── Components ─────────────────────────────────────────────────────
@@ -14,3 +14,6 @@ export { useReviews } from './hooks/useReviews'
 
 // ── Admin Hooks ────────────────────────────────────────────────────
 export { useAllInstitutions, usePendingInstitutions, useApproveInstitution, useRejectInstitution, useToggleVerifyInstitution, useUpdateAdminInstitution } from './hooks/useAdminInstitutions'
+
+// ── Institution Portal Hooks ───────────────────────────────────────
+export { useMyJobPostings, useAllJobApplicants, useCreateJobPosting, useUpdateJobPosting, useDeleteJobPosting, useToggleJobStatus, useUpdateApplicationStatus } from './hooks/useInstitutionJobs'

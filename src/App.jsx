@@ -18,6 +18,7 @@ import FavoritesPage from '@features/favorites/pages/FavoritesPage'
 import InstitutionPage from '@features/institutions/pages/InstitutionPage'
 import CrearInstitucionPage from '@features/institutions/pages/CrearInstitucionPage'
 import AdminPage from '@features/admin/pages/AdminPage'
+import InstitutionPortalPage from '@features/institutions/pages/InstitutionPortalPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
@@ -158,7 +159,7 @@ export default function App() {
                 <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-                <Route path="/institution-portal" element={<ProtectedRoute role="institution"><DashboardPage /></ProtectedRoute>} />
+                <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

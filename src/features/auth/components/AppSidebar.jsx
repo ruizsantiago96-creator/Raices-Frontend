@@ -17,6 +17,9 @@ export const AppSidebar = ({ currentPage }) => {
     items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/familia' })
   }
   items.push({ id: 'profile', label: 'Mi perfil', icon: Icons.user, path: '/profile' })
+  if (user?.role === 'institution') {
+    items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
+  }
   if (user?.role === 'admin') {
     items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
   }

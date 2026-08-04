@@ -93,13 +93,13 @@ export function useDeleteDependent() {
 }
 
 /**
- * Mutación: vincula una cuenta PCD al tutor actual.
- * POST /usuarios/vincular-pcd/:pcdUserId
+ * Mutación: vincula una cuenta PCD al tutor actual por correo electrónico.
+ * POST /usuarios/vincular-pcd  { email }
  */
 export function useVincularPCD() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (pcdUserId) => api.post(`/usuarios/vincular-pcd/${pcdUserId}`).then(r => r.data),
+    mutationFn: (email) => api.post('/usuarios/vincular-pcd', { email }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['dependientes'] }),
   })
 }
