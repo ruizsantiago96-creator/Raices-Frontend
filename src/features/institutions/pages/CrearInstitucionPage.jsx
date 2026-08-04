@@ -16,6 +16,7 @@ const initialForm = {
   email: '',
   sitioWeb: '',
   tiposDiscapacidad: [],
+  metodosComunicacion: [],
 }
 
 export default function CrearInstitucionPage() {
@@ -48,6 +49,16 @@ export default function CrearInstitucionPage() {
     if (apiError) setApiError(null)
   }
 
+  const toggleCommunicationMethod = (value) => {
+    setForm(prev => ({
+      ...prev,
+      metodosComunicacion: prev.metodosComunicacion.includes(value)
+        ? prev.metodosComunicacion.filter(v => v !== value)
+        : [...prev.metodosComunicacion, value],
+    }))
+    if (apiError) setApiError(null)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setApiError(null)
@@ -69,6 +80,7 @@ export default function CrearInstitucionPage() {
         email: form.email.trim() || undefined,
         sitioWeb: form.sitioWeb.trim() || undefined,
         tiposDiscapacidad: form.tiposDiscapacidad.length > 0 ? form.tiposDiscapacidad : undefined,
+        metodosComunicacion: form.metodosComunicacion.length > 0 ? form.metodosComunicacion : undefined,
       }
 
       const datosLimpios = Object.fromEntries(
@@ -214,7 +226,7 @@ export default function CrearInstitucionPage() {
           </div>
 
           {/* Sección: Discapacidades */}
-          <div className="animate-fade-in-up delay-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 28 }}>
+          <div className="animate-fade-in-up delay-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
               {Icons.heartPulse({ s: 18 })} Tipos de discapacidad que atiende
             </h3>
@@ -229,6 +241,40 @@ export default function CrearInstitucionPage() {
                   <button key={dtValue} type="button" onClick={() => toggleDisability(dtValue)} style={{ padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
                     {active && <span style={{ marginRight: 4 }}>✓</span>}
                     {dtLabel}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Sección: Métodos de comunicación */}
+          <div className="animate-fade-in-up delay-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 28 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {Icons.messageCircle({ s: 18 })} Métodos de comunicación que soporta
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 16px' }}>¿Qué formas de comunicación utilizan en tu institución? (opcional)</p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { value: 'oral', label: 'Oral' },
+                { value: 'lenguaSenasMexicana', label: 'Lengua de Señas Mexicana (LSM)' },
+                { value: 'lenguaSenasInternacional', label: 'Lengua de Señas Internacional (LSI)' },
+                { value: 'braille', label: 'Braille' },
+                { value: 'comunicacionAumentativa', label: 'Comunicación Aumentativa y Alternativa (CAA)' },
+                { value: 'lecturaLabial', label: 'Lectura labial' },
+                { value: 'escritura', label: 'Escritura' },
+                { value: 'pictogramas', label: 'Pictogramas' },
+                { value: 'gestos', label: 'Gestos y señas naturales' },
+                { value: 'sistemaPuntos', label: 'Sistema de comunicación por puntos (Braille)' },
+                { value: 'aparatosAuditivos', label: 'Aparatos auditivos / implantes' },
+                { value: 'asistentesVirtuales', label: 'Asistentes virtuales / IA' },
+                { value: 'otro', label: 'Otro' },
+              ].map(method => {
+                const active = form.metodosComunicacion.includes(method.value)
+                return (
+                  <button key={method.value} type="button" onClick={() => toggleCommunicationMethod(method.value)} style={{ padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
+                    {active && <span style={{ marginRight: 4 }}>✓</span>}
+                    {method.label}
                   </button>
                 )
               })}

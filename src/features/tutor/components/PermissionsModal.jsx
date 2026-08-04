@@ -95,7 +95,7 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
 
         {/* ── Permissions List ── */}
         {!loadingPermisos && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '260px', overflowY: 'auto', paddingRight: '6px' }}>
             {PERMISOS_CONFIG.map(({ key, label, description, icon }) => (
               <ToggleRow
                 key={key}
@@ -116,9 +116,21 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
             Los cambios se guardan automáticamente
           </p>
           <button
-            className="btn-secondary"
             onClick={onClose}
-            style={{ fontSize: 14, padding: '10px 20px', minHeight: 44 }}
+            style={{ 
+              fontSize: 14, 
+              padding: '10px 20px', 
+              borderRadius: '8px',
+              border: 'none',
+              background: '#F3D6E1',
+              color: '#000',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
+            onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
           >
             Cerrar
           </button>

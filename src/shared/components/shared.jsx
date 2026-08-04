@@ -38,6 +38,7 @@ export const Icons = {
   plus: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
   edit: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>,
   shieldAlert: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>,
+  shieldCheck: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>,
   barChart: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
   compass: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
   milestone: (p) => <svg aria-hidden="true" focusable="false" width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z"/><path d="M12 13v8"/><path d="M12 3v3"/></svg>,
@@ -99,7 +100,7 @@ export const CATEGORY_COLORS = {
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
   <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-block', verticalAlign: 'baseline', whiteSpace: 'nowrap', padding: 0 }}>
     <span style={{
-      fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700,
+      fontFamily: 'var(--font-body)', fontSize: size, fontWeight: 700,
       color: light ? 'white' : 'var(--fg1)',
       textDecoration: 'underline',
       textDecorationColor: light ? 'rgba(255,255,255,0.5)' : 'var(--primary)',
@@ -108,7 +109,7 @@ export const BrandMark = ({ onClick, size = 22, light = false }) => (
     }}>
       Raíces
     </span>
-    <span className="brand-subtitle" style={{ fontFamily: 'var(--font-display)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)' }}>
+    <span className="brand-subtitle" style={{ fontFamily: 'var(--font-body)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)' }}>
       {' para florecer.'}
     </span>
   </button>

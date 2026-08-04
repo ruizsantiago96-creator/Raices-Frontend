@@ -217,13 +217,43 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
 
           {/* ── Acciones ── */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              disabled={saving}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#F3D6E1',
+                color: '#000',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                transition: 'background 0.2s ease',
+                opacity: saving ? 0.6 : 1,
+              }}
+              onMouseEnter={e => !saving && (e.currentTarget.style.background = '#E8BCCF')}
+              onMouseLeave={e => !saving && (e.currentTarget.style.background = '#F3D6E1')}
+            >
               Cancelar
             </button>
             <button
               type="submit"
-              className="btn-primary"
               disabled={saving || !form.nombreCompleto.trim()}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                opacity: (saving || !form.nombreCompleto.trim()) ? 0.6 : 1,
+              }}
             >
               {saving ? 'Guardando...' : 'Agregar'}
             </button>

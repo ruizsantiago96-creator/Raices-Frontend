@@ -21,7 +21,7 @@ const COLORS = {
 
 export default function DesignPreview() {
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.bg, fontFamily: "'Inter', system-ui, sans-serif", color: COLORS.fg1 }}>
+    <div style={{ minHeight: '100vh', background: COLORS.bg, fontFamily: "'Lato', system-ui, sans-serif", color: COLORS.fg1 }}>
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${COLORS.border}`, padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BrandMark />
@@ -200,7 +200,7 @@ const btnBase = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
-  fontFamily: "'Inter', system-ui, sans-serif",
+  fontFamily: "'Lato', system-ui, sans-serif",
   fontSize: 14,
   fontWeight: 600,
   lineHeight: '20px',

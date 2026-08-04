@@ -1,0 +1,42 @@
+/* ═══════════════════════════════════════════════════════════
+   TAILWIND CSS v4 - Design Token Mapping
+   ═══════════════════════════════════════════════════════════ */
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+  --color-secondary-dark: var(--secondary-dark);
+  --color-secondary-subtle: var(--secondary-subtle);
+  --color-bg-warm: var(--bg-warm);
+  --color-bg-cool: var(--bg-cool);
+  --color-bg-surface: var(--bg-surface);
+  --color-fg1: var(--fg1);
+  --color-fg2: var(--fg2);
+  --color-fg3: var(--fg3);
+  --color-border: var(--border-color);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+  --color-salud: var(--color-salud);
+  --color-educacion: var(--color-educacion);
+  --color-empleo: var(--color-empleo);
+  --color-artes: var(--color-artes);
+  --color-comunidad: var(--color-comunidad);
+  --color-vida: var(--color-vida);
+  
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-bold: var(--font-bold);
+  
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-pill: var(--radius-pill);
+  
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+}

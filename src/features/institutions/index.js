@@ -11,3 +11,6 @@ export { default as MapView } from './components/MapView'
 // ── Hooks ──────────────────────────────────────────────────────────
 export { useInstitutions, useDiscovery, useCrearInstitucion } from './hooks/useInstitutions'
 export { useReviews } from './hooks/useReviews'
+
+// ── Admin Hooks ────────────────────────────────────────────────────
+export { useAllInstitutions, usePendingInstitutions, useApproveInstitution, useRejectInstitution, useToggleVerifyInstitution, useUpdateAdminInstitution } from './hooks/useAdminInstitutions'

@@ -1,4 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700;800&display=swap');
+@import "tailwindcss";
+@import "./tailwind-theme.css";
+
+/* ═══════════════════════════════════════════════════════════
+   FONT DECLARATIONS
+   ═══════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Poppins';
+  src: url('/font/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('/font/Lato-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -59,8 +79,9 @@
   --color-info: #004E52;
   
   /* Typography */
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', Georgia, serif;
+  --font-body: 'Lato', system-ui, -apple-system, sans-serif;
+  --font-bold: 'Poppins', sans-serif;
   
   /* Focus */
   --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
@@ -115,8 +136,8 @@ html[data-reduced-motion="true"] *::after {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { 
-    animation: none !important; 
-    transition: none !important; 
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -409,6 +430,11 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
     transform: scale(2.2);
     opacity: 0;
   }
+}
+
+@keyframes shimmer { 
+  0%{background-position:200% 0} 
+  100%{background-position:-200% 0} 
 }
 
 .animate-fade-in-up {

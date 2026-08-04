@@ -81,7 +81,7 @@ export default function MapView({ institutions = [], height = '400px' }) {
       // Build popup HTML
       const color = CATEGORY_COLORS[inst.category] ?? '#01ADFF'
       const popupNode = document.createElement('div')
-      popupNode.style.cssText = 'font-family:Inter,sans-serif;min-width:200px;padding:4px 2px'
+      popupNode.style.cssText = 'font-family:Lato,sans-serif;min-width:200px;padding:4px 2px'
 
       const root = createRoot(popupNode)
       root.render(
@@ -121,9 +121,9 @@ function PopupContent({ inst, color }) {
   }
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
+    <div style={{ fontFamily: 'Lato, sans-serif', padding: '2px 0' }}>
       <div style={{
-        fontFamily: 'Playfair Display, serif',
+        fontFamily: 'Poppins, serif',
         fontSize: 15,
         fontWeight: 700,
         color: '#1A2E35',
@@ -152,7 +152,7 @@ function PopupContent({ inst, color }) {
           fontSize: 13,
           fontWeight: 600,
           cursor: 'pointer',
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Lato, sans-serif',
         }}
       >
         Ver institución

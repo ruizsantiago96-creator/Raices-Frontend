@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMe, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent, useUpdateDependentFeatures, useVincularPCD } from '../hooks/useDependientes'
@@ -47,6 +47,13 @@ export default function TutorPage() {
   const vincularPCD = useVincularPCD()
   const [showVincular, setShowVincular] = useState(false)
   const [permissionsFor, setPermissionsFor] = useState(null) // { id, nombreCompleto } para modal de permisos
+  const [activeMenuId, setActiveMenuId] = useState(null)
+
+  useEffect(() => {
+    const handleCloseMenu = () => setActiveMenuId(null)
+    window.addEventListener('click', handleCloseMenu)
+    return () => window.removeEventListener('click', handleCloseMenu)
+  }, [])
 
   const handleCreate = (payload) => {
     // Si se solicita crear cuenta, registrar primero
@@ -92,6 +99,34 @@ export default function TutorPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
+      <style>{`
+        .tutor-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          color: var(--fg1);
+          font-size: 13.5px;
+          font-weight: 500;
+          cursor: pointer;
+          text-align: left;
+          font-family: var(--font-body);
+          transition: all 0.15s ease;
+        }
+        .tutor-dropdown-item:hover {
+          background: var(--bg-warm) !important;
+        }
+        .tutor-dropdown-item.danger {
+          color: var(--color-error) !important;
+        }
+        .tutor-dropdown-item.danger:hover {
+          background: color-mix(in oklch, var(--color-error) 10%, transparent) !important;
+        }
+      `}</style>
       <AppSidebar currentPage="tutor" />
       <TopNav user={user} onLogout={logout} currentPage="tutor" />
 
@@ -107,10 +142,46 @@ export default function TutorPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn-secondary" onClick={() => setShowVincular(true)} style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button 
+              onClick={() => setShowVincular(true)} 
+              style={{ 
+                fontSize: 14, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 6,
+                padding: '10px 20px',
+                borderRadius: '12px',
+                border: 'none',
+                background: '#F3D6E1',
+                color: '#000',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
+              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+            >
               {Icons.link({ s: 16 })} {TUTOR_UI.LINK_PERSON}
             </button>
-            <button className="btn-primary tutor-btn" onClick={() => setShowCreate(true)} style={{ fontSize: 16 }}>
+            <button 
+              className="btn-primary tutor-btn" 
+              onClick={() => setShowCreate(true)} 
+              style={{ 
+                fontSize: 15, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 6,
+                padding: '10px 20px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
               {Icons.plus({ s: 18 })} {TUTOR_UI.ADD_PERSON}
             </button>
           </div>
@@ -145,7 +216,18 @@ export default function TutorPage() {
           ) : (
             <div className="tutor-cards-grid stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {dependents.map(dep => (
-                <div key={dep?.id} className="animate-scale-in"><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} /></div>
+                <div key={dep?.id} className="animate-scale-in">
+                  <DependentCard 
+                    dep={dep} 
+                    lifeStages={LIFE_STAGES} 
+                    onEdit={() => setEditing(dep)} 
+                    onDelete={() => setConfirm(dep)} 
+                    onConfigureFeatures={() => setConfiguringFeatures(dep)} 
+                    onPermissions={(data) => setPermissionsFor(data)} 
+                    activeMenuId={activeMenuId}
+                    setActiveMenuId={setActiveMenuId}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -183,8 +265,17 @@ export default function TutorPage() {
   )
 }
 
+/* ── Icono de elipsis vertical ── */
+const EllipsisVerticalIcon = ({ s = 20 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+    <circle cx="12" cy="12" r="1.5"/>
+    <circle cx="12" cy="5" r="1.5"/>
+    <circle cx="12" cy="19" r="1.5"/>
+  </svg>
+)
+
 /* ── Tarjeta de dependiente ── */
-function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeatures, onPermissions }) {
+function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeatures, onPermissions, activeMenuId, setActiveMenuId }) {
   const nombre = dep?.nombreCompleto || TUTOR_UI.NO_NAME
   const color = hashColor(nombre)
   const initials = nombre.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
@@ -197,13 +288,116 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
     setShowAI(s => !s)
   }
 
+  const isMenuOpen = activeMenuId === dep.id
+
+  const handleMenuClick = (e) => {
+    e.stopPropagation()
+    setActiveMenuId(isMenuOpen ? null : dep.id)
+  }
+
   return (
-    <div style={{ ...card, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ ...card, padding: 22, display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div aria-hidden="true" style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 16%', background: color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingRight: 24 }}>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{nombre}</h3>
           <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '2px 0 0' }}>{dep?.parentesco || TUTOR_UI.FAMILY_RELATION}{stage ? ` · ${stage.label}` : ''}</p>
+        </div>
+
+        {/* Menu de tres puntos */}
+        <div style={{ position: 'absolute', top: 22, right: 18 }}>
+          <button 
+            type="button"
+            onClick={handleMenuClick}
+            aria-label="Acciones de persona"
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: 'var(--fg3)', 
+              cursor: 'pointer', 
+              width: 32, 
+              height: 32, 
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s, color 0.2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-warm)'; e.currentTarget.style.color = 'var(--fg1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fg3)' }}
+          >
+            <EllipsisVerticalIcon s={18} />
+          </button>
+          
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <div 
+              style={{
+                position: 'absolute',
+                top: 36,
+                right: 0,
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                boxShadow: 'var(--shadow-lg)',
+                padding: '6px',
+                zIndex: 100,
+                width: 220,
+                animation: 'fade-in 0.1s ease-out',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="tutor-dropdown-item"
+                onClick={() => { handleAIToggle(); setActiveMenuId(null) }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.sparkles({ s: 14 })}</span>
+                <span>{showAI ? 'Ocultar recomendaciones' : 'Recomendaciones IA'}</span>
+              </button>
+              
+              <button
+                type="button"
+                className="tutor-dropdown-item"
+                onClick={() => { onConfigureFeatures(); setActiveMenuId(null) }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.shield({ s: 14 })}</span>
+                <span>Configurar features</span>
+              </button>
+              
+              <button
+                type="button"
+                className="tutor-dropdown-item"
+                onClick={() => { onPermissions({ id: dep.id, nombreCompleto: dep.nombreCompleto }); setActiveMenuId(null) }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.shield({ s: 14 })}</span>
+                <span>Gestionar permisos</span>
+              </button>
+              
+              <button
+                type="button"
+                className="tutor-dropdown-item"
+                onClick={() => { onEdit(); setActiveMenuId(null) }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.edit({ s: 14 })}</span>
+                <span>Editar información</span>
+              </button>
+              
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
+              
+              <button
+                type="button"
+                className="tutor-dropdown-item danger"
+                onClick={() => { onDelete(); setActiveMenuId(null) }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.x({ s: 14 })}</span>
+                <span>Eliminar persona</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {dep?.tiposDiscapacidad?.length > 0 && (
@@ -212,26 +406,6 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
         </div>
       )}
       {dep?.notas && (<p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>{dep.notas}</p>)}
-      <div className="tutor-card-actions" style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
-        <button onClick={handleAIToggle} className="btn-secondary"
-          aria-expanded={showAI}
-          style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          {Icons.sparkles({ s: 15 })} {showAI ? TUTOR_UI.HIDE_AI : TUTOR_UI.SHOW_AI}
-        </button>
-        <button onClick={onConfigureFeatures} className="btn-secondary"          title={TUTOR_UI.CONFIGURE_FEATURES} style={{ fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          {Icons.shield({ s: 15 })} {TUTOR_UI.FEATURES_BUTTON}
-        </button>
-        <button onClick={() => onPermissions({ id: dep.id, nombreCompleto: dep.nombreCompleto })} className="btn-secondary" style={{ fontSize: 13, padding: '10px 12px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-label={TUTOR_UI.MANAGE_PERMISSIONS}>
-          {Icons.shield({ s: 15 })} {TUTOR_UI.PERMISSIONS_BUTTON}
-        </button>
-        <button onClick={onEdit} className="btn-secondary" style={{ flex: 1, fontSize: 13, padding: '10px', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          {Icons.edit({ s: 15 })} {TUTOR_UI.EDIT_BUTTON}
-        </button>
-        <button onClick={onDelete} aria-label={`Eliminar a ${nombre}`}
-          style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-pill)', border: '2px solid color-mix(in oklch, var(--color-error) 40%, transparent)', background: 'var(--bg-surface)', color: 'var(--color-error)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {Icons.x({ s: 16 })}
-        </button>
-      </div>
       {showAI && (
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles({ s: 13 })} {TUTOR_UI.AI_STEPS_TITLE} {nombre}</p>
@@ -271,8 +445,44 @@ function DependentForm({ initial, onCancel, onSave, saving, relationships = [], 
           </fieldset>
           <div style={{ marginBottom: 24 }}><label htmlFor="dep-notes" style={labelStyle}>{TUTOR_UI.NOTES_LABEL}</label><textarea id="dep-notes" value={form.notas} onChange={set('notas')} rows={3} placeholder={TUTOR_UI.NOTES_PLACEHOLDER} style={{ ...inputStyle, height: 'auto', paddingTop: 12, paddingBottom: 12, resize: 'vertical', lineHeight: 1.5 }} /></div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-            <button type="button" className="btn-secondary" onClick={onCancel}>{TUTOR_UI.CANCEL_BUTTON}</button>
-            <button type="submit" className="btn-primary" disabled={saving || !form.nombreCompleto.trim()}>{saving ? TUTOR_UI.SAVE_BUTTON_LOADING : form.id ? TUTOR_UI.SAVE_BUTTON : TUTOR_UI.ADD_BUTTON}</button>
+            <button 
+              type="button" 
+              onClick={onCancel}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#F3D6E1',
+                color: '#000',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
+              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+            >
+              {TUTOR_UI.CANCEL_BUTTON}
+            </button>
+            <button 
+              type="submit" 
+              disabled={saving || !form.nombreCompleto.trim()}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                opacity: (saving || !form.nombreCompleto.trim()) ? 0.6 : 1,
+              }}
+            >
+              {saving ? TUTOR_UI.SAVE_BUTTON_LOADING : form.id ? TUTOR_UI.SAVE_BUTTON : TUTOR_UI.ADD_BUTTON}
+            </button>
           </div>
         </form>
       </div>
@@ -313,7 +523,46 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
         </div>
         <form onSubmit={submit}>
           <div style={{ marginBottom: 20 }}><label htmlFor="pcd-user-id" style={labelStyle}>{TUTOR_UI.PCD_ID_LABEL}</label><input id="pcd-user-id" style={{ ...inputStyle, opacity: saving ? 0.6 : 1 }} value={pcdUserId} onChange={e => setPcdUserId(e.target.value)} required placeholder={TUTOR_UI.PCD_ID_PLACEHOLDER} autoFocus disabled={saving} /><p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>{TUTOR_UI.PCD_ID_HINT}</p></div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}><button type="button" className="btn-secondary" onClick={onCancel}>{TUTOR_UI.CANCEL_BUTTON}</button><button type="submit" className="btn-primary" disabled={saving || !pcdUserId.trim()}>{saving ? TUTOR_UI.LINK_BUTTON_LOADING : TUTOR_UI.LINK_BUTTON}</button></div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <button 
+              type="button" 
+              onClick={onCancel}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#F3D6E1',
+                color: '#000',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
+              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+            >
+              {TUTOR_UI.CANCEL_BUTTON}
+            </button>
+            <button 
+              type="submit" 
+              disabled={saving || !pcdUserId.trim()}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                opacity: (saving || !pcdUserId.trim()) ? 0.6 : 1,
+              }}
+            >
+              {saving ? TUTOR_UI.LINK_BUTTON_LOADING : TUTOR_UI.LINK_BUTTON}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -339,10 +588,92 @@ function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, savin
           <button onClick={onCancel} aria-label="Cerrar" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 18 })}</button>
         </div>
         <form onSubmit={submit}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-            {features.map(f => { const enabled = form[f.id]; return (<button key={f.id} type="button" onClick={() => toggleFeature(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 'var(--radius-md)', border: enabled ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: enabled ? 'var(--primary-subtle)' : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease' }}><div style={{ width: 22, height: 22, borderRadius: 'var(--radius-sm)', border: enabled ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: enabled ? 'var(--primary)' : 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s ease' }}>{enabled && <span style={{ color: '#fff', fontSize: 14, fontWeight: 700, lineHeight: 1 }}>✓</span>}</div><div><p style={{ fontSize: 15, fontWeight: 700, color: enabled ? 'var(--primary)' : 'var(--fg1)', margin: 0 }}>{f.label}</p><p style={{ fontSize: 12.5, color: 'var(--fg2)', margin: '2px 0 0' }}>{f.description}</p></div></button>) })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24, maxHeight: '260px', overflowY: 'auto', paddingRight: '6px' }}>
+            {features.map(f => {
+              const enabled = form[f.id];
+              return (
+                <button 
+                  key={f.id} 
+                  type="button" 
+                  onClick={() => toggleFeature(f.id)} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 14, 
+                    padding: '14px 16px', 
+                    borderRadius: '12px', 
+                    border: enabled ? '2px solid var(--primary)' : '1.5px solid var(--border-color)', 
+                    background: enabled ? 'var(--primary-subtle)' : 'var(--bg-surface)', 
+                    cursor: 'pointer', 
+                    textAlign: 'left', 
+                    transition: 'all 0.15s ease' 
+                  }}
+                >
+                  <div 
+                    style={{ 
+                      width: 22, 
+                      height: 22, 
+                      borderRadius: '50%', 
+                      border: enabled ? '2.5px solid var(--primary)' : '2.5px solid var(--border-color)', 
+                      background: enabled ? 'var(--primary)' : 'transparent', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      flexShrink: 0, 
+                      transition: 'all 0.15s ease',
+                      color: '#fff'
+                    }}
+                  >
+                    {enabled && <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: enabled ? 'var(--primary)' : 'var(--fg1)', margin: 0 }}>{f.label}</p>
+                    <p style={{ fontSize: 12.5, color: 'var(--fg2)', margin: '2px 0 0' }}>{f.description}</p>
+                  </div>
+                </button>
+              )
+            })}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}><button type="button" className="btn-secondary" onClick={onCancel}>{TUTOR_UI.CANCEL_BUTTON}</button><button type="submit" className="btn-primary" disabled={saving}>{saving ? TUTOR_UI.SAVE_BUTTON_LOADING : TUTOR_UI.SAVE_PERMISSIONS}</button></div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <button 
+              type="button" 
+              onClick={onCancel}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#F3D6E1',
+                color: '#000',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
+              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              disabled={saving}
+              style={{
+                fontSize: 14.5,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? TUTOR_UI.SAVE_BUTTON_LOADING : 'Guardar permisos'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -26,7 +26,7 @@ export const TUTOR_TOAST = {
 // ─── Textos de UI ─────────────────────────────────────────
 export const TUTOR_UI = {
   // Header
-  PAGE_TITLE: 'Mi familia',
+  PAGE_TITLE: 'Mis personas',
   SUBTITLE: 'Personas a tu cuidado y sus necesidades',
   ADD_PERSON: 'Agregar persona',
   LINK_PERSON: 'Vincular persona',

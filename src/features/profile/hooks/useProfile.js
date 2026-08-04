@@ -39,10 +39,40 @@ export function useUpdateProfile() {
   })
 }
 
+/**
+ * Mapea los datos del onboarding (inglés) al formato del backend (español).
+ * El backend espera campos en español para perfilNecesidades.
+ */
+function mapOnboardingToBackend(data) {
+  return {
+    tiposDiscapacidad: data.disability_types ?? [],
+    severidadDiscapacidad: data.disability_severity || null,
+    modosComunicacion: data.communication_modes ?? [],
+    necesidadesMovilidad: data.mobility_needs ?? [],
+    accesoTecnologia: data.tech_access ?? [],
+    zonasPreferidas: data.preferred_zones ?? [],
+    necesidades: data.needs ?? [],
+    metasActuales: data.goals ?? [],
+    areasApoyo: data.support_areas ? data.support_areas.split(',').map(s => s.trim()).filter(Boolean) : [],
+    historialEducacion: data.education ? [data.education] : [],
+    historialTerapia: data.therapies ? data.therapies.split(',').map(s => s.trim()) : [],
+    etapaVida: data.stage || null,
+    preocupacionesActuales: data.concerns || null,
+    nivelApoyo: data.disability_severity || null,
+    // Campos adicionales del onboarding
+    edad: data.age ? Number(data.age) : null,
+    experienciaLaboral: data.work || null,
+    experienciaSocial: data.social || null,
+  }
+}
+
 export function useSaveProfiling() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.post('/usuarios/perfil-necesidades', data).then(r => r.data),
+    mutationFn: (data) => {
+      const backendData = mapOnboardingToBackend(data)
+      return api.post('/usuarios/perfil-necesidades', backendData).then(r => r.data)
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['perfil'] }),
   })
 }

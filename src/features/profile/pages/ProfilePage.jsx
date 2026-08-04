@@ -1,10 +1,121 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import { PROFILE_TOAST, PROFILE_UI, PROFILE_VALIDATION, ROLE_LABELS } from '../constants/profileMessages'
+import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
+
+function normalizeText(text) {
+  if (!text) return ''
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+}
+
+function getNormalizedStateKey(stateName) {
+  if (!stateName) return ''
+  const normState = normalizeText(stateName)
+  return STATES.find(st => normalizeText(st) === normState) || stateName
+}
+
+function SearchableSelect({ label, value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  // When closed, show the selected value; when open, show user's search
+  const displayValue = isOpen ? userSearch : (value || '')
+  const normSearch = normalizeText(displayValue)
+  const filteredOptions = options.filter(opt =>
+    normalizeText(opt).includes(normSearch)
+  )
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          style={{ ...inputStyle, paddingRight: 32 }}
+          value={displayValue}
+          onChange={e => {
+            setUserSearch(e.target.value)
+            setIsOpen(true)
+            if (!e.target.value) onChange('')
+          }}
+          onFocus={() => {
+            if (!disabled) {
+              setUserSearch(value || '')
+              setIsOpen(true)
+            }
+          }}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--fg3)', display: 'flex', alignItems: 'center' }}>
+          {Icons.chevronDown ? Icons.chevronDown({ s: 15 }) : '▼'}
+        </div>
+      </div>
+
+      {isOpen && !disabled && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: 4,
+          maxHeight: 180,
+          overflowY: 'auto',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 8,
+          boxShadow: 'var(--shadow-md)',
+          zIndex: 1010,
+        }}>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map(opt => (
+              <div
+                key={opt}
+                onClick={() => {
+                  onChange(opt)
+                  setIsOpen(false)
+                }}
+                style={{
+                  padding: '10px 12px',
+                  fontSize: 13.5,
+                  color: 'var(--fg1)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in oklch, var(--primary) 6%, var(--bg-surface))'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {opt}
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: '12px', fontSize: 13, color: 'var(--fg3)', textAlign: 'center' }}>
+              No se encontraron resultados
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProfilePage() {
   const { logout } = useAuthStore()
@@ -16,19 +127,25 @@ export default function ProfilePage() {
   const deleteAvatar = useEliminarAvatar()
   const { addToast } = useUiStore()
 
-  const [editing, setEditing] = useState(false)
+  const [editingMode, setEditingMode] = useState(null) // 'profile' | 'address' | null
   const [form, setForm] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const fileInputRef = useRef(null)
 
-  const startEdit = () => {
+  const startEdit = (mode) => {
+    const fullNameVal = data?.full_name ?? ''
+    const parts = fullNameVal.trim().split(' ')
+    const fName = parts[0] || ''
+    const lName = parts.slice(1).join(' ') || ''
     setForm({
-      full_name: data?.full_name ?? '',
+      first_name: fName,
+      last_name: lName,
+      full_name: fullNameVal,
       city: data?.city ?? '',
       state: data?.state ?? '',
       avatar_url: avatarPreview || data?.avatar_url || '',
     })
-    setEditing(true)
+    setEditingMode(mode)
   }
 
   const handleAvatarClick = () => {
@@ -62,13 +179,16 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     try {
+      const mergedName = form.first_name !== undefined 
+        ? `${form.first_name.trim()} ${form.last_name.trim()}`.trim()
+        : form.full_name
       await update.mutateAsync({
-        nombreCompleto: form.full_name,
+        nombreCompleto: mergedName,
         ciudad: form.city,
         estado: form.state,
       })
       addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
-      setEditing(false)
+      setEditingMode(null)
     } catch {
       addToast(PROFILE_TOAST.PROFILE_UPDATE_ERROR, 'error')
     }
@@ -113,212 +233,386 @@ export default function ProfilePage() {
   }
 
   const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
+  const fullName = data?.full_name ?? '—'
+  const nameParts = fullName.trim().split(' ')
+  const firstName = nameParts[0] || '—'
+  const lastName = nameParts.slice(1).join(' ') || '—'
 
   return (
     <div style={s.page}>
       <AppSidebar currentPage="profile" />
       <TopNav user={data} onLogout={logout} currentPage="profile" />
       <main className="responsive-main">
-        <div style={{ maxWidth: 800, width: '100%', margin: '0 auto' }}>
-        <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 32px' }}>
-          {PROFILE_UI.PAGE_TITLE}
-        </h1>
+        <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
+          
+          {/* Header/Breadcrumbs */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 32px' }}>
+            <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+              Perfil de Usuario
+            </h1>
+            
+          </div>
 
-        {isLoading ? (
-          <div style={s.card}>
-            {[80, 200, 120, 60].map((w, i) => (
-              <div key={i} style={{ height: 18, width: w, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 16 }} />
-            ))}
-          </div>
-        ) : isError ? (
-          <div style={s.card}>
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--danger-subtle, #fdecea)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                {Icons.shieldAlert({ s: 22 })}
-              </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.ERROR_TITLE}</h3>
-              <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.ERROR_DESCRIPTION}</p>
+          {isLoading ? (
+            <div style={s.card}>
+              {[80, 200, 120, 60].map((w, i) => (
+                <div key={i} style={{ height: 18, width: w, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 16 }} />
+              ))}
             </div>
-          </div>
-        ) : (
-          <>
-            {/* Header card */}
-            <div className="profile-card animate-fade-in-up delay-1" style={s.card}>
-              <div className="profile-header-row" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
+          ) : isError ? (
+            <div style={s.card}>
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--danger-subtle, #fdecea)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  {Icons.shieldAlert({ s: 22 })}
+                </div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.ERROR_TITLE}</h3>
+                <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.ERROR_DESCRIPTION}</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Tarjeta: Mi Perfil */}
+              <div className="profile-card animate-fade-in-up delay-1" style={s.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                    Mi Perfil
+                  </h3>
+                  <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={() => startEdit('profile')}>
+                    {Icons.edit({ s: 13 })} Editar
+                  </button>
+                </div>
+
+                {/* Avatar + Name row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 28, flexWrap: 'wrap' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 80, height: 80, borderRadius: '50% 50% 50% 18%', background: data?.avatar_url ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, overflow: 'hidden' }}>
+                      {data?.avatar_url ? (
+                        <img src={data?.avatar_url} alt={data?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : initials}
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                        {data?.full_name ?? '—'}
+                      </h2>
+                      <span style={s.roleBadge}>{ROLE_LABELS[data?.role] ?? data?.role}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--fg3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {Icons.mail({ s: 13 })} {data?.email}
+                      </span>
+                      {(data?.city || data?.state) && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {Icons.mapPin({ s: 13 })} {[data?.city, data?.state].filter(Boolean).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fields Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nombre</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{firstName}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Apellido</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{lastName}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Correo electrónico</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{data?.email ?? '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Perfil de necesidades */}
+              {data?.profiling ? (
+                <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
+                  <div style={s.sectionTitle}>
+                    <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
+                    <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {Icons.edit ? Icons.edit({ s: 13 }) : '✏️'} {PROFILE_UI.RETAKE_TEST_LINK}
+                    </a>
+                  </div>
+                  {stage && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
+                      <span style={s.chip('var(--primary)')}>{stage.label}</span>
+                    </div>
+                  )}
+                  {disabilities.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {disabilities.map((d, i) => (
+                          <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {data?.profiling?.communication_modes?.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {data?.profiling?.communication_modes?.map((m, i) => (
+                          <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {data?.profiling?.mobility_needs?.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {data?.profiling?.mobility_needs?.map((m, i) => (
+                          <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="profile-card animate-fade-in-up delay-2" style={{ ...s.card, textAlign: 'center' }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    {Icons.target ? Icons.target({ s: 22 }) : '🎯'}
+                  </div>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.EMPTY_TITLE}</h3>
+                  <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.EMPTY_DESCRIPTION}</p>
+                  <a href="/onboarding">
+                    <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }}>
+                      {PROFILE_UI.COMPLETE_NOW_BUTTON} {Icons.arrowRight ? Icons.arrowRight({ s: 14 }) : '→'}
+                    </button>
+                  </a>
+                </div>
+              )}
+
+              {/* Tarjeta: Dirección */}
+              <div className="profile-card animate-fade-in-up delay-3" style={s.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                    Dirección
+                  </h3>
+                  <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={() => startEdit('address')}>
+                    {Icons.edit({ s: 13 })} Editar
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>País</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>México</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ciudad / Estado</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{[data?.city, data?.state].filter(Boolean).join(', ') || 'No especificado'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta: Seguridad */}
+              <div className="profile-card animate-fade-in-up delay-4" style={s.card}>
+                <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                    Seguridad
+                  </h3>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cambiar contraseña</h4>
+                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Recibe notificaciones en tiempo real y alertas del equipo.</p>
+                    </div>
+                    <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}>
+                      {Icons.edit ? Icons.edit({ s: 14 }) : '✏️'} Cambiar contraseña
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Autenticación de dos factores (2FA)</h4>
+                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Mantén tu cuenta segura habilitando la verificación en dos pasos.</p>
+                    </div>
+                    <div style={{ width: 44, height: 24, borderRadius: 12, background: 'var(--primary)', position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 2px' }}>
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', marginLeft: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta: Zona de Peligro */}
+              <div className="profile-card animate-fade-in-up delay-5" style={s.card}>
+                <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--color-error, #DC3545)', margin: 0 }}>
+                    Zona de peligro
+                  </h3>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cerrar sesión en todos los dispositivos</h4>
+                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Cierra sesión en todas las sesiones activas.</p>
+                    </div>
+                    <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={logout}>
+                      Cerrar sesión
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Eliminar cuenta</h4>
+                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Elimina permanentemente tu cuenta y todos los datos asociados.</p>
+                    </div>
+                    <button style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--color-error, #DC3545)', background: 'transparent', color: 'var(--color-error, #DC3545)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in oklch, var(--color-error, #DC3545) 8%, transparent)' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                      Eliminar cuenta
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* Edit Personal Information Modal Overlay */}
+      {editingMode === 'profile' && (
+        <div onClick={() => setEditingMode(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
+            
+            {/* Close Button */}
+            <button onClick={() => setEditingMode(null)} style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-warm)'}>
+              {Icons.x({ s: 16 })}
+            </button>
+
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Editar información personal</h3>
+            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 24px' }}>Actualiza tus datos para mantener tu perfil al día.</p>
+            
+            {/* Change Profile Picture Section */}
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 14px' }}>Cambiar foto de perfil</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50% 50% 50% 18%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }} aria-label="Cambiar foto de perfil">
+                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }}>
                     {(avatarPreview || data?.avatar_url) ? (
-                      <img src={avatarPreview || data?.avatar_url} alt={data?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={avatarPreview || data?.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : initials}
                   </button>
-                  <span style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', border: '2px solid var(--bg-surface)' }}>
+                  <span style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg-surface)', pointerEvents: 'none' }}>
                     {uploadAvatar.isPending ? (
-                      <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      <span style={{ width: 10, height: 10, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                     ) : (
-                      Icons.camera({ s: 14 })
+                      Icons.camera({ s: 12 })
                     )}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <button onClick={handleAvatarClick} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {Icons.upload({ s: 14 })} {PROFILE_UI.UPLOAD_PHOTO}
-                  </button>
-                  {(avatarPreview || data?.avatar_url) && (
-                    <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'none', border: 'none', color: '#DC3545', fontSize: 13, fontWeight: 600, cursor: deleteAvatar.isPending ? 'not-allowed' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
-                      {deleteAvatar.isPending ? (
-                        <span style={{ width: 14, height: 14, border: '2px solid #DC3545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                      ) : (
-                        Icons.x({ s: 14 })
-                      )} {PROFILE_UI.DELETE_PHOTO}
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <p style={{ fontSize: 12.5, color: 'var(--fg3)', margin: '0 0 8px', lineHeight: '1.4' }}>
+                    Sube una imagen cuadrada (200x200 px) en formato JPEG o PNG.
+                  </p>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button onClick={handleAvatarClick} style={{ background: 'var(--primary-subtle)', border: 'none', color: 'var(--primary)', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {Icons.upload({ s: 12 })} Subir foto
                     </button>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                      {data?.full_name ?? '—'}
-                    </h2>
-                    <span style={s.roleBadge}>{ROLE_LABELS[data?.role] ?? data?.role}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {Icons.mail({ s: 14 })} {data?.email}
-                    </span>
-                    {(data?.city || data?.state) && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {Icons.mapPin({ s: 14 })} {[data?.city, data?.state].filter(Boolean).join(', ')}
-                      </span>
+                    {(avatarPreview || data?.avatar_url) && (
+                      <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'transparent', border: '1px solid #DC3545', color: '#DC3545', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
+                        {Icons.x({ s: 12 })} Eliminar
+                      </button>
                     )}
                   </div>
                 </div>
-                {!editing && (
-                  <div className="profile-header-actions">
-                    <button className="btn-secondary" style={{ fontSize: 14, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={startEdit}>
-                      {Icons.edit({ s: 14 })} {PROFILE_UI.EDIT_BUTTON}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Stats row */}
-              <div className="profile-stats-row" style={{ display: 'flex', gap: 12 }}>
-                  <div style={s.stat}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {data?.profiling?.disability_types?.length || 0}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.DISABILITY_STAT_LABEL}</div>
-                  </div>
-                  <div style={s.stat}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {(data?.profiling?.needs?.length || 0) + (data?.profiling?.goals?.length || 0)}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.NEEDS_STAT_LABEL}</div>
-                  </div>
-                  <div style={s.stat}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                      {data?.is_verified ? '✓' : 'No'}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{PROFILE_UI.VERIFIED_STAT_LABEL}</div>
-                  </div>
               </div>
             </div>
 
-            {/* Edit form */}
-            {editing && (
-              <div className="animate-tab-in" style={s.card}>
-                <div style={s.sectionTitle}>
-                  <span>{PROFILE_UI.EDIT_TITLE}</span>
-                </div>
-                <div style={s.row}>
-                  <div style={s.field}>
-                    <label style={labelStyle}>{PROFILE_UI.NAME_LABEL}</label>
-                    <input style={inputStyle} value={form.full_name} onChange={set('full_name')} />
-                  </div>
-                </div>
-                <div style={s.row}>
-                  <div style={s.field}>
-                    <label style={labelStyle}>{PROFILE_UI.CITY_LABEL}</label>
-                    <input style={inputStyle} value={form.city} onChange={set('city')} placeholder={PROFILE_UI.CITY_PLACEHOLDER} />
-                  </div>
-                  <div style={s.field}>
-                    <label style={labelStyle}>{PROFILE_UI.STATE_LABEL}</label>
-                    <input style={inputStyle} value={form.state} onChange={set('state')} placeholder={PROFILE_UI.STATE_PLACEHOLDER} />
-                  </div>
-                </div>
-                <div className="profile-edit-actions" style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                  <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={() => setEditing(false)}>{PROFILE_UI.CANCEL_BUTTON}</button>
-                  <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }} onClick={handleSave} disabled={update.isPending}>
-                    {update.isPending ? PROFILE_UI.SAVE_BUTTON_LOADING : PROFILE_UI.SAVE_BUTTON}
-                  </button>
-                </div>
-              </div>
-            )}
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '24px 0' }} />
 
-            {/* Perfil de necesidades */}
-            {data?.profiling ? (
-              <div className="animate-fade-in-up delay-2" style={s.card}>
-                <div style={s.sectionTitle}>
-                  <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
-                  <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {Icons.edit({ s: 13 })} {PROFILE_UI.UPDATE_LINK}
-                  </a>
-                </div>
-                {stage && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
-                    <span style={s.chip('var(--primary)')}>{stage.label}</span>
-                  </div>
-                )}
-                {disabilities.length > 0 && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {disabilities.map((d, i) => (
-                        <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {data?.profiling?.communication_modes?.length > 0 && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.profiling?.communication_modes?.map((m, i) => (
-                        <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {data?.profiling?.mobility_needs?.length > 0 && (
+            {/* Personal Information Section */}
+            <div>
+              <h4 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 16px' }}>Información personal</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {data?.profiling?.mobility_needs?.map((m, i) => (
-                        <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
-                      ))}
-                    </div>
+                    <label style={labelStyle}>Nombre</label>
+                    <input style={inputStyle} value={form.first_name} onChange={set('first_name')} />
                   </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ ...s.card, textAlign: 'center' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  {Icons.target({ s: 22 })}
+                  <div>
+                    <label style={labelStyle}>Apellido</label>
+                    <input style={inputStyle} value={form.last_name} onChange={set('last_name')} />
+                  </div>
                 </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.EMPTY_TITLE}</h3>
-                <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.EMPTY_DESCRIPTION}</p>
-                <a href="/onboarding">
-                  <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }}>
-                    {PROFILE_UI.COMPLETE_NOW_BUTTON} {Icons.arrowRight({ s: 14 })}
-                  </button>
-                </a>
+                <div>
+                  <label style={labelStyle}>Correo electrónico</label>
+                  <input style={{ ...inputStyle, background: 'var(--bg-warm)', cursor: 'not-allowed' }} value={data?.email ?? ''} disabled />
+                </div>
               </div>
-            )}
-          </>
-        )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
+              <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }} onClick={() => setEditingMode(null)}>Cerrar</button>
+              <button onClick={handleSave} style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }} disabled={update.isPending}>
+                {update.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* Edit Address Modal Overlay */}
+      {editingMode === 'address' && (
+        <div onClick={() => setEditingMode(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
+            
+            {/* Close Button */}
+            <button onClick={() => setEditingMode(null)} style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-warm)'}>
+              {Icons.x({ s: 16 })}
+            </button>
+
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Editar dirección</h3>
+            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 24px' }}>Actualiza tus datos para mantener tu perfil al día.</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>País</label>
+                  <input style={{ ...inputStyle, background: 'var(--bg-warm)', cursor: 'not-allowed' }} value="México" disabled />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <SearchableSelect
+                    label="Estado"
+                    value={form.state}
+                    onChange={val => setForm(f => ({ ...f, state: val, city: '' }))}
+                    options={STATES}
+                    placeholder="Selecciona un estado..."
+                  />
+                  <SearchableSelect
+                    label="Ciudad / Municipio"
+                    value={form.city}
+                    onChange={val => setForm(f => ({ ...f, city: val }))}
+                    options={form.state ? getMunicipalities(getNormalizedStateKey(form.state)) : []}
+                    placeholder={form.state ? "Selecciona..." : "Elige un estado"}
+                    disabled={!form.state}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
+              <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }} onClick={() => setEditingMode(null)}>Cerrar</button>
+              <button onClick={handleSave} style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }} disabled={update.isPending}>
+                {update.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

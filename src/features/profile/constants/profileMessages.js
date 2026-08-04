@@ -56,7 +56,8 @@ export const PROFILE_UI = {
   
   // Perfil de necesidades
   NEEDS_PROFILE_TITLE: 'Perfil de necesidades',
-  UPDATE_LINK: 'Actualizar',
+  UPDATE_LINK: 'Actualizar perfil',
+  RETAKE_TEST_LINK: 'Volver a hacer el test',
   LIFE_STAGE_LABEL: 'Etapa de vida',
   DISABILITY_TYPES_LABEL: 'Tipos de discapacidad',
   COMMUNICATION_MODES_LABEL: 'Modos de comunicación',
@@ -66,6 +67,7 @@ export const PROFILE_UI = {
   EMPTY_TITLE: 'Completa tu perfil de necesidades',
   EMPTY_DESCRIPTION: 'Con esta información la IA puede recomendarte instituciones que realmente encajen contigo',
   COMPLETE_NOW_BUTTON: 'Completar ahora',
+  RETAKE_TEST_BUTTON: 'Volver a hacer el test',
   
   // Error
   ERROR_TITLE: 'No se pudo cargar el perfil',
