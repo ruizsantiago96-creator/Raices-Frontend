@@ -252,7 +252,7 @@ export default function TutorPage() {
         <FeaturesConfigModal dependent={configuringFeatures} features={AVAILABLE_FEATURES} onSave={handleFeaturesSave} onCancel={() => setConfiguringFeatures(null)} saving={updateFeatures.isPending} />
       )}
       {showVincular && (
-        <VincularPCDModal onVincular={(pcdUserId) =>            { vincularPCD.mutate(pcdUserId, { onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) }, onError: (e) => addToast(e?.message ?? TUTOR_TOAST.LINK_ERROR, 'error') }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />
+        <VincularPCDModal onVincular={(email) => { vincularPCD.mutate(email, { onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) }, onError: (e) => addToast(e?.message ?? TUTOR_TOAST.LINK_ERROR, 'error') }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />
       )}
       {permissionsFor && (
         <PermissionsModal
@@ -511,8 +511,9 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }) {
 
 /* ── Modal para vincular cuenta PCD ── */
 function VincularPCDModal({ onVincular, onCancel, saving }) {
-  const [pcdUserId, setPcdUserId] = useState('')
-  const submit = (e) => { e.preventDefault(); if (!pcdUserId.trim()) return; onVincular(pcdUserId.trim()) }
+  const [pcdEmail, setPcdEmail] = useState('')
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pcdEmail)
+  const submit = (e) => { e.preventDefault(); if (!isValidEmail) return; onVincular(pcdEmail.trim()) }
 
   return (
     <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
@@ -522,7 +523,7 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
           <div><h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{TUTOR_UI.LINK_TITLE}</h2><p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>{TUTOR_UI.LINK_MODAL_SUBTITLE}</p></div>
         </div>
         <form onSubmit={submit}>
-          <div style={{ marginBottom: 20 }}><label htmlFor="pcd-user-id" style={labelStyle}>{TUTOR_UI.PCD_ID_LABEL}</label><input id="pcd-user-id" style={{ ...inputStyle, opacity: saving ? 0.6 : 1 }} value={pcdUserId} onChange={e => setPcdUserId(e.target.value)} required placeholder={TUTOR_UI.PCD_ID_PLACEHOLDER} autoFocus disabled={saving} /><p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>{TUTOR_UI.PCD_ID_HINT}</p></div>
+          <div style={{ marginBottom: 20 }}><label htmlFor="pcd-email" style={labelStyle}>{TUTOR_UI.PCD_EMAIL_LABEL}</label><input id="pcd-email" type="email" style={{ ...inputStyle, opacity: saving ? 0.6 : 1 }} value={pcdEmail} onChange={e => setPcdEmail(e.target.value)} required placeholder={TUTOR_UI.PCD_EMAIL_PLACEHOLDER} autoFocus disabled={saving} /><p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>{TUTOR_UI.PCD_EMAIL_HINT}</p></div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button 
               type="button" 
@@ -546,7 +547,7 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
             </button>
             <button 
               type="submit" 
-              disabled={saving || !pcdUserId.trim()}
+              disabled={saving || !isValidEmail}
               style={{
                 fontSize: 14.5,
                 padding: '10px 20px',
@@ -557,7 +558,7 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
                 fontWeight: 600,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-body)',
-                opacity: (saving || !pcdUserId.trim()) ? 0.6 : 1,
+                opacity: (saving || !isValidEmail) ? 0.6 : 1,
               }}
             >
               {saving ? TUTOR_UI.LINK_BUTTON_LOADING : TUTOR_UI.LINK_BUTTON}

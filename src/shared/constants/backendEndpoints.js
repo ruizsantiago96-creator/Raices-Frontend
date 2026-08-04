@@ -121,7 +121,8 @@ export const DEPENDENT_ENDPOINTS = {
   },
   LINK_PCD: {
     method: 'POST',
-    path: '/usuarios/vincular-pcd/:pcdUserId',
+    path: '/usuarios/vincular-pcd',
+    body: { email: 'string' },
     response: 'Dependiente',
   },
   REGISTER_DEPENDENT: {
