@@ -57,7 +57,7 @@ export const USER_ENDPOINTS = {
   UPDATE_PROFILE: {
     method: 'PUT',
     path: '/usuarios/perfil',
-    body: { nombreCompleto: 'string', ciudad: 'string', estado: 'string', perfilNecesidades: 'PerfilNecesidades?' },
+    body: { nombreCompleto: 'string', ciudad: 'string', estado: 'string', urlAvatar: 'string?', profesion: 'string?', bio: 'string?' },
     response: 'Usuario',
   },
   UPLOAD_AVATAR: {
@@ -96,15 +96,17 @@ export const DEPENDENT_ENDPOINTS = {
   CREATE: {
     method: 'POST',
     path: '/usuarios/dependientes',
-    body: { nombreCompleto: 'string', parentesco: 'string', etapaVida: 'string', necesidades: 'string[]' },
+    body: { nombreCompleto: 'string', parentesco: 'string', tiposDiscapacidad: 'string[]', rangoEdad: 'string?', etapaVida: 'string?', notas: 'string?' },
     response: {
       id: 'string',
       tutorId: 'string',
       nombreCompleto: 'string',
       parentesco: 'string',
+      tiposDiscapacidad: 'string[]',
+      rangoEdad: 'string',
       etapaVida: 'string',
-      necesidades: 'string[]',
-      rol: 'discapacitado',
+      notas: 'string',
+      rol: 'pcd',
       fechaCreacion: 'string',
     },
   },
@@ -147,6 +149,17 @@ export const DEPENDENT_ENDPOINTS = {
     path: '/usuarios/dependientes/:id/features',
     body: 'Features',
     response: 'Features',
+  },
+  UPDATE_FEATURES_PCD_VINCULADO: {
+    method: 'PUT',
+    path: '/usuarios/pcd-vinculado/:pcdUserId/features',
+    body: 'Features',
+    response: 'Features',
+  },
+  UNLINK_PCD: {
+    method: 'DELETE',
+    path: '/usuarios/pcd-vinculado/:pcdUserId/desvincular',
+    response: { exito: 'boolean' },
   },
 }
 
@@ -202,7 +215,7 @@ export const DISCOVERY_ENDPOINTS = {
   SEARCH: {
     method: 'GET',
     path: '/descubrimiento',
-    params: { busqueda: 'string?', categoria: 'string?', ciudad: 'string?', estado: 'string?', pagina: 'number', limite: 'number' },
+    params: { busqueda: 'string?', categoria: 'string?', ciudad: 'string?', estado: 'string?', tipoDiscapacidad: 'string?', pagina: 'number', limite: 'number' },
     response: { datos: 'Institucion[]', total: 'number', paginas: 'number' },
   },
 }
@@ -344,7 +357,7 @@ export const COMMUNITY_ENDPOINTS = {
   },
   GET_MIEMBROS: {
     method: 'GET',
-    path: '/comunidad/miembros-destacados',
+    path: '/comunidad/miembros',
     params: { limite: 'number?' },
     response: { miembros: 'UsuarioComunidad[]' },
   },
@@ -462,6 +475,11 @@ export const NOTIFICATION_ENDPOINTS = {
     path: '/notificaciones/fcm-token',
     body: { token: 'string' },
     response: { exito: 'boolean' },
+  },
+  STREAM: {
+    method: 'GET',
+    path: '/notificaciones/flujo',
+    description: 'SSE — notificaciones en tiempo real (EventSource)',
   },
 }
 
