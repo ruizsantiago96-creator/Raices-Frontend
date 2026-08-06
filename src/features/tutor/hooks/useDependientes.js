@@ -95,6 +95,9 @@ export function useDeleteDependent() {
 /**
  * Mutación: vincula una cuenta PCD al tutor actual por correo electrónico.
  * POST /usuarios/vincular-pcd  { email }
+ *
+ * El backend busca internamente al usuario por email, valida que tenga
+ * el rol PCD y realiza la vinculación en un solo paso.
  */
 export function useVincularPCD() {
   const qc = useQueryClient()

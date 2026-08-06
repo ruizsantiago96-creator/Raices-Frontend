@@ -252,7 +252,12 @@ export default function TutorPage() {
         <FeaturesConfigModal dependent={configuringFeatures} features={AVAILABLE_FEATURES} onSave={handleFeaturesSave} onCancel={() => setConfiguringFeatures(null)} saving={updateFeatures.isPending} />
       )}
       {showVincular && (
-        <VincularPCDModal onVincular={(email) => { vincularPCD.mutate(email, { onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) }, onError: (e) => addToast(e?.message ?? TUTOR_TOAST.LINK_ERROR, 'error') }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />
+        <VincularPCDModal onVincular={(email) => {
+          vincularPCD.mutate(email, {
+            onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) },
+            onError: (e) => addToast(e?.response?.data?.mensaje ?? e?.message ?? TUTOR_TOAST.LINK_ERROR, 'error'),
+          })
+        }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />
       )}
       {permissionsFor && (
         <PermissionsModal
