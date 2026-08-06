@@ -34,6 +34,7 @@ export function useUpdateProfile() {
     mutationFn: (data) => api.put('/usuarios/perfil', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['perfil'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
       qc.invalidateQueries({ queryKey: ['yo'] })
     },
   })
@@ -63,16 +64,31 @@ function mapOnboardingToBackend(data) {
     edad: data.age ? Number(data.age) : null,
     experienciaLaboral: data.work || null,
     experienciaSocial: data.social || null,
+    fechaNacimiento: data.birth_date || null,
   }
 }
 
 export function useSaveProfiling() {
   const qc = useQueryClient()
+  const { user } = useAuthStore()
   return useMutation({
     mutationFn: (data) => {
       const backendData = mapOnboardingToBackend(data)
+      const userId = user?.id
+      if (userId) {
+        if (data.birth_date) {
+          localStorage.setItem(`raices_birth_date_${userId}`, data.birth_date)
+        }
+        if (data.age) {
+          localStorage.setItem(`raices_age_${userId}`, data.age)
+        }
+      }
       return api.post('/usuarios/perfil-necesidades', backendData).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['perfil'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['perfil'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['yo'] })
+    },
   })
 }

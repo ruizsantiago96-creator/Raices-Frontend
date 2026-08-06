@@ -13,7 +13,7 @@ describe('shared/constants/uiMessages', () => {
   describe('LOADING_MESSAGES', () => {
     it('is defined and has expected keys', () => {
       expect(LOADING_MESSAGES).toBeDefined()
-      expect(LOADING_MESSAGES.GENERIC).toBe('Cargando...')
+      expect(LOADING_MESSAGES.GENERIC).toBe('Un momento...')
       expect(LOADING_MESSAGES.SLOW).toBeDefined()
       expect(LOADING_MESSAGES.DATA).toBeDefined()
       expect(LOADING_MESSAGES.SAVE).toBeDefined()
@@ -88,7 +88,7 @@ describe('shared/constants/uiMessages', () => {
       expect(BUTTON_TEXT.CONFIRM).toBe('Confirmar')
       expect(BUTTON_TEXT.ACCEPT).toBe('Aceptar')
       expect(BUTTON_TEXT.REJECT).toBe('Rechazar')
-      expect(BUTTON_TEXT.RETRY).toBe('Reintentar')
+      expect(BUTTON_TEXT.RETRY).toBe('Intentar de nuevo')
       expect(BUTTON_TEXT.LOAD_MORE).toBe('Ver más')
       expect(BUTTON_TEXT.SHOW_ALL).toBe('Ver todo')
     })
@@ -103,7 +103,7 @@ describe('shared/constants/uiMessages', () => {
 
   describe('INPUT_PLACEHOLDERS', () => {
     it('has all expected placeholders', () => {
-      expect(INPUT_PLACEHOLDERS.SEARCH).toBe('Buscar...')
+      expect(INPUT_PLACEHOLDERS.SEARCH).toBe('¿Qué estás buscando?')
       expect(INPUT_PLACEHOLDERS.EMAIL).toBeDefined()
       expect(INPUT_PLACEHOLDERS.PASSWORD).toBeDefined()
       expect(INPUT_PLACEHOLDERS.NAME).toBeDefined()

@@ -19,16 +19,26 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const DISABILIDADES = catalogos?.tiposDiscapacidad?.map(d => d.label ?? d) ?? []
   const ETAPAS_VIDA = catalogos?.etapasVida ?? []
 
+  const listDiscapacidades = DISABILIDADES.filter(d => {
+    const name = d.toLowerCase()
+    return name.includes('motriz') || name.includes('visual') || name.includes('auditiva') || 
+           name.includes('intelectual') || name.includes('psicosocial') || 
+           name.includes('múltiple') || name.includes('multiple') || name.includes('otra')
+  })
+  const listCondiciones = DISABILIDADES.filter(d => !listDiscapacidades.includes(d))
+
   const [form, setForm] = useState({
     nombreCompleto: '',
     parentesco: PARENTESCOS[0] ?? '',
     necesidades: [],
     etapaVida: '',
+    birth_date: '',
     // Campos para crear cuenta Firebase
     crearCuenta: false,
     email: '',
     password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
@@ -49,6 +59,7 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
       parentesco: form.parentesco,
       necesidades: form.necesidades,
       etapaVida: form.etapaVida || null,
+      birth_date: form.birth_date || null,
     }
 
     // Incluir datos de cuenta si se activó la opción
@@ -114,27 +125,45 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
             </select>
           </div>
 
-          {/* ── Etapa de vida ── */}
+          {/* ── Fecha de nacimiento ── */}
           <div style={{ marginBottom: 18 }}>
-            <label htmlFor="dep-etapa" style={labelStyle}>Etapa de vida</label>
-            <select
-              id="dep-etapa"
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.etapaVida}
-              onChange={set('etapaVida')}
-            >
-              <option value="">Sin especificar</option>
-              {ETAPAS_VIDA.map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </select>
+            <label htmlFor="dep-fecha-nacimiento" style={labelStyle}>Fecha de nacimiento</label>
+            <input
+              type="date"
+              id="dep-fecha-nacimiento"
+              style={inputStyle}
+              max={new Date().toISOString().split('T')[0]}
+              min="1900-01-01"
+              value={form.birth_date || ''}
+              onChange={e => {
+                const bdate = e.target.value
+                let calculatedStage = ''
+                if (bdate) {
+                  const birthDate = new Date(bdate)
+                  if (!isNaN(birthDate.getTime())) {
+                    const today = new Date()
+                    let age = today.getFullYear() - birthDate.getFullYear()
+                    const m = today.getMonth() - birthDate.getMonth()
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                      age--
+                    }
+                    if (age <= 12) calculatedStage = 'infancia'
+                    else if (age <= 17) calculatedStage = 'adolescencia'
+                    else if (age <= 29) calculatedStage = 'adultoJoven'
+                    else if (age <= 59) calculatedStage = 'adulto'
+                    else calculatedStage = 'mayor'
+                  }
+                }
+                setForm(f => ({ ...f, birth_date: bdate, etapaVida: calculatedStage }))
+              }}
+            />
           </div>
 
           {/* ── Tipos de discapacidad ── */}
           <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}>
             <legend style={{ ...labelStyle, padding: 0 }}>Tipo(s) de discapacidad</legend>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-              {DISABILIDADES.map((d) => {
+              {listDiscapacidades.map((d) => {
                 const active = form.necesidades.includes(d)
                 return (
                   <button
@@ -161,6 +190,40 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
               })}
             </div>
           </fieldset>
+
+          {/* ── Condición ── */}
+          {listCondiciones.length > 0 && (
+            <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}>
+              <legend style={{ ...labelStyle, padding: 0 }}>Condición</legend>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                {listCondiciones.map((d) => {
+                  const active = form.necesidades.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleDiscapacidad(d)}
+                      aria-pressed={active}
+                      style={{
+                        padding: '8px 14px',
+                        minHeight: 44,
+                        borderRadius: 'var(--radius-pill)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        border: active ? '2px solid var(--primary)' : '2px solid var(--border-color)',
+                        background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+                        color: active ? 'var(--primary)' : 'var(--fg2)',
+                      }}
+                    >
+                      {active && <span aria-hidden="true">✓ </span>}{d}
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )}
 
           {/* ── Crear cuenta para el dependiente ── */}
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
@@ -195,16 +258,40 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
                 </div>
                 <div>
                   <label htmlFor="dep-password" style={labelStyle}>Contraseña</label>
-                  <input
-                    id="dep-password"
-                    type="password"
-                    style={inputStyle}
-                    value={form.password}
-                    onChange={set('password')}
-                    required={form.crearCuenta}
-                    placeholder="Mínimo 8 caracteres"
-                    minLength={8}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      id="dep-password"
+                      type={showPassword ? 'text' : 'password'}
+                      style={{ ...inputStyle, paddingRight: 48 }}
+                      value={form.password}
+                      onChange={set('password')}
+                      required={form.crearCuenta}
+                      placeholder="Mínimo 8 caracteres"
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      aria-pressed={showPassword}
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--fg2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 4,
+                      }}
+                    >
+                      {showPassword ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+                    </button>
+                  </div>
                   <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>
                     La cuenta se creará en Firebase para que puedan iniciar sesión
                   </p>

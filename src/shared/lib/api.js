@@ -5,7 +5,7 @@ import { useAuthStore } from '@features/auth/store/authStore'
 /* ─── Configuración ───────────────────────────────────────────────── */
 
 const REFRESH_ENDPOINT = '/autenticacion/renovar-token'
-const PUBLIC_ROUTES = ['/', '/auth', '/explore']
+const PUBLIC_ROUTES = ['/auth']
 
 /** Rutas donde NUNCA redirigimos a /auth (evita loops en páginas públicas) */
 function isPublicRoute() {

@@ -6,43 +6,43 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const JOBS_TOAST = {
   // Vacantes
-  JOB_CREATED: 'Vacante creada con éxito',
-  JOB_CREATE_FAILED: 'No se pudo crear la vacante',
+  JOB_CREATED: '¡Vacante publicada con éxito!',
+  JOB_CREATE_FAILED: 'No pudimos crear la vacante. Intenta de nuevo.',
   
   // Postulaciones
-  APPLICATION_SENT: '¡Solicitud enviada con éxito!',
-  APPLICATION_FAILED: 'No se pudo enviar la solicitud',
+  APPLICATION_SENT: '¡Tu postulación fue enviada con éxito!',
+  APPLICATION_FAILED: 'No pudimos enviar tu postulación. Intenta de nuevo.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
 export const JOBS_UI = {
   // Título
-  PAGE_TITLE: 'Bolsa de Trabajo Inclusiva',
-  PAGE_SUBTITLE: 'Vacantes en empresas que valoran la diversidad',
+  PAGE_TITLE: 'Oportunidades',
+  PAGE_SUBTITLE: 'Empresas que valoran la diversidad',
   
   // Tabs
-  TAB_BOARD: 'Vacantes',
-  TAB_APPLICATIONS: 'Mis solicitudes',
+  TAB_BOARD: 'Oportunidades',
+  TAB_APPLICATIONS: 'Mis postulaciones',
   
   // Botones
-  CREATE_JOB: 'Crear vacante',
+  CREATE_JOB: 'Crear oportunidad',
   CREATE_JOB_LOADING: 'Creando...',
-  APPLY_BUTTON: 'Enviar solicitud',
+  APPLY_BUTTON: 'Postularme',
   APPLY_BUTTON_LOADING: 'Enviando…',
   POSTULATE_BUTTON: 'Postularme',
-  POSTULATED_BADGE: 'Postulado',
-  VIEW_DETAILS: 'Ver detalles',
-  LESS_INFO: 'Menos info',
+  POSTULATED_BADGE: 'Ya te postulaste',
+  VIEW_DETAILS: 'Ver más',
+  LESS_INFO: 'Ver menos',
   CANCEL_BUTTON: 'Cancelar',
   
   // Formularios - Crear vacante
-  CREATE_JOB_TITLE: 'Crear vacante',
+  CREATE_JOB_TITLE: 'Crear nueva oportunidad',
   JOB_TITLE_LABEL: 'Título *',
   JOB_TITLE_PLACEHOLDER: 'Ej: Terapeuta Ocupacional',
   JOB_DESC_LABEL: 'Descripción',
-  JOB_DESC_PLACEHOLDER: 'Describe la vacante...',
+  JOB_DESC_PLACEHOLDER: 'Describe la oportunidad...',
   JOB_REQUIREMENTS_LABEL: 'Requisitos',
-  JOB_REQUIREMENTS_PLACEHOLDER: 'Requisitos del puesto...',
+  JOB_REQUIREMENTS_PLACEHOLDER: '¿Qué se necesita para esta oportunidad?',
   MODALITY_LABEL: 'Modalidad',
   MODALITY_PRESENCIAL: 'Presencial',
   MODALITY_REMOTO: 'Remoto',
@@ -55,25 +55,41 @@ export const JOBS_UI = {
   STATE_PLACEHOLDER: 'Yucatán',
   SALARY_LABEL: 'Rango salarial',
   SALARY_PLACEHOLDER: '$15,000 - $20,000 MXN',
-  INCLUSIVE_CHECKBOX: 'Vacante inclusiva para personas con discapacidad',
+  INCLUSIVE_CHECKBOX: 'Oportunidad inclusiva para personas con alguna condición',
   
   // Formularios - Postularme
-  APPLY_TITLE: 'Postularte a',
-  COVER_LETTER_LABEL: 'Carta de presentación (opcional)',
-  COVER_LETTER_PLACEHOLDER: 'Cuéntanos por qué eres el candidato ideal para esta vacante…',
+  APPLY_TITLE: 'Postularme a',
+  APPLY_TITLE_TUTOR: 'Postular a',
+  COVER_LETTER_LABEL: 'Cuéntanos sobre ti (opcional)',
+  COVER_LETTER_PLACEHOLDER: '¿Por qué eres buena opción para esta oportunidad?',
+  
+  // Selector de candidato (tutor)
+  CANDIDATE_SECTION_TITLE: '¿Quién se va a postular?',
+  CANDIDATE_ME: 'Yo mismo/a',
+  CANDIDATE_ME_DESCRIPTION: 'Postular con mi perfil personal',
+  CANDIDATE_MANAGED: 'Mis personas',
+  CANDIDATE_MANAGED_DESCRIPTION: 'Personas a tu cuidado sin cuenta propia',
+  CANDIDATE_LINKED: 'Cuentas vinculadas',
+  CANDIDATE_LINKED_DESCRIPTION: 'Personas con su propia cuenta',
+  CANDIDATE_SELECT_PLACEHOLDER: 'Selecciona a quien postular...',
+  CANDIDATE_LOADING: 'Cargando personas...',
+  CANDIDATE_NO_MANAGED: 'No hay personas registradas aún',
+  CANDIDATE_NO_LINKED: 'No hay cuentas vinculadas',
+  CANDIDATE_CONFIRM: 'Confirmar postulación',
+  CANDIDATE_CONFIRM_LOADING: 'Enviando postulación...',
   
   // Detalles de vacante
   DESCRIPTION_LABEL: 'Descripción',
   REQUIREMENTS_LABEL: 'Requisitos',
-  DISABILITY_WELCOME_LABEL: 'Discapacidades bienvenidas',
-  INCLUSIVE_BADGE: 'Empresa inclusiva para personas con discapacidad',
+  DISABILITY_WELCOME_LABEL: 'Condiciones bienvenidas',
+  INCLUSIVE_BADGE: 'Oportunidad inclusiva para personas con alguna condición',
   VERIFIED_BADGE: 'Verificado',
   
   // Estados de postulación
   STATUS_PENDING: 'Enviada',
   STATUS_REVIEWED: 'En revisión',
-  STATUS_ACCEPTED: 'Aceptada',
-  STATUS_REJECTED: 'No seleccionado',
+  STATUS_ACCEPTED: '¡Aceptado/a!',
+  STATUS_REJECTED: 'No seleccionado/a',
   
   // Mensajería
   MESSAGE_BUTTON: 'Enviar mensaje',
@@ -81,17 +97,17 @@ export const JOBS_UI = {
   MESSAGE_PLACEHOLDER: 'Escribe tu mensaje...',
   MESSAGE_SEND: 'Enviar',
   MESSAGE_SENT: '¡Mensaje enviado!',
-  MESSAGE_FAILED: 'No se pudo enviar el mensaje',
-  MESSAGE_MODAL_HINT: 'Conversa directamente con la institución sobre esta vacante',
-  MESSAGE_NO_OWNER: 'No se pudo identificar al responsable de la institución',
+  MESSAGE_FAILED: 'No pudimos enviar el mensaje. Intenta de nuevo.',
+  MESSAGE_MODAL_HINT: 'Conversa directamente con la institución sobre esta oportunidad',
+  MESSAGE_NO_OWNER: 'No pudimos identificar al responsable de la institución',
   
   // Vacío
-  NO_JOBS: 'No hay vacantes disponibles',
-  NO_JOBS_HINT: 'Pronto las instituciones publicarán sus oportunidades de empleo',
-  NO_APPLICATIONS: 'Aún no has enviado ninguna solicitud',
+  NO_JOBS: 'No hay oportunidades disponibles aún',
+  NO_JOBS_HINT: 'Pronto las instituciones publicarán oportunidades de empleo',
+  NO_APPLICATIONS: 'Aún no te has postulado a ninguna oportunidad',
   
   // Modalidad filter
-  ALL_MODALITIES: 'Todos',
+  ALL_MODALITIES: 'Todas',
 }
 
 // ─── Colores de estado ────────────────────────────────────

@@ -6,31 +6,31 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const SOCIAL_TOAST = {
   // Publicaciones
-  POST_UPDATED: 'Publicación actualizada',
-  POST_UPDATE_FAILED: 'No se pudo actualizar',
+  POST_UPDATED: '¡Tu publicación se actualizó!',
+  POST_UPDATE_FAILED: 'No pudimos actualizar tu publicación. Intenta de nuevo.',
   POST_DELETED: 'Publicación eliminada',
-  POST_DELETE_FAILED: 'No se pudo eliminar',
-  POST_CREATED: 'Mensaje publicado con éxito',
-  POST_CREATE_FAILED: 'No se pudo publicar el mensaje. Asegúrate de estar unido al grupo.',
+  POST_DELETE_FAILED: 'No pudimos eliminar la publicación. Intenta de nuevo.',
+  POST_CREATED: '¡Tu mensaje fue compartido con éxito!',
+  POST_CREATE_FAILED: 'No pudimos publicar tu mensaje. ¿Estás unido/a al grupo?',
   
   // Grupos
-  GROUP_CREATED: 'Grupo creado',
-  GROUP_CREATE_FAILED: 'No se pudo crear el grupo',
-  GROUP_JOINED: 'Te uniste al grupo',
-  GROUP_JOIN_FAILED: 'No se pudo unir al grupo',
+  GROUP_CREATED: '¡Grupo creado con éxito!',
+  GROUP_CREATE_FAILED: 'No pudimos crear el grupo. Intenta de nuevo.',
+  GROUP_JOINED: '¡Te uniste al grupo! Bienvenido/a',
+  GROUP_JOIN_FAILED: 'No pudimos unirte al grupo. Intenta de nuevo.',
   GROUP_LEFT: 'Saliste del grupo',
-  GROUP_LEAVE_FAILED: 'No se pudo salir del grupo',
+  GROUP_LEAVE_FAILED: 'No pudimos sacarte del grupo. Intenta de nuevo.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
 export const SOCIAL_UI = {
   // Tabs
   TAB_COMMUNITY: 'Comunidad',
-  TAB_MESSAGES: 'Mensajes directos',
-  TAB_ABOUT: 'Quiénes somos',
+  TAB_MESSAGES: 'Mensajes ',
+  TAB_ABOUT: 'Conectemos',
   
   // Publicación
-  POST_PLACEHOLDER: '¿Qué quieres compartir con la comunidad?',
+  POST_PLACEHOLDER: '¿Qué te gustaría compartir con la comunidad?',
   POST_BUTTON: 'Publicar',
   POST_BUTTON_LOADING: 'Publicando…',
   EDIT_BUTTON: 'Guardar',
@@ -38,9 +38,9 @@ export const SOCIAL_UI = {
   CANCEL_BUTTON: 'Cancelar',
   
   // Comentarios
-  COMMENT_PLACEHOLDER: 'Escribe un comentario…',
+  COMMENT_PLACEHOLDER: 'Escribe tu comentario aquí...',
   COMMENTS_LOADING: 'Cargando comentarios...',
-  NO_COMMENTS: 'Sin comentarios aún.',
+  NO_COMMENTS: 'Sé el primero en comentar',
   
   // Grupos
   CREATE_GROUP_TITLE: 'Crear grupo',
@@ -59,18 +59,18 @@ export const SOCIAL_UI = {
   
   // Mensajes
   MESSAGES_TITLE: 'Mensajes',
-  MESSAGES_EMPTY: 'Sin conversaciones aún.',
-  MESSAGES_EMPTY_HINT: 'Escribe a alguien desde la comunidad.',
+  MESSAGES_EMPTY: 'Aún no tienes conversaciones',
+  MESSAGES_EMPTY_HINT: 'Escribe a alguien desde la comunidad para comenzar',
   MESSAGES_LOADING: 'Cargando…',
-  MESSAGE_PLACEHOLDER: 'Escribe un mensaje…',
+  MESSAGE_PLACEHOLDER: 'Escribe tu mensaje aquí...',
   SELECT_CONVERSATION: 'Selecciona una conversación para chatear',
   
   // Estadísticas
   ACTIVE_MEMBERS: 'Miembros activos',
   GROUPS_COUNT: 'Grupos',
   SHARED_STORIES: 'Historias compartidas',
-  ABOUT_COMMUNITY_TITLE: 'Quiénes forman parte de nuestra comunidad',
-  ABOUT_COMMUNITY_DESC: 'Somos personas con discapacidad, familias, cuidadores y profesionales comprometidos con la inclusión.',
+  ABOUT_COMMUNITY_TITLE: 'Nuestra comunidad',
+  ABOUT_COMMUNITY_DESC: 'Somos personas con alguna condición, familias, cuidadores y profesionales comprometidos con la inclusión.',
   STATS_LOADING: 'Cargando estadísticas...',
   
   // Relative time
@@ -85,7 +85,7 @@ export const SOCIAL_UI = {
   EMPTY_POSTS_DESC: 'Comparte experiencias, preguntas o recursos con la comunidad',
   
   // Messages fallback
-  USER_FALLBACK: 'Usuario',
+  USER_FALLBACK: 'Usuario/a',
   
   // Form labels
   FORM_NAME_LABEL: 'Nombre *',

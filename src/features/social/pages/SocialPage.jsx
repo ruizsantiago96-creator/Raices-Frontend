@@ -503,16 +503,22 @@ export default function SocialPage() {
 
       <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
 
-        {/* Tab selector */}
-        <div className="social-tabs animate-fade-in-up" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        {/* Header */}
+        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Comunidad</h1>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Conecta, comparte y crece junto a otros</p>
+        </div>
+
+        {/* iOS-style Segmented Control */}
+        <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24 }}>
           {[
             { key: 'community', label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
             { key: 'messages', label: SOCIAL_UI.TAB_MESSAGES, icon: Icons.message },
             { key: 'about', label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 'var(--radius-pill)', border: mainTab === t.key ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: mainTab === t.key ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: mainTab === t.key ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: mainTab === t.key ? 700 : 500, fontSize: 14, fontFamily: 'var(--font-body)' }}>
-              {t.icon({ s: 16 })} <span>{t.label}</span>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: mainTab === t.key ? 'var(--bg-surface)' : 'transparent', boxShadow: mainTab === t.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: mainTab === t.key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: mainTab === t.key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease' }}>
+              {t.icon({ s: 15 })} <span>{t.label}</span>
             </button>
           ))}
         </div>

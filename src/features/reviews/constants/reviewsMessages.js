@@ -4,14 +4,14 @@
 
 export const REVIEWS_TOAST = {
   REVIEW_DELETED: 'Reseña eliminada',
-  REVIEW_DELETE_FAILED: 'Error al eliminar la reseña',
+  REVIEW_DELETE_FAILED: 'No pudimos eliminar la reseña. Intenta de nuevo.',
 }
 
 export const REVIEWS_UI = {
   TITLE: 'Moderación de reseñas',
-  EMPTY_STATE: 'No hay reseñas',
-  EMPTY_HINT: 'Cuando los usuarios califiquen instituciones aparecerán aquí',
+  EMPTY_STATE: 'No hay reseñas pendientes',
+  EMPTY_HINT: 'Cuando las personas califiquen instituciones, aparecerán aquí',
   DELETE_TITLE: 'Eliminar reseña',
-  DELETE_MESSAGE: '¿Eliminar esta reseña? El rating de la institución se recalculará automáticamente.',
+  DELETE_MESSAGE: '¿Eliminar esta reseña? La calificación de la institución se actualizará automáticamente.',
   DELETE_CONFIRM: 'Sí, eliminar',
 }

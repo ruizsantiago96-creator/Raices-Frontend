@@ -3,26 +3,26 @@
  */
 
 export const USERS_TOAST = {
-  USER_UPDATED: 'Usuario actualizado',
-  USER_UPDATE_FAILED: 'Error al actualizar el usuario',
-  USER_ACTIVATED: 'Usuario activado',
+  USER_UPDATED: '¡Usuario actualizado!',
+  USER_UPDATE_FAILED: 'No pudimos actualizar el usuario. Intenta de nuevo.',
+  USER_ACTIVATED: '¡Usuario activado!',
   USER_DEACTIVATED: 'Usuario desactivado',
-  USER_TOGGLE_FAILED: 'Error al cambiar estado del usuario',
-  ROLE_UPDATED: 'Rol actualizado',
-  ROLE_UPDATE_FAILED: 'Error al cambiar el rol',
+  USER_TOGGLE_FAILED: 'No pudimos cambiar el estado. Intenta de nuevo.',
+  ROLE_UPDATED: '¡Rol actualizado!',
+  ROLE_UPDATE_FAILED: 'No pudimos cambiar el rol. Intenta de nuevo.',
   USER_DELETED: 'Usuario eliminado',
-  USER_DELETE_FAILED: 'Error al eliminar el usuario',
+  USER_DELETE_FAILED: 'No pudimos eliminar el usuario. Intenta de nuevo.',
 }
 
 export const USERS_UI = {
   TITLE: 'Gestión de usuarios',
-  SEARCH_PLACEHOLDER: 'Buscar por nombre o email...',
+  SEARCH_PLACEHOLDER: '¿Qué usuario buscas?',
   FILTER_ALL: 'Todos los roles',
   FILTER_ADMIN: 'Admin',
   FILTER_INSTITUTION: 'Institución',
-  FILTER_TUTOR: 'Tutor',
-  FILTER_PCD: 'Persona c/ disc.',
-  EMPTY_STATE: 'No se encontraron usuarios',
+  FILTER_TUTOR: 'Cuidador/a',
+  FILTER_PCD: 'Persona c/ condición',
+  EMPTY_STATE: 'No encontramos usuarios con esos criterios',
   TABLE_HEADERS: {
     USER: 'Usuario',
     ROLE: 'Rol',
@@ -52,7 +52,7 @@ export const USERS_UI = {
 export const ROLE_LABELS = {
   admin: 'Admin',
   institution: 'Institución',
-  tutor: 'Tutor',
-  pcd: 'Persona c/ disc.',
+  tutor: 'Cuidador/a',
+  pcd: 'Persona c/ condición',
   user: 'Usuario',
 }

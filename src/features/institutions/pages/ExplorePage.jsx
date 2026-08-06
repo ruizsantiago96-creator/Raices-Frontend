@@ -121,7 +121,10 @@ export default function ExplorePage() {
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
         <TopNav currentPage="explore" />
         <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 24px' }}>Explorar instituciones</h1>
+          <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
+        </div>
           <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
@@ -165,7 +168,10 @@ export default function ExplorePage() {
       <AppSidebar currentPage="explore" />
       <TopNav user={user} onLogout={() => { useAuthStore.getState().logout(); navigate('/'); }} currentPage="explore" />
       <main className="responsive-main">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 24px' }}>Explorar instituciones</h1>
+        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
+        </div>
         <div className="explore-search-bar" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
@@ -230,7 +236,7 @@ export default function ExplorePage() {
         {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
         {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
             {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
           </>
         ) : (
@@ -263,7 +269,10 @@ function ErrorState({ onRetry }) {
 function InstitutionCard({ inst, isFav, onToggleFav }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ height: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'box-shadow 0.2s ease' }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <CategoryTag label={inst.category} color={color} />
         {onToggleFav && (<button onClick={onToggleFav} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isFav ? '#C4789A' : 'var(--fg3)', padding: 0, display: 'flex' }}>{Icons.heart({ s: 18, filled: isFav })}</button>)}
@@ -271,7 +280,7 @@ function InstitutionCard({ inst, isFav, onToggleFav }) {
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.3 }}>{inst.name}</div>
       <div style={{ fontSize: 14, color: 'var(--fg3)', lineHeight: 1.5, flex: 1 }}>{inst.description?.slice(0, 80)}{inst.description?.length > 80 ? '...' : ''}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--fg3)' }}>{Icons.mapPin({ s: 14 })} {inst.city}{inst.state ? `, ${inst.state}` : ''}</div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
         <span style={{ fontSize: 13, color: '#D4944C', display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.star({ s: 14, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}<span style={{ color: 'var(--fg3)' }}>({inst.rating_count ?? 0})</span></span>
         {isFav !== undefined && (<Link to={`/institution/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>)}
       </div>
@@ -282,7 +291,10 @@ function InstitutionCard({ inst, isFav, onToggleFav }) {
 function InstitutionRow({ inst, isFav, onToggleFav }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '16px 20px', boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', gap: 16 }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 16, transition: 'box-shadow 0.2s ease' }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
+    >
       <div style={{ width: 48, height: 48, borderRadius: '50% 50% 50% 14%', background: `color-mix(in oklch, ${color} 15%, transparent)`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18, fontFamily: 'var(--font-display)', fontWeight: 700 }}>{inst.name?.[0]}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>

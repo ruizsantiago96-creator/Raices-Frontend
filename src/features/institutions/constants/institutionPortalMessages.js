@@ -6,34 +6,34 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const PORTAL_TOAST = {
   // Vacantes
-  JOB_CREATED: 'Vacante publicada con éxito',
-  JOB_CREATE_FAILED: 'No se pudo crear la vacante',
-  JOB_UPDATED: 'Vacante actualizada',
-  JOB_UPDATE_FAILED: 'No se pudo actualizar la vacante',
+  JOB_CREATED: '¡Vacante publicada con éxito!',
+  JOB_CREATE_FAILED: 'No pudimos publicar la vacante. Intenta de nuevo.',
+  JOB_UPDATED: '¡Vacante actualizada!',
+  JOB_UPDATE_FAILED: 'No pudimos actualizar la vacante. Intenta de nuevo.',
   JOB_DELETED: 'Vacante eliminada',
-  JOB_DELETE_FAILED: 'No se pudo eliminar la vacante',
+  JOB_DELETE_FAILED: 'No pudimos eliminar la vacante. Intenta de nuevo.',
   STATUS_CHANGED: 'Estado de la vacante actualizado',
-  STATUS_CHANGE_FAILED: 'No se pudo cambiar el estado',
+  STATUS_CHANGE_FAILED: 'No pudimos cambiar el estado. Intenta de nuevo.',
   
   // Candidatos
   APPLICATION_UPDATED: 'Estado del candidato actualizado',
-  APPLICATION_UPDATE_FAILED: 'No se pudo actualizar el estado',
+  APPLICATION_UPDATE_FAILED: 'No pudimos actualizar el estado. Intenta de nuevo.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
 export const PORTAL_UI = {
   // Título
-  PAGE_TITLE: 'Portal de Institución',
-  PAGE_SUBTITLE: 'Gestiona tus vacantes y candidatos',
+  PAGE_TITLE: 'Tu espacio de gestión',
+  PAGE_SUBTITLE: 'Administra tus vacantes y candidatos',
   
   // Tabs
-  TAB_POSTULACIONES: 'Mis Postulaciones',
-  TAB_CANDIDATOS: 'Candidatos Postulados',
+  TAB_POSTULACIONES: 'Mis Vacantes',
+  TAB_CANDIDATOS: 'Personas interesadas',
   
   // Botones
-  CREATE_JOB: 'Publicar nueva oferta',
+  CREATE_JOB: 'Publicar nueva oportunidad',
   CREATE_JOB_LOADING: 'Publicando...',
-  VIEW_APPLICANTS: 'Ver candidatos',
+  VIEW_APPLICANTS: 'Ver personas interesadas',
   EDIT_JOB: 'Editar',
   DELETE_JOB: 'Eliminar',
   TOGGLE_STATUS: 'Cambiar estado',
@@ -42,13 +42,13 @@ export const PORTAL_UI = {
   CONFIRM_DELETE: 'Eliminar vacante',
   
   // Formularios - Crear vacante
-  CREATE_JOB_TITLE: 'Publicar nueva vacante',
+  CREATE_JOB_TITLE: 'Publicar nueva oportunidad',
   JOB_TITLE_LABEL: 'Título *',
   JOB_TITLE_PLACEHOLDER: 'Ej: Terapeuta Ocupacional',
   JOB_DESC_LABEL: 'Descripción',
-  JOB_DESC_PLACEHOLDER: 'Describe la vacante...',
+  JOB_DESC_PLACEHOLDER: 'Describe la oportunidad...',
   JOB_REQUIREMENTS_LABEL: 'Requisitos',
-  JOB_REQUIREMENTS_PLACEHOLDER: 'Requisitos del puesto...',
+  JOB_REQUIREMENTS_PLACEHOLDER: '¿Qué se necesita para esta oportunidad?',
   MODALITY_LABEL: 'Modalidad',
   MODALITY_PRESENCIAL: 'Presencial',
   MODALITY_REMOTO: 'Remoto',
@@ -61,7 +61,7 @@ export const PORTAL_UI = {
   STATE_PLACEHOLDER: 'Yucatán',
   SALARY_LABEL: 'Rango salarial',
   SALARY_PLACEHOLDER: '$15,000 - $20,000 MXN',
-  INCLUSIVE_CHECKBOX: 'Vacante inclusiva para personas con discapacidad',
+  INCLUSIVE_CHECKBOX: 'Oportunidad inclusiva para personas con alguna condición',
   
   // Estados de vacante
   STATUS_ACTIVE: 'Activa',
@@ -69,15 +69,15 @@ export const PORTAL_UI = {
   
   // Estados de candidato
   APP_STATUS_PENDING: 'Pendiente',
-  APP_STATUS_REVIEWED: 'En Revisión',
-  APP_STATUS_ACCEPTED: 'Aceptado',
-  APP_STATUS_REJECTED: 'Rechazado',
+  APP_STATUS_REVIEWED: 'En revisión',
+  APP_STATUS_ACCEPTED: 'Aceptado/a',
+  APP_STATUS_REJECTED: 'No seleccionado/a',
   
   // Filtros de candidatos
-  FILTER_ALL: 'Todos',
+  FILTER_ALL: 'Todas',
   FILTER_PENDING: 'Pendientes',
-  FILTER_REVIEWED: 'En Revisión',
-  FILTER_ACCEPTED: 'Aceptados',
+  FILTER_REVIEWED: 'En revisión',
+  FILTER_ACCEPTED: 'Aceptados/as',
   
   // Tabla de candidatos
   COL_NAME: 'Nombre',
@@ -85,7 +85,7 @@ export const PORTAL_UI = {
   COL_DATE: 'Fecha de postulación',
   COL_STATUS: 'Estado',
   COL_ACTIONS: 'Acciones',
-  COL_CANDIDATES: 'Candidatos',
+  COL_CANDIDATES: 'Personas interesadas',
   
   // Tabla de postulaciones
   COL_TITLE: 'Título',
@@ -97,23 +97,23 @@ export const PORTAL_UI = {
   
   // Confirmaciones
   DELETE_CONFIRM_TITLE: 'Eliminar vacante',
-  DELETE_CONFIRM_MESSAGE: '¿Estás seguro de que deseas eliminar esta vacante? Esta acción no se puede deshacer.',
+  DELETE_CONFIRM_MESSAGE: '¿Eliminar esta vacante? Esta acción no se puede deshacer.',
   
   // Vacío
-  NO_POSTULACIONES: 'No tienes vacantes publicadas',
-  NO_POSTULACIONES_HINT: 'Crea tu primera vacante para empezar a recibir candidatos',
-  NO_CANDIDATES: 'No hay candidatos registrados',
-  NO_CANDIDATES_HINT: 'Cuando los candidatos se postulen a tus vacantes, aparecerán aquí',
+  NO_POSTULACIONES: 'Aún no has publicado vacantes',
+  NO_POSTULACIONES_HINT: 'Crea tu primera oportunidad para empezar a recibir candidatos',
+  NO_CANDIDATES: 'No hay personas interesadas aún',
+  NO_CANDIDATES_HINT: 'Cuando alguien se postule a tus vacantes, aparecerá aquí',
   
   // Búsqueda
-  SEARCH_PLACEHOLDER: 'Buscar por título, ciudad o categoría...',
-  SEARCH_CANDIDATES_PLACEHOLDER: 'Buscar por nombre, vacante o email...',
+  SEARCH_PLACEHOLDER: '¿Qué vacante buscas?',
+  SEARCH_CANDIDATES_PLACEHOLDER: '¿Qué candidato buscas?',
   
   // Estadísticas
   STAT_ACTIVE: 'Vacantes activas',
   STAT_TOTAL_POSTULANTS: 'Total de candidatos',
   STAT_PENDING: 'Pendientes de revisión',
-  STAT_ACCEPTED: 'Aceptados',
+  STAT_ACCEPTED: 'Aceptados/as',
 }
 
 // ─── Colores de estado ────────────────────────────────────

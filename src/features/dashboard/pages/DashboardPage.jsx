@@ -41,18 +41,18 @@ export default function DashboardPage() {
         {/* Greeting */}
         <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both', position: 'relative', zIndex: 10 }}>
           <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 14%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
+                Hola, {user?.full_name?.split(' ')[0] ?? 'bienvenid@'}
+              </h1>
+              <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Tu ecosistema personalizado</p>
+            </div>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, overflow: 'hidden', flexShrink: 0 }}>
               {user?.avatar_url ? (
                 <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 user?.full_name?.[0]?.toUpperCase() ?? '?'
               )}
-            </div>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                Hola, {user?.full_name?.split(' ')[0] ?? 'bienvenid@'}
-              </h1>
-              <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>Tu ecosistema personalizado</p>
             </div>
           </div>
         </div>
@@ -87,14 +87,11 @@ export default function DashboardPage() {
         {/* AI Analysis Panel */}
         <div className="scroll-reveal animate-fade-in-up delay-2" style={{ marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50% 50% 50% 10%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {Icons.brain({ s: 16 })}
-            </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-              Análisis IA — Próximos pasos
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
+              Próximos pasos
             </h2>
             {aiInsights?.mock && (
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: 'color-mix(in oklch, #D4944C 15%, transparent)', color: '#D4944C', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'var(--bg-cool)', color: 'var(--fg3)' }}>
                 Demo
               </span>
             )}
@@ -109,7 +106,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : aiInsights?.next_steps?.length > 0 ? (
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 24, boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {aiInsights.next_steps.map((step, i) => (
                   <div key={i} className={`animate-step`} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, animationDelay: `${i * 0.1}s` }}>
@@ -148,7 +145,7 @@ export default function DashboardPage() {
 
         {/* Recommendations */}
         <div className="scroll-reveal animate-fade-in-up delay-3" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 12 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
             Recomendaciones para ti
           </h2>
           <Link to="/explore" style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
@@ -202,7 +199,7 @@ export default function DashboardPage() {
 function InstitutionCard({ inst, isFav, onToggleFav }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'all 0.2s ease' }}>
+    <div className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'all 0.2s ease' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <CategoryTag label={inst.category} color={color} />
         <button onClick={onToggleFav} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isFav ? 'var(--color-salud)' : 'var(--fg3)', padding: 0, display: 'flex' }}>

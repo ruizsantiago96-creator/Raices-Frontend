@@ -6,19 +6,19 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const PROFILE_TOAST = {
   // Avatar
-  AVATAR_INVALID_FORMAT: 'Formato no permitido. Usa PNG, JPG o JPEG',
-  AVATAR_TOO_LARGE: 'La imagen no puede superar 5MB',
-  AVATAR_UPDATED: 'Avatar actualizado correctamente',
-  AVATAR_UPDATE_ERROR: 'Error al subir la foto',
-  AVATAR_DELETED: 'Foto de perfil eliminada correctamente',
-  AVATAR_DELETE_ERROR: 'Error al eliminar la foto',
+  AVATAR_INVALID_FORMAT: 'Formato no reconocido. Usa PNG, JPG o JPEG',
+  AVATAR_TOO_LARGE: 'La imagen es muy grande. Intenta con una de menos de 5MB',
+  AVATAR_UPDATED: '¡Foto de perfil actualizada!',
+  AVATAR_UPDATE_ERROR: 'No pudimos subir la foto. Intenta de nuevo.',
+  AVATAR_DELETED: 'Foto eliminada',
+  AVATAR_DELETE_ERROR: 'No pudimos eliminar la foto. Intenta de nuevo.',
   
   // Perfil
-  PROFILE_UPDATED: 'Perfil actualizado',
-  PROFILE_UPDATE_ERROR: 'Error al guardar',
+  PROFILE_UPDATED: '¡Tu perfil se actualizó correctamente!',
+  PROFILE_UPDATE_ERROR: 'No pudimos guardar los cambios. Intenta de nuevo.',
   
   // Onboarding
-  ONBOARDING_COMPLETED: '¡Perfil completado!',
+  ONBOARDING_COMPLETED: '¡Tu perfil está completo!',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
@@ -35,7 +35,7 @@ export const PROFILE_UI = {
   DELETE_PHOTO: 'Eliminar foto',
   
   // Editar formulario
-  EDIT_TITLE: 'Editar datos personales',
+  EDIT_TITLE: 'Editar mis datos',
   NAME_LABEL: 'Nombre completo',
   CITY_LABEL: 'Ciudad',
   STATE_LABEL: 'Estado',
@@ -43,56 +43,56 @@ export const PROFILE_UI = {
   STATE_PLACEHOLDER: 'Yucatán',
   
   // Estados de rol
-  ROLE_PCD: 'Persona con discapacidad',
-  ROLE_TUTOR: 'Tutor o familiar',
+  ROLE_PCD: 'Persona con condición',
+  ROLE_TUTOR: 'Cuidador/a',
   ROLE_INSTITUTION: 'Institución',
   ROLE_ADMIN: 'Administrador',
   ROLE_USER: 'Usuario',
   
   // Estadísticas
-  DISABILITY_STAT_LABEL: 'tipo(s) de discapacidad',
+  DISABILITY_STAT_LABEL: 'condición(es)',
   NEEDS_STAT_LABEL: 'perfil de necesidades',
   VERIFIED_STAT_LABEL: 'identidad verificada',
   
   // Perfil de necesidades
-  NEEDS_PROFILE_TITLE: 'Perfil de necesidades',
-  UPDATE_LINK: 'Actualizar perfil',
-  RETAKE_TEST_LINK: 'Volver a hacer el test',
+  NEEDS_PROFILE_TITLE: 'Cuéntanos sobre ti',
+  UPDATE_LINK: 'Actualizar mi perfil',
+  RETAKE_TEST_LINK: 'Volver a hacer el cuestionario',
   LIFE_STAGE_LABEL: 'Etapa de vida',
-  DISABILITY_TYPES_LABEL: 'Tipos de discapacidad',
-  COMMUNICATION_MODES_LABEL: 'Modos de comunicación',
+  DISABILITY_TYPES_LABEL: 'Condición o situación',
+  COMMUNICATION_MODES_LABEL: 'Cómo te comunicas',
   MOBILITY_NEEDS_LABEL: 'Necesidades de movilidad',
   
   // Estado vacío
-  EMPTY_TITLE: 'Completa tu perfil de necesidades',
-  EMPTY_DESCRIPTION: 'Con esta información la IA puede recomendarte instituciones que realmente encajen contigo',
+  EMPTY_TITLE: 'Cuéntanos más sobre ti',
+  EMPTY_DESCRIPTION: 'Con esta información podemos recomendarte opciones que realmente se ajusten a lo que necesitas',
   COMPLETE_NOW_BUTTON: 'Completar ahora',
-  RETAKE_TEST_BUTTON: 'Volver a hacer el test',
+  RETAKE_TEST_BUTTON: 'Volver a hacer el cuestionario',
   
   // Error
-  ERROR_TITLE: 'No se pudo cargar el perfil',
-  ERROR_DESCRIPTION: 'Verifica tu conexión e intenta de nuevo',
+  ERROR_TITLE: 'No pudimos cargar tu perfil',
+  ERROR_DESCRIPTION: '¿Puedes verificar tu conexión e intentar de nuevo?',
   
   // Confirmación
-  CONFIRM_DELETE_AVATAR: '¿Estás seguro de que deseas eliminar tu foto de perfil?',
+  CONFIRM_DELETE_AVATAR: '¿Eliminar tu foto de perfil?',
   
   // Onboarding - Pasos
   ONBOARDING_STEPS: [
-    { title: 'Datos generales', desc: 'Conocer lo básico nos ayuda a personalizar tu entorno.' },
-    { title: 'Condición y necesidades', desc: 'Adaptar la accesibilidad a tus necesidades específicas.' },
-    { title: 'Etapa de vida', desc: 'Identificar tu momento para sugerir apoyos relevantes.' },
-    { title: 'Historial y recorrido', desc: 'Queremos saber qué has hecho para continuar construyendo.' },
-    { title: 'Tus objetivos', desc: '¿Hacia dónde vamos? Tus metas de corto y mediano plazo.' },
-    { title: 'Estado actual', desc: 'Cómo te sientes hoy y en qué necesitas más soporte.' },
+    { title: 'Datos generales', desc: 'Conocerte un poco nos ayuda a personalizar tu experiencia.' },
+    { title: 'Tu condición y necesidades', desc: 'Para adaptar todo a lo que realmente necesitas.' },
+    { title: 'Etapa de vida', desc: 'Para sugerirte apoyos que realmente te sirvan.' },
+    { title: 'Tu recorrido', desc: 'Queremos saber qué has intentado para continuar desde ahí.' },
+    { title: 'Tus metas', desc: '¿Qué te gustaría lograr? Tus objetivos nos guían.' },
+    { title: 'Cómo te sientes', desc: 'Hoy y en general, en qué necesitas más acompañamiento.' },
   ],
   
   // Severidad
-  SEVERITY_OPTIONS: ['Bajo', 'Medio', 'Alto'],
+  SEVERITY_OPTIONS: ['Leve', 'Moderado', 'Significativo'],
   
   // Onboarding - Botones
   ONBOARDING_NEXT: 'Siguiente',
   ONBOARDING_BACK: 'Volver',
-  ONBOARDING_FINISH: 'Finalizar perfil',
+  ONBOARDING_FINISH: 'Finalizar',
   ONBOARDING_FINISH_LOADING: 'Guardando...',
 }
 

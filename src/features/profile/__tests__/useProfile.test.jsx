@@ -131,6 +131,7 @@ describe('features/profile/hooks/useProfile', () => {
           edad: null,
           experienciaLaboral: null,
           experienciaSocial: null,
+          fechaNacimiento: null,
         })
       })
     })

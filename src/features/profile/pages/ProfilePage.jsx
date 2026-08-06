@@ -214,8 +214,8 @@ export default function ProfilePage() {
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
-    card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 },
-    sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: 20 },
+    sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     row: { display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 16 },
     field: { flex: 1 },
     chip: (color) => ({
@@ -245,12 +245,10 @@ export default function ProfilePage() {
       <main className="responsive-main">
         <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
           
-          {/* Header/Breadcrumbs */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 32px' }}>
-            <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-              Perfil de Usuario
-            </h1>
-            
+          {/* Header */}
+          <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Mi perfil</h1>
+            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Gestiona tu información personal</p>
           </div>
 
           {isLoading ? (
@@ -341,7 +339,14 @@ export default function ProfilePage() {
                   {stage && (
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
-                      <span style={s.chip('var(--primary)')}>{stage.label}</span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={s.chip('var(--primary)')}>{stage.label}</span>
+                        {data?.profiling?.age && (
+                          <span style={s.chip('#4A5568')}>
+                            {data.profiling.age} años
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                   {disabilities.length > 0 && (

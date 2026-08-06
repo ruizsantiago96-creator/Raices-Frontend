@@ -6,26 +6,26 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const ADMIN_TOAST = {
   // Instituciones
-  INSTITUTION_APPROVED: 'Institución aprobada',
-  INSTITUTION_APPROVE_FAILED: 'No se pudo aprobar la institución',
+  INSTITUTION_APPROVED: '¡Institución aprobada con éxito!',
+  INSTITUTION_APPROVE_FAILED: 'No pudimos aprobar la institución. Intenta de nuevo.',
   INSTITUTION_REJECTED: 'Institución rechazada',
-  INSTITUTION_REJECT_FAILED: 'No se pudo rechazar la institución',
-  INSTITUTION_VERIFIED: 'Verificación actualizada',
-  INSTITUTION_VERIFY_FAILED: 'No se pudo actualizar la verificación',
+  INSTITUTION_REJECT_FAILED: 'No pudimos rechazar la institución. Intenta de nuevo.',
+  INSTITUTION_VERIFIED: '¡Verificación actualizada!',
+  INSTITUTION_VERIFY_FAILED: 'No pudimos actualizar la verificación. Intenta de nuevo.',
   
   // Usuarios
   USER_TOGGLED: 'Estado del usuario actualizado',
-  USER_TOGGLE_FAILED: 'No se pudo cambiar el estado',
-  USER_ROLE_CHANGED: 'Rol actualizado',
-  USER_ROLE_CHANGE_FAILED: 'No se pudo cambiar el rol',
+  USER_TOGGLE_FAILED: 'No pudimos cambiar el estado. Intenta de nuevo.',
+  USER_ROLE_CHANGED: '¡Rol actualizado!',
+  USER_ROLE_CHANGE_FAILED: 'No pudimos cambiar el rol. Intenta de nuevo.',
   
   // Reseñas
   REVIEW_DELETED: 'Reseña eliminada',
-  REVIEW_DELETE_FAILED: 'No se pudo eliminar la reseña',
+  REVIEW_DELETE_FAILED: 'No pudimos eliminar la reseña. Intenta de nuevo.',
   
   // Configuración
-  SETTINGS_UPDATED: 'Configuración guardada',
-  SETTINGS_UPDATE_FAILED: 'No se pudo guardar la configuración',
+  SETTINGS_UPDATED: '¡Configuración guardada!',
+  SETTINGS_UPDATE_FAILED: 'No pudimos guardar la configuración. Intenta de nuevo.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────

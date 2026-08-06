@@ -21,14 +21,19 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 
 /* ═══════════════════════════════════════════════════════════
    DESIGN TOKENS (CSS Custom Properties)
    ═══════════════════════════════════════════════════════════ */
 :root {
   /* Layout */
-  --sidebar-width: 260px;
+  --sidebar-width: 220px;
   --main-max-width: 100%;
+  --sidebar-bg: rgba(0, 29, 38, 0.92);
   
   /* Colors - Primary */
   --primary: #004E52;
@@ -600,13 +605,108 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   bottom: 0;
   width: var(--sidebar-width);
   z-index: 100;
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: none;
   transition: width 0.25s ease, background-color 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.15) transparent;
-  border-right: 1px solid var(--border-color);
 }
+
+/* Custom WebKit scrollbar styling to prevent layout/cutout bleed */
+.responsive-sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.responsive-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.responsive-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+}
+
+.responsive-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Desktop Sidebar Navigation Item ─────────────────── */
+.sidebar-desktop-nav-item {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-right: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  width: auto;
+}
+
+.sidebar-desktop-nav-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 2;
+}
+
+.sidebar-desktop-nav-item.active {
+  background: var(--bg-warm);
+  color: var(--primary) !important;
+  font-weight: 700;
+  border-radius: 24px 0 0 24px;
+  margin-right: 0;
+  animation: activeTabEntrance 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: right center;
+}
+
+@keyframes activeTabEntrance {
+  from {
+    transform: scaleX(0.85);
+    opacity: 0.8;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Curved cutout pseudo-elements for active desktop sidebar item */
+.sidebar-desktop-nav-item.active::before,
+.sidebar-desktop-nav-item.active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-desktop-nav-item.active::before {
+  top: -20px;
+  background: radial-gradient(circle at top left, transparent 20px, var(--bg-warm) 21px);
+}
+
+.sidebar-desktop-nav-item.active::after {
+  bottom: -20px;
+  background: radial-gradient(circle at bottom left, transparent 20px, var(--bg-warm) 21px);
+}
+
+
 
 .responsive-main {
   margin-left: max(var(--sidebar-width), calc(var(--sidebar-width) + (100% - var(--sidebar-width) - var(--main-max-width)) / 2));
@@ -633,7 +733,29 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   border-bottom: 1px solid var(--border-color);
   font-family: var(--font-body);
   box-sizing: border-box;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, margin-left 0.25s ease, width 0.25s ease;
+}
+
+/* ── Sidebar Collapsed State overrides ───────────────── */
+html.sidebar-collapsed {
+  --sidebar-width: 70px;
+}
+
+html.sidebar-collapsed .sidebar-text,
+html.sidebar-collapsed .sidebar-badge {
+  display: none !important;
+}
+
+html.sidebar-collapsed .sidebar-logo-container {
+  padding-left: 5px !important;
+}
+
+html.sidebar-collapsed .sidebar-user-container {
+  padding-left: 7px !important;
+}
+
+html.sidebar-collapsed .sidebar-user-container a {
+  justify-content: center !important;
 }
 
 .responsive-header {
@@ -697,7 +819,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 /* ── Small Laptop (≥768px) ──────────────────────────── */
 @media (min-width: 768px) and (max-width: 991px) {
   :root {
-    --sidebar-width: 240px;
+    --sidebar-width: 200px;
   }
   .responsive-main {
     padding: 20px 20px;

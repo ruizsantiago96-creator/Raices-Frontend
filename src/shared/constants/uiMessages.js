@@ -5,39 +5,39 @@
 
 // ─── Mensajes de Loading ──────────────────────────────────
 export const LOADING_MESSAGES = {
-  GENERIC: 'Cargando...',
-  SLOW: 'Cargando, por favor espera...',
-  DATA: 'Cargando datos...',
-  SAVE: 'Guardando...',
-  DELETE: 'Eliminando...',
-  SEND: 'Enviando...',
-  PROCESS: 'Procesando...',
+  GENERIC: 'Un momento...',
+  SLOW: 'Esto está tardando un poco más, gracias por tu paciencia...',
+  DATA: 'Preparando tu información...',
+  SAVE: 'Guardando tus cambios...',
+  DELETE: 'Procesando...',
+  SEND: 'Enviando tu mensaje...',
+  PROCESS: 'Trabajando en ello...',
 }
 
 // ─── Mensajes de Éxito ────────────────────────────────────
 export const SUCCESS_MESSAGES = {
-  SAVED: 'Guardado correctamente',
-  UPDATED: 'Actualizado correctamente',
-  DELETED: 'Eliminado correctamente',
-  CREATED: 'Creado correctamente',
-  SENT: 'Enviado correctamente',
+  SAVED: '¡Listo! Todo guardado',
+  UPDATED: '¡Perfecto! Tus cambios se guardaron',
+  DELETED: 'Eliminado con éxito',
+  CREATED: '¡Creado con éxito!',
+  SENT: '¡Tu mensaje fue enviado!',
 }
 
 // ─── Mensajes de Error ────────────────────────────────────
 export const ERROR_MESSAGES = {
-  GENERIC: 'Ocurrió un error. Intenta de nuevo.',
-  NETWORK: 'Error de conexión. Verifica tu internet.',
-  UNAUTHORIZED: 'Tu sesión ha expirado. Inicia sesión nuevamente.',
-  NOT_FOUND: 'No se encontró el recurso solicitado.',
-  VALIDATION: 'Los datos proporcionados no son válidos.',
-  SERVER: 'Error del servidor. Intenta más tarde.',
-  PERMISSION: 'No tienes permisos para realizar esta acción.',
+  GENERIC: 'Algo no salió como esperábamos. Vamos a intentarlo de nuevo.',
+  NETWORK: 'Parece que hay un problema con tu conexión. ¿Puedes verificar tu internet?',
+  UNAUTHORIZED: 'Tu sesión terminó. Vuelve a iniciar sesión para continuar.',
+  NOT_FOUND: 'No encontramos lo que buscabas.',
+  VALIDATION: 'Revisa los datos que ingresaste, algo no coincide.',
+  SERVER: 'Nuestro servicio está teniendo problemas. Intenta en unos minutos.',
+  PERMISSION: 'No tienes acceso a esta sección.',
 }
 
 // ─── Mensajes de Confirmación ─────────────────────────────
 export const CONFIRM_MESSAGES = {
-  DELETE: '¿Estás seguro de que deseas eliminar esta acción?',
-  LEAVE: '¿Deseas salir sin guardar los cambios?',
+  DELETE: '¿Estás segura/o de que quieres eliminar esto?',
+  LEAVE: '¿Salir sin guardar tus cambios?',
   LOGOUT: '¿Cerrar sesión?',
 }
 
@@ -55,25 +55,25 @@ export const BUTTON_TEXT = {
   CONFIRM: 'Confirmar',
   ACCEPT: 'Aceptar',
   REJECT: 'Rechazar',
-  RETRY: 'Reintentar',
+  RETRY: 'Intentar de nuevo',
   LOAD_MORE: 'Ver más',
   SHOW_ALL: 'Ver todo',
 }
 
 // ─── Placeholders de Input ────────────────────────────────
 export const INPUT_PLACEHOLDERS = {
-  SEARCH: 'Buscar...',
+  SEARCH: '¿Qué estás buscando?',
   EMAIL: 'correo@ejemplo.com',
   PASSWORD: '••••••••',
-  NAME: 'Nombre completo',
-  PHONE: 'Teléfono',
-  MESSAGE: 'Escribe un mensaje...',
-  COMMENT: 'Escribe un comentario...',
+  NAME: 'Tu nombre completo',
+  PHONE: 'Tu teléfono',
+  MESSAGE: 'Escribe tu mensaje aquí...',
+  COMMENT: 'Comparte tu opinión...',
 }
 
 // ─── Estados de Página ────────────────────────────────────
 export const PAGE_STATES = {
-  EMPTY: 'No hay elementos para mostrar',
-  NO_DATA: 'No se encontraron datos',
-  COMING_SOON: 'Próximamente disponible',
+  EMPTY: 'Aquí aparecerá contenido pronto',
+  NO_DATA: 'No encontramos información por el momento',
+  COMING_SOON: 'Esto estará disponible muy pronto',
 }

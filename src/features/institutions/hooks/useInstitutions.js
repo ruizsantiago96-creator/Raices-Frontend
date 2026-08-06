@@ -200,3 +200,20 @@ export function useDeleteInstitution() {
     },
   })
 }
+
+/**
+ * Hook para obtener el detalle completo de una institución (admin o propietario).
+ * GET /api/instituciones/:id/detalle
+ * Retorna la institución sin importar su estado (pendiente, inactiva o verificada).
+ * @param {string} id - ID único de la institución
+ */
+export function useInstitutionDetail(id) {
+  return useQuery({
+    queryKey: ['institution-detail', id],
+    queryFn: () => api.get(`/instituciones/${id}/detalle`).then(r => {
+      const inst = r.data?.datos ?? r.data
+      return mapInstitucion(inst)
+    }),
+    enabled: !!id,
+  })
+}

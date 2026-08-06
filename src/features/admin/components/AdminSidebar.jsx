@@ -1,7 +1,26 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Icons } from '@shared/components/shared'
 
 export default function AdminSidebar({ tab, onTab, pendingCount, alertCritical }) {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true'
+  })
+
+  useEffect(() => {
+    if (isCollapsed) {
+      document.documentElement.classList.add('sidebar-collapsed')
+    } else {
+      document.documentElement.classList.remove('sidebar-collapsed')
+    }
+  }, [isCollapsed])
+
+  const handleCollapseToggle = () => {
+    const nextVal = !isCollapsed
+    setIsCollapsed(nextVal)
+    localStorage.setItem('sidebar_collapsed', String(nextVal))
+  }
+
   const NAV = [
     { key: 'overview',      label: 'Inicio',         icon: Icons.home },
     { key: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
@@ -14,16 +33,14 @@ export default function AdminSidebar({ tab, onTab, pendingCount, alertCritical }
 
   return (
     <nav aria-label="Panel de administración" className="responsive-sidebar" style={{
-      background: '#001D26',
       display: 'flex', flexDirection: 'column',
-      padding: '20px 12px', gap: 4,
+      padding: '20px 0 20px 12px', gap: 4,
     }}>
       {/* Brand logo at top */}
-      <div style={{ padding: '8px 12px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="sidebar-logo-container" style={{ padding: '8px 0 24px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
         <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {Icons.shield({ s: 18 })}
         </div>
-        <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Admin</span>
       </div>
 
       {/* Nav items */}
@@ -33,20 +50,12 @@ export default function AdminSidebar({ tab, onTab, pendingCount, alertCritical }
           return (
             <button key={item.key} onClick={() => onTab(item.key)}
               aria-current={active ? 'page' : undefined}
-              style={{
-                background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
-                borderRadius: 'var(--radius-md)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                color: active ? '#fff' : 'rgba(255,255,255,0.55)',
-                transition: 'all 0.2s ease', padding: '10px 12px',
-                fontFamily: 'var(--font-body)', fontWeight: active ? 700 : 500,
-                fontSize: 14, textAlign: 'left', position: 'relative',
-              }}>
+              className={`sidebar-desktop-nav-item ${active ? 'active' : ''}`}
+            >
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-              <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+              <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
               {(item.badge > 0) && (
-                <span aria-label={`${item.badge} pendientes`} style={{
+                <span className="sidebar-badge" aria-label={`${item.badge} pendientes`} style={{
                   marginLeft: 'auto',
                   minWidth: 18, height: 18, borderRadius: 9,
                   background: item.badgeColor, color: '#fff',
@@ -57,10 +66,31 @@ export default function AdminSidebar({ tab, onTab, pendingCount, alertCritical }
             </button>
           )
         })}
+
+        {/* Toggle collapse button */}
+        <button
+          type="button"
+          onClick={handleCollapseToggle}
+          className="sidebar-desktop-nav-item"
+          aria-label={isCollapsed ? "Mostrar menú" : "Ocultar menú"}
+          style={{
+            marginTop: 'auto',
+            marginBottom: 4,
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
+            {isCollapsed ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            )}
+          </span>
+          <span className="sidebar-text" style={{ lineHeight: 1.2 }}>Contraer menú</span>
+        </button>
       </div>
 
       {/* Volver a la app */}
-      <div style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+      <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
         <Link to="/dashboard" style={{
           textDecoration: 'none',
           display: 'flex', alignItems: 'center', gap: 12,
@@ -69,7 +99,7 @@ export default function AdminSidebar({ tab, onTab, pendingCount, alertCritical }
           transition: 'all 0.15s',
         }}>
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
-          <span>Ir a app</span>
+          <span className="sidebar-text">Ir a app</span>
         </Link>
       </div>
     </nav>

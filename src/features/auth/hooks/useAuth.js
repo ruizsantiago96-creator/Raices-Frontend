@@ -248,6 +248,8 @@ function mapPerfilNecesidadesToFrontend(p) {
     life_stage: p.etapaVida,
     current_concerns: p.preocupacionesActuales,
     support_level: p.nivelApoyo,
+    age: p.edad,
+    birth_date: p.fechaNacimiento,
   }
 }
 
@@ -273,6 +275,8 @@ function mapPerfilNecesidadesToBackend(profiling) {
     etapaVida: profiling.life_stage ?? null,
     preocupacionesActuales: profiling.current_concerns ?? null,
     nivelApoyo: profiling.support_level ?? null,
+    edad: profiling.age ?? null,
+    fechaNacimiento: profiling.birth_date ?? null,
   }
 }
 
@@ -281,15 +285,29 @@ function mapPerfilNecesidadesToBackend(profiling) {
  * GET /api/usuarios/perfil
  */
 export function useProfile() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
   return useQuery({
     queryKey: ['profile'],
     queryFn: () => api.get('/usuarios/perfil').then(r => {
       const d = r.data?.datos ?? r.data
-      return {
+      const mapped = {
         ...mapUsuarioBackendToFrontend(d),
         profiling: mapPerfilNecesidadesToFrontend(d.perfilNecesidades),
       }
+      if (mapped.profiling) {
+        const userId = user?.id || mapped.id
+        if (userId) {
+          const localBirthDate = localStorage.getItem(`raices_birth_date_${userId}`)
+          const localAge = localStorage.getItem(`raices_age_${userId}`)
+          if (localBirthDate && !mapped.profiling.birth_date) {
+            mapped.profiling.birth_date = localBirthDate
+          }
+          if (localAge && !mapped.profiling.age) {
+            mapped.profiling.age = Number(localAge)
+          }
+        }
+      }
+      return mapped
     }),
     enabled: !!token,
   })
@@ -314,6 +332,15 @@ export function useUpdateProfile() {
       // Si se proporcionan datos de perfilNecesidades, incluirlos
       if (data.profiling) {
         body.perfilNecesidades = mapPerfilNecesidadesToBackend(data.profiling)
+        const userId = user?.id
+        if (userId) {
+          if (data.profiling.birth_date) {
+            localStorage.setItem(`raices_birth_date_${userId}`, data.profiling.birth_date)
+          }
+          if (data.profiling.age) {
+            localStorage.setItem(`raices_age_${userId}`, data.profiling.age)
+          }
+        }
       }
       return api.put('/usuarios/perfil', body).then(r => r.data)
     },

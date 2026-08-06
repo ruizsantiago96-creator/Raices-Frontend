@@ -88,6 +88,11 @@ export const DEPENDENT_ENDPOINTS = {
     path: '/usuarios/dependientes',
     response: 'Dependiente[]',
   },
+  COUNT: {
+    method: 'GET',
+    path: '/usuarios/dependientes/count',
+    response: { total: 'number', limite: 'number', restantes: 'number' },
+  },
   GET: {
     method: 'GET',
     path: '/usuarios/dependientes/:id',
@@ -121,6 +126,18 @@ export const DEPENDENT_ENDPOINTS = {
     path: '/usuarios/dependientes/:id',
     response: { exito: 'boolean' },
   },
+  MIS_PERSONAS: {
+    method: 'GET',
+    path: '/usuarios/mis-personas',
+    params: { pagina: 'number', limite: 'number', ordenarPor: 'string', direccion: 'string', buscar: 'string?' },
+    response: {
+      datos: [{ id: 'string', nombre: 'string', esCuentaVinculada: 'boolean', features: 'object', fotoUrl: 'string|null', pcdUserId: 'string?', fechaCreacion: 'string' }],
+      total: 'number',
+      pagina: 'number',
+      limite: 'number',
+      totalPaginas: 'number',
+    },
+  },
   LINK_PCD: {
     method: 'POST',
     path: '/usuarios/vincular-pcd',
@@ -150,6 +167,18 @@ export const DEPENDENT_ENDPOINTS = {
     body: 'Features',
     response: 'Features',
   },
+  PATCH_FEATURES: {
+    method: 'PATCH',
+    path: '/usuarios/dependientes/:dependienteId/features',
+    body: 'Features (parcial)',
+    response: { id: 'string', features: 'Features' },
+  },
+  PATCH_FEATURES_PCD_VINCULADO: {
+    method: 'PATCH',
+    path: '/usuarios/vincular-pcd/:pcdId/features',
+    body: 'Features (parcial)',
+    response: { id: 'string', features: 'Features' },
+  },
   UPDATE_FEATURES_PCD_VINCULADO: {
     method: 'PUT',
     path: '/usuarios/pcd-vinculado/:pcdUserId/features',
@@ -159,7 +188,7 @@ export const DEPENDENT_ENDPOINTS = {
   UNLINK_PCD: {
     method: 'DELETE',
     path: '/usuarios/pcd-vinculado/:pcdUserId/desvincular',
-    response: { exito: 'boolean' },
+    response: { desvinculado: 'boolean', pcdUserId: 'string', tutorId: 'string' },
   },
 }
 
@@ -176,6 +205,12 @@ export const INSTITUTION_ENDPOINTS = {
   GET: {
     method: 'GET',
     path: '/instituciones/:id',
+    response: 'Institucion',
+  },
+  GET_DETAIL: {
+    method: 'GET',
+    path: '/instituciones/:id/detalle',
+    description: 'Detalle completo (admin o propietario) — incluye instituciones pendientes/inactivas',
     response: 'Institucion',
   },
   CREATE: {

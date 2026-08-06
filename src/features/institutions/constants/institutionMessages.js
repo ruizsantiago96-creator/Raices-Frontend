@@ -6,18 +6,18 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const INSTITUTION_TOAST = {
   // Reseñas
-  REVIEW_UPDATED: 'Reseña actualizada',
-  REVIEW_UPDATE_FAILED: 'No se pudo actualizar',
+  REVIEW_UPDATED: '¡Tu reseña se actualizó!',
+  REVIEW_UPDATE_FAILED: 'No pudimos actualizar tu reseña. Intenta de nuevo.',
   REVIEW_DELETED: 'Reseña eliminada',
-  REVIEW_DELETE_FAILED: 'No se pudo eliminar',
-  REVIEW_CREATED: '¡Reseña publicada con éxito!',
-  REVIEW_CREATE_FAILED: 'No se pudo publicar la reseña. Intenta de nuevo.',
-  REVIEW_LOGIN_REQUIRED: 'Debes iniciar sesión para dejar una reseña.',
+  REVIEW_DELETE_FAILED: 'No pudimos eliminar la reseña. Intenta de nuevo.',
+  REVIEW_CREATED: '¡Gracias por compartir tu experiencia!',
+  REVIEW_CREATE_FAILED: 'No pudimos publicar tu reseña. Intenta de nuevo.',
+  REVIEW_LOGIN_REQUIRED: 'Necesitas iniciar sesión para dejar una reseña.',
   
   // Institución
-  INSTITUTION_CREATED: 'Institución creada con éxito',
-  INSTITUTION_CREATE_FAILED: 'Error al crear la institución. Intenta de nuevo.',
-  INSTITUTION_NAME_REQUIRED: 'El nombre de la institución es obligatorio.',
+  INSTITUTION_CREATED: '¡Institución registrada con éxito!',
+  INSTITUTION_CREATE_FAILED: 'No pudimos registrar la institución. Intenta de nuevo.',
+  INSTITUTION_NAME_REQUIRED: 'El nombre de la institución es necesario para continuar.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
@@ -32,16 +32,16 @@ export const INSTITUTION_UI = {
   
   // Formularios
   REVIEW_PLACEHOLDER: 'Comparte tu experiencia con esta institución (opcional)',
-  SEARCH_PLACEHOLDER: 'Buscar instituciones, servicios, ciudades...',
+  SEARCH_PLACEHOLDER: '¿Qué institución o servicio buscas?',
   
   // Estados
   LOADING: 'Buscando...',
-  NO_RESULTS: 'Sin resultados',
+  NO_RESULTS: 'No encontramos resultados',
   NO_ADDRESS: 'Dirección no disponible',
   ANONYMOUS: 'Anónimo',
   
   // AI Assistant
-  AI_ERROR: 'Hubo un error al conectar con el asistente. Intenta de nuevo.',
+  AI_ERROR: 'No pudimos conectar con el asistente. Intenta de nuevo.',
   
   // Categorías
   CATEGORIES: [
@@ -52,7 +52,7 @@ export const INSTITUTION_UI = {
   ],
   
   // Filtros
-  ALL_FILTER: 'Todos',
+  ALL_FILTER: 'Todas',
   
   // Vista
   GRID_VIEW: 'Vista cuadrícula',
@@ -68,6 +68,6 @@ export const INSTITUTION_UI = {
   CREATE_PHONE_PLACEHOLDER: 'Ej. 81 1234 5678',
   CREATE_EMAIL_PLACEHOLDER: 'Ej. contacto@institucion.org',
   CREATE_WEBSITE_PLACEHOLDER: 'Ej. https://www.institucion.org',
-  CREATE_LOGIN_REQUIRED: 'Inicia sesión para registrar una institución',
+  CREATE_LOGIN_REQUIRED: 'Necesitas iniciar sesión para registrar una institución',
   CREATE_REGISTER: 'Registrarse',
 }

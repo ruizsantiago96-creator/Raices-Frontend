@@ -57,29 +57,31 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
               {NOTIFICATION_UI.PAGE_TITLE}
             </h1>
-            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>
+            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>
               {unread > 0 ? `${unread} ${NOTIFICATION_UI.UNREAD_SUFFIX}` : NOTIFICATION_UI.ALL_READ}
             </p>
           </div>
           {unread > 0 && (
             <button onClick={handleMarkAllRead} disabled={markAll.isPending}
-              style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bg-cool)', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-cool)'}>
               {Icons.check({ s: 14 })} {NOTIFICATION_UI.MARK_ALL_READ}
             </button>
           )}
         </div>
 
-        {/* Filters */}
-        <div className="animate-fade-in-up delay-1" style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {/* iOS-style Segmented Control */}
+        <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 20 }}>
           {[
             { k: 'all', label: `Todas (${notifications.length})` },
             { k: 'unread', label: `Sin leer (${unread})` },
           ].map(f => (
             <button key={f.k} onClick={() => setFilter(f.k)}
-              style={{ padding: '7px 16px', borderRadius: 20, border: filter === f.k ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: filter === f.k ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: filter === f.k ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontWeight: filter === f.k ? 700 : 500, fontSize: 13, fontFamily: 'var(--font-body)' }}>
+              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: filter === f.k ? 'var(--bg-surface)' : 'transparent', boxShadow: filter === f.k ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: filter === f.k ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: filter === f.k ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease' }}>
               {f.label}
             </button>
           ))}

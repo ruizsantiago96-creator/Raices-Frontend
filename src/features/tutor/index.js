@@ -6,8 +6,20 @@
  */
 
 // ── Hooks ──────────────────────────────────────────────────────────
-export { useAI } from './hooks/useAI'
-export { useDependientes, useAddDependiente, useUpdateDependent, useDeleteDependent } from './hooks/useDependientes'
+export { useChat, useAINextSteps, useAIForDependent } from './hooks/useAI'
+export {
+  useDependientes,
+  useAddDependiente,
+  useUpdateDependent,
+  useDeleteDependent,
+  useMisPersonas,
+  useDependientesCount,
+  useVincularPCD,
+  useUnlinkPCD,
+  useUpdateDependentFeatures,
+  useUpdateDependentFeaturesPatch,
+  useUpdatePCDLinkedFeaturesPatch,
+} from './hooks/useDependientes'
 export { usePermisos, useUpdatePermisos, useRegisterDependiente, DEFAULT_PERMISOS, PERMISOS_CONFIG } from './hooks/usePermisos'
 
 // ── Components ─────────────────────────────────────────────────────

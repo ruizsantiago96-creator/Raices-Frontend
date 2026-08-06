@@ -82,8 +82,11 @@ export function useMyApplications() {
 export function useApplyJob() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ jobId, cover_letter }) =>
-      api.post(`/empleo/${jobId}/postularse`, { cartaPresentacion: cover_letter }).then(r => r.data),
+    mutationFn: ({ jobId, cover_letter, candidateId }) => {
+      const payload = { cartaPresentacion: cover_letter }
+      if (candidateId) payload.candidateId = candidateId
+      return api.post(`/empleo/${jobId}/postularse`, payload).then(r => r.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs', 'applied'] })
       qc.invalidateQueries({ queryKey: ['jobs', 'my-applications'] })

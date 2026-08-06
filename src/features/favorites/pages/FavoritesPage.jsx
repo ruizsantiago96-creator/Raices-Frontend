@@ -18,12 +18,12 @@ export default function FavoritesPage() {
       <TopNav user={user} onLogout={logout} currentPage="favorites" />
 
       <main className="responsive-main">
-        <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
-          Instituciones guardadas
-        </h1>
-        <p className="animate-fade-in-up delay-1" style={{ fontSize: 15, color: 'var(--fg3)', margin: '0 0 32px' }}>
-          {isLoading ? '' : `${favorites.length} institución${favorites.length !== 1 ? 'es' : ''} guardada${favorites.length !== 1 ? 's' : ''}`}
-        </p>
+        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Guardados</h1>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>
+            {isLoading ? '' : `${favorites.length} institución${favorites.length !== 1 ? 'es' : ''} guardada${favorites.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
 
         {isError ? (
           <BackendFallback method={FAVORITE_ENDPOINTS.LIST.method} endpoint={FAVORITE_ENDPOINTS.LIST.path} onRetry={() => refetch()} />
@@ -49,7 +49,10 @@ export default function FavoritesPage() {
             {favorites.map((inst, i) => {
               const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
               return (
-                <div key={inst.id} className="animate-scale-in" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${i * 0.07}s` }}>
+                <div key={inst.id} className="animate-scale-in" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${i * 0.07}s`, transition: 'box-shadow 0.2s ease' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <CategoryTag label={inst.category} color={color} />
                     <button onClick={() => toggle.mutate(inst.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-salud)', padding: 0, display: 'flex' }}>

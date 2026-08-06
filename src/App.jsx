@@ -17,6 +17,7 @@ import SocialPage from '@features/social/pages/SocialPage'
 import FavoritesPage from '@features/favorites/pages/FavoritesPage'
 import InstitutionPage from '@features/institutions/pages/InstitutionPage'
 import CrearInstitucionPage from '@features/institutions/pages/CrearInstitucionPage'
+import EditarInstitucionPage from '@features/institutions/pages/EditarInstitucionPage'
 import AdminPage from '@features/admin/pages/AdminPage'
 import InstitutionPortalPage from '@features/institutions/pages/InstitutionPortalPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
@@ -157,9 +158,11 @@ export default function App() {
                 <Route path="/institution/:id" element={<ProtectedRoute><InstitutionPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
+                <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                 <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
+                <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icons } from '@shared/components/shared'
 
 export default function MobileInstitutionDrawer({ isOpen, onClose, tab, onTab, stats }) {
+  const navigate = useNavigate()
   const NAV = [
     { key: 'postulaciones', label: 'Mis Postulaciones', icon: Icons.briefcase, badge: stats?.activeJobs },
     { key: 'candidatos', label: 'Candidatos', icon: Icons.users, badge: stats?.pendingApplicants },
+    { key: 'editar', label: 'Editar institución', icon: Icons.edit, action: () => navigate('/institution-portal/editar') },
   ]
 
   return (
@@ -50,7 +52,7 @@ export default function MobileInstitutionDrawer({ isOpen, onClose, tab, onTab, s
           {NAV.map(item => {
             const active = tab === item.key
             return (
-              <button key={item.key} onClick={() => { onTab(item.key); onClose() }}
+              <button key={item.key} onClick={() => { item.action ? item.action() : onTab(item.key); onClose() }}
                 aria-current={active ? 'page' : undefined}
                 style={{
                   background: active ? 'rgba(255,255,255,0.08)' : 'transparent',

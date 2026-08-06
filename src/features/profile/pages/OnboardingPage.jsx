@@ -6,9 +6,8 @@ import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, BrandMark, labelStyle, inputStyle } from '@shared/components/shared'
 
 const STEPS = [
-  { title: 'Datos generales', desc: 'Conocer lo básico nos ayuda a personalizar tu entorno.', icon: Icons.user },
+  { title: 'Fecha de nacimiento', desc: 'Conocer tu cumpleaños nos ayuda a personalizar tu entorno y calcular tu etapa de vida.', icon: Icons.user },
   { title: 'Condición y necesidades', desc: 'Adaptar la accesibilidad a tus necesidades específicas.', icon: Icons.activity },
-  { title: 'Etapa de vida', desc: 'Identificar tu momento para sugerir apoyos relevantes.', icon: Icons.milestone },
   { title: 'Historial y recorrido', desc: 'Queremos saber qué has hecho para continuar construyendo.', icon: Icons.compass },
   { title: 'Tus objetivos', desc: '¿Hacia dónde vamos? Tus metas de corto y mediano plazo.', icon: Icons.target },
   { title: 'Estado actual', desc: 'Cómo te sientes hoy y en qué necesitas más soporte.', icon: Icons.heartPulse },
@@ -20,6 +19,7 @@ export default function OnboardingPage() {
     disability_types: [], disability_severity: '', communication_modes: [],
     mobility_needs: [], tech_access: [], preferred_zones: [],
     stage: '', goals: [], support_areas: '',
+    birth_date: '', age: '',
   })
   const saveProfiling = useSaveProfiling()
   const { addToast } = useUiStore()
@@ -297,17 +297,86 @@ export default function OnboardingPage() {
         <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
 
           <div style={{ marginBottom: 12 }}>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso {step} de 6</p>
+            <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso {step} de 5</p>
             <div style={{ height: 6, background: 'var(--border-color)', borderRadius: 3, marginBottom: 28, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${(step / 6) * 100}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }} />
+              <div style={{ height: '100%', width: `${(step / 5) * 100}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }} />
             </div>
           </div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>{cur.title}</h1>
           <p style={{ fontSize: 16, color: 'var(--fg2)', margin: '0 0 28px', lineHeight: 1.5 }}>{cur.desc}</p>
 
           {step === 1 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div><label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>Edad</label><input type="number" min="0" max="120" placeholder="Ej. 24" className="onboarding-input" value={data.age || ''} onChange={e => { const val = e.target.value; if (val === '' || (Number(val) >= 0 && Number(val) <= 120)) setData(d => ({ ...d, age: val })) }} /></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>Ingresa tu fecha de nacimiento</label>
+                <input 
+                  type="date" 
+                  className="onboarding-input" 
+                  max={new Date().toISOString().split('T')[0]}
+                  min="1900-01-01"
+                  value={data.birth_date || ''} 
+                  onChange={e => {
+                    const bdate = e.target.value
+                    let calculatedAge = ''
+                    let calculatedStage = ''
+                    if (bdate) {
+                      const birthDate = new Date(bdate)
+                      if (!isNaN(birthDate.getTime())) {
+                        const today = new Date()
+                        let age = today.getFullYear() - birthDate.getFullYear()
+                        const m = today.getMonth() - birthDate.getMonth()
+                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                          age--
+                        }
+                        calculatedAge = String(age)
+                        if (age <= 12) calculatedStage = 'infancia'
+                        else if (age <= 17) calculatedStage = 'adolescencia'
+                        else if (age <= 29) calculatedStage = 'adultoJoven'
+                        else if (age <= 59) calculatedStage = 'adulto'
+                        else calculatedStage = 'mayor'
+                      }
+                    }
+                    setData(d => ({
+                      ...d,
+                      birth_date: bdate,
+                      age: calculatedAge,
+                      stage: calculatedStage
+                    }))
+                  }} 
+                />
+              </div>
+              
+              {data.birth_date && data.age && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 12, 
+                  padding: '14px 18px', 
+                  background: 'var(--primary-subtle)', 
+                  borderLeft: '4px solid var(--primary)', 
+                  borderRadius: '0 8px 8px 0',
+                  marginTop: 10
+                }}>
+                  <div style={{ color: 'var(--primary)' }}>
+                    {Icons.sparkles({ s: 20 })}
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', display: 'block' }}>
+                      Edad e intervalo de vida calculados
+                    </span>
+                    <span style={{ fontSize: 13, color: 'var(--fg2)' }}>
+                      Tienes <strong>{data.age} años</strong>, correspondiente a la etapa de{' '}
+                      <strong>
+                        {data.stage === 'infancia' && 'Infancia (0-12)'}
+                        {data.stage === 'adolescencia' && 'Adolescencia (13-17)'}
+                        {data.stage === 'adultoJoven' && 'Adulto joven (18-29)'}
+                        {data.stage === 'adulto' && 'Adulto (30-59)'}
+                        {data.stage === 'mayor' && 'Adulto mayor (60+)'}
+                      </strong>.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -339,18 +408,6 @@ export default function OnboardingPage() {
           )}
 
           {step === 3 && (
-            <div>
-              <label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>¿En qué etapa de vida te encuentras?</label>
-              <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                {STAGES.map((s, i) => {
-                  const val = getValue(s)
-                  return <div key={val || i}>{radioCard(getLabel(s), 'stage', data.stage === val, () => setData(d => ({ ...d, stage: val })))}</div>
-                })}
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div><label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>Educación</label>
                 <select className="onboarding-input" value={data.education || ''} onChange={e => setData(d => ({ ...d, education: e.target.value }))}>
@@ -370,7 +427,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 5 && (
+          {step === 4 && (
             <div>
               <label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>¿Qué estás buscando actualmente?</label>
               <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 16px' }}>Selecciona todas las que apliquen</p>
@@ -410,7 +467,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 6 && (
+          {step === 5 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div><label style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>¿Dónde sientes que necesitas más apoyo hoy?</label>
                 <textarea placeholder="Ej. En manejar la ansiedad, en encontrar apoyo escolar..." className="onboarding-input" style={{ height: 90, resize: 'none' }} value={data.support_areas} onChange={e => setData(d => ({ ...d, support_areas: e.target.value }))} />
@@ -437,8 +494,13 @@ export default function OnboardingPage() {
             : <button className="onboarding-btn-secondary" type="button" onClick={() => nav('/dashboard')}>
                 Completar después
               </button>}
-          {step < 6
-            ? <button className="onboarding-btn-primary" type="button" onClick={() => setStep(s => s + 1)}>
+          {step < 5
+            ? <button 
+                className="onboarding-btn-primary" 
+                type="button" 
+                disabled={step === 1 && !data.birth_date}
+                onClick={() => setStep(s => s + 1)}
+              >
                 Continuar {Icons.arrowRight({ s: 18 })}
               </button>
             : <button className="onboarding-btn-primary" type="button" onClick={handleFinish} disabled={saveProfiling.isPending}>
