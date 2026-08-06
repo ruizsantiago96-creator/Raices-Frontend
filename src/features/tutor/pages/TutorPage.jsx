@@ -421,7 +421,7 @@ function DependentCard({ dep, lifeStages = [], onEdit, onDelete, onConfigureFeat
 /* ── Formulario (modal) ── */
 function DependentForm({ initial, onCancel, onSave, saving, relationships = [], lifeStages = [], disabilities = [] }) {
   const [form, setForm] = useState({
-    id: initial?.id, nombreCompleto: initial?.nombreCompleto ?? '', parentesco: initial?.parentesco ?? relationships[0] ?? '', tiposDiscapacidad: initial?.tiposDiscapacidad ?? [], etapaVida: initial?.etapaVida ?? '', notas: initial?.notas ?? '',
+    id: initial?.id, nombreCompleto: initial?.nombreCompleto ?? '', parentesco: initial?.parentesco ?? relationships[0] ?? '', tiposDiscapacidad: initial?.tiposDiscapacidad ?? [], etapaVida: initial?.etapaVida ?? '', rangoEdad: initial?.rangoEdad ?? '', notas: initial?.notas ?? '',
   })
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
   const toggleDis = (d) => setForm(f => ({ ...f, tiposDiscapacidad: f.tiposDiscapacidad.includes(d) ? f.tiposDiscapacidad.filter(x => x !== d) : [...f.tiposDiscapacidad, d] }))
@@ -443,6 +443,10 @@ function DependentForm({ initial, onCancel, onSave, saving, relationships = [], 
               {disabilities.map(d => { const on = form.tiposDiscapacidad.includes(d); return (<button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on} style={{ padding: '8px 14px', minHeight: 44, borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, border: on ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: on ? 'var(--primary)' : 'var(--fg2)' }}>{on && <span aria-hidden="true">✓ </span>}{d}</button>) })}
             </div>
           </fieldset>
+          <div style={{ marginBottom: 18 }}>
+            <label htmlFor="dep-rango" style={labelStyle}>Rango de Edad</label>
+            <input id="dep-rango" style={inputStyle} value={form.rangoEdad} onChange={set('rangoEdad')} placeholder="Ej. 0-12" />
+          </div>
           <div style={{ marginBottom: 24 }}><label htmlFor="dep-notes" style={labelStyle}>{TUTOR_UI.NOTES_LABEL}</label><textarea id="dep-notes" value={form.notas} onChange={set('notas')} rows={3} placeholder={TUTOR_UI.NOTES_PLACEHOLDER} style={{ ...inputStyle, height: 'auto', paddingTop: 12, paddingBottom: 12, resize: 'vertical', lineHeight: 1.5 }} /></div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button 

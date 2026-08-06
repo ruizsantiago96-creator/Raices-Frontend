@@ -22,8 +22,10 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const [form, setForm] = useState({
     nombreCompleto: '',
     parentesco: PARENTESCOS[0] ?? '',
-    necesidades: [],
+    tiposDiscapacidad: [],
     etapaVida: '',
+    rangoEdad: '',
+    notas: '',
     // Campos para crear cuenta Firebase
     crearCuenta: false,
     email: '',
@@ -35,9 +37,9 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
   const toggleDiscapacidad = (d) =>
     setForm((f) => ({
       ...f,
-      necesidades: f.necesidades.includes(d)
-        ? f.necesidades.filter((x) => x !== d)
-        : [...f.necesidades, d],
+      tiposDiscapacidad: f.tiposDiscapacidad.includes(d)
+        ? f.tiposDiscapacidad.filter((x) => x !== d)
+        : [...f.tiposDiscapacidad, d],
     }))
 
   const handleSubmit = (e) => {
@@ -47,8 +49,10 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
     const payload = {
       nombreCompleto: form.nombreCompleto.trim(),
       parentesco: form.parentesco,
-      necesidades: form.necesidades,
+      tiposDiscapacidad: form.tiposDiscapacidad,
       etapaVida: form.etapaVida || null,
+      rangoEdad: form.rangoEdad || null,
+      notas: form.notas,
     }
 
     // Incluir datos de cuenta si se activó la opción
@@ -130,12 +134,24 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
             </select>
           </div>
 
+          {/* ── Rango de Edad ── */}
+          <div style={{ marginBottom: 18 }}>
+            <label htmlFor="dep-rango" style={labelStyle}>Rango de Edad</label>
+            <input
+              id="dep-rango"
+              style={inputStyle}
+              value={form.rangoEdad}
+              onChange={set('rangoEdad')}
+              placeholder="Ej. 0-12"
+            />
+          </div>
+
           {/* ── Tipos de discapacidad ── */}
           <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}>
             <legend style={{ ...labelStyle, padding: 0 }}>Tipo(s) de discapacidad</legend>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
               {DISABILIDADES.map((d) => {
-                const active = form.necesidades.includes(d)
+                const active = form.tiposDiscapacidad.includes(d)
                 return (
                   <button
                     key={d}
@@ -161,6 +177,18 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
               })}
             </div>
           </fieldset>
+
+          {/* ── Notas ── */}
+          <div style={{ marginBottom: 18 }}>
+            <label htmlFor="dep-notas" style={labelStyle}>Notas (opcional)</label>
+            <textarea
+              id="dep-notas"
+              style={{ ...inputStyle, height: 80, resize: 'vertical' }}
+              value={form.notas}
+              onChange={(e) => setForm(f => ({ ...f, notas: e.target.value }))}
+              placeholder="Información útil: terapias actuales, intereses, lo que necesita..."
+            />
+          </div>
 
           {/* ── Crear cuenta para el dependiente ── */}
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
