@@ -44,6 +44,8 @@ export function mapInstitucion(inst) {
     website: inst.website ?? inst.sitioWeb,
     rating_avg: inst.rating_avg ?? inst.calificacionPromedio,
     rating_count: inst.rating_count ?? inst.cantidadCalificaciones,
+    is_active: inst.is_active ?? inst.activa ?? inst.active,
+    is_verified: inst.is_verified ?? inst.verificada ?? inst.verified,
   }
 }
 

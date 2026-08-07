@@ -26,6 +26,7 @@ import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
 import AboutPage from '@features/about/pages/AboutPage'
 import DesignPreview from '@features/landing/pages/DesignPreview'
+import MainLayout from '@shared/components/MainLayout'
 
 /** Al cambiar de ruta, lleva el foco al contenido principal y sube el scroll
     — clave para que los lectores de pantalla anuncien la nueva página. */
@@ -149,21 +150,30 @@ export default function App() {
                 <Route path="/design-preview" element={<DesignPreview />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/auth" element={<AuthPage />} />
-                <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
-                <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
-                <Route path="/institution/nueva" element={<ProtectedRoute><CrearInstitucionPage /></ProtectedRoute>} />
-                <Route path="/institution/:id" element={<ProtectedRoute><InstitutionPage /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
-                <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
-                <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-                <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
-                <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
+
+                {/* 🛡️ Rutas Protegidas que comparten el MainLayout Global */}
+                <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/social" element={<SocialPage />} />
+                  <Route path="/favorites" element={<FavoritesPage />} />
+                  <Route path="/institution/nueva" element={<CrearInstitucionPage />} />
+                  <Route path="/institution/:id" element={<InstitutionPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
+                  <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
+                  <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
+                  <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
+                </Route>
+
+                {/* 🌍 Rutas Públicas que comparten el MainLayout Global */}
+                <Route element={<MainLayout />}>
+                  <Route path="/explore" element={<ExplorePage />} />
+                </Route>
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </FCMProvider>

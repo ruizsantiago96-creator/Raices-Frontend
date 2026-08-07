@@ -239,11 +239,9 @@ export default function ProfilePage() {
   const lastName = nameParts.slice(1).join(' ') || '—'
 
   return (
-    <div style={s.page}>
-      <AppSidebar currentPage="profile" />
-      <TopNav user={data} onLogout={logout} currentPage="profile" />
+    <>
       <main className="responsive-main">
-        <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
+      <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
           
           {/* Header */}
           <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
@@ -618,6 +616,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

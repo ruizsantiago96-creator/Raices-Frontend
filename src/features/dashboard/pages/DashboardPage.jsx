@@ -5,7 +5,7 @@ import { useDiscovery } from '@features/institutions'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useAINextSteps } from '../../tutor/hooks/useAI'
-import { Icons, CategoryTag, CATEGORY_COLORS, hashColor } from '@shared/components/shared'
+import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import BackendFallback from '@shared/components/BackendFallback'
 import { DISCOVERY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 
@@ -30,29 +30,16 @@ export default function DashboardPage() {
   const filledBasics = [profile?.full_name, profile?.city, profile?.state].filter(Boolean).length
   const profilePct = Math.min(100, Math.round(((hasProfiling ? 3 : 0) + filledBasics) / 6 * 100))
   const profileComplete = hasProfiling && filledBasics >= 2
-
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="dashboard" />
-      <TopNav user={user} onLogout={logout} currentPage="dashboard" />
-
-      <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Greeting */}
-        <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both', position: 'relative', zIndex: 10 }}>
-          <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
+        <div className="scroll-reveal" style={{ marginBottom: 36, animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both', position: 'relative', zIndex: 10 }}>            <div className="responsive-header dashboard-greeting" style={{ marginBottom: 8 }}>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
                 Hola, {user?.full_name?.split(' ')[0] ?? 'bienvenid@'}
               </h1>
               <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Tu ecosistema personalizado</p>
-            </div>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: user?.avatar_url ? 'transparent' : hashColor(user?.full_name ?? ''), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, overflow: 'hidden', flexShrink: 0 }}>
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                user?.full_name?.[0]?.toUpperCase() ?? '?'
-              )}
             </div>
           </div>
         </div>
@@ -192,7 +179,6 @@ export default function DashboardPage() {
         )}
         </div>
       </main>
-    </div>
   )
 }
 

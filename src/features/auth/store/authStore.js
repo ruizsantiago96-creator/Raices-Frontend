@@ -20,6 +20,9 @@ export const useAuthStore = create((set) => ({
     set({ token, user, refreshToken: refresh ?? null })
   },
   logout: () => {
+    // 🛡️ Evitar bucles infinitos de redirección si ya estamos deslogueados (solo en el navegador real)
+    if (process.env.NODE_ENV !== 'test' && !useAuthStore.getState().token && !getToken()) return
+
     // 🔒 PASO 1: Activar freno de mano — bloquea TODA creación de EventSource
     //    Esto debe ser lo PRIMERO que se ejecuta, antes de cualquier
     //    cambio de estado que pueda provocar re-renders en React.
@@ -35,5 +38,11 @@ export const useAuthStore = create((set) => ({
     //    Con el freno activo, ningún useEffect creará un nuevo
     //    EventSource durante el proceso de desmontaje.
     set({ token: null, user: null, refreshToken: null })
+
+    // PASO 5: Redirección inmediata y segura a la landing page.
+    //    Evita colisiones de estado en renders y limpia cachés pesadas de React Query.
+    if (typeof window !== 'undefined' && window.location && process.env.NODE_ENV !== 'test') {
+      window.location.replace('/')
+    }
   },
 }))

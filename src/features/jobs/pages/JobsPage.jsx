@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useJobs, useAppliedJobIds, useApplyJob, useMyApplications, useCreateJob } from '../hooks/useJobs'
+import { useMiInstitucion } from '@features/institutions/hooks/useInstitutions'
 import { useMessages, useSendMessage } from '@features/social/hooks/useMessages'
 import { useAuthStore } from '@features/auth'
 import { useDependientes, useUpdateDependent } from '@features/tutor'
@@ -1261,7 +1263,7 @@ function MessageModal({ job, onClose }) {
 }
 
 /* ─── JobCard (Apple-style minimal) ─────────────────────── */
-function JobCard({ job, applied, onApply, onMessage }) {
+function JobCard({ job, applied, onApply, onMessage, userRole, institutionId, onNavigateToPortal, onEditJob }) {
   const [expanded, setExpanded] = useState(false)
 
   // Build single-line info string
@@ -1324,18 +1326,60 @@ function JobCard({ job, applied, onApply, onMessage }) {
       {/* Action row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {applied ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, background: 'color-mix(in oklch, #1F8049 10%, transparent)', color: '#1F8049', fontSize: 13, fontWeight: 600 }}>
-              {Icons.check({ s: 13 })} {JOBS_UI.POSTULATED_BADGE}
-            </span>
+          {/* Role-based action buttons */}
+          {userRole === 'institution' ? (
+            /* Institution role: show edit/applicants buttons for own jobs */
+            (job.institution_id && String(job.institution_id) === String(institutionId)) ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEditJob?.(job) }}
+                  style={{
+                    padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+                    color: 'var(--primary)', border: '1px solid color-mix(in oklch, var(--primary) 20%, transparent)',
+                    cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in oklch, var(--primary) 18%, transparent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'color-mix(in oklch, var(--primary) 10%, transparent)' }}
+                >
+                  {Icons.edit({ s: 13 })} Editar vacante
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onNavigateToPortal?.('candidatos') }}
+                  style={{
+                    padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    background: 'color-mix(in oklch, #D4944C 10%, transparent)',
+                    color: '#D4944C', border: '1px solid color-mix(in oklch, #D4944C 20%, transparent)',
+                    cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in oklch, #D4944C 18%, transparent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'color-mix(in oklch, #D4944C 10%, transparent)' }}
+                >
+                  {Icons.users({ s: 13 })} Ver postulantes
+                </button>
+              </div>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, background: 'var(--bg-cool)', color: 'var(--fg3)', fontSize: 13, fontWeight: 500 }}>
+                {Icons.building({ s: 13 })} Vacante de otra institución
+              </span>
+            )
           ) : (
-            <button 
-              className="btn-primary" 
-              onClick={(e) => { e.stopPropagation(); onApply() }} 
-              style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 8, whiteSpace: 'nowrap' }}
-            >
-              {JOBS_UI.POSTULATE_BUTTON}
-            </button>
+            /* User / Tutor / other roles: show apply button */
+            applied ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, background: 'color-mix(in oklch, #1F8049 10%, transparent)', color: '#1F8049', fontSize: 13, fontWeight: 600 }}>
+                {Icons.check({ s: 13 })} {JOBS_UI.POSTULATED_BADGE}
+              </span>
+            ) : (
+              <button 
+                className="btn-primary" 
+                onClick={(e) => { e.stopPropagation(); onApply() }} 
+                style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 8, whiteSpace: 'nowrap' }}
+              >
+                {JOBS_UI.POSTULATE_BUTTON}
+              </button>
+            )
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1460,6 +1504,8 @@ function ApplicationCard({ app, onMessage }) {
 export default function JobsPage() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
+  const navigate = useNavigate()
+  const { data: institution } = useMiInstitucion()
   const [modality, setModality] = useState('Todos')
   const [tab, setTab] = useState('board')
   const [applyTarget, setApplyTarget] = useState(null)
@@ -1526,10 +1572,7 @@ export default function JobsPage() {
   const appsCount = applications.length
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="jobs" />
-      <TopNav user={user} onLogout={logout} currentPage="jobs" />
-
+    <>
       <main className="responsive-main" style={{ '--main-max-width': '900px' }}>
         {/* ── Header: Title Left, Actions Right ── */}
         <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
@@ -1684,7 +1727,7 @@ export default function JobsPage() {
               <>
                 <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {paginatedItems.map(job => (
-                    <div key={job.id} className="animate-fade-in-up"><JobCard job={job} applied={appliedIds.includes(job.id)} onApply={() => setApplyTarget(job)} onMessage={setMessageTarget} /></div>
+                    <div key={job.id} className="animate-fade-in-up"><JobCard job={job} applied={appliedIds.includes(job.id)} onApply={() => setApplyTarget(job)} onMessage={setMessageTarget} userRole={user?.role} institutionId={institution?.id} onNavigateToPortal={(targetTab) => navigate(targetTab ? `/institution-portal?tab=${targetTab}` : '/institution-portal')} onEditJob={(job) => navigate(`/institution-portal/editar?jobId=${job.id}`)} /></div>
                   ))}
                 </div>
 
@@ -1862,6 +1905,6 @@ export default function JobsPage() {
       {applyTarget && <ApplicationModal job={applyTarget} onClose={() => setApplyTarget(null)} />}
       {showCreateJob && <CreateJobModal onClose={() => setShowCreateJob(false)} />}
       {messageTarget && <MessageModal job={messageTarget} onClose={() => setMessageTarget(null)} />}
-    </div>
+    </>
   )
 }

@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { Icons, LeafIcon } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 
-export const AppSidebar = ({ currentPage }) => {
+export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount, alertCritical, stats }) => {
   const { user } = useAuthStore()
   const { sidebarOpen, setSidebarOpen } = useUiStore()
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -25,59 +25,114 @@ export const AppSidebar = ({ currentPage }) => {
     localStorage.setItem('sidebar_collapsed', String(nextVal))
   }
 
-  const items = [
-    { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
-    { id: 'explore', label: 'Explorar', icon: Icons.search, path: '/explore' },
-    { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs' },
-    { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites' },
-    { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social' },
-  ]
-  if (user?.role === 'tutor') {
-    items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
-  }
-  if (user?.role === 'institution') {
-    items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
-  }
-  if (user?.role === 'admin') {
-    items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
-  }
+  let items = []
+  let logoIcon = null
+  let title = 'Raíces'
 
-  // Bottom nav items (mobile) — show only the 5 main ones
-  const bottomItems = items.slice(0, 5)
+  if (mode === 'admin') {
+    logoIcon = Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    title = 'Admin'
+    items = [
+      { id: 'overview',      label: 'Inicio',         icon: Icons.home },
+      { id: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
+      { id: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: 'var(--color-empleo)' },
+      { id: 'users',         label: 'Usuarios',       icon: Icons.users },
+      { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
+      { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
+      { id: 'settings',      label: 'Config',         icon: Icons.target },
+    ]
+  } else if (mode === 'institution') {
+    logoIcon = Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    title = 'Panel'
+    items = [
+      { id: 'postulaciones', label: 'Mis Postulaciones', icon: Icons.briefcase, badge: stats?.activeJobs, badgeColor: 'var(--color-artes)' },
+      { id: 'candidatos', label: 'Candidatos', icon: Icons.users, badge: stats?.pendingApplicants, badgeColor: 'var(--color-empleo)' },
+      { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
+    ]
+  } else {
+    logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
+               user?.role === 'institution' ? Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
+               user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
+               <LeafIcon size={18} color="rgba(255,255,255,0.9)" />
+    title = 'Raíces'
+    items = [
+      { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
+      { id: 'explore', label: 'Explorar', icon: Icons.search, path: '/explore' },
+      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs' },
+      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites' },
+      { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social' },
+    ]
+    if (user?.role === 'tutor') {
+      items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
+    }
+    if (user?.role === 'institution') {
+      items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
+    }
+    if (user?.role === 'admin') {
+      items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
+    }
+  }
 
   return (
     <>
       {/* Desktop sidebar */}
-      <nav aria-label="Navegación principal" className="responsive-sidebar" style={{
+      <nav aria-label={mode === 'admin' ? "Panel de administración" : mode === 'institution' ? "Portal de institución" : "Navegación principal"} className="responsive-sidebar" style={{
         display: 'flex', flexDirection: 'column',
         padding: '20px 0 20px 12px', gap: 4,
       }}>
-        {/* Brand logo at top — icon changes by role */}
+        {/* Brand logo at top */}
         <div className="sidebar-logo-container" style={{ padding: '8px 0 24px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
           <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-             user?.role === 'institution' ? Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-             user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-             <LeafIcon size={18} color="rgba(255,255,255,0.9)" />}
+            {logoIcon}
           </div>
         </div>
+
         {/* Nav items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflow: 'visible' }}>
           {items.map((item) => {
-            const isActive = currentPage === item.id
+            const isActive = mode === 'app' ? currentPage === item.id : tab === item.id
+            const isLink = !!item.path
+
+            if (isLink) {
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
+                  style={{
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+                  <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
+                </Link>
+              )
+            }
+
             return (
-              <Link
+              <button
                 key={item.id}
-                to={item.path}
+                type="button"
+                onClick={() => onTab?.(item.id)}
                 aria-current={isActive ? 'page' : undefined}
                 className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
                 style={{
-                  textDecoration: 'none',
+                  alignSelf: 'stretch',
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
                 <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
-              </Link>
+                {(item.badge > 0) && (
+                  <span className="sidebar-badge" aria-label={`${item.badge} pendientes`} style={{
+                    marginLeft: 'auto',
+                    minWidth: 18, height: 18, borderRadius: 9,
+                    background: item.badgeColor, color: '#fff',
+                    fontSize: 10, fontWeight: 700, padding: '0 4px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{item.badge > 9 ? '9+' : item.badge}</span>
+                )}
+              </button>
             )
           })}
 
@@ -90,6 +145,7 @@ export const AppSidebar = ({ currentPage }) => {
             style={{
               marginTop: 'auto',
               marginBottom: 4,
+              alignSelf: 'stretch',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
@@ -102,6 +158,35 @@ export const AppSidebar = ({ currentPage }) => {
             <span className="sidebar-text" style={{ lineHeight: 1.2 }}>Contraer menú</span>
           </button>
         </div>
+
+        {/* Volver a la app link for sub-portals */}
+        {mode !== 'app' && (
+          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
+            <Link to="/dashboard" className="sidebar-desktop-nav-item" style={{
+              textDecoration: 'none',
+              color: 'rgba(255,255,255,0.45)',
+              marginRight: 0,
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
+              <span className="sidebar-text">Ir a app</span>
+            </Link>
+          </div>
+        )}
+
+        {/* User profile (only main app) */}
+        {mode === 'app' && user && (
+          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
+            <Link to="/profile" className="sidebar-desktop-nav-item" style={{
+              textDecoration: 'none',
+              marginRight: 0,
+            }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                {(user.full_name ?? '?')[0]?.toUpperCase()}
+              </div>
+              <span className="sidebar-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.full_name ?? 'Usuario'}</span>
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Mobile drawer navigation */}
@@ -122,7 +207,7 @@ export const AppSidebar = ({ currentPage }) => {
         />
         {/* Drawer panel */}
         <nav
-          aria-label="Navegación móvil lateral"
+          aria-label={mode === 'admin' ? "Navegación móvil administración" : mode === 'institution' ? "Navegación móvil portal" : "Navegación móvil lateral"}
           className="mobile-sidebar-drawer"
           style={{
             position: 'fixed',
@@ -145,12 +230,9 @@ export const AppSidebar = ({ currentPage }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '0 8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {user?.role === 'admin' ? Icons.shield({ s: 16, color: 'rgba(255,255,255,0.9)' }) :
-                 user?.role === 'institution' ? Icons.building({ s: 16, color: 'rgba(255,255,255,0.9)' }) :
-                 user?.role === 'tutor' ? Icons.users({ s: 16, color: 'rgba(255,255,255,0.9)' }) :
-                 <LeafIcon size={16} color="rgba(255,255,255,0.9)" />}
+                {logoIcon}
               </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Raíces</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{title}</span>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -171,17 +253,43 @@ export const AppSidebar = ({ currentPage }) => {
           </div>
 
           {/* Navigation Links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflow: 'hidden' }}>
             {items.map((item) => {
-              const isActive = currentPage === item.id
+              const isActive = mode === 'app' ? currentPage === item.id : tab === item.id
+              const isLink = !!item.path
+
+              if (isLink) {
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    aria-current={isActive ? 'page' : undefined}
+                    style={{
+                      textDecoration: 'none',
+                      background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      borderRadius: 'var(--radius-md)',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                      transition: 'all 0.2s ease', padding: '12px 14px',
+                      fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
+                      fontSize: 15,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+                    <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+                  </Link>
+                )
+              }
+
               return (
-                <Link
+                <button
                   key={item.id}
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
+                  type="button"
+                  onClick={() => { onTab?.(item.id); setSidebarOpen(false) }}
                   aria-current={isActive ? 'page' : undefined}
                   style={{
-                    textDecoration: 'none',
+                    border: 'none',
                     background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
                     borderRadius: 'var(--radius-md)',
                     display: 'flex', alignItems: 'center', gap: 12,
@@ -189,24 +297,49 @@ export const AppSidebar = ({ currentPage }) => {
                     transition: 'all 0.2s ease', padding: '12px 14px',
                     fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
                     fontSize: 15,
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                  <span style={{ lineHeight: 1.2 }}>{item.label}</span>
-                </Link>
+                  <span style={{ flex: 1, lineHeight: 1.2 }}>{item.label}</span>
+                  {(item.badge > 0) && (
+                    <span style={{
+                      minWidth: 18, height: 18, borderRadius: 9,
+                      background: item.badgeColor, color: '#fff',
+                      fontSize: 10, fontWeight: 700, padding: '0 4px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{item.badge > 9 ? '9+' : item.badge}</span>
+                  )}
+                </button>
               )
             })}
           </div>
 
-          {/* User profile at bottom */}
-          <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
-                {(user?.full_name ?? '?')[0]?.toUpperCase()}
+          {/* Bottom user / portal controls */}
+          {mode === 'app' ? (
+            <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
+                  {(user?.full_name ?? '?')[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.full_name ?? 'Usuario'}</span>
               </div>
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.full_name ?? 'Usuario'}</span>
             </div>
-          </div>
+          ) : (
+            <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+              <Link to="/dashboard" onClick={() => setSidebarOpen(false)} style={{
+                textDecoration: 'none',
+                display: 'flex', alignItems: 'center', gap: 12,
+                color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
+                padding: '12px 14px', borderRadius: 'var(--radius-md)',
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
+                <span>Ir a app</span>
+              </Link>
+            </div>
+          )}
         </nav>
       </div>
     </>

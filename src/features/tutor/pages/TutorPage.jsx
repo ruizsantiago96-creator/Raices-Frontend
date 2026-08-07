@@ -167,7 +167,8 @@ export default function TutorPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
+    <>
+      <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' }}>
       <style>{`
         .tutor-dropdown-item {
           display: flex;
@@ -196,10 +197,6 @@ export default function TutorPage() {
           background: color-mix(in oklch, var(--color-error) 10%, transparent) !important;
         }
       `}</style>
-      <AppSidebar currentPage="tutor" />
-      <TopNav user={user} onLogout={logout} currentPage="tutor" />
-
-      <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' }}>
         {/* ── Header: Title Left, Actions Right ── */}
         <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
           <div>
@@ -391,7 +388,7 @@ export default function TutorPage() {
           onClose={() => setPermissionsFor(null)}
         />
       )}
-    </div>
+    </>
   )
 }
 

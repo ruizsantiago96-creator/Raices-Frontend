@@ -39,8 +39,8 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --primary: #004E52;
   --primary-dark: #003A3D;
   --primary-subtle: rgba(0, 78, 82, 0.12);
-  --secondary: #EFD5E2;
-  --secondary-dark: #EFD5E2;
+  --secondary: #f0d5e9;
+  --secondary-dark: #f0d5e9;
   --secondary-subtle: rgba(26, 237, 21, 0.15);
   
   /* Colors - Background */
@@ -78,10 +78,10 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --color-vida: #004E52;
   
   /* Status Colors */
-  --color-success: #1AED15;
-  --color-warning: #F1FA3F;
-  --color-error: #B0434B;
-  --color-info: #004E52;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
   
   /* Typography */
   --font-display: 'Poppins', Georgia, serif;
@@ -641,8 +641,8 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   font-weight: 500;
   border-radius: var(--radius-md);
   padding: 10px 12px;
-  margin-right: 12px;
-  transition: all 0.2s ease;
+  margin-right: 20px;
+  transition: color 0.1s ease, background-color 0.1s ease;
   position: relative;
   border: none;
   cursor: pointer;
@@ -658,8 +658,9 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
 .sidebar-desktop-nav-item:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   z-index: 2;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-desktop-nav-item.active {
@@ -668,19 +669,26 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   font-weight: 700;
   border-radius: 24px 0 0 24px;
   margin-right: 0;
-  animation: activeTabEntrance 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: right center;
+  transition: none !important;
+  animation: active-bar-slide 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@keyframes activeTabEntrance {
+@keyframes active-bar-slide {
   from {
-    transform: scaleX(0.85);
-    opacity: 0.8;
+    transform: scaleX(0.88);
+    opacity: 0.9;
   }
   to {
     transform: scaleX(1);
     opacity: 1;
   }
+}
+
+.sidebar-desktop-nav-item.active:hover {
+  background: var(--bg-warm);
+  color: var(--primary) !important;
+  box-shadow: none;
 }
 
 /* Curved cutout pseudo-elements for active desktop sidebar item */
@@ -693,7 +701,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   height: 20px;
   pointer-events: none;
   z-index: 1;
-  transition: opacity 0.15s ease;
+  /* No transition - instant appearance to prevent dark shadow artifacts */
 }
 
 .sidebar-desktop-nav-item.active::before {
