@@ -22,10 +22,7 @@ import InstitutionReviews from '../components/InstitutionReviews'
 
 function LoadingState() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="explore" />
-      <TopNav currentPage="explore" />
-      <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 32, boxShadow: 'var(--shadow-sm)', marginBottom: 24 }}>
           <Skeleton w={80} h={24} radius={12} mb={20} />
           <Skeleton w="60%" h={36} mb={12} />
@@ -38,7 +35,6 @@ function LoadingState() {
           </div>
         </div>
       </main>
-    </div>
   )
 }
 
@@ -79,11 +75,7 @@ export default function InstitutionPage() {
   /* ── render ── */
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="explore" />
-      <TopNav user={user} onLogout={logout} currentPage="explore" />
-
-      <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '860px' }}>
 
         {/* Breadcrumb */}
         <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, fontSize: 14, color: 'var(--fg3)' }}>
@@ -108,6 +100,5 @@ export default function InstitutionPage() {
           user={user}
         />
       </main>
-    </div>
   )
 }

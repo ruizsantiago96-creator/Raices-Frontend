@@ -11,4 +11,16 @@ export const useUiStore = create((set) => ({
   sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
+  
+  // Tab states for administrative and institution portals
+  adminTab: localStorage.getItem('admin-tab') ?? 'overview',
+  setAdminTab: (tab) => {
+    localStorage.setItem('admin-tab', tab)
+    set({ adminTab: tab })
+  },
+  instPortalTab: localStorage.getItem('inst-portal-tab') ?? 'postulaciones',
+  setInstPortalTab: (tab) => {
+    localStorage.setItem('inst-portal-tab', tab)
+    set({ instPortalTab: tab })
+  },
 }))

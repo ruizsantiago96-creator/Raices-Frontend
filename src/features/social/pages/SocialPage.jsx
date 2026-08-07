@@ -497,10 +497,7 @@ export default function SocialPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="social" />
-      <TopNav user={user} onLogout={logout} currentPage="social" />
-
+    <>
       <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
 
         {/* Header */}
@@ -633,6 +630,6 @@ export default function SocialPage() {
       </main>
 
       {showCreateGroup && <CreateGroupModal onClose={() => setShowCreateGroup(false)} />}
-    </div>
+    </>
   )
 }

@@ -118,135 +118,128 @@ export default function ExplorePage() {
   /* ── Guest view ────────────────────────────────────────────── */
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-        <TopNav currentPage="explore" />
-        <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
-          <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+      <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
+        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
         </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar instituciones, servicios, ciudades..." style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }} />
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar instituciones, servicios, ciudades..." style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div className="explore-category-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
+          <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-surface)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
+          {CATEGORIES.map(cat => {
+            const active = category === cat.value
+            const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
+            return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-surface)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
+          })}
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+              {MOCK_INSTITUTIONS.slice(0, visibleCount).map(inst => (<InstitutionCard key={inst.id} inst={inst} />))}
             </div>
           </div>
-          <div className="explore-category-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
-            <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-surface)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
-            {CATEGORIES.map(cat => {
-              const active = category === cat.value
-              const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
-              return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-surface)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
-            })}
-          </div>
-          <div style={{ position: 'relative' }}>
-            <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {MOCK_INSTITUTIONS.slice(0, visibleCount).map(inst => (<InstitutionCard key={inst.id} inst={inst} />))}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg, var(--bg-warm) 0%, var(--bg-warm) 100%)', opacity: 0.85, borderRadius: 16 }}>
+            <div className="explore-guest-overlay" style={{ background: 'var(--bg-surface)', borderRadius: 20, padding: '48px 56px', textAlign: 'center', boxShadow: 'var(--shadow-xl)', maxWidth: 480, width: '100%' }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white' }}>{Icons.search({ s: 32 })}</div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px' }}>Para seguir explorando</h2>
+              <p style={{ fontSize: 16, color: 'var(--fg3)', margin: '0 0 32px', lineHeight: 1.6 }}>Regístrate gratis para descubrir instituciones, guardar favoritos y conectar con la comunidad.</p>
+              <div className="explore-guest-overlay-actions" style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+                <button onClick={() => navigate('/auth?mode=login')} className="btn-secondary" style={{ padding: '14px 32px', fontSize: 15, fontWeight: 600, borderRadius: 12, minWidth: 140 }}>Iniciar sesión</button>
+                <button onClick={() => navigate('/auth?mode=register')} className="btn-primary" style={{ padding: '14px 32px', fontSize: 15, fontWeight: 600, borderRadius: 12, minWidth: 140 }}>Registrarse</button>
               </div>
             </div>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg, var(--bg-warm) 0%, var(--bg-warm) 100%)', opacity: 0.85, borderRadius: 16 }}>
-              <div className="explore-guest-overlay" style={{ background: 'var(--bg-surface)', borderRadius: 20, padding: '48px 56px', textAlign: 'center', boxShadow: 'var(--shadow-xl)', maxWidth: 480, width: '100%' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white' }}>{Icons.search({ s: 32 })}</div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px' }}>Para seguir explorando</h2>
-                <p style={{ fontSize: 16, color: 'var(--fg3)', margin: '0 0 32px', lineHeight: 1.6 }}>Regístrate gratis para descubrir instituciones, guardar favoritos y conectar con la comunidad.</p>
-                <div className="explore-guest-overlay-actions" style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-                  <button onClick={() => navigate('/auth?mode=login')} className="btn-secondary" style={{ padding: '14px 32px', fontSize: 15, fontWeight: 600, borderRadius: 12, minWidth: 140 }}>Iniciar sesión</button>
-                  <button onClick={() => navigate('/auth?mode=register')} className="btn-primary" style={{ padding: '14px 32px', fontSize: 15, fontWeight: 600, borderRadius: 12, minWidth: 140 }}>Registrarse</button>
-                </div>
-              </div>
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     )
   }
 
   /* ── Authenticated view ──────────────────────────────────────── */
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-      <AppSidebar currentPage="explore" />
-      <TopNav user={user} onLogout={() => { useAuthStore.getState().logout(); navigate('/'); }} currentPage="explore" />
-      <main className="responsive-main">
-        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
-          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
+    <main className="responsive-main">
+      <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
+        <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
+      </div>
+      <div className="explore-search-bar" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar instituciones, servicios, ciudades..." style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-cool)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }} />
         </div>
-        <div className="explore-search-bar" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar instituciones, servicios, ciudades..." style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-cool)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <button onClick={() => setShowFilters(v => !v)} className={`btn-filter-banner ${showFilters || category || tipoDiscapacidad || edad || ciudad ? 'is-active' : ''}`} title="Filtros avanzados">
-            <span className="btn-filter-left">{Icons.sliders({ s: 18 })}</span>
-            <span className="btn-filter-center">FILTRAR</span>
-            <span className={`btn-filter-right ${showFilters ? 'is-open' : ''}`}>{Icons.chevronDown({ s: 16 })}</span>
-          </button>
-        </div>
+        <button onClick={() => setShowFilters(v => !v)} className={`btn-filter-banner ${showFilters || category || tipoDiscapacidad || edad || ciudad ? 'is-active' : ''}`} title="Filtros avanzados">
+          <span className="btn-filter-left">{Icons.sliders({ s: 18 })}</span>
+          <span className="btn-filter-center">FILTRAR</span>
+          <span className={`btn-filter-right ${showFilters ? 'is-open' : ''}`}>{Icons.chevronDown({ s: 16 })}</span>
+        </button>
+      </div>
 
-        {showFilters && (
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '20px 24px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ width: '100%' }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 8, fontFamily: 'var(--font-body)' }}>Categoría</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-warm)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
-                {CATEGORIES.map(cat => {
-                  const active = category === cat.value
-                  const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
-                  return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
-                })}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
-              <div style={{ flex: '1 1 180px', minWidth: 160 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Tipo de discapacidad</label>
-                <select value={tipoDiscapacidad} onChange={e => setTipoDiscapacidad(e.target.value)} style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-                  {DISABILITY_TYPES.map(dt => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
-                </select>
-              </div>
-              <div style={{ flex: '1 1 140px', minWidth: 120 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Edad</label>
-                <input type="number" min="0" max="120" value={edad} onChange={e => setEdad(e.target.value)} placeholder="Ej. 25" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ flex: '1 1 180px', minWidth: 160 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Ciudad</label>
-                <input type="text" value={ciudad} onChange={e => setCiudad(e.target.value)} placeholder="Ej. Monterrey" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              {(category || tipoDiscapacidad || edad || ciudad) && (
-                <button onClick={() => { setCategory(''); setTipoDiscapacidad(''); setEdad(''); setCiudad('') }} style={{ height: 40, padding: '0 16px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, transition: 'all 0.2s' }}>{Icons.x({ s: 14 })} Limpiar</button>
-              )}
+      {showFilters && (
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '20px 24px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ width: '100%' }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 8, fontFamily: 'var(--font-body)' }}>Categoría</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-warm)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
+              {CATEGORIES.map(cat => {
+                const active = category === cat.value
+                const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
+                return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
+              })}
             </div>
           </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 20 }} className="explore-toolbar">
-          <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-            <span>{loadingInstitutions ? 'Buscando...' : institutions.length === 0 ? 'Sin resultados' : `Mostrando ${Math.min(visibleCount, institutions.length)} de ${institutions.length} institución${institutions.length !== 1 ? 'es' : ''}`}</span>
-            {category && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {category}</span>}
-            {tipoDiscapacidad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {DISABILITY_TYPES.find(d => d.value === tipoDiscapacidad)?.label || tipoDiscapacidad}</span>}
-            {ciudad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {ciudad}</span>}
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <button onClick={() => setShowMap(v => !v)} title="Vista mapa" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-color)', background: showMap ? 'var(--primary)' : 'var(--bg-surface)', color: showMap ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{Icons.mapPin({ s: 16 })}</button>
-            {['grid', 'list'].map(v => (
-              <button key={v} onClick={() => setView(v)} title={v === 'grid' ? 'Vista cuadrícula' : 'Vista lista'} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', borderRadius: 8, background: view === v && !showMap ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: view === v && !showMap ? 'var(--primary)' : 'var(--fg3)', cursor: 'pointer', transition: 'all 0.2s' }}>{v === 'grid' ? Icons.grid({ s: 16 }) : Icons.list({ s: 16 })}</button>
-            ))}
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+            <div style={{ flex: '1 1 180px', minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Tipo de discapacidad</label>
+              <select value={tipoDiscapacidad} onChange={e => setTipoDiscapacidad(e.target.value)} style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                {DISABILITY_TYPES.map(dt => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Edad</label>
+              <input type="number" min="0" max="120" value={edad} onChange={e => setEdad(e.target.value)} placeholder="Ej. 25" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ flex: '1 1 180px', minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Ciudad</label>
+              <input type="text" value={ciudad} onChange={e => setCiudad(e.target.value)} placeholder="Ej. Monterrey" style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            {(category || tipoDiscapacidad || edad || ciudad) && (
+              <button onClick={() => { setCategory(''); setTipoDiscapacidad(''); setEdad(''); setCiudad('') }} style={{ height: 40, padding: '0 16px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, transition: 'all 0.2s' }}>{Icons.x({ s: 14 })} Limpiar</button>
+            )}
           </div>
         </div>
-        {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
-        {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
-            {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
-          </>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
-            {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
-          </>
-        )}
-      </main>
-    </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 20 }} className="explore-toolbar">
+        <div style={{ fontSize: 14, color: 'var(--fg3)', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+          <span>{loadingInstitutions ? 'Buscando...' : institutions.length === 0 ? 'Sin resultados' : `Mostrando ${Math.min(visibleCount, institutions.length)} de ${institutions.length} institución${institutions.length !== 1 ? 'es' : ''}`}</span>
+          {category && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {category}</span>}
+          {tipoDiscapacidad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {DISABILITY_TYPES.find(d => d.value === tipoDiscapacidad)?.label || tipoDiscapacidad}</span>}
+          {ciudad && <span style={{ color: 'var(--primary)', fontWeight: 600 }}> · {ciudad}</span>}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button onClick={() => setShowMap(v => !v)} title="Vista mapa" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-color)', background: showMap ? 'var(--primary)' : 'var(--bg-surface)', color: showMap ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{Icons.mapPin({ s: 16 })}</button>
+          {['grid', 'list'].map(v => (
+            <button key={v} onClick={() => setView(v)} title={v === 'grid' ? 'Vista cuadrícula' : 'Vista lista'} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', borderRadius: 8, background: view === v && !showMap ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: view === v && !showMap ? 'var(--primary)' : 'var(--fg3)', cursor: 'pointer', transition: 'all 0.2s' }}>{v === 'grid' ? Icons.grid({ s: 16 }) : Icons.list({ s: 16 })}</button>
+          ))}
+        </div>
+      </div>
+      {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
+      {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
+          {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
+          {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
+        </>
+      )}
+    </main>
   )
 }
 

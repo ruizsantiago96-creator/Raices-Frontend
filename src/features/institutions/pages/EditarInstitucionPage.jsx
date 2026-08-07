@@ -170,20 +170,17 @@ export default function EditarInstitucionPage() {
 
   if (loadingInst) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
-        <InstitutionPortalSidebar tab={tab} onTab={() => {}} stats={{}} />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="responsive-main">
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
           <div style={{ width: 40, height: 40, border: '3px solid var(--border-color)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         </div>
-      </div>
+      </main>
     )
   }
 
   if (!institution) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
-        <InstitutionPortalSidebar tab={tab} onTab={() => {}} stats={{}} />
-        <MobileInstitutionDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} tab={tab} onTab={() => {}} stats={{}} />
+      <main className="responsive-main">
         <div style={{ flex: 1, padding: 40, textAlign: 'center' }}>
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '48px 32px', maxWidth: 500, margin: '0 auto' }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -196,32 +193,12 @@ export default function EditarInstitucionPage() {
             </button>
           </div>
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)', display: 'flex' }}>
-      <InstitutionPortalSidebar tab={tab} onTab={() => navigate('/institution-portal')} stats={{}} />
-      <MobileInstitutionDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} tab={tab} onTab={() => navigate('/institution-portal')} stats={{}} />
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Top bar */}
-        <header className="admin-topbar responsive-topnav" style={{ borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className="mobile-hamburger-btn" onClick={() => setDrawerOpen(true)} aria-label="Abrir menú" style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 'var(--radius-sm)', background: '#001D26', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-            </button>
-            <button onClick={() => navigate('/institution-portal')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {Icons.building({ s: 16, color: '#fff' })}
-              </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>Portal</span>
-            </button>
-          </div>
-        </header>
-
-        <main id="main" className="responsive-main" style={{ '--main-max-width': '800px' }}>
+    <main id="main" className="responsive-main" style={{ '--main-max-width': '800px' }}>
           <button onClick={() => navigate('/institution-portal')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, fontWeight: 600, marginBottom: 20, padding: 0 }}>
             {Icons.arrowLeft({ s: 16 })} Volver al portal
           </button>
@@ -481,7 +458,5 @@ export default function EditarInstitucionPage() {
             </div>
           </form>
         </main>
-      </div>
-    </div>
   )
 }
