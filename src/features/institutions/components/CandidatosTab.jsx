@@ -22,7 +22,7 @@ const FILTER_OPTIONS = [
 ]
 
 /* ─── StatusDropdown ──────────────────────────────────────── */
-function StatusDropdown({ currentStatus, jobId, applicantId, onChange }) {
+function StatusDropdown({ currentStatus, applicantId, onChange }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const [menuPos, setMenuPos] = useState(null)
@@ -38,7 +38,7 @@ function StatusDropdown({ currentStatus, jobId, applicantId, onChange }) {
   const current = STATUS_OPTIONS.find(s => s.value === currentStatus) ?? STATUS_OPTIONS[0]
 
   const handleSelect = (value) => {
-    onChange({ jobId, applicantId, status: value })
+    onChange({ applicantId, status: value })
     setOpen(false)
   }
 
@@ -120,9 +120,9 @@ export default function CandidatosTab() {
     accepted: applicants.filter(a => a.status === 'accepted').length,
   }
 
-  const handleStatusChange = ({ jobId, applicantId, status }) => {
+  const handleStatusChange = ({ applicantId, status }) => {
     updateStatus.mutate(
-      { jobId, applicantId, status },
+      { applicantId, status },
       {
         onSuccess: () => addToast(PORTAL_TOAST.APPLICATION_UPDATED, 'success'),
         onError: () => addToast(PORTAL_TOAST.APPLICATION_UPDATE_FAILED, 'error'),
@@ -205,7 +205,6 @@ export default function CandidatosTab() {
                   <td style={{ padding: '14px 16px' }}>
                     <StatusDropdown
                       currentStatus={app.status}
-                      jobId={app.job_id}
                       applicantId={app.id}
                       onChange={handleStatusChange}
                     />

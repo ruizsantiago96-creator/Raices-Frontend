@@ -8,10 +8,10 @@ export default function OverviewTab({ onNavigate: _onNavigate }) {
   const { data: rawAnalytics, isLoading: isAnalyticsLoading } = useAdminDetailedAnalytics()
   const { data: activeUsersDetail, isLoading: isActiveUsersLoading } = useAdminActiveUsersDetail()
 
-  const c1 = 'var(--primary)' // #004E52 (Teal)
-  const c2 = 'color-mix(in oklch, var(--primary) 65%, var(--secondary))' // Teal-Pink Blend
-  const c3 = 'color-mix(in oklch, var(--secondary) 40%, black)' // Rose/Salmon (High Contrast)
-  const c4 = 'color-mix(in oklch, var(--secondary) 40%, white)' // Soft Pink/Light Salmon
+  const c1 = 'var(--chart-1, var(--primary))'     // Usuarios
+  const c2 = 'var(--chart-2, color-mix(in oklch, var(--primary) 65%, var(--secondary)))' // Instituciones
+  const c3 = 'var(--chart-3, color-mix(in oklch, var(--secondary) 40%, black))'         // Reseñas
+  const c4 = 'var(--chart-4, color-mix(in oklch, var(--secondary) 40%, white))'         // Publicaciones
 
   const [waveOffset, setWaveOffset] = useState(0)
   useEffect(() => {
@@ -50,19 +50,70 @@ export default function OverviewTab({ onNavigate: _onNavigate }) {
 
   const parseAnalytics = () => {
     if (!rawAnalytics) return []
-    const val = (item, m) => {
-      const key = m === 'resenas' ? (item.resenas ?? item.reviews ?? 0) : (item[m] ?? 0)
-      return typeof key === 'number' ? key : parseInt(key, 10) || 0
-    }
+
+    // Extract the array from various possible response formats
+    let arr = null
     if (Array.isArray(rawAnalytics)) {
-      return rawAnalytics.map(item => ({ label: item.mes ?? item.month ?? 'Mes', usuarios: val(item, 'usuarios'), instituciones: val(item, 'instituciones'), resenas: val(item, 'resenas'), publicaciones: val(item, 'publicaciones') }))
+      arr = rawAnalytics
+    } else if (Array.isArray(rawAnalytics?.datos)) {
+      arr = rawAnalytics.datos
+    } else if (Array.isArray(rawAnalytics?.data)) {
+      arr = rawAnalytics.data
+    } else if (Array.isArray(rawAnalytics?.historialMensual)) {
+      arr = rawAnalytics.historialMensual
+    } else if (Array.isArray(rawAnalytics?.meses)) {
+      arr = rawAnalytics.meses
+    } else if (Array.isArray(rawAnalytics?.periodos)) {
+      arr = rawAnalytics.periodos
+    } else if (rawAnalytics && typeof rawAnalytics === 'object') {
+      // Try to find any array property in the response
+      const arrayKey = Object.keys(rawAnalytics).find(k => Array.isArray(rawAnalytics[k]) && rawAnalytics[k].length > 0)
+      if (arrayKey) arr = rawAnalytics[arrayKey]
     }
-    return []
+
+    if (!arr || arr.length === 0) return []
+
+    const val = (item, m) => {
+      // Try multiple possible field names for each metric
+      const fieldMap = {
+        usuarios: ['usuarios', 'users', 'usuariosTotal', 'totalUsuarios'],
+        instituciones: ['instituciones', 'institutions', 'institucionesTotal', 'totalInstituciones'],
+        resenas: ['resenas', 'reviews', 'reseñas', 'totalResenas'],
+        publicaciones: ['publicaciones', 'posts', 'comunidades', 'totalPublicaciones'],
+      }
+      const fields = fieldMap[m] ?? [m]
+      for (const f of fields) {
+        const key = item[f]
+        if (key != null) {
+          return typeof key === 'number' ? key : parseInt(key, 10) || 0
+        }
+      }
+      return 0
+    }
+
+    return arr.map(item => ({
+      label: item.mes ?? item.month ?? item.periodo ?? item.label ?? item.nombre ?? `Mes ${arr.indexOf(item) + 1}`,
+      usuarios: val(item, 'usuarios'),
+      instituciones: val(item, 'instituciones'),
+      resenas: val(item, 'resenas'),
+      publicaciones: val(item, 'publicaciones'),
+    }))
   }
 
   const chartPoints = parseAnalytics()
 
-  const peakVal = chartPoints.length > 0 ? Math.max(...chartPoints.map(p => p.usuarios + p.instituciones + p.resenas + p.publicaciones)) : 10
+  // If no analytics data, generate a single bar from current stats
+  const displayPoints = chartPoints.length > 0 ? chartPoints : [
+    {
+      label: 'Actual',
+      usuarios: stats?.totalUsuarios ?? 0,
+      instituciones: stats?.totalInstituciones ?? 0,
+      resenas: stats?.totalResenas ?? 0,
+      publicaciones: stats?.totalPublicaciones ?? 0,
+    }
+  ]
+
+  const peakVal = displayPoints.length > 0 ? Math.max(...displayPoints.map(p => p.usuarios + p.instituciones + p.resenas + p.publicaciones)) : 10
   const yMax = Math.ceil(peakVal / 10) * 10 || 100
   const yTicks = [yMax, Math.round(yMax * 0.75), Math.round(yMax * 0.5), Math.round(yMax * 0.25), 0]
 
@@ -145,11 +196,9 @@ export default function OverviewTab({ onNavigate: _onNavigate }) {
                 <div style={{ display: 'flex', alignItems: 'end', gap: 16, height: '100%', padding: '0 8px' }}>
                   {[60, 80, 45, 90, 70, 85].map((h, i) => <Skeleton key={i} h={`${h}%`} style={{ flex: 1 }} />)}
                 </div>
-              ) : chartPoints.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--fg3)', fontSize: 13.5, fontWeight: 600 }}>Sin datos históricos</div>
               ) : (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'end', gap: 16, padding: '0 8px', justifyContent: 'space-around' }}>
-                  {chartPoints.map((p, idx) => {
+                  {displayPoints.map((p, idx) => {
                     const total = p.usuarios + p.instituciones + p.resenas + p.publicaciones
                     const barHeightPct = yMax > 0 ? (total / yMax) * 100 : 0
                     return (

@@ -17,7 +17,7 @@ const ROLE_META = {
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
 
 function Card({ children, style, className }) {
-  return <div className={className} style={{ ...card, padding: 24, ...style }}>{children}</div>
+  return <div className={`card ${className || ''}`} style={{ padding: 24, ...style }}>{children}</div>
 }
 
 function SectionTitle({ icon, children, right }) {
@@ -48,8 +48,8 @@ function EmptyState({ icon, title, sub }) {
 
 function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000 }}>
+      <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: danger ? 'color-mix(in oklch, var(--color-error) 14%, transparent)' : 'var(--primary-subtle)', color: danger ? 'var(--color-error)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {danger ? Icons.shieldAlert({ s: 20 }) : Icons.shield({ s: 20 })}
@@ -268,8 +268,8 @@ export default function UsersTab({ currentUserId }) {
 
       {/* Edit Modal */}
       {editUser && (
-        <div onClick={() => setEditUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+        <div onClick={() => setEditUser(null)} className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {Icons.user({ s: 20 })}
@@ -310,8 +310,8 @@ export default function UsersTab({ currentUserId }) {
 
       {/* Role Change Select */}
       {roleConfirm && (
-        <div onClick={() => setRoleConfirm(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+        <div onClick={() => setRoleConfirm(null)} className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {Icons.shield({ s: 20 })}

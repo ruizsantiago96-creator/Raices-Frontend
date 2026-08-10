@@ -66,7 +66,15 @@ function mapActiveVisitors(raw) {
 export function useAdminDetailedAnalytics() {
   return useQuery({
     queryKey: ['admin', 'detailed-analytics'],
-    queryFn: () => api.get('/administracion/analiticas').then(r => r.data),
+    queryFn: async () => {
+      const { data } = await api.get('/administracion/analiticas')
+      // Handle various response formats
+      if (data?.datos) return data.datos
+      if (data?.data) return data.data
+      if (Array.isArray(data)) return data
+      // If it's an object with metric properties, return as-is for the component to parse
+      return data
+    },
     staleTime: 1000 * 60 * 5,
   })
 }

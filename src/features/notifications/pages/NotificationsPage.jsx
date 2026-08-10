@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useNotifications, useMarkRead, useMarkAllRead } from '../hooks/useNotifications'
-import { useAuthStore } from '@features/auth'
 import { Icons } from '@shared/components/shared'
-import { AppSidebar, TopNav } from '@features/auth'
 import BackendFallback from '@shared/components/BackendFallback'
-import { NOTIFICATION_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import { NOTIFICATION_UI } from '../constants/notificationMessages'
 
 const TYPE_META = {
@@ -25,11 +22,7 @@ function relativeDate(d) {
   return `${NOTIFICATION_UI.TIME_DAYS} ${days}d`
 }
 
-const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
-
 export default function NotificationsPage() {
-  const { logout } = useAuthStore()
-  const { data: user } = { data: useAuthStore.getState().user }
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications()
   const markRead = useMarkRead()
   const markAll = useMarkAllRead()
@@ -110,8 +103,8 @@ export default function NotificationsPage() {
       ) : (
         <div className="animate-fade-in-up delay-2" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map((n) => {
-            const meta = NOTIFICATION_METRICS[n.type] ?? { icon: Icons.bell, color: 'var(--primary)' }
-            const timeStr = formatTimeAgo(n.created_at)
+            const meta = TYPE_META[n.type] ?? { icon: Icons.bell, color: 'var(--primary)' }
+            const timeStr = relativeDate(n.created_at)
             return (
               <div key={n.id} onClick={() => handleMarkRead(n.id)}
                 style={{

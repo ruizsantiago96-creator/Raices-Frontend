@@ -17,7 +17,6 @@ import { useAIForDependent } from '../hooks/useAI'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
-import AddDependienteModal from '../components/AddDependienteModal'
 import PermissionsModal from '../components/PermissionsModal'
 import { TUTOR_TOAST, TUTOR_UI } from '../constants/tutorMessages'
 import BackendFallback from '@shared/components/BackendFallback'
@@ -30,13 +29,7 @@ function hashColor(str = '') {
   return colors[Math.abs(h) % colors.length]
 }
 
-/* ── Minimalist design tokens (using project colors) ── */
-const minimalCard = {
-  background: 'var(--bg-surface)',
-  border: '1px solid var(--border-color)',
-  borderRadius: 'var(--radius-md)',
-  boxShadow: 'var(--shadow-sm)',
-}
+
 const minimalBadge = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -249,7 +242,7 @@ export default function TutorPage() {
           ) : isLoading ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
               {[0, 1].map(i => (
-                <div key={i} style={{ ...minimalCard, padding: 20 }}>
+                <div key={i} className="card" style={{ padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--border-color)', animation: 'pulse 1.5s infinite' }} />
                     <div style={{ flex: 1 }}>
@@ -261,7 +254,7 @@ export default function TutorPage() {
               ))}
             </div>
           ) : dependents.length === 0 ? (
-            <div style={{ ...minimalCard, padding: '48px 24px', textAlign: 'center' }}>
+            <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
               <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 {Icons.users({ s: 24 })}
               </div>
@@ -348,7 +341,15 @@ export default function TutorPage() {
       </main>
 
       {showCreate && (
-        <AddDependienteModal onClose={() => setShowCreate(false)} onSubmit={handleCreate} saving={add.isPending} catalogos={catalogos} />
+        <DependentForm
+          initial={null}
+          onCancel={() => setShowCreate(false)}
+          onSave={handleCreate}
+          saving={add.isPending}
+          relationships={RELATIONSHIPS}
+          lifeStages={LIFE_STAGES}
+          disabilities={DISABILITIES}
+        />
       )}
       {editing !== null && (
         <DependentForm initial={editing} onCancel={() => setEditing(null)} onSave={handleUpdate} saving={update.isPending} relationships={RELATIONSHIPS} lifeStages={LIFE_STAGES} disabilities={DISABILITIES} />
@@ -442,7 +443,7 @@ function DependentCard({ dep, lifeStages = [], isLinked = false, onEdit, onDelet
   const hasPhoto = dep?.fotoUrl
 
   return (
-    <div style={{ ...minimalCard, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', transition: 'box-shadow 0.2s ease' }} onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'} onMouseLeave={e => e.currentTarget.style.boxShadow = minimalCard.boxShadow}>
+    <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {hasPhoto ? (
           <img 
@@ -590,22 +591,49 @@ function DependentCard({ dep, lifeStages = [], isLinked = false, onEdit, onDelet
 
 /* ── Formulario (modal) ── */
 function DependentForm({ initial, onCancel, onSave, saving, relationships = [], lifeStages = [], disabilities = [] }) {
+  const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
-    id: initial?.id,
+    id: initial?.id ?? null,
     nombreCompleto: initial?.nombreCompleto ?? initial?.nombre ?? '',
-    parentesco: initial?.parentesco ?? relationships[0] ?? '',
-    tiposDiscapacidad: initial?.tiposDiscapacidad ?? [],
+    parentesco: initial?.parentesco ?? initial?.relacion ?? relationships[0] ?? '',
+    tiposDiscapacidad: initial?.tiposDiscapacidad ?? initial?.discapacidades ?? [],
     etapaVida: initial?.etapaVida ?? '',
     notas: initial?.notas ?? '',
     birth_date: initial?.id ? localStorage.getItem(`raices_dep_birth_date_${initial.id}`) || '' : '',
+    crearCuenta: false,
+    email: '',
+    password: '',
   })
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
   const toggleDis = (d) => setForm(f => ({ ...f, tiposDiscapacidad: f.tiposDiscapacidad.includes(d) ? f.tiposDiscapacidad.filter(x => x !== d) : [...f.tiposDiscapacidad, d] }))
-  const submit = (e) => { e.preventDefault(); if (!form.nombreCompleto.trim()) return; onSave(form) }
+  
+  const submit = (e) => {
+    e.preventDefault()
+    if (!form.nombreCompleto.trim()) return
+
+    if (!initial?.id) {
+      const payload = {
+        nombreCompleto: form.nombreCompleto.trim(),
+        parentesco: form.parentesco,
+        necesidades: form.tiposDiscapacidad,
+        etapaVida: form.etapaVida || null,
+        birth_date: form.birth_date || null,
+        notas: form.notas || ''
+      }
+      if (form.crearCuenta && form.email.trim() && form.password) {
+        payload.crearCuenta = true
+        payload.email = form.email.trim()
+        payload.password = form.password
+      }
+      onSave(payload)
+    } else {
+      onSave(form)
+    }
+  }
 
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16, overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={form.id ? 'Editar persona' : 'Agregar persona'} style={{ ...minimalCard, padding: 28, maxWidth: 540, width: '100%', margin: 'auto' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000, overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" className="glass-card" aria-modal="true" aria-label={form.id ? 'Editar persona' : 'Agregar persona'} style={{ padding: 28, maxWidth: 540, width: '100%', margin: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{form.id ? TUTOR_UI.EDIT_TITLE : TUTOR_UI.CREATE_TITLE}</h2>
           <button onClick={onCancel} aria-label="Cerrar" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 18 })}</button>
         </div>
@@ -674,25 +702,87 @@ function DependentForm({ initial, onCancel, onSave, saving, relationships = [], 
               </>
             )
           })()}
+          {/* ── Crear cuenta para el dependiente ── */}
+          {!initial?.id && (
+            <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.crearCuenta}
+                  onChange={(e) => setForm(f => ({ ...f, crearCuenta: e.target.checked }))}
+                  style={{ width: 20, height: 20, accentColor: 'var(--primary)' }}
+                />
+                <div>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>Crear cuenta de acceso</span>
+                  <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>
+                    Permite que {form.nombreCompleto || 'esta persona'} inicie sesión en la plataforma
+                  </p>
+                </div>
+              </label>
+
+              {form.crearCuenta && (
+                <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label htmlFor="dep-email" style={labelStyle}>Correo electrónico</label>
+                    <input
+                      id="dep-email"
+                      type="email"
+                      style={inputStyle}
+                      value={form.email}
+                      onChange={set('email')}
+                      required
+                      placeholder="ejemplo@correo.com"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="dep-password" style={labelStyle}>Contraseña</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="dep-password"
+                        type={showPassword ? 'text' : 'password'}
+                        style={{ ...inputStyle, paddingRight: 48 }}
+                        value={form.password}
+                        onChange={set('password')}
+                        required={form.crearCuenta}
+                        placeholder="Mínimo 8 caracteres"
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(v => !v)}
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-pressed={showPassword}
+                        style={{
+                          position: 'absolute',
+                          right: 12,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--fg2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 4,
+                        }}
+                      >
+                        {showPassword ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ marginBottom: 24 }}><label htmlFor="dep-notes" style={labelStyle}>{TUTOR_UI.NOTES_LABEL}</label><textarea id="dep-notes" value={form.notas} onChange={set('notas')} rows={3} placeholder={TUTOR_UI.NOTES_PLACEHOLDER} style={{ ...inputStyle, height: 'auto', paddingTop: 12, paddingBottom: 12, resize: 'vertical', lineHeight: 1.5 }} /></div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button 
               type="button" 
+              className="btn-secondary"
               onClick={onCancel}
-              style={{
-                fontSize: 14.5,
-                padding: '10px 20px',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#F3D6E1',
-                color: '#000',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-                transition: 'background 0.2s ease',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
-              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+              style={{ fontSize: 14.5 }}
             >
               {TUTOR_UI.CANCEL_BUTTON}
             </button>
@@ -724,8 +814,8 @@ function DependentForm({ initial, onCancel, onSave, saving, relationships = [], 
 /* ── Confirmación ── */
 function ConfirmDialog({ title, message, onConfirm, onCancel, confirmLabel }) {
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-label={title} style={{ ...minimalCard, padding: 28, maxWidth: 420, width: '100%' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1100 }}>
+      <div onClick={e => e.stopPropagation()} role="alertdialog" className="glass-card" aria-modal="true" aria-label={title} style={{ padding: 28, maxWidth: 420, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in oklch, var(--color-error) 15%, transparent)', color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icons.shieldAlert({ s: 20 })}</div>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{title}</h3>
@@ -747,8 +837,8 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
   const submit = (e) => { e.preventDefault(); if (!isValidEmail) return; onVincular(pcdEmail.trim()) }
 
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Vincular persona" style={{ ...minimalCard, padding: 28, maxWidth: 440, width: '100%' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000, padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" className="glass-card" aria-modal="true" aria-label="Vincular persona" style={{ padding: 28, maxWidth: 440, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icons.link({ s: 20 })}</div>
           <div><h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{TUTOR_UI.LINK_TITLE}</h2><p style={{ fontSize: 13, color: 'var(--fg2)', margin: '2px 0 0' }}>{TUTOR_UI.LINK_MODAL_SUBTITLE}</p></div>
@@ -758,21 +848,9 @@ function VincularPCDModal({ onVincular, onCancel, saving }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button 
               type="button" 
+              className="btn-secondary"
               onClick={onCancel}
-              style={{
-                fontSize: 14.5,
-                padding: '10px 20px',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#F3D6E1',
-                color: '#000',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-                transition: 'background 0.2s ease',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
-              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+              style={{ fontSize: 14.5 }}
             >
               {TUTOR_UI.CANCEL_BUTTON}
             </button>
@@ -810,8 +888,8 @@ function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, savin
   const submit = (e) => { e.preventDefault(); onSave({ id: dependent.isLinked ? (dependent.pcdUserId || dependent.id) : dependent.id, features: form, isLinked: !!dependent.isLinked }) }
 
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16, overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Configurar features" style={{ ...minimalCard, padding: 28, maxWidth: 480, width: '100%', margin: 'auto' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000, padding: 16, overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" className="glass-card" aria-modal="true" aria-label="Configurar features" style={{ padding: 28, maxWidth: 480, width: '100%', margin: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icons.shield({ s: 22 })}</div>
@@ -869,21 +947,9 @@ function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, savin
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button 
               type="button" 
+              className="btn-secondary"
               onClick={onCancel}
-              style={{
-                fontSize: 14.5,
-                padding: '10px 20px',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#F3D6E1',
-                color: '#000',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-                transition: 'background 0.2s ease',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
-              onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+              style={{ fontSize: 14.5 }}
             >
               Cancelar
             </button>

@@ -11,6 +11,9 @@ dist/
 .env.production
 .env.*.local
 
+# OpenCode config
+.opencode
+
 # IDE
 .vscode/
 .idea/

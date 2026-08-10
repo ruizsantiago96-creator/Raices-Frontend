@@ -18,7 +18,7 @@ export default function DependientesPanel() {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
         {[0, 1].map(i => (
-          <div key={i} style={skeletonCard}>
+          <div key={i} className="card" style={{ padding: 22 }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--border-color)', animation: 'pulse 1.5s infinite', marginBottom: 14 }} />
             <div style={{ width: '60%', height: 18, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s infinite', marginBottom: 10 }} />
             <div style={{ width: '40%', height: 14, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s infinite' }} />
@@ -81,7 +81,7 @@ function DependienteCard({ dep }) {
   const initials = nombre.split(' ').map(w => w?.[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
 
   return (
-    <div style={cardStyle}>
+    <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ width: 56, height: 56, borderRadius: '50% 50% 50% 16%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
           {initials}
@@ -112,11 +112,16 @@ function DependienteCard({ dep }) {
 }
 
 /* ── Estilos reutilizables ── */
-const cardBase = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
+const cardBase = {
+  background: 'var(--glass-bg)',
+  backdropFilter: 'var(--glass-blur)',
+  WebkitBackdropFilter: 'var(--glass-blur)',
+  border: '1px solid var(--glass-border)',
+  borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--glass-shadow)'
+}
 
-const skeletonCard = { ...cardBase, padding: 22 }
 
-const cardStyle = { ...cardBase, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }
 
 const errorBox = {
   ...cardBase,

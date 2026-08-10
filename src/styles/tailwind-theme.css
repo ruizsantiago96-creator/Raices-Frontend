@@ -27,6 +27,9 @@
   --color-comunidad: var(--color-comunidad);
   --color-vida: var(--color-vida);
   
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-bold: var(--font-bold);

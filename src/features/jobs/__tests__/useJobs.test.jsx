@@ -25,10 +25,12 @@ function JobsTestComponent({ filters = {} }) {
   const { data, isLoading, isError } = useJobs(filters)
   if (isLoading) return <div data-testid="loading">Loading...</div>
   if (isError) return <div data-testid="error">Error</div>
-  const items = Array.isArray(data) ? data : []
+  const items = data?.datos ?? []
   return (
     <div>
       <span data-testid="count">{items.length}</span>
+      <span data-testid="total">{data?.total ?? 0}</span>
+      <span data-testid="page">{data?.pagina ?? 1}</span>
       {items.map(job => (
         <div key={job.id} data-testid={`job-${job.id}`}>
           <span>{job.title ?? job.titulo}</span>
@@ -55,6 +57,8 @@ describe('features/jobs/hooks/useJobs', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('count')).toHaveTextContent('1')
+      expect(screen.getByTestId('total')).toHaveTextContent('1')
+      expect(screen.getByTestId('page')).toHaveTextContent('1')
     })
 
     expect(screen.getByText('Desarrollador')).toBeInTheDocument()

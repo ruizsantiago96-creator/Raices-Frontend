@@ -57,13 +57,14 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
   const isSaving = updatePermisos.isPending
 
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={onClose} className="modal-overlay" style={{ zIndex: 1000, overflowY: 'auto' }}>
       <div
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        className="glass-card"
         aria-modal="true"
         aria-label="Gestionar permisos"
-        style={modalStyle}
+        style={{ padding: 28, maxWidth: 480, width: '100%', margin: 'auto' }}
       >
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -115,22 +116,10 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
           <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>
             Los cambios se guardan automáticamente
           </p>
-          <button
+          <button 
+            className="btn-secondary"
             onClick={onClose}
-            style={{ 
-              fontSize: 14, 
-              padding: '10px 20px', 
-              borderRadius: '8px',
-              border: 'none',
-              background: '#F3D6E1',
-              color: '#000',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              transition: 'background 0.2s ease',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#E8BCCF'}
-            onMouseLeave={e => e.currentTarget.style.background = '#F3D6E1'}
+            style={{ fontSize: 14 }}
           >
             Cerrar
           </button>
@@ -222,29 +211,7 @@ function ToggleRow({ icon, label, description, enabled, onToggle, disabled }) {
   )
 }
 
-/* ── Estilos ── */
-const overlayStyle = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.5)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: 16,
-  overflowY: 'auto',
-}
 
-const modalStyle = {
-  background: 'var(--bg-surface)',
-  border: '1px solid var(--border-color)',
-  borderRadius: 'var(--radius-md)',
-  boxShadow: 'var(--shadow-sm)',
-  padding: 28,
-  maxWidth: 480,
-  width: '100%',
-  margin: 'auto',
-}
 
 const closeBtnStyle = {
   width: 40,

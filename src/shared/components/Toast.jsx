@@ -36,7 +36,7 @@ export default function ToastContainer() {
     <div
       aria-live="polite"
       aria-atomic="false"
-      style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1400, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 'min(380px, calc(100vw - 48px))' }}
+      style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 'min(380px, calc(100vw - 48px))' }}
     >
       {toasts.map(t => (
         <div

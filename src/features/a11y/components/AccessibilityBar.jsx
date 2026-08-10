@@ -89,14 +89,30 @@ export default function AccessibilityBar() {
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  
+  // Posicion del boton flotante y estado de arrastre (Draggable accessibility button)
+  const [position, setPosition] = useState({ right: 20, bottom: 20 })
+  const [isDragging, setIsDragging] = useState(false)
+  const isDraggingRef = useRef(false)
+  const wasDraggingRef = useRef(false)
+  const dragStartRef = useRef({ startX: 0, startY: 0, startRight: 0, startBottom: 0 })
+
   const { supported: ttsSupported, speak, stop } = useSpeech()
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      setPosition(pos => ({
+        ...pos,
+        bottom: mobile ? 80 : 20
+      }))
+    }
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
   const btnRef = useRef(null)
   const readingGuideRef = useRef(null)
   const flashRef = useRef(null)
@@ -236,6 +252,115 @@ export default function AccessibilityBar() {
     if (main) speak(main.innerText)
   }
 
+  const handleDragStart = (e) => {
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+
+    isDraggingRef.current = true
+    wasDraggingRef.current = false
+    setIsDragging(true)
+    
+    dragStartRef.current = {
+      startX: clientX,
+      startY: clientY,
+      startRight: position.right,
+      startBottom: position.bottom
+    }
+
+    if (e.touches) {
+      document.addEventListener('touchmove', handleDragMove, { passive: false })
+      document.addEventListener('touchend', handleDragEnd)
+    } else {
+      document.addEventListener('mousemove', handleDragMove)
+      document.addEventListener('mouseup', handleDragEnd)
+    }
+  }
+
+  const handleDragMove = (e) => {
+    if (!isDraggingRef.current) return
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+
+    const { startX, startY, startRight, startBottom } = dragStartRef.current
+
+    const dx = clientX - startX
+    const dy = clientY - startY
+
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      wasDraggingRef.current = true
+    }
+
+    const newRight = Math.max(10, Math.min(window.innerWidth - 58, startRight - dx))
+    const newBottom = Math.max(10, Math.min(window.innerHeight - 58, startBottom - dy))
+
+    setPosition({
+      right: newRight,
+      bottom: newBottom
+    })
+
+    if (e.cancelable) {
+      e.preventDefault()
+    }
+  }
+
+  const handleDragEnd = () => {
+    isDraggingRef.current = false
+    setIsDragging(false)
+    
+    document.removeEventListener('mousemove', handleDragMove)
+    document.removeEventListener('mouseup', handleDragEnd)
+    document.removeEventListener('touchmove', handleDragMove)
+    document.removeEventListener('touchend', handleDragEnd)
+
+    if (wasDraggingRef.current) {
+      setTimeout(() => {
+        wasDraggingRef.current = false
+      }, 50)
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove)
+      document.removeEventListener('mouseup', handleDragEnd)
+      document.removeEventListener('touchmove', handleDragMove)
+      document.removeEventListener('touchend', handleDragEnd)
+    }
+  }, [])
+
+  const getPanelStyle = () => {
+    const isTopHalf = position.bottom > window.innerHeight / 2
+    const isLeftHalf = position.right > window.innerWidth / 2
+
+    const panelStyle = {
+      position: 'fixed',
+      zIndex: 1500,
+      width: 320,
+      maxWidth: 'calc(100vw - 40px)',
+      maxHeight: 'calc(100vh - 120px)',
+      overflowY: 'auto',
+      borderRadius: '24px',
+      padding: 20,
+      fontFamily: 'var(--font-body)',
+      animation: 'slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    }
+
+    if (isTopHalf) {
+      panelStyle.top = window.innerHeight - position.bottom + 12
+    } else {
+      panelStyle.bottom = position.bottom + 58
+    }
+
+    if (isLeftHalf) {
+      panelStyle.left = Math.max(20, window.innerWidth - position.right - 320 + 24)
+    } else {
+      panelStyle.right = position.right
+    }
+
+    return panelStyle
+  }
+
   const scaleLabels = { base: 'A', lg: 'A+', xl: 'A++' }
 
   return (
@@ -244,12 +369,12 @@ export default function AccessibilityBar() {
       {/* Botón flotante y su pestaña colapsable */}
       <div ref={triggerRef} style={{
         position: 'fixed',
-        right: minimized ? 0 : 20,
-        bottom: isMobile ? 80 : 20,
+        right: minimized ? 0 : position.right,
+        bottom: position.bottom,
         zIndex: 1500,
         display: 'flex',
         alignItems: 'center',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: isDragging ? 'none' : 'right 0.3s ease, bottom 0.3s ease, transform 0.3s ease',
         transform: minimized ? 'translateX(50%)' : 'none',
       }}>
         {/* Botón de minimizar/maximizar (solo visible en móvil) */}
@@ -288,7 +413,14 @@ export default function AccessibilityBar() {
 
         <button
           ref={btnRef}
-          onClick={() => {
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onClick={(e) => {
+            if (wasDraggingRef.current) {
+              e.preventDefault()
+              e.stopPropagation()
+              return
+            }
             if (minimized) {
               setMinimized(false)
             } else {
@@ -298,16 +430,16 @@ export default function AccessibilityBar() {
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-label="Opciones de accesibilidad"
+          className="liquid-glass-trigger"
           style={{
-            width: 60, height: 60, borderRadius: '50%',
-            background: 'var(--primary)', color: '#fff', border: '3px solid #fff',
-            boxShadow: 'var(--shadow-lg)', cursor: 'pointer',
+            width: 48, height: 48, borderRadius: '50%',
+            color: '#fff', cursor: isDragging ? 'grabbing' : 'grab',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: minimized ? 0.7 : 1,
-            transition: 'opacity 0.2s',
+            touchAction: 'none'
           }}
         >
-          {open ? I.close(26) : I.access(28)}
+          {open ? I.close(20) : I.access(22)}
         </button>
       </div>
 
@@ -325,16 +457,8 @@ export default function AccessibilityBar() {
           ref={panelRef}
           role="dialog"
           aria-label="Opciones de accesibilidad"
-          style={{
-            position: 'fixed', right: 20, bottom: 92, zIndex: 1500,
-            width: 320, maxWidth: 'calc(100vw - 40px)',
-            maxHeight: 'calc(100vh - 120px)',
-            overflowY: 'auto',
-            background: 'var(--bg-surface)', border: '2px solid var(--border-strong)',
-            borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-xl)',
-            padding: 20, fontFamily: 'var(--font-body)',
-            animation: 'slideUp 0.2s ease',
-          }}
+          className="liquid-glass-panel"
+          style={getPanelStyle()}
         >
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--primary)' }}>{I.access(22)}</span> Accesibilidad
@@ -351,11 +475,10 @@ export default function AccessibilityBar() {
                 const active = a11y.textScale === sz
                 return (
                   <button key={sz} onClick={() => a11y.setTextScale(sz)} aria-pressed={active}
+                    className={`glass-button ${active ? 'active' : ''}`}
                     style={{
-                      flex: 1, minHeight: 48, borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                      border: active ? '2px solid var(--primary)' : '2px solid var(--border-color)',
-                      background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)',
-                      color: active ? 'var(--primary)' : 'var(--fg2)', fontWeight: 800,
+                      flex: 1, minHeight: 48, borderRadius: '12px', cursor: 'pointer',
+                      fontWeight: 800,
                       fontSize: sz === 'base' ? 16 : sz === 'lg' ? 19 : 22, fontFamily: 'var(--font-body)',
                     }}>
                     {scaleLabels[sz]}
@@ -378,12 +501,10 @@ export default function AccessibilityBar() {
                 const active = (a11y.colorblindMode ?? 'none') === m.value
                 return (
                   <button key={m.value} onClick={() => a11y.setColorblindMode(m.value)} aria-pressed={active}
+                    className={`glass-button ${active ? 'active' : ''}`}
                     style={{
-                      minHeight: 40, borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                      border: active ? '2px solid var(--primary)' : '2px solid var(--border-color)',
-                      background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)',
-                      color: active ? 'var(--primary)' : 'var(--fg2)',
-                      fontWeight: active ? 700 : 500, fontSize: 12,
+                      minHeight: 40, borderRadius: '10px', cursor: 'pointer',
+                      fontSize: 12, fontWeight: active ? 700 : 500,
                       fontFamily: 'var(--font-body)', padding: '6px 4px',
                     }}>
                     {m.label}
@@ -427,11 +548,12 @@ export default function AccessibilityBar() {
               <Toggle icon={I.speaker()} label="Leer al pasar el cursor" on={a11y.ttsEnabled} onToggle={a11y.toggleTts}
                 hint="Pasa el cursor sobre botones, títulos o campos para escucharlos" />
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <button onClick={readPage} className="btn-secondary" style={{ flex: 1, fontSize: 14, padding: '10px', minHeight: 44 }}>
+                <button onClick={readPage} className="glass-button" style={{ flex: 1, fontSize: 14, padding: '10px', minHeight: 44, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--fg1)', fontWeight: 700 }}>
                   {I.speaker(16)} Leer página
                 </button>
                 <button onClick={stop} aria-label="Detener lectura"
-                  style={{ minHeight: 44, minWidth: 44, borderRadius: 'var(--radius-sm)', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  className="glass-button"
+                  style={{ minHeight: 44, minWidth: 44, borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg2)' }}>
                   {I.stop()}
                 </button>
               </div>
@@ -440,7 +562,8 @@ export default function AccessibilityBar() {
 
           {/* Restablecer */}
           <button onClick={() => { a11y.reset(); stop() }}
-            style={{ marginTop: 16, width: '100%', minHeight: 44, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg3)', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            className="glass-button"
+            style={{ marginTop: 16, width: '100%', minHeight: 44, borderRadius: '12px', color: 'var(--fg3)', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {I.reset()} Restablecer todo
           </button>
         </div>
@@ -483,6 +606,166 @@ export default function AccessibilityBar() {
           }}
         />
       )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(24px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .liquid-glass-panel {
+          background: rgba(255, 255, 255, 0.45);
+          backdrop-filter: blur(25px) saturate(180%);
+          -webkit-backdrop-filter: blur(25px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.45);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
+            0 12px 40px 0 rgba(31, 38, 135, 0.08),
+            0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        html[data-theme="dark"] .liquid-glass-panel {
+          background: rgba(20, 28, 28, 0.94);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            0 12px 40px 0 rgba(0, 0, 0, 0.35),
+            0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+        
+        .glass-button {
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-button:hover {
+          background: rgba(255, 255, 255, 0.35);
+          border-color: rgba(0, 0, 0, 0.1);
+          transform: translateY(-1.5px);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
+            0 6px 15px rgba(0, 0, 0, 0.04);
+        }
+        
+        .glass-button:active {
+          transform: translateY(0);
+        }
+        
+        .glass-button.active {
+          background: color-mix(in srgb, var(--primary) 15%, rgba(255, 255, 255, 0.45));
+          border-color: var(--primary);
+          border-width: 1.5px;
+          color: var(--primary) !important;
+          font-weight: 800 !important;
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
+            0 4px 12px rgba(0, 78, 82, 0.1);
+        }
+        
+        .glass-button.active:hover {
+          background: color-mix(in srgb, var(--primary) 22%, rgba(255, 255, 255, 0.55));
+        }
+        
+        html[data-theme="dark"] .glass-button {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        html[data-theme="dark"] .glass-button:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        html[data-theme="dark"] .glass-button.active {
+          background: color-mix(in srgb, var(--primary) 25%, rgba(255, 255, 255, 0.02));
+          border-color: var(--primary);
+          color: var(--primary) !important;
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            0 4px 12px rgba(63, 172, 145, 0.15);
+        }
+        
+        html[data-theme="dark"] .glass-button.active:hover {
+          background: color-mix(in srgb, var(--primary) 35%, rgba(255, 255, 255, 0.04));
+        }
+
+        .liquid-glass-trigger {
+          background: var(--primary) !important;
+          border: 1px solid rgba(255, 255, 255, 0.25) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 
+            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.3),
+            0 8px 30px rgba(0, 43, 41, 0.2);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .liquid-glass-trigger:hover {
+          transform: translateY(-2px) scale(1.04);
+          box-shadow: 
+            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.4),
+            0 12px 35px rgba(0, 43, 41, 0.3);
+        }
+
+        .liquid-glass-trigger:active {
+          transform: translateY(0) scale(0.96);
+        }
+
+        html[data-theme="dark"] .liquid-glass-trigger {
+          box-shadow: 
+            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.15),
+            0 8px 30px rgba(0, 0, 0, 0.5);
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .glass-switch {
+          width: 46px;
+          height: 26px;
+          border-radius: 13px;
+          background: rgba(0, 0, 0, 0.08);
+          border: 1px solid rgba(0, 0, 0, 0.04);
+          position: relative;
+          flex-shrink: 0;
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .glass-switch.active {
+          background: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .glass-switch-thumb {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #ffffff;
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .glass-switch.active .glass-switch-thumb {
+          left: 22px;
+          box-shadow: 0 2px 6px rgba(0, 43, 41, 0.3);
+        }
+
+        html[data-theme="dark"] .glass-switch {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        html[data-theme="dark"] .glass-switch.active .glass-switch-thumb {
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+      `}</style>
     </>
   )
 }
@@ -510,17 +793,16 @@ function Toggle({ icon, label, on, onToggle, hint }) {
   return (
     <div style={{ marginBottom: 12 }}>
       <button onClick={onToggle} role="switch" aria-checked={on}
+        className={`glass-button ${on ? 'active' : ''}`}
         style={{
-          width: '100%', minHeight: 52, padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-          border: on ? '2px solid var(--primary)' : `2px solid ${OFF_COLOR}`,
-          background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', cursor: 'pointer',
+          width: '100%', minHeight: 52, padding: '8px 14px', borderRadius: '14px',
+          cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)',
-          transition: 'border-color 0.2s',
         }}>
-        <span style={{ color: on ? 'var(--primary)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.2s' }}>{icon}</span>
+        <span style={{ color: on ? 'var(--primary)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.25s' }}>{icon}</span>
         <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{label}</span>
-        <span aria-hidden="true" style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--primary)' : OFF_COLOR, position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-          <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+        <span aria-hidden="true" className={`glass-switch ${on ? 'active' : ''}`}>
+          <span className="glass-switch-thumb" />
         </span>
       </button>
       {hint && <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '4px 0 0 40px', lineHeight: 1.4 }}>{hint}</p>}
