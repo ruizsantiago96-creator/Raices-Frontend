@@ -3,7 +3,14 @@ import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 
 // Los catálogos se reciben via props (catalogos) desde el componente padre
 
-const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
+const card = {
+  background: 'var(--glass-bg)',
+  backdropFilter: 'var(--glass-blur)',
+  WebkitBackdropFilter: 'var(--glass-blur)',
+  border: '1px solid var(--glass-border)',
+  borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--glass-shadow)'
+}
 
 /**
  * Modal para crear un nuevo dependiente.

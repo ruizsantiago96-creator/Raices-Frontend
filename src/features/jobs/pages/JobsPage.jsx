@@ -42,8 +42,8 @@ function CreateJobModal({ onClose }) {
   const labelStyle = { fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
+      <div className="animate-scale-in glass-card" style={{ padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px' }}>{JOBS_UI.CREATE_JOB_TITLE}</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div><label style={labelStyle}>{JOBS_UI.JOB_TITLE_LABEL}</label><input required value={form.titulo} onChange={e => update('titulo', e.target.value)} placeholder={JOBS_UI.JOB_TITLE_PLACEHOLDER} style={inputStyle} /></div>
@@ -126,7 +126,33 @@ const filePdfIcon = (
 )
 
 /* ─── CvDocumentPreview (Vista previa interactiva del CV) ────── */
-function CvDocumentPreview({ name, email, phone, location, jobTitle }) {
+function CvDocumentPreview({ name, email, phone, location, jobTitle, fileUrl }) {
+  if (fileUrl) {
+    return (
+      <div style={{
+        background: '#fff',
+        border: '1.5px solid var(--border-strong)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)',
+        width: '100%',
+        height: '420px',
+        position: 'relative'
+      }}>
+        <iframe
+          src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+          title="Vista previa del currículum"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            display: 'block'
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div style={{
       background: '#fff',
@@ -142,6 +168,25 @@ function CvDocumentPreview({ name, email, phone, location, jobTitle }) {
       overflowY: 'auto',
       textAlign: 'left'
     }}>
+      {/* Fallback layout banner */}
+      <div style={{
+        background: 'color-mix(in srgb, var(--primary) 6%, #fff)',
+        border: '1px solid var(--primary-subtle)',
+        borderRadius: '6px',
+        padding: '10px 14px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        fontSize: '11.5px',
+        color: 'var(--fg2)'
+      }}>
+        <span style={{ color: 'var(--primary)', fontSize: 14 }}>ℹ️</span>
+        <span>
+          <strong>Archivo cargado desde almacenamiento:</strong> Para ver la vista previa interactiva del PDF, vuelve a subir el archivo. Los datos de tu postulación siguen estando listos.
+        </span>
+      </div>
+
       {/* Resume Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '24px' }}>
         
@@ -327,8 +372,17 @@ function ApplicationModal({ job, onClose }) {
 
   // Archivo CV
   const [cvFile, setCvFile] = useState(null)
+  const [cvFileUrl, setCvFileUrl] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (cvFileUrl) {
+        URL.revokeObjectURL(cvFileUrl)
+      }
+    }
+  }, [cvFileUrl])
 
   // Carta de presentación
   const [letter, setLetter] = useState('')
@@ -451,6 +505,13 @@ function ApplicationModal({ job, onClose }) {
         uploadDate: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
       }
       setCvFile(fileData)
+      
+      if (cvFileUrl) {
+        URL.revokeObjectURL(cvFileUrl)
+      }
+      const url = URL.createObjectURL(file)
+      setCvFileUrl(url)
+      
       setIsUploading(false)
 
       const currentCandidateId = getCandidateId()
@@ -556,16 +617,13 @@ function ApplicationModal({ job, onClose }) {
   )
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div className="animate-scale-in" style={{
-        background: 'var(--bg-surface)',
-        borderRadius: 'var(--radius-md)',
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
+      <div className="animate-scale-in glass-card" style={{
         padding: '24px 28px 28px',
         maxWidth: 580,
         width: '100%',
         maxHeight: '92vh',
         overflowY: 'auto',
-        boxShadow: 'var(--shadow-xl)',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative'
@@ -596,9 +654,30 @@ function ApplicationModal({ job, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontWeight: 600, fontSize: 14 }}
+            aria-label="Cerrar"
+            style={{ 
+              width: 36, 
+              height: 36, 
+              borderRadius: '50%', 
+              border: '2px solid var(--border-color)', 
+              background: 'var(--bg-surface)', 
+              color: 'var(--fg2)', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              transition: 'background 0.2s ease, border-color 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--border-strong)'
+              e.currentTarget.style.background = 'var(--bg-cool)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'var(--border-color)'
+              e.currentTarget.style.background = 'var(--bg-surface)'
+            }}
           >
-            {step === 2 && cvFile ? 'Guardar y cerrar' : 'Cancelar'}
+            {Icons.x({ s: 18 })}
           </button>
         </div>
 
@@ -885,6 +964,10 @@ function ApplicationModal({ job, onClose }) {
                       type="button"
                       onClick={() => {
                         setCvFile(null)
+                        if (cvFileUrl) {
+                          URL.revokeObjectURL(cvFileUrl)
+                          setCvFileUrl(null)
+                        }
                         const currentCandidateId = getCandidateId()
                         localStorage.removeItem('raices_user_cv_' + (currentCandidateId || 'me'))
                       }}
@@ -907,6 +990,7 @@ function ApplicationModal({ job, onClose }) {
                     phone={contactInfo.telefono}
                     location={location.ciudadEstado}
                     jobTitle={job.title}
+                    fileUrl={cvFileUrl}
                   />
                 </div>
               </div>
@@ -1079,6 +1163,7 @@ function ApplicationModal({ job, onClose }) {
                         phone={contactInfo.telefono}
                         location={location.ciudadEstado}
                         jobTitle={job.title}
+                        fileUrl={cvFileUrl}
                       />
                     </div>
                   </div>
@@ -1163,8 +1248,8 @@ function MessageModal({ job, onClose }) {
 
   if (!ownerUserId) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 440, width: '100%', boxShadow: 'var(--shadow-xl)', textAlign: 'center' }}>
+      <div className="modal-overlay" style={{ zIndex: 2000 }}>
+        <div className="animate-scale-in glass-card" style={{ padding: 28, maxWidth: 440, width: '100%', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'color-mix(in oklch, #D4944C 15%, transparent)', color: '#D4944C', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             {Icons.message({ s: 22 })}
           </div>
@@ -1176,8 +1261,8 @@ function MessageModal({ job, onClose }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 0, maxWidth: 520, width: '100%', maxHeight: '80vh', boxShadow: 'var(--shadow-xl)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
+      <div className="animate-scale-in glass-card" style={{ padding: 0, maxWidth: 520, width: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1295,8 +1380,8 @@ function JobCard({ job, applied, onApply, onMessage, userRole, institutionId, on
               {job.title}
             </h3>
             {job.institution_verified && (
-              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 6, background: 'color-mix(in oklch, #1F8049 12%, transparent)', color: '#1F8049', whiteSpace: 'nowrap' }}>
-                {Icons.check({ s: 9 })} {JOBS_UI.VERIFIED_BADGE}
+              <span title={JOBS_UI.VERIFIED_BADGE} style={{ color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                {Icons.verifiedBadge({ s: 18 })}
               </span>
             )}
           </div>
@@ -1518,9 +1603,12 @@ export default function JobsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const JOBS_PER_PAGE = 5
 
-  const { data: jobs = [], isLoading, isError: jobsError, refetch: refetchJobs } = useJobs({})
+  const { data: jobsPage, isLoading, isError: jobsError, refetch: refetchJobs } = useJobs({})
   const { data: appliedIds = [] } = useAppliedJobIds()
-  const { data: applications = [], isError: appsError } = useMyApplications()
+  const { data: appsPage, isError: appsError } = useMyApplications()
+
+  const jobs = jobsPage?.datos ?? []
+  const applications = appsPage?.datos ?? []
 
   // Filter jobs based on search term and modality
   const filteredJobs = useMemo(() => {

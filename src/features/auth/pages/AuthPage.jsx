@@ -593,7 +593,7 @@ export default function AuthPage() {
       {/* Columna derecha: Branding y Gráfico */}
       <div className="auth-brand-column" style={{ 
         flex: 1, 
-        background: 'linear-gradient(135deg, #001D21 0%, #004E52 100%)', 
+        background: 'linear-gradient(135deg, #071e22 0%, #0d363c 100%)', 
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'center', 

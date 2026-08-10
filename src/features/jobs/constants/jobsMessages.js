@@ -108,6 +108,13 @@ export const JOBS_UI = {
   
   // Modalidad filter
   ALL_MODALITIES: 'Todas',
+  
+  // Paginación
+  PAGINATION_SHOWING: 'Mostrando',
+  PAGINATION_OF: 'de',
+  PAGINATION_PREV: 'Anterior',
+  PAGINATION_NEXT: 'Siguiente',
+  PAGINATION_PAGE: 'Página',
 }
 
 // ─── Colores de estado ────────────────────────────────────

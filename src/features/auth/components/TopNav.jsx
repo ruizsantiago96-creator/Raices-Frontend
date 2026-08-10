@@ -154,11 +154,9 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
             </button>
 
             {notifDropdownOpen && (
-              <div style={{
+              <div className="glass-card" style={{
                 position: 'absolute', right: -60, top: 'calc(100% + 8px)',
-                width: 320, background: 'var(--bg-surface)',
-                borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)',
-                boxShadow: 'var(--shadow-lg)', zIndex: 100,
+                width: 320, zIndex: 100,
                 display: 'flex', flexDirection: 'column',
                 animation: 'fade-in 0.15s ease-out'
               }}>
@@ -190,14 +188,12 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                             markRead(n.id)
                             nav(n.url)
                           }}
+                          className="notif-item"
                           style={{
                             display: 'flex', gap: 12, padding: '14px 18px',
                             borderBottom: '1px solid var(--border-color)',
                             cursor: 'pointer', background: n.is_read ? 'transparent' : 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))',
-                            transition: 'background-color 0.2s',
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-cool)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = n.is_read ? 'transparent' : 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))'}
                         >
                           {/* Avatar block with status dot */}
                           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -235,19 +231,10 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                   <Link
                     to="/notifications"
                     onClick={() => setNotifDropdownOpen(false)}
+                    className="dropdown-item text-center"
                     style={{
-                      width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-color)', background: 'transparent',
-                      color: 'var(--fg2)', fontSize: 13.5, fontWeight: 700,
-                      textAlign: 'center', textDecoration: 'none', transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-cool)'
-                      e.currentTarget.style.color = 'var(--fg1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.color = 'var(--fg2)'
+                      fontSize: 13.5,
+                      fontWeight: 700
                     }}
                   >
                     Ver todas las notificaciones
@@ -292,11 +279,9 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
             </button>
 
             {dropdownOpen && (
-              <div style={{
+              <div className="glass-card" style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                width: 240, background: 'var(--bg-surface)',
-                borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)',
-                boxShadow: 'var(--shadow-lg)', zIndex: 100,
+                width: 240, zIndex: 100,
                 display: 'flex', flexDirection: 'column',
                 padding: '16px 0',
                 animation: 'fade-in 0.15s ease-out'
@@ -312,21 +297,7 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                   <Link
                     to="/profile"
                     onClick={() => setDropdownOpen(false)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 12px', borderRadius: 'var(--radius-sm)',
-                      textDecoration: 'none', color: 'var(--fg2)',
-                      fontSize: 14, fontWeight: 600,
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-cool)'
-                      e.currentTarget.style.color = 'var(--fg1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.color = 'var(--fg2)'
-                    }}
+                    className="dropdown-item"
                   >
                     <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.user({ s: 18 })}</span>
                     Ver perfil
@@ -335,21 +306,7 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                   <Link
                     to="/profile"
                     onClick={() => setDropdownOpen(false)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 12px', borderRadius: 'var(--radius-sm)',
-                      textDecoration: 'none', color: 'var(--fg2)',
-                      fontSize: 14, fontWeight: 600,
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-cool)'
-                      e.currentTarget.style.color = 'var(--fg1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.color = 'var(--fg2)'
-                    }}
+                    className="dropdown-item"
                   >
                     <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.sliders({ s: 18 })}</span>
                     Configuración
@@ -364,23 +321,7 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                         setDropdownOpen(false)
                         onLogout()
                       }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '10px 12px', borderRadius: 'var(--radius-sm)',
-                        border: 'none', background: 'transparent',
-                        color: 'var(--fg2)', cursor: 'pointer',
-                        fontSize: 14, fontWeight: 600, textAlign: 'left',
-                        width: '100%', transition: 'all 0.2s',
-                        fontFamily: 'var(--font-body)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-cool)'
-                        e.currentTarget.style.color = 'var(--color-error)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                        e.currentTarget.style.color = 'var(--fg2)'
-                      }}
+                      className="dropdown-item dropdown-logout"
                     >
                       <span style={{ display: 'flex', color: 'var(--fg3)' }}>{Icons.logout({ s: 18 })}</span>
                       Cerrar sesión

@@ -32,20 +32,55 @@ function limpiarFiltros(filtros) {
  * @returns {Object} Institución con campos normalizados en inglés
  */
 export function mapInstitucion(inst) {
+  if (!inst) return inst
+
   return {
     ...inst,
+    // ── Core fields ──────────────────────────────────────
     name: inst.name ?? inst.nombre,
     description: inst.description ?? inst.descripcion,
     category: inst.category ?? inst.categoria,
+    subcategory: inst.subcategory ?? inst.subcategoria,
     city: inst.city ?? inst.ciudad,
     state: inst.state ?? inst.estado,
     address: inst.address ?? inst.direccion,
+
+    // ── Location ─────────────────────────────────────────
+    lat: inst.lat,
+    lng: inst.lng,
+
+    // ── Contact ──────────────────────────────────────────
     phone: inst.phone ?? inst.telefono,
+    whatsapp: inst.whatsapp,
+    email: inst.email,
     website: inst.website ?? inst.sitioWeb,
+
+    // ── Media ────────────────────────────────────────────
+    logo_url: inst.logo_url ?? inst.urlLogo,
+    cover_url: inst.cover_url ?? inst.urlPortada,
+    photos: inst.photos ?? inst.fotos,
+
+    // ── Details ──────────────────────────────────────────
+    disability_types: inst.disability_types ?? inst.tiposDiscapacidad,
+    min_age: inst.min_age ?? inst.edadMinima,
+    max_age: inst.max_age ?? inst.edadMaxima,
+    business_hours: inst.business_hours ?? inst.horarioAtencion,
+    plan_type: inst.plan_type ?? inst.tipoPlan,
+    services: inst.services ?? inst.servicios,
+
+    // ── Ratings ──────────────────────────────────────────
     rating_avg: inst.rating_avg ?? inst.calificacionPromedio,
     rating_count: inst.rating_count ?? inst.cantidadCalificaciones,
+
+    // ── Status ───────────────────────────────────────────
     is_active: inst.is_active ?? inst.activa ?? inst.active,
     is_verified: inst.is_verified ?? inst.verificada ?? inst.verified,
+
+    // ── Meta ─────────────────────────────────────────────
+    owner_id: inst.owner_id ?? inst.creadoPor,
+    created_at: inst.created_at ?? inst.fechaCreacion,
+    updated_at: inst.updated_at ?? inst.fechaActualizacion,
+    deleted_at: inst.deleted_at ?? inst.fechaEliminacion,
   }
 }
 

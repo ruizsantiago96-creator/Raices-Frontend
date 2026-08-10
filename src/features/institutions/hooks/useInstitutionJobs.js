@@ -144,15 +144,21 @@ export function useToggleJobStatus() {
 
 /**
  * Fetch all applicants to a specific job posting.
+ * Endpoint: GET /api/empleo/postulaciones?vacanteId=xxx
  */
 export function useJobApplicants(jobId) {
   return useQuery({
     queryKey: ['institution', 'job-applicants', jobId],
     queryFn: async () => {
-      const r = await api.get(`/empleo/${jobId}/postulantes`)
-      const res = r.data
-      const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      return data.map(mapApplicant)
+      try {
+        const r = await api.get('/empleo/postulaciones', { params: { vacanteId: jobId } })
+        const res = r.data
+        const data = Array.isArray(res) ? res : (res?.datos ?? [])
+        return data.map(mapApplicant)
+      } catch (err) {
+        if (err.response?.status === 404) return []
+        throw err
+      }
     },
     enabled: !!jobId,
   })
@@ -160,19 +166,20 @@ export function useJobApplicants(jobId) {
 
 /**
  * Fetch all applicants across all of the institution's job postings.
- * Uses /empleo/postulantes-institucion if available, or aggregates from individual jobs.
+ * Endpoint: GET /api/empleo/postulaciones (all for current institution)
  */
 export function useAllJobApplicants() {
   return useQuery({
     queryKey: ['institution', 'all-applicants'],
     queryFn: async () => {
       try {
-        const r = await api.get('/empleo/postulantes-institucion')
+        // Try to fetch all postulaciones for the institution
+        const r = await api.get('/empleo/postulaciones')
         const res = r.data
         const data = Array.isArray(res) ? res : (res?.datos ?? [])
         return data.map(mapApplicant)
       } catch {
-        // Fallback: get own jobs first, then aggregate applicants
+        // Fallback: aggregate from individual jobs
         const jobsRes = await api.get('/empleo', { params: { mias: true } })
         const jobsRaw = jobsRes.data
         const jobs = Array.isArray(jobsRaw) ? jobsRaw : (jobsRaw?.datos ?? [])
@@ -182,7 +189,7 @@ export function useAllJobApplicants() {
           const jobId = job.id ?? job._id
           if (!jobId) continue
           try {
-            const appRes = await api.get(`/empleo/${jobId}/postulantes`)
+            const appRes = await api.get('/empleo/postulaciones', { params: { vacanteId: jobId } })
             const appsRaw = appRes.data
             const apps = Array.isArray(appsRaw) ? appsRaw : (appsRaw?.datos ?? [])
             allApplicants.push(...apps.map(a => ({
@@ -191,7 +198,7 @@ export function useAllJobApplicants() {
               job_id: a.job_id ?? a.vacanteId ?? jobId,
             })))
           } catch {
-            // Skip jobs where applicants endpoint fails
+            // Skip jobs where postulaciones endpoint fails
           }
         }
         return allApplicants.map(mapApplicant)
@@ -201,14 +208,23 @@ export function useAllJobApplicants() {
   })
 }
 
+// Map frontend status values to backend values
+const STATUS_MAP = {
+  accepted: 'aceptada',
+  rejected: 'rechazada',
+}
+
 /**
  * Update the status of an applicant to a job posting.
+ * Endpoint: PATCH /api/empleo/postulaciones/:id/estado
  */
 export function useUpdateApplicationStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ jobId, applicantId, status }) =>
-      api.patch(`/empleo/${jobId}/postulantes/${applicantId}`, { estado: status }).then(r => r.data),
+    mutationFn: ({ applicantId, status }) => {
+      const backendStatus = STATUS_MAP[status] ?? status
+      return api.patch(`/empleo/postulaciones/${applicantId}/estado`, { estado: backendStatus }).then(r => r.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'all-applicants'] })
       qc.invalidateQueries({ queryKey: ['institution', 'job-applicants'] })

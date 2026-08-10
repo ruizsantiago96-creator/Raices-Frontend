@@ -7,7 +7,7 @@ import { REVIEWS_UI } from '../constants/reviewsMessages'
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
 
 function Card({ children, style, className }) {
-  return <div className={className} style={{ ...card, padding: 24, ...style }}>{children}</div>
+  return <div className={`card ${className || ''}`} style={{ padding: 24, ...style }}>{children}</div>
 }
 
 function Skeleton({ w = '100%', h = 16, r = 6, style }) {
@@ -26,8 +26,8 @@ function EmptyState({ icon, title, sub }) {
 
 function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000 }}>
+      <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: danger ? 'color-mix(in oklch, var(--color-error) 14%, transparent)' : 'var(--primary-subtle)', color: danger ? 'var(--color-error)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {danger ? Icons.shieldAlert({ s: 20 }) : Icons.shield({ s: 20 })}

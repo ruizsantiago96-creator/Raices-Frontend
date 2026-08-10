@@ -1,0 +1,187 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "agentrouter-anthropic/claude-opus-5-medium",
+  "small_model": "agentrouter-anthropic/claude-opus-5",
+
+  "provider": {
+    // ---------------------------------------------------------------------
+    // AgentRouter por la ruta OpenAI-compatible.
+    // Las "options" de cada modelo se mandan tal cual en el body, por eso
+    // se usa el nombre snake_case estandar de OpenAI: reasoning_effort.
+    // Verificado contra la API: acepta none | minimal | low | medium | high |
+    // xhigh | max.
+    // ---------------------------------------------------------------------
+    "agentrouter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AgentRouter (OpenAI Compatible)",
+      "options": {
+        "baseURL": "https://agentrouter.org/v1",
+        "headerTimeout": 60000,
+        "chunkTimeout": 120000
+      },
+      "models": {
+        "gpt-5.6-sol": {
+          "name": "gpt-5.6-sol (medium)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "medium" }
+        },
+        "gpt-5.6-sol-none": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (none)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": false,
+          "options": { "reasoning_effort": "none" }
+        },
+        "gpt-5.6-sol-minimal": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (minimal)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "minimal" }
+        },
+        "gpt-5.6-sol-low": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (low)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "low" }
+        },
+        "gpt-5.6-sol-high": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (high)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "high" }
+        },
+        "gpt-5.6-sol-xhigh": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (xhigh)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "xhigh" }
+        },
+        "gpt-5.6-sol-max": {
+          "id": "gpt-5.6-sol",
+          "name": "gpt-5.6-sol (max)",
+          "limit": { "context": 1000000, "output": 128000 },
+          "cost": { "input": 6, "output": 36, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "options": { "reasoning_effort": "max" }
+        }
+      }
+    },
+
+    // ---------------------------------------------------------------------
+    // AgentRouter por la ruta Anthropic nativa (/v1/messages).
+    // Aqui el effort no es un enum: es presupuesto de thinking en tokens.
+    // Verificado contra la API: acepta thinking.budget_tokens y devuelve
+    // bloques "thinking" con presupuestos altos.
+    // ---------------------------------------------------------------------
+    "agentrouter-anthropic": {
+      "npm": "@ai-sdk/anthropic",
+      "name": "AgentRouter (Anthropic)",
+      "options": {
+        // OJO: @ai-sdk/anthropic pide ${baseURL}/messages, no ${baseURL}/v1/messages.
+        // La doc de AgentRouter dice "https://agentrouter.org" y eso apunta al HTML
+        // del sitio: responde 200, el SDK lo lee como SSE vacio y no sale ni error.
+        "baseURL": "https://agentrouter.org/v1",
+        "headerTimeout": 60000,
+        "chunkTimeout": 120000
+      },
+      "models": {
+        "claude-opus-5": {
+          "name": "claude-opus-5 (sin thinking)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
+          "reasoning": false
+        },
+        "claude-opus-5-low": {
+          "id": "claude-opus-5",
+          "name": "claude-opus-5 (thinking low, 4k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 4096 } }
+        },
+        "claude-opus-5-medium": {
+          "id": "claude-opus-5",
+          "name": "claude-opus-5 (thinking medium, 16k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 16000 } }
+        },
+        "claude-opus-5-high": {
+          "id": "claude-opus-5",
+          "name": "claude-opus-5 (thinking high, 32k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 32000 } }
+        },
+        "claude-opus-5-max": {
+          "id": "claude-opus-5",
+          "name": "claude-opus-5 (thinking max, 64k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 64000 } }
+        },
+
+        "claude-opus-4-8": {
+          "name": "claude-opus-4-8 (sin thinking)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 6, "output": 30, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": false
+        },
+        "claude-opus-4-8-low": {
+          "id": "claude-opus-4-8",
+          "name": "claude-opus-4-8 (thinking low, 4k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 6, "output": 30, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 4096 } }
+        },
+        "claude-opus-4-8-medium": {
+          "id": "claude-opus-4-8",
+          "name": "claude-opus-4-8 (thinking medium, 16k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 6, "output": 30, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 16000 } }
+        },
+        "claude-opus-4-8-high": {
+          "id": "claude-opus-4-8",
+          "name": "claude-opus-4-8 (thinking high, 32k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 6, "output": 30, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 32000 } }
+        },
+        "claude-opus-4-8-max": {
+          "id": "claude-opus-4-8",
+          "name": "claude-opus-4-8 (thinking max, 64k)",
+          "limit": { "context": 1000000, "output": 64000 },
+          "cost": { "input": 6, "output": 30, "cache_read": 0.6, "cache_write": 7.5 },
+          "reasoning": true,
+          "temperature": false,
+          "options": { "thinking": { "type": "enabled", "budgetTokens": 64000 } }
+        }
+      }
+    }
+  }
+}
