@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { queryClient } from '@shared/lib/queryClient'
 import { ProtectedRoute } from '@features/auth'
+import FeatureGuard from '@features/auth/components/FeatureGuard'
 import ToastContainer from '@shared/components/Toast'
 import { AccessibilityBar } from '@features/a11y'
 import FCMProvider from '@features/notifications/components/FCMProvider'
@@ -24,7 +25,7 @@ import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
-import AboutPage from '@features/about/pages/AboutPage'
+
 import DesignPreview from '@features/landing/pages/DesignPreview'
 import MainLayout from '@shared/components/MainLayout'
 
@@ -148,23 +149,24 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/design-preview" element={<DesignPreview />} />
-                <Route path="/about" element={<AboutPage />} />
+
                 <Route path="/auth" element={<AuthPage />} />
 
                 {/* 🛡️ Rutas Protegidas que comparten el MainLayout Global */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                   <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/social" element={<SocialPage />} />
-                  <Route path="/favorites" element={<FavoritesPage />} />
+                  <Route path="/social" element={<FeatureGuard feature="comunidad"><SocialPage /></FeatureGuard>} />
+                  <Route path="/favorites" element={<FeatureGuard feature="favoritos"><FavoritesPage /></FeatureGuard>} />
                   <Route path="/institution/nueva" element={<CrearInstitucionPage />} />
                   <Route path="/institution/:id" element={<InstitutionPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                   <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
-                  <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/jobs" element={<FeatureGuard feature="postulaciones"><JobsPage /></FeatureGuard>} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
+                  <Route path="/institution-portal/registro" element={<ProtectedRoute role="institution"><CrearInstitucionPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                 </Route>

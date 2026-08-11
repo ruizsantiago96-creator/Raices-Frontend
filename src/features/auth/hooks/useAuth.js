@@ -8,7 +8,6 @@ import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 
 export function useLogin() {
   const { setAuth } = useAuthStore()
-  const nav = useNavigate()
   return useMutation({
     mutationFn: async ({ _rememberMe, email, password }) => {
       const rememberMe = _rememberMe ?? true
@@ -25,6 +24,7 @@ export function useLogin() {
             email: raw.usuario.email,
             role: raw.usuario.rol,
             full_name: raw.usuario.nombreCompleto,
+            features: raw.usuario.features ?? {},
           } : undefined,
         }
         return { source: 'backend', data, rememberMe }
@@ -88,11 +88,7 @@ export function useLogin() {
         hasRefreshToken: !!refresh,
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
-
-      const role = data.user?.role
-      if (role === 'admin') nav('/admin', { replace: true })
-      else if (role === 'institution') nav('/institution-portal', { replace: true })
-      else nav('/dashboard', { replace: true })
+      // La navegación se maneja directamente en AuthPage.doLogin después del mutateAsync
     },
   })
 }
@@ -133,6 +129,7 @@ export function useRegister() {
         email: raw.usuario.email,
         role: raw.usuario.rol,
         full_name: raw.usuario.nombreCompleto,
+        features: raw.usuario.features ?? {},
       } : undefined
       console.log('[Auth] Register response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: user?.role })
       setRememberMe(rememberMe)
@@ -163,9 +160,14 @@ export function useMe() {
         state: d.estado,
         avatar_url: d.urlAvatar,
         is_verified: d.verificado,
+        features: d.features ?? {},
       }
     }),
     enabled: !!token,
+    // Auto-refetch cada 2 minutos para que los cambios de features del tutor se reflejen sin recargar
+    refetchInterval: 2 * 60 * 1000,
+    // Refetch cuando el usuario vuelve a la pestaña (complemento al interval)
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -222,6 +224,7 @@ function mapUsuarioBackendToFrontend(d) {
     is_active: d.activo,
     is_verified: d.verificado,
     created_at: d.fechaCreacion,
+    features: d.features ?? {},
   }
 }
 

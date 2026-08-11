@@ -188,7 +188,7 @@ export default function EditarInstitucionPage() {
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px' }}>No tienes una institución registrada</h2>
             <p style={{ fontSize: 15, color: 'var(--fg3)', marginBottom: 24 }}>Registra tu institución para comenzar a gestionar vacantes y postulaciones.</p>
-            <button onClick={() => navigate('/crear-institucion')} className="btn-primary" style={{ padding: '12px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10 }}>
+            <button onClick={() => navigate('/institution-portal/registro')} className="btn-primary" style={{ padding: '12px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10 }}>
               {Icons.plus({ s: 18 })} Registrar institución
             </button>
           </div>
@@ -327,7 +327,7 @@ export default function EditarInstitucionPage() {
             {/* Sección: Imágenes */}
             <div className="animate-fade-in-up delay-3b" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {Icons.image({ s: 18 })} Imágenes
+                {Icons.camera({ s: 18 })} Imágenes
               </h3>
 
               <div style={{ marginBottom: 18 }}>
@@ -377,7 +377,7 @@ export default function EditarInstitucionPage() {
             {/* Sección: Atención y plan */}
             <div className="animate-fade-in-up delay-4b" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {Icons.clock({ s: 18 })} Atención y plan
+                {Icons.activity({ s: 18 })} Atención y plan
               </h3>
 
               <div style={{ marginBottom: 18 }}>

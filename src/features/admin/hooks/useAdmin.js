@@ -1,41 +1,64 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 
 /* ═══════════════════════════════════════════════════════════════════
    Admin — Stats, Analytics, Alerts, Settings
    ═══════════════════════════════════════════════════════════════════ */
 
-export function useAdminStats() {
+/** Helper: returns true only if the current user is an admin. */
+const useIsAdmin = () => useAuthStore(s => s.user?.role === 'admin')
+
+export function useAdminStats(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: () => api.get('/administracion/estadisticas').then(r => r.data),
     staleTime: 1000 * 60 * 5,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
-export function useAdminAnalytics() {
-  return useAdminStats()
+export function useAdminAnalytics(opts) {
+  return useAdminStats(opts)
 }
 
-export function useNeedsIntelligence() {
+export function useNeedsIntelligence(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'needs-intelligence'],
-    queryFn: () => api.get('/administracion/necesidades-inteligencia').then(r => r.data),
+    queryFn: () => api.get('/administracion/inteligencia-necesidades').then(r => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
-export function useAdminAlerts() {
+export function useAdminAlerts(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'alerts'],
     queryFn: () => api.get('/administracion/alertas').then(r => r.data),
     staleTime: 1000 * 60 * 2, // 2 min — las alertas deben estar relativamente frescas
     refetchOnWindowFocus: true,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
-export function useAdminSettings() {
-  return useQuery({ queryKey: ['admin', 'settings'],    queryFn: () => api.get('/administracion/configuracion').then(r => r.data) })
+export function useAdminSettings(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  return useQuery({
+    queryKey: ['admin', 'settings'],
+    queryFn: () => api.get('/administracion/configuracion').then(r => r.data),
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
+  })
 }
 
 export function useUpdateSettings() {
@@ -63,7 +86,9 @@ function mapActiveVisitors(raw) {
   return { live, historialMinutos, promedioDiario, promedioSemanal, promedioMensual }
 }
 
-export function useAdminDetailedAnalytics() {
+export function useAdminDetailedAnalytics(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'detailed-analytics'],
     queryFn: async () => {
@@ -76,15 +101,21 @@ export function useAdminDetailedAnalytics() {
       return data
     },
     staleTime: 1000 * 60 * 5,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
-export function useAdminActiveUsersDetail() {
+export function useAdminActiveUsersDetail(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'active-users-detail'],
     queryFn: () => api.get('/administracion/visitantes-activos').then(r => mapActiveVisitors(r.data)),
     staleTime: 1000 * 30,
     retry: false,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 

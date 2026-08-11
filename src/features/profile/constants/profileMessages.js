@@ -6,7 +6,7 @@
 // ─── Mensajes de Toast ────────────────────────────────────
 export const PROFILE_TOAST = {
   // Avatar
-  AVATAR_INVALID_FORMAT: 'Formato no reconocido. Usa PNG, JPG o JPEG',
+  AVATAR_INVALID_FORMAT: 'Formato no reconocido. Usa PNG, JPG, JPEG, WebP o GIF',
   AVATAR_TOO_LARGE: 'La imagen es muy grande. Intenta con una de menos de 5MB',
   AVATAR_UPDATED: '¡Foto de perfil actualizada!',
   AVATAR_UPDATE_ERROR: 'No pudimos subir la foto. Intenta de nuevo.',
@@ -99,7 +99,7 @@ export const PROFILE_UI = {
 // ─── Validación ───────────────────────────────────────────
 export const PROFILE_VALIDATION = {
   MAX_AVATAR_SIZE_MB: 5,
-  ALLOWED_AVATAR_TYPES: ['image/png', 'image/jpeg', 'image/jpg'],
+  ALLOWED_AVATAR_TYPES: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'],
 }
 
 // ─── Labels de rol (mapa para badge) ─────────────────────

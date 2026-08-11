@@ -55,9 +55,9 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --accent-dark: #98c5de;
   
   /* Colors - Background */
-  --bg-warm: #FFFFFF;
-  --bg-cool: #F5F5F5;
-  --bg-surface: #FFFFFF;
+  --bg-warm: #FFF9F2;
+  --bg-cool: #F5ECE3;
+  --bg-surface: #FFF9F2;
   
   /* Colors - Foreground */
   --fg1: #243434;
@@ -65,8 +65,8 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --fg3: #5F7070;
   
   /* Colors - Borders */
-  --border-color: #E2E8F0;
-  --border-strong: #CBD5E1;
+  --border-color: #E5DCD2;
+  --border-strong: #C8BEB2;
   
   /* Border Radius */
   --radius-sm: 8px;

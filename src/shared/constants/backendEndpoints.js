@@ -644,8 +644,8 @@ export const JOB_ENDPOINTS = {
   // ── Endpoints de postulaciones ──────────────────────
   GET_POSTULACIONES: {
     method: 'GET',
-    path: '/empleo/postulaciones',
-    description: 'Obtener postulaciones. Filtrar por vacanteId para ver las de una vacante específica.',
+    path: '/empleo/postulantes-institucion',
+    description: 'Obtener postulantes de mi institución. Filtrar por vacanteId para ver las de una vacante específica.',
     params: { vacanteId: 'string? (opcional, filtrar por vacante)' },
     response: {
       datos: [{
