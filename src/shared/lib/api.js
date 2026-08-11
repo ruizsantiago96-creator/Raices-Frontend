@@ -23,12 +23,34 @@ function forceLogout(message) {
   // con <Navigate replace />, manteniendo el historial limpio.
 }
 
+/* ─── ETag Cache ──────────────────────────────────────────────────── */
+// Almacena ETags de respuestas GET para enviar If-None-Match.
+// Key: URL completa (path + query string)
+// Value: { etag: string, data: any, status: number }
+const etagCache = new Map()
+
+function getEtagKey(config) {
+  // Solo para GETs, usar URL completa como key
+  if (config.method !== 'get') return null
+  const base = config.baseURL ?? ''
+  const url = config.url ?? ''
+  return `${config.method}:${base}${url}`
+}
+
 /* ─── Axios instance ──────────────────────────────────────────────── */
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' })
+// 🛡️ Prevenir bug de conversión de rutas POSIX-to-Windows de Git Bash en Windows (ej. convirtiendo "/api" en "C:/Program Files/Git/api")
+let rawApiUrl = import.meta.env.VITE_API_URL
+if (rawApiUrl && (rawApiUrl.includes('Git') || /^[a-zA-Z]:[/\\]/.test(rawApiUrl))) {
+  rawApiUrl = '/api'
+}
+
+const api = axios.create({
+  baseURL: rawApiUrl ?? '/api',
+})
 
 // Instance aislada para el refresh (sin interceptores, evita loops)
-const refreshClient = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' })
+const refreshClient = axios.create({ baseURL: rawApiUrl ?? '/api' })
 
 /* ─── Cola de peticiones pendientes durante refresh ────────────────── */
 
@@ -49,10 +71,61 @@ api.interceptors.request.use(cfg => {
   }
 
   if (storageToken) cfg.headers.Authorization = `Bearer ${storageToken}`
+
+  // ─── ETag: enviar If-None-Match si tenemos un ETag previo ──────
+  const etagKey = getEtagKey(cfg)
+  if (etagKey) {
+    const cached = etagCache.get(etagKey)
+    if (cached?.etag) {
+      cfg.headers['If-None-Match'] = cached.etag
+    }
+  }
+
   return cfg
 })
 
-/* ─── Interceptor de Response ─────────────────────────────────────── */
+/* ─── Interceptor de Response (ETag) ─────────────────────────────── */
+
+api.interceptors.response.use(
+  response => {
+    // ─── Capturar ETag de la respuesta (solo GETs con 200) ─────────
+    const etagKey = getEtagKey(response.config)
+    if (etagKey && response.status === 200) {
+      const etag = response.headers['etag']
+      if (etag) {
+        etagCache.set(etagKey, {
+          etag,
+          data: response.data,
+          status: response.status,
+        })
+      }
+    }
+    return response
+  },
+  // ─── Error handler: capturar 304 (axios lo lanza como error) ────
+  error => {
+    const { response, config } = error
+    // Solo procesar 304 en peticiones GET
+    if (response?.status === 304 && config?.method === 'get') {
+      const etagKey = getEtagKey(config)
+      const cached = etagKey ? etagCache.get(etagKey) : null
+      if (cached) {
+        // Devolver datos cacheados como si fuera 200
+        return {
+          data: cached.data,
+          status: 200,
+          statusText: 'OK (304 cached)',
+          headers: { ...response.headers, 'x-etag-cache': 'hit' },
+          config,
+        }
+      }
+    }
+    // Para cualquier otro error, propagar
+    return Promise.reject(error)
+  }
+)
+
+/* ─── Interceptor de Response (Error + 401 refresh) ──────────────── */
 
 api.interceptors.response.use(
   r => r,

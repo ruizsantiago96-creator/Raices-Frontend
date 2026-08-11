@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 
 /* ── Map helpers ─────────────────────────────────────────── */
 
@@ -59,7 +60,12 @@ function mapApplicant(app) {
  * Fetch all job postings created by the current institution.
  * Uses /empleo with a filter to get only the institution's own jobs.
  */
-export function useMyJobPostings() {
+/** Helper: returns true only if the current user has the institution role. */
+const useIsInstitution = () => useAuthStore(s => s.user?.role === 'institution')
+
+export function useMyJobPostings(opts) {
+  const isInstitution = useIsInstitution()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'job-postings'],
     queryFn: async () => {
@@ -69,6 +75,8 @@ export function useMyJobPostings() {
       return data.map(mapJob)
     },
     staleTime: 1000 * 60 * 2,
+    enabled: isInstitution && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
@@ -144,14 +152,17 @@ export function useToggleJobStatus() {
 
 /**
  * Fetch all applicants to a specific job posting.
- * Endpoint: GET /api/empleo/postulaciones?vacanteId=xxx
+ * Endpoint: GET /api/empleo/postulantes-institucion?vacanteId=xxx
  */
-export function useJobApplicants(jobId) {
+export function useJobApplicants(jobId, opts) {
+  const isInstitution = useIsInstitution()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'job-applicants', jobId],
     queryFn: async () => {
       try {
-        const r = await api.get('/empleo/postulaciones', { params: { vacanteId: jobId } })
+        // Use the dedicated per-vacante endpoint (new alias)
+        const r = await api.get('/empleo/postulantes-vacante', { params: { vacanteId: jobId } })
         const res = r.data
         const data = Array.isArray(res) ? res : (res?.datos ?? [])
         return data.map(mapApplicant)
@@ -160,51 +171,36 @@ export function useJobApplicants(jobId) {
         throw err
       }
     },
-    enabled: !!jobId,
+    enabled: isInstitution && !!jobId && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
 /**
  * Fetch all applicants across all of the institution's job postings.
- * Endpoint: GET /api/empleo/postulaciones (all for current institution)
+ * Endpoint: GET /api/empleo/postulantes-institucion (all for current institution)
  */
-export function useAllJobApplicants() {
+export function useAllJobApplicants(opts) {
+  const isInstitution = useIsInstitution()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'all-applicants'],
     queryFn: async () => {
       try {
-        // Try to fetch all postulaciones for the institution
-        const r = await api.get('/empleo/postulaciones')
+        // Primary: fetch all postulantes for the institution in one call
+        const r = await api.get('/empleo/postulantes-institucion')
         const res = r.data
         const data = Array.isArray(res) ? res : (res?.datos ?? [])
         return data.map(mapApplicant)
-      } catch {
-        // Fallback: aggregate from individual jobs
-        const jobsRes = await api.get('/empleo', { params: { mias: true } })
-        const jobsRaw = jobsRes.data
-        const jobs = Array.isArray(jobsRaw) ? jobsRaw : (jobsRaw?.datos ?? [])
-        
-        const allApplicants = []
-        for (const job of jobs) {
-          const jobId = job.id ?? job._id
-          if (!jobId) continue
-          try {
-            const appRes = await api.get('/empleo/postulaciones', { params: { vacanteId: jobId } })
-            const appsRaw = appRes.data
-            const apps = Array.isArray(appsRaw) ? appsRaw : (appsRaw?.datos ?? [])
-            allApplicants.push(...apps.map(a => ({
-              ...a,
-              job_title: a.job_title ?? a.tituloVacante ?? job.titulo ?? job.title,
-              job_id: a.job_id ?? a.vacanteId ?? jobId,
-            })))
-          } catch {
-            // Skip jobs where postulaciones endpoint fails
-          }
-        }
-        return allApplicants.map(mapApplicant)
+      } catch (err) {
+        // If the bulk endpoint doesn't exist yet, return empty — never fall back to N+1
+        if (err.response?.status === 404) return []
+        throw err
       }
     },
     staleTime: 1000 * 60 * 2,
+    enabled: isInstitution && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
@@ -216,7 +212,7 @@ const STATUS_MAP = {
 
 /**
  * Update the status of an applicant to a job posting.
- * Endpoint: PATCH /api/empleo/postulaciones/:id/estado
+ * Endpoint: PATCH /api/empleo/postulaciones/:id/estado (correcto según backend)
  */
 export function useUpdateApplicationStatus() {
   const qc = useQueryClient()

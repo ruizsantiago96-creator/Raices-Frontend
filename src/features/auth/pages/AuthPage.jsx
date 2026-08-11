@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
@@ -86,8 +86,17 @@ export default function AuthPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Si el usuario ya está logueado, redirigir a su página principal
-  if (token) {
+  // Ref global que persiste entre renders sin causar re-renders.
+  // Se setea a true DESPUÉS del await mutateAsync (antes del navigate).
+  // Se resetea a false en el cleanup del efecto.
+  const didLoginRef = useRef(false)
+
+  useEffect(() => {
+    return () => { didLoginRef.current = false }
+  }, [])
+
+  // Si el usuario ya tenía sesión al cargar la página (recarga), redirigir
+  if (token && !login.isPending && !didLoginRef.current) {
     if (user?.role === 'admin') return <Navigate to="/admin" replace />
     if (user?.role === 'institution') return <Navigate to="/institution-portal" replace />
     return <Navigate to="/dashboard" replace />
@@ -115,9 +124,18 @@ export default function AuthPage() {
       return
     }
     try {
-      await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
+      // Marcar ANTES del await para que el Navigate no compita con nav()
+      didLoginRef.current = true
+      const result = await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
       addToast(AUTH_MESSAGES.LOGIN_SUCCESS, 'success')
+      
+      // Navegar directamente después del login exitoso según el rol
+      const role = result?.data?.user?.role
+      if (role === 'admin') nav('/admin', { replace: true })
+      else if (role === 'institution') nav('/institution-portal', { replace: true })
+      else nav('/dashboard', { replace: true })
     } catch (err) {
+      didLoginRef.current = false
       const msg = err.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
       const translatedMsg = mapErrorMessage(msg)
       setError(translatedMsg)

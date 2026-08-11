@@ -197,13 +197,22 @@ export function useDiscovery(filtros = {}) {
   })
 }
 
-export function useMiInstitucion() {
+export function useMiInstitucion(opts) {
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['mi-institucion'],
-    queryFn: () => api.get('/instituciones/mi-institucion').then(r => {
-      const inst = r.data?.datos ?? r.data
-      return mapInstitucion(inst)
-    }),
+    queryFn: async () => {
+      try {
+        const r = await api.get('/instituciones/mi-institucion')
+        const inst = r.data?.datos ?? r.data
+        return mapInstitucion(inst)
+      } catch (err) {
+        // 404 = usuario no tiene institución registrada → tratar como null
+        if (err.response?.status === 404) return null
+        throw err
+      }
+    },
+    ...restOpts,
   })
 }
 

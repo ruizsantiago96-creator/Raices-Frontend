@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { useAuthStore } from '@features/auth'
 
 /**
  * @typedef {Object} InstitucionAdmin
@@ -41,7 +42,12 @@ function mapInstitucionAdmin(inst) {
  * Hook para listar todas las instituciones (panel admin).
  * GET /api/administracion/instituciones
  */
-export function useAllInstitutions() {
+/** Helper: returns true only if the current user is an admin. */
+const useIsAdmin = () => useAuthStore(s => s.user?.role === 'admin')
+
+export function useAllInstitutions(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'institutions'],
     queryFn: () => api.get('/administracion/instituciones').then(r => {
@@ -55,6 +61,8 @@ export function useAllInstitutions() {
       }
       return [...seen.values()]
     }),
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 
@@ -62,7 +70,9 @@ export function useAllInstitutions() {
  * Hook para listar instituciones pendientes de aprobación.
  * GET /api/administracion/instituciones/pending
  */
-export function usePendingInstitutions() {
+export function usePendingInstitutions(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'pending'],
     queryFn: () => api.get('/administracion/instituciones/pendientes').then(r => {
@@ -76,6 +86,8 @@ export function usePendingInstitutions() {
       }
       return [...seen.values()]
     }),
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 

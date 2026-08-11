@@ -1,7 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore, useMe, AppSidebar, TopNav } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants } from '@features/institutions'
+import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants, useMiInstitucion } from '@features/institutions'
 import { useAdminAlerts } from '@features/admin'
 
 export default function MainLayout() {
@@ -21,13 +21,18 @@ export default function MainLayout() {
   const sidebarMode = isAdmin ? 'admin' : isInstPortal ? 'institution' : 'app'
 
   // Consultas de React Query para los contadores de la barra lateral (seguras según el modo)
-  const { data: pendingInsts = [] } = usePendingInstitutions(undefined, { enabled: isAdmin })
-  const { data: adminAlerts = [] } = useAdminAlerts(undefined, { enabled: isAdmin })
+  const { data: pendingInsts = [] } = usePendingInstitutions({ enabled: isAdmin })
+  const { data: adminAlerts = [] } = useAdminAlerts({ enabled: isAdmin })
   const totalPendingCount = pendingInsts.length
   const criticalCount = adminAlerts.filter(a => a.severity === 'critical' || a.severity === 'high').length
 
-  const { data: jobs = [] } = useMyJobPostings(undefined, { enabled: isInstPortal })
-  const { data: applicants = [] } = useAllJobApplicants(undefined, { enabled: isInstPortal })
+  // Solo buscar la institución del usuario cuando estamos en el portal
+  const { data: myInstitution, isLoading: loadingMyInst } = useMiInstitucion({ enabled: isInstPortal })
+  const hasInstitution = isInstPortal && !loadingMyInst && !!myInstitution
+
+  // Solo buscar vacantes y postulantes si ya existe una institución
+  const { data: jobs = [] } = useMyJobPostings({ enabled: hasInstitution })
+  const { data: applicants = [] } = useAllJobApplicants({ enabled: hasInstitution })
   const activeJobs = jobs.filter(j => j.is_active).length
   const pendingApplicants = applicants.filter(a => a.status === 'pending').length
   const instStats = { activeJobs, pendingApplicants }

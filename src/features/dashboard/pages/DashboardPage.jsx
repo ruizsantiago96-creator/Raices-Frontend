@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const { data: recommendations = [], isLoading, isError: discoveryError, refetch: refetchDiscovery } = useDiscovery()
   const { data: favIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
-  const { data: aiInsights, isLoading: aiLoading } = useAINextSteps()
+  const { data: aiInsights, isLoading: aiLoading, canFetch, fetch: fetchAI } = useAINextSteps()
 
   useEffect(() => {
     const cleanup = initScrollReveal()
@@ -81,6 +81,29 @@ export default function DashboardPage() {
               <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'var(--bg-cool)', color: 'var(--fg3)' }}>
                 Demo
               </span>
+            )}
+            {/* Botón manual para disparar IA */}
+            {!aiLoading && !aiInsights?.next_steps?.length && (
+              <button
+                onClick={() => fetchAI()}
+                disabled={!canFetch()}
+                style={{
+                  marginLeft: 'auto',
+                  padding: '7px 16px',
+                  borderRadius: 20,
+                  border: '1px solid var(--primary)',
+                  background: canFetch() ? 'var(--primary)' : 'var(--border-color)',
+                  color: canFetch() ? '#fff' : 'var(--fg3)',
+                  fontSize: 13, fontWeight: 600,
+                  cursor: canFetch() ? 'pointer' : 'not-allowed',
+                  fontFamily: 'var(--font-body)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                  flexShrink: 0,
+                }}
+              >
+                {Icons.sparkles({ s: 14 })} {canFetch() ? 'Obtener recomendaciones' : 'Espera 5 min'}
+              </button>
             )}
           </div>
           {aiLoading ? (

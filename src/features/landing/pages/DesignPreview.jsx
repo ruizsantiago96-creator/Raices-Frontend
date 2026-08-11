@@ -11,12 +11,12 @@ const COLORS = {
   secondary: '#F1FA3F',
   secondaryDark: '#D4DC2E',
   secondarySubtle: 'rgba(241, 250, 63, 0.15)',
-  bg: '#FFFFFF',
-  surface: '#F8FAFC',
+  bg: '#FFF9F2',
+  surface: '#F5ECE3',
   fg1: '#0F172A',
   fg2: '#475569',
   fg3: '#94A3B8',
-  border: '#E2E8F0',
+  border: '#E5DCD2',
 }
 
 export default function DesignPreview() {

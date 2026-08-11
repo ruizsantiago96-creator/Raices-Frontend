@@ -25,7 +25,7 @@ export function useSessionVerify() {
   const [error, setError] = useState(null)
   const [isVerified, setIsVerified] = useState(false)
 
-  const { logout } = useAuthStore()
+  const logout = useAuthStore(state => state.logout)
 
   useEffect(() => {
     let cancelled = false
@@ -64,6 +64,7 @@ export function useSessionVerify() {
               state: raw.estado,
               avatar_url: raw.urlAvatar,
               is_verified: raw.verificado,
+              features: raw.features ?? {},
             },
           })
 

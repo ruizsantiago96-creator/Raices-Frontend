@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useMe } from '../hooks/useAuth'
 import { Icons, LeafIcon } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 
 export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount, alertCritical, stats }) => {
   const { user } = useAuthStore()
+  const { data: meData, isFetching } = useMe()
   const { sidebarOpen, setSidebarOpen } = useUiStore()
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true'
@@ -55,13 +57,20 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
                <LeafIcon size={18} color="rgba(255,255,255,0.9)" />
     title = 'Raíces'
+    // ── Filtrar items según features del usuario ────────────────────
+    const features = user?.features ?? {}
+    const hasFeature = (name) => {
+      if (Array.isArray(features)) return features.includes(name)
+      return features[name] !== false
+    }
+
     items = [
       { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
       { id: 'explore', label: 'Explorar', icon: Icons.search, path: '/explore' },
-      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs' },
-      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites' },
-      { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social' },
-    ]
+      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
+      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
+      { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social', hidden: !hasFeature('comunidad') },
+    ].filter(item => !item.hidden)
     if (user?.role === 'tutor') {
       items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
     }
@@ -82,8 +91,30 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       }}>
         {/* Brand logo at top */}
         <div className="sidebar-logo-container" style={{ padding: '8px 0 24px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {logoIcon}
+          <div style={{ position: 'relative', width: 36, height: 36 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {logoIcon}
+            </div>
+            {/* Indicador de sincronización cuando se refrescan permisos */}
+            {isFetching && mode === 'app' && (
+              <div
+                aria-label="Actualizando permisos"
+                title="Sincronizando permisos..."
+                style={{
+                  position: 'absolute', top: -4, right: -4,
+                  width: 14, height: 14,
+                  borderRadius: '50%',
+                  background: 'var(--color-warning)',
+                  border: '2px solid var(--bg-surface)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  animation: 'spin 1s linear infinite',
+                }}
+              >
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 11-6.219-8.56" />
+                </svg>
+              </div>
+            )}
           </div>
         </div>
 
@@ -180,8 +211,25 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
               textDecoration: 'none',
               marginRight: 0,
             }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                {(user.full_name ?? '?')[0]?.toUpperCase()}
+              <div style={{ position: 'relative', width: 24, height: 24, flexShrink: 0 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700 }}>
+                  {(user.full_name ?? '?')[0]?.toUpperCase()}
+                </div>
+                {/* Dot de sincronización en el avatar */}
+                {isFetching && (
+                  <div
+                    aria-label="Actualizando"
+                    title="Sincronizando..."
+                    style={{
+                      position: 'absolute', bottom: -1, right: -1,
+                      width: 8, height: 8,
+                      borderRadius: '50%',
+                      background: 'var(--color-warning)',
+                      border: '1.5px solid rgba(0,29,38,0.92)',
+                      animation: 'spin 1s linear infinite',
+                    }}
+                  />
+                )}
               </div>
               <span className="sidebar-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.full_name ?? 'Usuario'}</span>
             </Link>
@@ -321,8 +369,23 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
           {mode === 'app' ? (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
-                  {(user?.full_name ?? '?')[0]?.toUpperCase()}
+                <div style={{ position: 'relative', width: 32, height: 32, flexShrink: 0 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
+                    {(user?.full_name ?? '?')[0]?.toUpperCase()}
+                  </div>
+                  {isFetching && (
+                    <div
+                      aria-label="Actualizando"
+                      style={{
+                        position: 'absolute', bottom: -1, right: -1,
+                        width: 10, height: 10,
+                        borderRadius: '50%',
+                        background: 'var(--color-warning)',
+                        border: '2px solid #001D26',
+                        animation: 'spin 1s linear infinite',
+                      }}
+                    />
+                  )}
                 </div>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.full_name ?? 'Usuario'}</span>
               </div>

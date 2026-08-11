@@ -8,6 +8,7 @@
 // ── Components (reusable UI used across features) ──────────────────
 export { AppSidebar } from './components/AppSidebar'
 export { default as ProtectedRoute } from './components/ProtectedRoute'
+export { default as FeatureGuard } from './components/FeatureGuard'
 export { TopNav } from './components/TopNav'
 
 // ── Hooks (business logic used by other features) ─────────────────
