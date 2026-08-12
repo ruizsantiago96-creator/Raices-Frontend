@@ -124,7 +124,7 @@ describe('shared/constants/backendEndpoints', () => {
     })
 
     it('JOB_ENDPOINTS.APPLY has body with cartaPresentacion', () => {
-      expect(JOB_ENDPOINTS.APPLY.body.cartaPresentacion).toBe('string')
+      expect(JOB_ENDPOINTS.APPLY.body.cartaPresentacion).toBe('string?')
     })
 
     it('NOTIFICATION_ENDPOINTS.MARK_READ uses PATCH method', () => {

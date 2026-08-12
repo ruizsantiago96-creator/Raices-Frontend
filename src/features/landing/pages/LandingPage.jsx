@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { LeafIcon, Icons, BrandMark, AppFooter } from '@shared/components/shared'
+import { Icons, BrandMark, AppFooter } from '@shared/components/shared'
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
