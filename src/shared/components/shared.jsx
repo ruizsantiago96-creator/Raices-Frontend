@@ -197,33 +197,52 @@ const FOOTER_COLUMNS = [
 ]
 
 export const AppFooter = () => (
-  <footer className="app-footer-main" style={{ background: '#2E3B46', padding: '40px 48px 20px', fontFamily: 'var(--font-body)' }}>
-    <div style={{ maxWidth: 1100, margin: '0 auto' }} className="responsive-footer-grid">
+  <footer className="app-footer-main" style={{ background: 'var(--landing-footer-bg)', borderTop: '1px solid var(--landing-footer-border)', padding: '40px 48px 20px', fontFamily: 'var(--font-body)', position: 'relative', overflow: 'hidden' }}>
+    {/* Nodos de luz decorativos en las esquinas del footer */}
+    <div style={{ position: 'absolute', left: '-100px', bottom: '-150px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(202, 145, 142, var(--landing-glow-opacity-rose)) 0%, rgba(202, 145, 142, 0) 70%)', filter: 'blur(45px)', pointerEvents: 'none', zIndex: 0 }}></div>
+    <div style={{ position: 'absolute', right: '-100px', bottom: '-150px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(168, 184, 107, var(--landing-glow-opacity-matcha)) 0%, rgba(168, 184, 107, 0) 70%)', filter: 'blur(45px)', pointerEvents: 'none', zIndex: 0 }}></div>
+
+    <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }} className="responsive-footer-grid">
       <div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: '#FBF7F0', margin: 0, lineHeight: 1.2 }}>
-          <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(251,247,240,0.3)', textUnderlineOffset: 3 }}>Raíces</span>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--landing-footer-text)', margin: 0, lineHeight: 1.2 }}>
+          <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--landing-footer-border)', textUnderlineOffset: 3 }}>Raíces</span>
           <br />
           para florecer.
         </h3>
-        <p style={{ fontSize: 14, color: 'rgba(251,247,240,0.7)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
+        <p style={{ fontSize: 14, color: 'var(--landing-footer-text-muted)', marginTop: 10, lineHeight: 1.5, maxWidth: 240 }}>
           Conectamos caminos claros, dignos y confiables para el desarrollo, la autonomía y el florecimiento.
         </p>
       </div>
       {FOOTER_COLUMNS.map((col, i) => (
         <div key={i}>
-          <h4 style={{ fontSize: 16, fontWeight: 700, color: '#FBF7F0', margin: '0 0 14px' }}>{col.title}</h4>
+          <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--landing-footer-text)', margin: '0 0 14px' }}>{col.title}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-            {col.items.map((item, j) => <li key={j} style={{ fontSize: 14, color: 'rgba(251,247,240,0.6)', cursor: 'pointer' }}>{item}</li>)}
+            {col.items.map((item, j) => (
+              <li 
+                key={j} 
+                className="hover:text-[#FF4D68] transition-colors duration-200" 
+                style={{ fontSize: 14, color: 'var(--landing-footer-text-muted)', cursor: 'pointer' }}
+              >
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
       ))}
     </div>
-    <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid rgba(251,247,240,0.1)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(251,247,240,0.4)' }} className="app-footer-bottom footer-bottom">
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <LeafIcon size={14} color="rgba(251,247,240,0.4)" />
-        2026. Raíces para florecer. Construida con dignidad y cuidado
-      </span>
-      <span>Privacidad · Accesibilidad</span>
+    <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid var(--landing-footer-border)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--landing-footer-text-muted)', position: 'relative', zIndex: 1 }} className="app-footer-bottom footer-bottom">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <LeafIcon size={14} color="var(--landing-footer-text-muted)" />
+          2026. Raíces para florecer. Construida con dignidad y cuidado
+        </span>
+        <span style={{ opacity: 0.5 }}>·</span>
+        <span>Privacidad · Accesibilidad</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--landing-footer-text-muted)' }}>
+        POWERED BY
+        <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 16, width: 'auto', display: 'block' }} />
+      </div>
     </div>
   </footer>
 )
