@@ -101,6 +101,25 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   
   /* Focus */
   --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
+
+  /* Landing Page & Footer theme tokens (Light Mode) */
+  --landing-bg-topbar: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 249, 242, 0.25) 100%);
+  --landing-border-topbar: rgba(255, 255, 255, 0.45);
+  --landing-text-topbar: #073B4C;
+  --landing-text-topbar-muted: rgba(7, 59, 76, 0.8);
+  --landing-footer-bg: #FFF9F2;
+  --landing-footer-text: #073B4C;
+  --landing-footer-text-muted: rgba(7, 59, 76, 0.65);
+  --landing-footer-border: rgba(7, 59, 76, 0.1);
+  --landing-title: #073B4C;
+  --landing-text-muted: rgba(7, 59, 76, 0.75);
+  --landing-card-bg: rgba(255, 249, 242, 0.65);
+  --landing-card-border: rgba(7, 59, 76, 0.1);
+  --landing-card-shadow: 0 8px 32px 0 rgba(7, 59, 76, 0.04);
+  --landing-glow-opacity-rose: 0.35;
+  --landing-glow-opacity-matcha: 0.35;
+  --landing-glass-text: #073B4C;
+  --landing-glass-text-muted: rgba(7, 59, 76, 0.75);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1112,11 +1131,7 @@ html.sidebar-collapsed .sidebar-user-container a {
     height: 56px !important; 
   }
   .landing-topbar .landing-nav { 
-    gap: 4px !important; 
-  }
-  .landing-topbar .landing-nav button { 
-    font-size: 13px !important; 
-    padding: 6px 8px !important; 
+    display: none !important; 
   }
   .landing-topbar .landing-auth { 
     gap: 6px !important; 
@@ -1700,11 +1715,11 @@ html[data-motor-spacing="true"] .mobile-bottom-nav a {
    ═══════════════════════════════════════════════════════════ */
 html[data-theme="dark"] {
   /* Liquid Glass Custom Properties (Dark Mode) */
-  --glass-bg: rgba(30, 32, 37, 0.94);
+  --glass-bg: rgba(20, 32, 32, 0.55);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.35), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
   --glass-blur: blur(24px) saturate(190%);
-  --modal-backdrop: rgba(0, 0, 0, 0.45);
+  --modal-backdrop: rgba(0, 0, 0, 0.2);
 
   /* ── Brand Colors ────────────────────────────────── */
   --primary: #3fac91;
@@ -1729,8 +1744,26 @@ html[data-theme="dark"] {
   --color-success: #4ADE80;
   --color-warning: #FBBF24;
   --color-error: #F87171;
-  --color-info: #60A5FA;
   --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
+
+  /* Landing Page & Footer theme tokens (Dark Mode) */
+  --landing-bg-topbar: linear-gradient(135deg, rgba(30, 32, 37, 0.5) 0%, rgba(20, 24, 23, 0.3) 100%);
+  --landing-border-topbar: rgba(255, 255, 255, 0.08);
+  --landing-text-topbar: #E8EAED;
+  --landing-text-topbar-muted: rgba(232, 234, 237, 0.8);
+  --landing-footer-bg: #0E1014;
+  --landing-footer-text: #E8EAED;
+  --landing-footer-text-muted: rgba(232, 234, 237, 0.65);
+  --landing-footer-border: rgba(255, 255, 255, 0.08);
+  --landing-title: #E8EAED;
+  --landing-text-muted: rgba(232, 234, 237, 0.75);
+  --landing-card-bg: rgba(30, 32, 37, 0.65);
+  --landing-card-border: rgba(255, 255, 255, 0.08);
+  --landing-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  --landing-glow-opacity-rose: 0.15;
+  --landing-glow-opacity-matcha: 0.15;
+  --landing-glass-text: #E8EAED;
+  --landing-glass-text-muted: rgba(232, 234, 237, 0.75);
 }
 
 html[data-theme="dark"] body {

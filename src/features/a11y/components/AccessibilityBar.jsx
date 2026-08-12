@@ -624,12 +624,14 @@ export default function AccessibilityBar() {
         }
         
         html[data-theme="dark"] .liquid-glass-panel {
-          background: rgba(20, 28, 28, 0.94);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(20, 32, 32, 0.65);
+          backdrop-filter: blur(25px) saturate(180%);
+          -webkit-backdrop-filter: blur(25px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-            0 12px 40px 0 rgba(0, 0, 0, 0.35),
-            0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+            0 12px 40px 0 rgba(0, 0, 0, 0.45),
+            0 1px 2px 0 rgba(0, 0, 0, 0.15);
         }
         
         .glass-button {

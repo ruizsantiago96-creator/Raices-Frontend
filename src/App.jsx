@@ -169,10 +169,6 @@ export default function App() {
                   <Route path="/institution-portal/registro" element={<ProtectedRoute role="institution"><CrearInstitucionPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
-                </Route>
-
-                {/* 🌍 Rutas Públicas que comparten el MainLayout Global */}
-                <Route element={<MainLayout />}>
                   <Route path="/explore" element={<ExplorePage />} />
                 </Route>
 
