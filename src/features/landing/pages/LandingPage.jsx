@@ -410,9 +410,9 @@ export default function LandingPage() {
         <button onClick={() => nav('/auth?mode=register')} className="btn-primary hover:bg-[#FF3352] hover:scale-[1.05] hover:shadow-lg hover:shadow-[#FF4D68]/20 active:scale-95 transition-all duration-300" style={{ fontSize: 18, padding: '14px 40px', background: '#FF4D68', color: '#fff', border: 'none', cursor: 'pointer' }}>
           Crear mi cuenta {Icons.arrowRight({ s: 18 })}
         </button>
-        <p style={{ fontSize: 13, color: 'var(--landing-text-muted)', marginTop: 16 }}>
+        {/* <p style={{ fontSize: 13, color: 'var(--landing-text-muted)', marginTop: 16 }}>
           Demo: demo@raices.mx / Demo1234
-        </p>
+        </p> */}
       </section>
 
       <div style={{ position: 'relative', zIndex: 10 }}>
