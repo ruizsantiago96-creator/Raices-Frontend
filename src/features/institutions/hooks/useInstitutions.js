@@ -205,8 +205,10 @@ export function useMiInstitucion(opts) {
       try {
         const r = await api.get('/instituciones/mi-institucion')
         const inst = r.data?.datos ?? r.data
+        console.log('[DEBUG] useMiInstitucion - GET /instituciones/mi-institucion response:', r.data)
         return mapInstitucion(inst)
       } catch (err) {
+        console.error('[DEBUG] useMiInstitucion - GET /instituciones/mi-institucion error:', err)
         // 404 = usuario no tiene institución registrada → tratar como null
         if (err.response?.status === 404) return null
         throw err
@@ -219,7 +221,18 @@ export function useMiInstitucion(opts) {
 export function useUpdateMiInstitucion() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.put('/instituciones/mi-institucion', data).then(r => r.data),
+    mutationFn: ({ id, ...data }) => {
+      console.log('[DEBUG] useUpdateMiInstitucion - PUT /instituciones/' + id + ' payload:', data)
+      return api.put(`/instituciones/${id}`, data)
+        .then(r => {
+          console.log('[DEBUG] useUpdateMiInstitucion - PUT response:', r.data)
+          return r.data
+        })
+        .catch(err => {
+          console.error('[DEBUG] useUpdateMiInstitucion - PUT error:', err.response?.data ?? err)
+          throw err
+        })
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mi-institucion'] })
       qc.invalidateQueries({ queryKey: ['institutions'] })

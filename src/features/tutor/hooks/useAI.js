@@ -6,14 +6,38 @@ import { useCallback } from 'react'
 const STORAGE_KEY = 'ai_last_fetch_ts'
 const DEBOUNCE_MS = 5 * 60 * 1000 // 5 min entre requests (respeta rate limit del backend)
 
+/**
+ * Hook para el chat de IA.
+ * POST /api/ia/conversacion
+ *
+ * @returns {Object} Mutation result con { mutate, mutateAsync, data, isPending, isError, error }
+ *
+ * Usage:
+ *   const chat = useChat()
+ *   const res = await chat.mutateAsync({ mensaje: 'Hola', historial: [] })
+ *   // res.respuesta = texto de la IA
+ *   // res.simulado = true/false (si es respuesta de demo)
+ */
 export function useChat() {
   return useMutation({
     mutationFn: (data) => api.post('/ia/conversacion', data).then(r => r.data),
+    onError: (error) => {
+      // Manejo específico para rate limit 429
+      if (error.response?.status === 429) {
+        console.warn('[AI Chat] Rate limit alcanzado (429). Espera antes de intentar de nuevo.')
+      }
+    },
   })
 }
 
 /**
  * AI Recommendations — MANUAL trigger only (prevents 429 spam).
+ *
+ * POST /api/ia/recomendaciones
+ *
+ * Response shape:
+ *   { proximosPasos: string[], razonamiento: string, sugerenciasInstitucion?: [], simulado: boolean }
+ *
  * Usage:
  *   const { data, isLoading, canFetch, fetch } = useAINextSteps()
  *   // User clicks button → call fetch()
@@ -32,6 +56,13 @@ export function useAINextSteps() {
     mutationFn: () => api.post('/ia/recomendaciones').then(r => r.data),
     onSuccess: (data) => {
       qc.setQueryData(['ai', 'next-steps'], data)
+    },
+    onError: (error) => {
+      if (error.response?.status === 429) {
+        // Resetear debounce para que el usuario pueda reintentar después
+        localStorage.removeItem(STORAGE_KEY)
+        console.warn('[AI Recs] Rate limit alcanzado (429).')
+      }
     },
   })
 
@@ -54,16 +85,30 @@ export function useAINextSteps() {
     isLoading: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error,
+    isRateLimited: mutation.error?.response?.status === 429,
     canFetch, // () => boolean — check if cooldown has passed
     fetch,    // call this on user action only
     refetch: fetch,
   }
 }
 
-// Recomendaciones IA personalizadas para un familiar específico (on-demand)
+/**
+ * Recomendaciones IA personalizadas para un familiar específico (on-demand).
+ *
+ * POST /api/ia/recomendaciones
+ * Body: { dependienteId: string }
+ *
+ * @param {string} dependentId - ID del dependiente
+ * @returns {Object} Mutation result
+ */
 export function useAIForDependent() {
   return useMutation({
     mutationFn: (dependentId) =>
       api.post('/ia/recomendaciones', { dependienteId: dependentId }).then(r => r.data),
+    onError: (error) => {
+      if (error.response?.status === 429) {
+        console.warn('[AI Dependent] Rate limit alcanzado (429).')
+      }
+    },
   })
 }

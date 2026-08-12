@@ -605,6 +605,11 @@ export default function AuthPage() {
               </>
             )}
           </main>
+          
+          {/* Powered By logo */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'var(--fg3)', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginTop: 32 }}>
+            POWERED BY <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 16, width: 'auto', objectFit: 'contain' }} />
+          </div>
         </div>
       </div>
       

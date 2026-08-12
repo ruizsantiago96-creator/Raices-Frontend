@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
 import { getToken } from '@shared/lib/storage'
+import { normalizeRole } from './useAuth'
 
 /**
  * Hook que verifica la sesión del usuario al montar la aplicación.
@@ -54,11 +55,13 @@ export function useSessionVerify() {
           // 3. Mapear la respuesta del servidor al store
           // El servidor retorna: { id, email, rol, nombreCompleto, ciudad, estado, urlAvatar, verificado }
           // Actualizamos el store con la información fresca del servidor
+          // Normalizar el rol: el backend puede retornar 'institucion' (español) en vez de 'institution' (inglés)
+          const role = normalizeRole(raw.rol)
           useAuthStore.setState({
             user: {
               id: raw.id,
               email: raw.email,
-              role: raw.rol,
+              role,
               full_name: raw.nombreCompleto,
               city: raw.ciudad,
               state: raw.estado,
