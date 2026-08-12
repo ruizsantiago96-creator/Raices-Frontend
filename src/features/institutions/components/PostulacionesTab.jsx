@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -21,10 +21,12 @@ function CreateJobModal({ onClose }) {
 
   const [step, setStep] = useState(1)
   const [cargo, setCargo] = useState('')
-  const [empresa, setEmpresa] = useState('')
+  const [empresa, setEmpresa] = useState(() => myInstitution?.nombre || user?.full_name || '')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [aiCardDismissed, setAiCardDismissed] = useState(false)
-  const [locationInput, setLocationInput] = useState('')
+  const [locationInput, setLocationInput] = useState(() => {
+    return `${myInstitution?.ciudad || ''}${myInstitution?.state || myInstitution?.estado ? `, ${myInstitution.state || myInstitution.estado}` : ''}`
+  })
 
   const [form, setForm] = useState({
     titulo: '',
@@ -33,30 +35,10 @@ function CreateJobModal({ onClose }) {
     modalidad: 'presencial',
     horario: 'Jornada completa',
     rangoSalario: '',
-    ciudad: '',
-    estado: '',
+    ciudad: myInstitution?.ciudad || '',
+    estado: myInstitution?.state || myInstitution?.estado || '',
     inclusivaDiscapacidad: true
   })
-
-  // Initialize empresa with institution name if available
-  useEffect(() => {
-    if (myInstitution?.nombre) {
-      setEmpresa(myInstitution.nombre)
-    } else if (user?.full_name) {
-      setEmpresa(user.full_name)
-    }
-  }, [myInstitution, user])
-
-  // Initialize locationInput when going to step 2
-  useEffect(() => {
-    if (step === 2) {
-      const defaultLoc = `${myInstitution?.ciudad || ''}${myInstitution?.state || myInstitution?.estado ? `, ${myInstitution.state || myInstitution.estado}` : ''}`
-      setLocationInput(defaultLoc)
-      const parts = defaultLoc.split(',')
-      update('ciudad', parts[0]?.trim() || '')
-      update('estado', parts[1]?.trim() || '')
-    }
-  }, [step, myInstitution])
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
