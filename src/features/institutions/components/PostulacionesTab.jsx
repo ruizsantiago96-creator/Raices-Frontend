@@ -1,18 +1,125 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, LeafIcon } from '@shared/components/shared'
 import { useMyJobPostings, useCreateJobPosting, useDeleteJobPosting, useToggleJobStatus } from '../hooks/useInstitutionJobs'
 import { PORTAL_UI, PORTAL_TOAST } from '../constants/institutionPortalMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { JOB_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import { useMe } from '../../auth/hooks/useAuth'
+import { useMiInstitucion } from '../hooks/useInstitutions'
+import { useChat } from '../../tutor/hooks/useAI'
 
 /* ─── CreateJobModal ──────────────────────────────────────── */
 function CreateJobModal({ onClose }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', requisitos: '', modalidad: 'presencial', horario: '', rangoSalario: '', ciudad: '', estado: '', inclusivaDiscapacidad: true })
+  const { data: user } = useMe()
+  const { data: myInstitution } = useMiInstitucion()
+  const chatMutation = useChat()
   const createJob = useCreateJobPosting()
   const { addToast } = useUiStore()
 
+  const [step, setStep] = useState(1)
+  const [cargo, setCargo] = useState('')
+  const [empresa, setEmpresa] = useState('')
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [aiCardDismissed, setAiCardDismissed] = useState(false)
+  const [locationInput, setLocationInput] = useState('')
+
+  const [form, setForm] = useState({
+    titulo: '',
+    descripcion: '',
+    requisitos: '',
+    modalidad: 'presencial',
+    horario: 'Jornada completa',
+    rangoSalario: '',
+    ciudad: '',
+    estado: '',
+    inclusivaDiscapacidad: true
+  })
+
+  // Initialize empresa with institution name if available
+  useEffect(() => {
+    if (myInstitution?.nombre) {
+      setEmpresa(myInstitution.nombre)
+    } else if (user?.full_name) {
+      setEmpresa(user.full_name)
+    }
+  }, [myInstitution, user])
+
+  // Initialize locationInput when going to step 2
+  useEffect(() => {
+    if (step === 2) {
+      const defaultLoc = `${myInstitution?.ciudad || ''}${myInstitution?.state || myInstitution?.estado ? `, ${myInstitution.state || myInstitution.estado}` : ''}`
+      setLocationInput(defaultLoc)
+      const parts = defaultLoc.split(',')
+      update('ciudad', parts[0]?.trim() || '')
+      update('estado', parts[1]?.trim() || '')
+    }
+  }, [step, myInstitution])
+
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const handleAIWrite = async () => {
+    if (!cargo.trim()) return
+    setIsLoadingAI(true)
+    try {
+      const prompt = `Genera un anuncio de empleo completo para el cargo '${cargo}' en la empresa '${empresa}'.
+Por favor, estructura la respuesta exactamente con las siguientes secciones:
+1. DESCRIPCIÓN GENERAL (un párrafo introductorio atractivo)
+2. RESPONSABILIDADES (una lista numerada de 4 tareas principales)
+3. REQUISITOS (una lista con viñetas de requisitos de experiencia, aptitud y valores de inclusión).
+Sé profesional, amigable y utiliza lenguaje inclusivo.`
+
+      const res = await chatMutation.mutateAsync({ mensaje: prompt })
+      const text = res?.respuesta ?? ''
+      update('descripcion', text)
+      setStep(2)
+    } catch (err) {
+      console.error(err)
+      addToast('Error al generar con IA. Escribe por tu cuenta.', 'error')
+      handleManualWrite()
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
+  const handleManualWrite = () => {
+    const template = `Consejos: Haz un resumen del puesto, explica qué se necesita para triunfar en él y el lugar que ocupa en la empresa.
+
+Responsabilidades
+[Describe con precisión todas las responsabilidades. Usa un lenguaje inclusivo.]
+Ejemplo: Definir y desarrollar los requisitos para los sistemas en fase de producción para garantizar la máxima facilidad de uso.
+
+Requisitos
+[Algunos requisitos que podrías incluir: aptitudes, estudios, experiencia o certificados.]
+Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
+
+    update('descripcion', template)
+    setStep(2)
+  }
+
+  const handleLocationChange = (val) => {
+    setLocationInput(val)
+    const parts = val.split(',')
+    update('ciudad', parts[0]?.trim() || '')
+    update('estado', parts[1]?.trim() || '')
+  }
+
+  const insertText = (before, after) => {
+    const textarea = document.getElementById('job-desc-textarea')
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+    const selected = text.substring(start, end)
+    const replacement = before + selected + after
+    update('descripcion', text.substring(0, start) + replacement + text.substring(end))
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(start + before.length, start + before.length + selected.length)
+    }, 0)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,53 +132,261 @@ function CreateJobModal({ onClose }) {
     }
   }
 
-  const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }
-  const labelStyle = { fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }
+  const inputStylePremium = {
+    width: '100%',
+    padding: '12px 16px',
+    border: '1px solid var(--border-color)',
+    borderRadius: '10px',
+    fontSize: 14,
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-body)',
+    color: 'var(--fg1)',
+    background: 'var(--modal-input-bg)',
+    outline: 'none',
+    transition: 'all 0.2s ease',
+  }
 
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {Icons.briefcase({ s: 20 })}
+  const labelStylePremium = {
+    fontSize: 14,
+    fontWeight: 700,
+    color: 'var(--fg2)',
+    display: 'block',
+    marginBottom: 8,
+  }
+
+  const toolbarBtnStyle = {
+    background: 'none',
+    border: 'none',
+    color: 'var(--fg2)',
+    fontWeight: 700,
+    fontSize: 13,
+    padding: '4px 8px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-body)',
+    transition: 'all 0.15s ease',
+  }
+
+  const userFirstName = user?.full_name?.split(' ')[0] ?? 'Lourdes'
+
+  if (step === 1) {
+    return createPortal(
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: '24px', padding: 36, maxWidth: 520, width: '100%', boxShadow: 'var(--glass-shadow)', border: '1px solid var(--glass-border)', position: 'relative' }}>
+          <button onClick={onClose} aria-label="Cerrar modal" style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, lineHeight: 1 }}>
+            &times;
+          </button>
+
+          {/* Leaf icon centered */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <LeafIcon size={36} color="var(--primary)" />
           </div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{PORTAL_UI.CREATE_JOB_TITLE}</h2>
+
+          <p style={{ textAlign: 'center', fontSize: 16, color: 'var(--primary)', fontWeight: 700, margin: '0 0 8px', letterSpacing: '0.02em' }}>
+            Hola, {userFirstName}:
+          </p>
+
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', margin: '0 0 10px', lineHeight: 1.25 }}>
+            Encuentra a tu candidato ideal
+          </h2>
+
+          <p style={{ fontSize: 14.5, color: 'var(--fg3)', textAlign: 'center', margin: '0 0 28px', lineHeight: 1.5, padding: '0 10px' }}>
+            El 86 % de las pequeñas empresas obtienen un candidato cualificado en solo un día
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 28 }}>
+            <div>
+              <label htmlFor="cargo-input" style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                Cargo <span style={{ cursor: 'help', color: 'var(--fg3)' }} title="Puesto o profesión que necesitas cubrir">❔</span>
+              </label>
+              <input 
+                id="cargo-input" 
+                value={cargo} 
+                onChange={e => { setCargo(e.target.value); update('titulo', e.target.value) }} 
+                placeholder="Añade el puesto que necesitas cubrir" 
+                style={inputStylePremium} 
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label htmlFor="empresa-input" style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 8 }}>
+                Empresa
+              </label>
+              <input 
+                id="empresa-input" 
+                value={empresa} 
+                onChange={e => setEmpresa(e.target.value)} 
+                placeholder="Nombre de la empresa o institución" 
+                style={inputStylePremium} 
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+            <button 
+              className="btn-primary" 
+              onClick={handleAIWrite} 
+              disabled={isLoadingAI || !cargo.trim()} 
+              style={{ width: '100%', height: 48, borderRadius: '24px', fontSize: 15, fontWeight: 700, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer', color: 'white', transition: 'all 0.2s' }}
+            >
+              {isLoadingAI ? Icons.loader({ s: 18 }) : Icons.sparkles({ s: 16 })} 
+              {isLoadingAI ? 'Generando descripción...' : 'Escribir con IA'}
+            </button>
+
+            <button 
+              onClick={handleManualWrite}
+              disabled={isLoadingAI || !cargo.trim()}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: 14, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, padding: '8px 16px' }}
+            >
+              Escribir por mi cuenta
+            </button>
+          </div>
         </div>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div><label style={labelStyle}>{PORTAL_UI.JOB_TITLE_LABEL}</label><input required value={form.titulo} onChange={e => update('titulo', e.target.value)} placeholder={PORTAL_UI.JOB_TITLE_PLACEHOLDER} style={inputStyle} /></div>
-          <div><label style={labelStyle}>{PORTAL_UI.JOB_DESC_LABEL}</label><textarea rows={3} value={form.descripcion} onChange={e => update('descripcion', e.target.value)} placeholder={PORTAL_UI.JOB_DESC_PLACEHOLDER} style={{ ...inputStyle, resize: 'vertical' }} /></div>
-          <div><label style={labelStyle}>{PORTAL_UI.JOB_REQUIREMENTS_LABEL}</label><textarea rows={2} value={form.requisitos} onChange={e => update('requisitos', e.target.value)} placeholder={PORTAL_UI.JOB_REQUIREMENTS_PLACEHOLDER} style={{ ...inputStyle, resize: 'vertical' }} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div><label style={labelStyle}>{PORTAL_UI.MODALITY_LABEL}</label>
-              <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                <option value="presencial">{PORTAL_UI.MODALITY_PRESENCIAL}</option><option value="remoto">{PORTAL_UI.MODALITY_REMOTO}</option><option value="híbrido">{PORTAL_UI.MODALITY_HYBRID}</option>
-              </select></div>
-            <div><label style={labelStyle}>{PORTAL_UI.SCHEDULE_LABEL}</label><input value={form.horario} onChange={e => update('horario', e.target.value)} placeholder={PORTAL_UI.SCHEDULE_PLACEHOLDER} style={inputStyle} /></div>
+      </div>,
+      document.body
+    )
+  }
+
+  return createPortal(
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: '24px', padding: 36, maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--glass-shadow)', border: '1px solid var(--glass-border)', position: 'relative' }}>
+        <button onClick={onClose} aria-label="Cerrar modal" style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, lineHeight: 1 }}>
+          &times;
+        </button>
+
+        {/* Step Indicator */}
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+          1 de 2: Revisa la descripción del empleo
+        </div>
+
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 20px' }}>
+          Detalles del empleo*
+        </h2>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          
+          {/* Grid fields */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStylePremium}>Cargo <span style={{ cursor: 'help', color: 'var(--fg3)' }} title="Nombre del puesto">❔</span></label>
+              <input required value={form.titulo} onChange={e => update('titulo', e.target.value)} style={inputStylePremium} />
+            </div>
+            <div>
+              <label style={labelStylePremium}>Empresa</label>
+              <input value={empresa} onChange={e => setEmpresa(e.target.value)} style={inputStylePremium} />
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div><label style={labelStyle}>{PORTAL_UI.CITY_LABEL}</label><input value={form.ciudad} onChange={e => update('ciudad', e.target.value)} placeholder={PORTAL_UI.CITY_PLACEHOLDER} style={inputStyle} /></div>
-            <div><label style={labelStyle}>{PORTAL_UI.STATE_LABEL}</label><input value={form.estado} onChange={e => update('estado', e.target.value)} placeholder={PORTAL_UI.STATE_PLACEHOLDER} style={inputStyle} /></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStylePremium}>Tipo de lugar de trabajo</label>
+              <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStylePremium, cursor: 'pointer' }}>
+                <option value="presencial">Presencial</option>
+                <option value="remoto">Remoto</option>
+                <option value="híbrido">Híbrido</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStylePremium}>Ubicación del empleo <span style={{ cursor: 'help', color: 'var(--fg3)' }} title="Ciudad, Estado">❔</span></label>
+              <input value={locationInput} onChange={e => handleLocationChange(e.target.value)} placeholder="Ej. Mérida, Yucatán" style={inputStylePremium} />
+            </div>
           </div>
-          <div><label style={labelStyle}>{PORTAL_UI.SALARY_LABEL}</label><input value={form.rangoSalario} onChange={e => update('rangoSalario', e.target.value)} placeholder={PORTAL_UI.SALARY_PLACEHOLDER} style={inputStyle} /></div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--fg2)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.inclusivaDiscapacidad} onChange={e => update('inclusivaDiscapacidad', e.target.checked)} style={{ width: 18, height: 18 }} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStylePremium}>Tipo de empleo</label>
+              <select value={form.horario} onChange={e => update('horario', e.target.value)} style={{ ...inputStylePremium, cursor: 'pointer' }}>
+                <option value="Jornada completa">Jornada completa</option>
+                <option value="Medio tiempo">Medio tiempo</option>
+                <option value="Por contrato">Por contrato</option>
+                <option value="Prácticas">Prácticas</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStylePremium}>Rango de salario (opcional)</label>
+              <input value={form.rangoSalario} onChange={e => update('rangoSalario', e.target.value)} placeholder="Ej. $15,000 - $18,000" style={inputStylePremium} />
+            </div>
+          </div>
+
+          {/* AI rewrite action button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <button 
+              type="button" 
+              onClick={handleAIWrite} 
+              disabled={isLoadingAI}
+              style={{ padding: '8px 16px', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+            >
+              {isLoadingAI ? Icons.loader({ s: 14 }) : Icons.sparkles({ s: 13 })}
+              {isLoadingAI ? 'Reescribiendo con IA...' : 'Reescribir con IA'}
+            </button>
+          </div>
+
+          {/* Description area */}
+          <div>
+            <label style={labelStylePremium}>Descripción*</label>
+
+            {/* Warning suggestion card */}
+            {!aiCardDismissed && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: '12px 16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: 12, fontSize: 13, color: 'var(--fg2)' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span>💡</span>
+                  <span>Crea un gran anuncio de empleo con las sugerencias a continuación. <a href="#" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }} onClick={e => e.preventDefault()}>Más información</a></span>
+                </div>
+                <button type="button" onClick={() => setAiCardDismissed(true)} aria-label="Cerrar sugerencia" style={{ background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', padding: 0 }}>
+                  &times;
+                </button>
+              </div>
+            )}
+
+            {/* Textarea editor container */}
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-surface)' }}>
+              {/* Toolbar */}
+              <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+                <button type="button" onClick={() => insertText('**', '**')} style={toolbarBtnStyle} title="Negrita"><b>B</b></button>
+                <button type="button" onClick={() => insertText('*', '*')} style={{ ...toolbarBtnStyle, fontStyle: 'italic' }} title="Cursiva">I</button>
+                <button type="button" onClick={() => insertText('\n- ', '')} style={toolbarBtnStyle} title="Lista con viñetas">• List</button>
+                <button type="button" onClick={() => insertText('\n1. ', '')} style={toolbarBtnStyle} title="Lista numerada">1. List</button>
+              </div>
+
+              {/* Textarea itself */}
+              <textarea 
+                id="job-desc-textarea"
+                rows={10} 
+                required 
+                value={form.descripcion} 
+                onChange={e => update('descripcion', e.target.value)} 
+                placeholder="Describe los detalles del puesto..." 
+                style={{ width: '100%', padding: '16px', border: 'none', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6 }}
+              />
+            </div>
+          </div>
+
+          {/* Disability inclusive check */}
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--fg2)', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={form.inclusivaDiscapacidad} onChange={e => update('inclusivaDiscapacidad', e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
             {PORTAL_UI.INCLUSIVE_CHECKBOX}
           </label>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>{PORTAL_UI.CANCEL_BUTTON}</button>
-            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || createJob.isPending} style={{ padding: '10px 24px', fontSize: 14 }}>{createJob.isPending ? PORTAL_UI.CREATE_JOB_LOADING : PORTAL_UI.CREATE_JOB}</button>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+            <button type="button" onClick={() => setStep(1)} style={{ padding: '12px 24px', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>Atrás</button>
+            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || !form.descripcion.trim() || createJob.isPending} style={{ padding: '12px 28px', fontSize: 14, fontWeight: 700, borderRadius: '24px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}>
+              {createJob.isPending ? 'Publicando...' : 'Publicar vacante'}
+            </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 /* ─── DeleteConfirmModal ─────────────────────────────────── */
 function DeleteConfirmModal({ job, onClose, onConfirm }) {
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 420, width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+  return createPortal(
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in oklch, var(--color-error) 14%, transparent)', color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {Icons.shieldAlert({ s: 20 })}
@@ -89,20 +404,24 @@ function DeleteConfirmModal({ job, onClose, onConfirm }) {
           <button onClick={onConfirm} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--color-error)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{PORTAL_UI.CONFIRM_DELETE}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 /* ─── PostulacionesTab ───────────────────────────────────── */
 export default function PostulacionesTab({ onViewCandidates }) {
   const { addToast } = useUiStore()
+  const navigate = useNavigate()
   const [showCreate, setShowCreate] = useState(false)
   const [search, setSearch] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
 
+  const { data: myInstitution, isLoading: loadingInst } = useMiInstitucion()
   const { data: jobs = [], isLoading, isError, refetch } = useMyJobPostings()
   const toggleStatus = useToggleJobStatus()
   const deleteJob = useDeleteJobPosting()
+  const hasInstitution = !loadingInst && !!myInstitution
 
   const filteredJobs = search.trim()
     ? jobs.filter(j => {
@@ -136,6 +455,15 @@ export default function PostulacionesTab({ onViewCandidates }) {
 
   const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
 
+  const handleCreateJob = () => {
+    if (!hasInstitution) {
+      addToast('Primero debes completar el registro de tu institución.', 'error')
+      navigate('/institution-portal/registro')
+      return
+    }
+    setShowCreate(true)
+  }
+
   if (isError) {
     return <BackendFallback method={JOB_ENDPOINTS.LIST.method} endpoint={JOB_ENDPOINTS.LIST.path} onRetry={() => refetch()} />
   }
@@ -144,7 +472,7 @@ export default function PostulacionesTab({ onViewCandidates }) {
     <div>
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button className="btn-primary" onClick={() => setShowCreate(true)} style={{ padding: '10px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn-primary" onClick={handleCreateJob} style={{ padding: '10px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus({ s: 16 })} {PORTAL_UI.CREATE_JOB}
         </button>
         <div style={{ position: 'relative', flex: 1, minWidth: 220, marginLeft: 'auto' }}>

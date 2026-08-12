@@ -39,16 +39,17 @@ export default function InstitutionPortalPage() {
         </div>
       )}
 
-      {/* No institution */}
+      {/* No institution — auto-redirect to registration */}
       {!loadingInst && !institution && (
         <div className="animate-fade-in-up" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '48px 32px', maxWidth: 500, margin: '40px auto', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             {Icons.building({ s: 28 })}
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px', fontFamily: 'var(--font-display)' }}>Registra tu institución</h2>
-          <p style={{ fontSize: 15, color: 'var(--fg3)', marginBottom: 24, lineHeight: 1.6 }}>Para comenzar a gestionar vacantes y postulaciones, primero necesitas registrar tu institución.</p>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px', fontFamily: 'var(--font-display)' }}>Completa el registro de tu institución</h2>
+          <p style={{ fontSize: 15, color: 'var(--fg3)', marginBottom: 8, lineHeight: 1.6 }}>Tu cuenta de usuario fue creada correctamente, pero aún falta registrar los datos de tu institución.</p>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', marginBottom: 24, lineHeight: 1.5 }}>Esto es un paso necesario para poder publicar vacantes y gestionar postulaciones.</p>
           <button onClick={() => navigate('/institution-portal/registro')} className="btn-primary" style={{ padding: '12px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            {Icons.plus({ s: 18 })} Registrar institución
+            {Icons.plus({ s: 18 })} Registrar datos de mi institución
           </button>
         </div>
       )}

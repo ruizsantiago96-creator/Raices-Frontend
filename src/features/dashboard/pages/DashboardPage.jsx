@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const { data: recommendations = [], isLoading, isError: discoveryError, refetch: refetchDiscovery } = useDiscovery()
   const { data: favIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
-  const { data: aiInsights, isLoading: aiLoading, canFetch, fetch: fetchAI } = useAINextSteps()
+  const { data: aiInsights, isLoading: aiLoading, isRateLimited, canFetch, fetch: fetchAI } = useAINextSteps()
 
   useEffect(() => {
     const cleanup = initScrollReveal()
@@ -77,32 +77,32 @@ export default function DashboardPage() {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
               Próximos pasos
             </h2>
-            {aiInsights?.mock && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'var(--bg-cool)', color: 'var(--fg3)' }}>
+            {aiInsights?.simulado && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'color-mix(in oklch, #D4944C 12%, transparent)', color: '#D4944C' }}>
                 Demo
               </span>
             )}
             {/* Botón manual para disparar IA */}
-            {!aiLoading && !aiInsights?.next_steps?.length && (
+            {!aiLoading && !aiInsights?.proximosPasos?.length && (
               <button
                 onClick={() => fetchAI()}
-                disabled={!canFetch()}
+                disabled={!canFetch() || isRateLimited}
                 style={{
                   marginLeft: 'auto',
                   padding: '7px 16px',
                   borderRadius: 20,
                   border: '1px solid var(--primary)',
-                  background: canFetch() ? 'var(--primary)' : 'var(--border-color)',
-                  color: canFetch() ? '#fff' : 'var(--fg3)',
+                  background: canFetch() && !isRateLimited ? 'var(--primary)' : 'var(--border-color)',
+                  color: canFetch() && !isRateLimited ? '#fff' : 'var(--fg3)',
                   fontSize: 13, fontWeight: 600,
-                  cursor: canFetch() ? 'pointer' : 'not-allowed',
+                  cursor: canFetch() && !isRateLimited ? 'pointer' : 'not-allowed',
                   fontFamily: 'var(--font-body)',
                   display: 'flex', alignItems: 'center', gap: 6,
                   transition: 'all 0.15s',
                   flexShrink: 0,
                 }}
               >
-                {Icons.sparkles({ s: 14 })} {canFetch() ? 'Obtener recomendaciones' : 'Espera 5 min'}
+                {Icons.sparkles({ s: 14 })} {isRateLimited ? 'Límite alcanzado' : canFetch() ? 'Obtener recomendaciones' : 'Espera 5 min'}
               </button>
             )}
           </div>
@@ -115,10 +115,10 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : aiInsights?.next_steps?.length > 0 ? (
+          ) : aiInsights?.proximosPasos?.length > 0 ? (
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {aiInsights.next_steps.map((step, i) => (
+                {aiInsights.proximosPasos.map((step, i) => (
                   <div key={i} className={`animate-step`} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, animationDelay: `${i * 0.1}s` }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: 'var(--font-display)', animation: `bounceIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both` }}>
                       {i + 1}
@@ -127,22 +127,22 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-              {aiInsights.reasoning && (
+              {aiInsights.razonamiento && (
                 <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <span style={{ color: 'var(--primary)', flexShrink: 0, paddingTop: 2 }}>{Icons.sparkles({ s: 14 })}</span>
-                  <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>{aiInsights.reasoning}</p>
+                  <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>{aiInsights.razonamiento}</p>
                 </div>
               )}
-              {aiInsights.institution_suggestions?.length > 0 && (
+              {aiInsights.sugerenciasInstitucion?.length > 0 && (
                 <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
                     Instituciones sugeridas
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {aiInsights.institution_suggestions.map((s, i) => (
-                      <Link key={i} to={`/explore?category=${encodeURIComponent(s.category)}`} style={{ textDecoration: 'none' }}>
+                    {aiInsights.sugerenciasInstitucion.map((s, i) => (
+                      <Link key={i} to={`/explore?category=${encodeURIComponent(s.categoria)}`} style={{ textDecoration: 'none' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 'var(--radius-pill)', background: 'var(--primary-subtle)', color: 'var(--primary)', fontSize: 13, fontWeight: 700, border: '1px solid color-mix(in oklch, var(--primary) 30%, transparent)' }}>
-                          {Icons.building({ s: 13 })} {s.category} — {s.reason}
+                          {Icons.building({ s: 13 })} {s.categoria} — {s.razon}
                         </span>
                       </Link>
                     ))}

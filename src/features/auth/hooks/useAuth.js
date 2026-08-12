@@ -6,6 +6,21 @@ import { useAuthStore } from '../store/authStore'
 import { setRememberMe, saveUser, getRememberMe } from '@shared/lib/storage'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 
+/**
+ * Normaliza el rol retornado por el backend al formato interno del frontend.
+ * El backend puede retornar 'institucion', 'Institucion', etc. en español,
+ * mientras que el frontend espera 'institution' (inglés).
+ * @param {string} rawRole - Rol crudo del backend
+ * @returns {string} Rol normalizado en inglés
+ */
+export function normalizeRole(rawRole) {
+  if (!rawRole) return rawRole
+  const lower = rawRole.toLowerCase()
+  if (lower === 'institucion' || lower === 'institución') return 'institution'
+  // Para otros roles, devolver tal cual (ya están en inglés: pcd, tutor, admin)
+  return rawRole
+}
+
 export function useLogin() {
   const { setAuth } = useAuthStore()
   return useMutation({
@@ -22,7 +37,7 @@ export function useLogin() {
           user: raw.usuario ? {
             id: raw.usuario.id,
             email: raw.usuario.email,
-            role: raw.usuario.rol,
+            role: normalizeRole(raw.usuario.rol),
             full_name: raw.usuario.nombreCompleto,
             features: raw.usuario.features ?? {},
           } : undefined,
@@ -127,7 +142,7 @@ export function useRegister() {
       const user = raw.usuario ? {
         id: raw.usuario.id,
         email: raw.usuario.email,
-        role: raw.usuario.rol,
+        role: normalizeRole(raw.usuario.rol),
         full_name: raw.usuario.nombreCompleto,
         features: raw.usuario.features ?? {},
       } : undefined
@@ -154,7 +169,7 @@ export function useMe() {
       return {
         id: d.id,
         email: d.email,
-        role: d.rol,
+        role: normalizeRole(d.rol),
         full_name: d.nombreCompleto,
         city: d.ciudad,
         state: d.estado,
@@ -219,7 +234,7 @@ function mapUsuarioBackendToFrontend(d) {
     full_name: d.nombreCompleto,
     city: d.ciudad,
     state: d.estado,
-    role: d.rol,
+    role: normalizeRole(d.rol),
     avatar_url: d.urlAvatar,
     is_active: d.activo,
     is_verified: d.verificado,

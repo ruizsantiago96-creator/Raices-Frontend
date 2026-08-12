@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useMe } from '../hooks/useAuth'
 import { Icons, LeafIcon } from '@shared/components/shared'
@@ -9,6 +9,8 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
   const { user } = useAuthStore()
   const { data: meData, isFetching } = useMe()
   const { sidebarOpen, setSidebarOpen } = useUiStore()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true'
   })
@@ -121,7 +123,18 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
         {/* Nav items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflow: 'visible' }}>
           {items.map((item) => {
-            const isActive = mode === 'app' ? currentPage === item.id : tab === item.id
+            let isActive = false
+            if (mode === 'app') {
+              isActive = currentPage === item.id
+            } else if (mode === 'admin') {
+              isActive = tab === item.id
+            } else if (mode === 'institution') {
+              if (item.id === 'editar') {
+                isActive = location.pathname === '/institution-portal/editar'
+              } else {
+                isActive = location.pathname === '/institution-portal' && tab === item.id
+              }
+            }
             const isLink = !!item.path
 
             if (isLink) {
@@ -145,7 +158,12 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onTab?.(item.id)}
+                onClick={() => {
+                  onTab?.(item.id)
+                  if (mode === 'institution' && location.pathname !== '/institution-portal') {
+                    navigate('/institution-portal')
+                  }
+                }}
                 aria-current={isActive ? 'page' : undefined}
                 className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
                 style={{
@@ -303,7 +321,18 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
           {/* Navigation Links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflow: 'hidden' }}>
             {items.map((item) => {
-              const isActive = mode === 'app' ? currentPage === item.id : tab === item.id
+              let isActive = false
+              if (mode === 'app') {
+                isActive = currentPage === item.id
+              } else if (mode === 'admin') {
+                isActive = tab === item.id
+              } else if (mode === 'institution') {
+                if (item.id === 'editar') {
+                  isActive = location.pathname === '/institution-portal/editar'
+                } else {
+                  isActive = location.pathname === '/institution-portal' && tab === item.id
+                }
+              }
               const isLink = !!item.path
 
               if (isLink) {
@@ -334,7 +363,13 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => { onTab?.(item.id); setSidebarOpen(false) }}
+                  onClick={() => {
+                    onTab?.(item.id)
+                    setSidebarOpen(false)
+                    if (mode === 'institution' && location.pathname !== '/institution-portal') {
+                      navigate('/institution-portal')
+                    }
+                  }}
                   aria-current={isActive ? 'page' : undefined}
                   style={{
                     border: 'none',
