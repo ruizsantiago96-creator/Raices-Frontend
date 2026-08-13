@@ -333,7 +333,7 @@ export default function LandingPage() {
             </span>{' '}
             <span className="relative inline-block text-[#FF4D68] z-10">
               florecer.
-              <span className="absolute -bottom-2 left-0 w-full h-[12px] pointer-events-none select-none -z-10" style={{ transform: 'translateY(2px)' }}>
+              <span className="absolute -bottom-2 left-0 w-full h-3 pointer-events-none select-none -z-10" style={{ transform: 'translateY(2px)' }}>
                 <svg viewBox="0 0 100 10" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
                   <path d="M 0 5 Q 12.5 0, 25 5 T 50 5 T 75 5 T 100 5" fill="none" stroke="#F4C84A" strokeWidth="4" strokeLinecap="round" />
                 </svg>
