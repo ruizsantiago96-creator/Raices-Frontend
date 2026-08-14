@@ -33,7 +33,7 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   /* Liquid Glass Custom Properties */
   --glass-bg: rgba(255, 255, 255, 0.55);
   --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 12px 40px 0 rgba(31, 38, 135, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+  --glass-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 12px 40px 0 rgba(7, 59, 76, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
   --glass-blur: blur(24px) saturate(190%);
   --modal-backdrop: rgba(0, 0, 0, 0.2);
   --modal-card-bg: var(--bg-surface);
@@ -42,86 +42,106 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   /* Layout */
   --sidebar-width: 220px;
   --main-max-width: 100%;
-  --sidebar-bg: #09282c;
-  
-  /* Colors - Primary */
-  --primary: #012b29;
-  --primary-dark: #012b29;
-  --primary-subtle: rgba(13, 54, 60, 0.12);
-  --secondary: #a5dade;
-  --secondary-dark: #98c5de;
-  --secondary-subtle: rgba(165, 218, 222, 0.15);
-  
-  /* Accent (Tertiary) */
-  --accent: #a5dade;
-  --accent-dark: #98c5de;
-  
+  --sidebar-bg: #073B4C;
+
+  /* ═══════════════════════════════════════════
+     RAÍCES BRAND PALETTE
+     Azul petróleo : #073B4C  → PRIMARY
+     Rosa cálido   : #CA918E
+     Verde matcha  : #A8B86B
+     Verde vivo    : #229B58
+     Amarillo sol  : #F4C84A
+     Coral         : #FF4D68
+     Crema         : #f6eddf  → BODY BG
+     ═══════════════════════════════════════════ */
+
+  /* Colors - Primary (Azul Petróleo) */
+  --primary: #073B4C;
+  --primary-dark: #052e3b;
+  --primary-subtle: rgba(7, 59, 76, 0.10);
+
+  /* Colors - Brand accents */
+  --color-rosa:    #CA918E;   /* Rosa Cálido  */
+  --color-matcha:  #A8B86B;   /* Verde Matcha */
+  --color-verde:   #229B58;   /* Verde Vivo   */
+  --color-amarillo:#F4C84A;   /* Amarillo Sol */
+  --color-coral:   #FF4D68;   /* Coral        */
+
+  /* Secondary / Accent (Verde Vivo) */
+  --secondary: #229B58;
+  --secondary-dark: #1a7a44;
+  --secondary-subtle: rgba(34, 155, 88, 0.12);
+
+  /* Accent (Rosa Cálido) */
+  --accent: #CA918E;
+  --accent-dark: #b57a77;
+
   /* Colors - Background */
-  --bg-warm: #FFF9F2;
-  --bg-cool: #F5ECE3;
-  --bg-surface: #FFF9F2;
-  
+  --bg-warm: #f6eddf;      /* Crema - body bg */
+  --bg-cool: #F5EDE3;
+  --bg-surface: #FFFFFF;
+
   /* Colors - Foreground */
-  --fg1: #243434;
-  --fg2: #4A5C5C;
-  --fg3: #5F7070;
-  
+  --fg1: #073B4C;          /* Azul Petróleo - títulos */
+  --fg2: #2F5463;          /* Azul petróleo medio     */
+  --fg3: rgba(7,59,76,0.6);/* Azul petróleo suave     */
+
   /* Colors - Borders */
   --border-color: #E5DCD2;
   --border-strong: #C8BEB2;
-  
+
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-btn: 15px;
   --radius-pill: 15px;
-  
+
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(44,62,62,0.10);
-  --shadow-md: 0 4px 12px rgba(44,62,62,0.14);
-  --shadow-lg: 0 8px 24px rgba(44,62,62,0.18);
-  --shadow-xl: 0 16px 48px rgba(44,62,62,0.24);
-  
-  /* Category Colors */
-  --color-salud: #B85C84;
-  --color-educacion: #7857A0;
-  --color-empleo: #BE7C34;
-  --color-artes: #5F8043;
-  --color-comunidad: #3A8C8C;
-  --color-vida: #0d363c;
-  
+  --shadow-sm: 0 1px 3px rgba(7,59,76,0.10);
+  --shadow-md: 0 4px 12px rgba(7,59,76,0.14);
+  --shadow-lg: 0 8px 24px rgba(7,59,76,0.18);
+  --shadow-xl: 0 16px 48px rgba(7,59,76,0.24);
+
+  /* Category Colors (brand-aligned) */
+  --color-salud:     #CA918E;  /* Rosa Cálido  */
+  --color-educacion: #A8B86B;  /* Verde Matcha */
+  --color-empleo:    #F4C84A;  /* Amarillo Sol */
+  --color-artes:     #229B58;  /* Verde Vivo   */
+  --color-comunidad: #073B4C;  /* Azul Petróleo*/
+  --color-vida:      #FF4D68;  /* Coral        */
+
   /* Status Colors */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-  
+  --color-success: #229B58;   /* Verde Vivo   */
+  --color-warning: #F4C84A;   /* Amarillo Sol */
+  --color-error:   #FF4D68;   /* Coral        */
+  --color-info:    #073B4C;   /* Azul Petróleo*/
+
   /* Typography */
   --font-display: 'Poppins', Georgia, serif;
   --font-body: 'Lato', system-ui, -apple-system, sans-serif;
   --font-bold: 'Poppins', sans-serif;
-  
+
   /* Focus */
   --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
 
-  /* Landing Page & Footer theme tokens (Light Mode) */
-  --landing-bg-topbar: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 249, 242, 0.25) 100%);
-  --landing-border-topbar: rgba(255, 255, 255, 0.45);
+  /* Landing Page & Footer theme tokens */
+  --landing-bg-topbar: #FFF9F2;
+  --landing-border-topbar: #E5DCD2;
   --landing-text-topbar: #073B4C;
-  --landing-text-topbar-muted: rgba(7, 59, 76, 0.8);
-  --landing-footer-bg: #FFF9F2;
-  --landing-footer-text: #073B4C;
-  --landing-footer-text-muted: rgba(7, 59, 76, 0.65);
-  --landing-footer-border: rgba(7, 59, 76, 0.1);
+  --landing-text-topbar-muted: rgba(7, 59, 76, 0.75);
+  --landing-footer-bg: #213052;
+  --landing-footer-text: #FFFFFF;
+  --landing-footer-text-muted: rgba(255, 255, 255, 0.80);
+  --landing-footer-border: rgba(255, 255, 255, 0.12);
   --landing-title: #073B4C;
-  --landing-text-muted: rgba(7, 59, 76, 0.75);
-  --landing-card-bg: rgba(255, 249, 242, 0.65);
-  --landing-card-border: rgba(7, 59, 76, 0.1);
-  --landing-card-shadow: 0 8px 32px 0 rgba(7, 59, 76, 0.04);
-  --landing-glow-opacity-rose: 0.35;
-  --landing-glow-opacity-matcha: 0.35;
+  --landing-text-muted: rgba(7, 59, 76, 0.70);
+  --landing-card-bg: rgba(255, 249, 242, 0.80);
+  --landing-card-border: rgba(7, 59, 76, 0.08);
+  --landing-card-shadow: 0 4px 20px 0 rgba(7, 59, 76, 0.06);
+  --landing-glow-opacity-rose: 0.15;
+  --landing-glow-opacity-matcha: 0.15;
   --landing-glass-text: #073B4C;
-  --landing-glass-text-muted: rgba(7, 59, 76, 0.75);
+  --landing-glass-text-muted: rgba(7, 59, 76, 0.70);
 }
 
 /* ═══════════════════════════════════════════════════════════

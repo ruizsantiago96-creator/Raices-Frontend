@@ -66,12 +66,14 @@ export const AUTH_UI = {
   FORGOT_EMAIL_PLACEHOLDER: 'correo@ejemplo.com',
   
   // Roles
-  ROLE_PCD_TITLE: 'Soy una persona con alguna condición',
+  ROLE_PCD_TITLE: 'Usuario con discapacidad',
   ROLE_PCD_DESC: 'Accede a tu espacio personalizado con recomendaciones para ti',
-  ROLE_TUTOR_TITLE: 'Cuido de alguien',
+  ROLE_TUTOR_TITLE: 'Usuario tutor',
   ROLE_TUTOR_DESC: 'Ayuda a la persona que cuidas a encontrar lo que necesita',
-  ROLE_INSTITUTION_TITLE: 'Represento una institución',
+  ROLE_INSTITUTION_TITLE: 'Usuario institución',
   ROLE_INSTITUTION_DESC: 'Comparte los servicios, terapias o programas que ofrecen',
+  ROLE_EMPRESA_TITLE: 'Usuario empresarial y/o empresa',
+  ROLE_EMPRESA_DESC: 'Publica oportunidades inclusivas, programas o colaboraciones',
 }
 
 // ─── Configuración de Validación ──────────────────────────

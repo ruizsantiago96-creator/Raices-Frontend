@@ -9,7 +9,7 @@ import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { AUTH_MESSAGES, AUTH_UI, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
-
+import RegistrationWizard from '../components/RegistrationWizard'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -39,6 +39,7 @@ const ROLES = [
   { id: 'pcd', icon: Icons.heart, title: AUTH_UI.ROLE_PCD_TITLE, desc: AUTH_UI.ROLE_PCD_DESC },
   { id: 'tutor', icon: Icons.users, title: AUTH_UI.ROLE_TUTOR_TITLE, desc: AUTH_UI.ROLE_TUTOR_DESC },
   { id: 'institution', icon: Icons.building, title: AUTH_UI.ROLE_INSTITUTION_TITLE, desc: AUTH_UI.ROLE_INSTITUTION_DESC },
+  { id: 'empresa', icon: Icons.briefcase, title: AUTH_UI.ROLE_EMPRESA_TITLE, desc: AUTH_UI.ROLE_EMPRESA_DESC },
 ]
 
 function mapErrorMessage(msg) {
@@ -236,26 +237,43 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="auth-split-layout" style={{ display: 'flex', minHeight: '100vh', fontFamily: 'var(--font-body)', background: 'var(--bg-warm)' }}>
+    <div className="auth-page-container" style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '100vh', 
+      fontFamily: 'var(--font-body)', 
+      background: '#f6eddf', 
+      padding: '40px 20px',
+      boxSizing: 'border-box'
+    }}>
       <style>{`
+        .auth-card {
+          display: flex;
+          width: 100%;
+          max-width: 1060px;
+          min-height: 680px;
+          background: #ffffff;
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow: 0 20px 50px rgba(7, 59, 76, 0.08);
+          position: relative;
+        }
         .auth-brand-column {
           display: flex;
         }
         .auth-input {
           width: 100%;
-          padding: 15px 22px;
+          padding: 14px 20px;
           border: 1.5px solid rgba(0, 0, 0, 0.12);
           border-radius: 8px;
           font-size: 15px;
           box-sizing: border-box;
           font-family: var(--font-body);
-          color: var(--fg1);
-          background: var(--bg-surface);
+          color: #012b29;
+          background: #ffffff;
           outline: none;
           transition: all 0.2s ease;
-        }
-        html[data-theme="dark"] .auth-input {
-          border-color: rgba(255, 255, 255, 0.15);
         }
         .auth-input:focus {
           border-color: var(--primary) !important;
@@ -276,7 +294,7 @@ export default function AuthPage() {
           border-radius: 8px;
           font-size: 16px;
           font-weight: 700;
-          padding: 16px 24px;
+          padding: 15px 24px;
           cursor: pointer;
           font-family: var(--font-body);
           display: flex;
@@ -300,7 +318,7 @@ export default function AuthPage() {
           border-radius: 8px;
           font-size: 15px;
           font-weight: 600;
-          padding: 14px 20px;
+          padding: 12px 20px;
           cursor: pointer;
           font-family: var(--font-body);
           display: flex;
@@ -333,320 +351,488 @@ export default function AuthPage() {
           color: var(--fg1);
           background: color-mix(in oklch, var(--primary) 10%, transparent);
         }
-        @media (max-width: 820px) {
+        @media (max-width: 900px) {
+          .auth-card {
+            flex-direction: column;
+            min-height: auto;
+            border-radius: 20px;
+          }
           .auth-brand-column {
             display: none !important;
           }
           .auth-form-column {
-            padding: 40px 24px !important;
+            padding: 36px 24px !important;
           }
         }
       `}</style>
 
-      {/* Columna izquierda: Formulario */}
-      <div className="auth-form-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 64px', boxSizing: 'border-box', background: 'var(--bg-surface)' }}>
-        <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
-          
-          {/* Volver al inicio */}
-          <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: 0, marginBottom: 36, fontFamily: 'var(--font-body)' }}>
-            {Icons.arrowLeft({ s: 16 })} Volver al inicio
-          </button>
-          
-          <main id="main">
-            {mode === 'login' && (
-              <>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-                  Iniciar sesión
-                </h1>
-                <p style={{ fontSize: 16, color: 'var(--fg2)', margin: '0 0 32px', lineHeight: 1.5 }}>
-                  Ingresa tu correo y contraseña para entrar a la plataforma
-                </p>
+      <div className="auth-card">
+        {/* Columna izquierda: Formulario */}
+        <div className="auth-form-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 54px', boxSizing: 'border-box', background: '#ffffff' }}>
+          <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
+            
+            {/* Logo de marca superior */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C' }}>
+                Raíces<span style={{ color: '#FF4D68' }}>.</span>
+              </span>
+            </div>
 
-                <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {error && (
-                    <div style={s.errorBox} role="alert" aria-live="assertive">
-                      {Icons.shieldAlert({ s: 18 })} {error}
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label htmlFor="login-email" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>
-                      Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input id="login-email" name="email" type="email" autoComplete="email"
-                      className="auth-input" value={form.email} onChange={set('email')} required
-                      placeholder="ejemplo@correo.com" />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="login-pass" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 10 }}>
-                      Contraseña <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <div style={s.passWrap}>
-                      <input id="login-pass" name="password" type={showPass ? 'text' : 'password'} autoComplete="current-password"
-                        className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required placeholder="Ingresa tu contraseña" />
-                      <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle"
-                        aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
-                        {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none' }}>
-                      <input
-                        type="checkbox"
-                        id="remember-me"
-                        checked={rememberMe}
-                        onChange={e => setRememberMe(e.target.checked)}
-                        style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }}
-                      />
-                      Mantener sesión iniciada
-                    </label>
-                    <button 
-                      type="button" 
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'var(--primary)', padding: 0 }} 
-                      onClick={() => { setMode('forgot'); setError(''); }}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
-                  
-                  <button className="auth-btn-primary" type="submit" disabled={login.isPending} style={{ marginTop: 8 }}>
-                    {login.isPending ? 'Entrando...' : 'Entrar'} {Icons.arrowRight({ s: 18 })}
-                  </button>
-                </form>
+            {/* Volver al inicio */}
+            <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, padding: 0, marginBottom: 24, fontFamily: 'var(--font-body)' }}>
+              {Icons.arrowLeft({ s: 15 })} Volver al inicio
+            </button>
+            
+            <main id="main">
+              {mode === 'login' && (
+                <>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Te damos la bienvenida a</p>
+                  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 800, color: '#012b29', margin: '0 0 24px', letterSpacing: '-0.02em' }}>
+                    Raíces
+                  </h1>
 
-                <p style={{ textAlign: 'center', marginTop: 32, fontSize: 16, color: 'var(--fg2)' }}>
-                  ¿No tienes cuenta?{' '}
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('register'); setError('') }}>Regístrate aquí</button>
-                </p>
-                <p style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--fg3)' }}>v{VERSION}</p>
-              </>
-            )}
-
-            {mode === 'register' && (
-              <>
-                <div style={{ marginBottom: 12 }}>
-                  <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso {regStep} de 2</p>
-                  <div style={s.progress} role="progressbar" aria-valuenow={regStep} aria-valuemin={1} aria-valuemax={2} aria-label={`Paso ${regStep} de 2`}>
-                    <div style={s.progressBar((regStep / 2) * 100)} />
-                  </div>
-                </div>
-                
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-                  {regStep === 1 ? '¿Cómo te gustaría unirte?' : 'Crea tu cuenta'}
-                </h1>
-                <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '0 0 24px', lineHeight: 1.5 }}>
-                  {regStep === 1 ? 'Selecciona el tipo de cuenta que mejor se adapte a ti' : 'Ingresa tus datos personales para completar el registro'}
-                </p>
-
-                {error && (
-                  <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">
-                    {Icons.shieldAlert({ s: 18 })} {error}
-                  </div>
-                )}
-
-                {regStep === 1 && (
-                  <fieldset style={{ border: 'none', padding: 0, margin: '0 0 24px' }}>
-                    <legend className="sr-only">Selecciona tu tipo de cuenta</legend>
-                    {ROLES.map(r => (
-                      <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))}
-                        aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
-                        <span style={s.avatar(form.role === r.id)}>{r.icon({ s: 24 })}</span>
-                        <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 16, width: 'calc(100% - 116px)' }}>
-                          <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
-                          <span style={{ display: 'block', fontSize: 13, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
-                        </span>
-                        {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)', marginLeft: 'auto' }}>{Icons.check({ s: 22 })}</span>}
-                      </button>
-                    ))}
-                  </fieldset>
-                )}
-
-                {regStep === 2 && (
-                  <form onSubmit={e => { e.preventDefault(); handleRegister(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                  <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    {error && (
+                      <div style={s.errorBox} role="alert" aria-live="assertive">
+                        {Icons.shieldAlert({ s: 18 })} {error}
+                      </div>
+                    )}
+                    
                     <div>
-                      <label htmlFor="reg-name" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Nombre completo <span style={{ color: '#ef4444' }}>*</span></label>
-                      <input id="reg-name" name="name" autoComplete="name" className="auth-input" value={form.full_name} onChange={set('full_name')} required placeholder="Ej. Ana Pérez" />
+                      <label htmlFor="login-email" style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#012b29', marginBottom: 8 }}>
+                        Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input id="login-email" name="email" type="email" autoComplete="email"
+                        className="auth-input" value={form.email} onChange={set('email')} required
+                        placeholder="ejemplo@correo.com" />
                     </div>
+                    
                     <div>
-                      <label htmlFor="reg-email" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
-                      <input id="reg-email" name="email" type="email" autoComplete="email" className="auth-input" value={form.email} onChange={set('email')} required placeholder="ejemplo@correo.com" />
-                    </div>
-                    <div>
-                      <label htmlFor="reg-pass" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Contraseña <span style={{ color: '#ef4444' }}>*</span></label>
+                      <label htmlFor="login-pass" style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#012b29', marginBottom: 8 }}>
+                        Contraseña <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
                       <div style={s.passWrap}>
-                        <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} placeholder="Crea una contraseña segura" />
-                        <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
+                        <input id="login-pass" name="password" type={showPass ? 'text' : 'password'} autoComplete="current-password"
+                          className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required placeholder="Ingresa tu contraseña" />
+                        <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle"
+                          aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
                           {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                         </button>
                       </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 8 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, color: 'var(--fg2)', cursor: 'pointer', userSelect: 'none' }}>
+                        <input
+                          type="checkbox"
+                          id="remember-me"
+                          checked={rememberMe}
+                          onChange={e => setRememberMe(e.target.checked)}
+                          style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                        />
+                        Recordarme
+                      </label>
+                      <button 
+                        type="button" 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--primary)', padding: 0 }} 
+                        onClick={() => { setMode('forgot'); setError(''); }}
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
+                    
+                    <button className="auth-btn-primary" type="submit" disabled={login.isPending} style={{ marginTop: 8 }}>
+                      {login.isPending ? 'Entrando...' : 'INICIAR SESIÓN'}
+                    </button>
+                  </form>
+
+                  <p style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: 'var(--fg2)' }}>
+                    ¿No tienes una cuenta?{' '}
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('register'); setError('') }}>Regístrate</button>
+                  </p>
+                </>
+              )}
+
+              {mode === 'register' && (
+                <>
+                  {/* ── PASO 1: SELECCIÓN DE ROL (4 ROLES) ── */}
+                  {regStep === 1 && (
+                    <>
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso 1 de 2</p>
+                        <div style={s.progress} role="progressbar" aria-valuenow={1} aria-valuemin={1} aria-valuemax={2} aria-label="Paso 1 de 2">
+                          <div style={s.progressBar(50)} />
+                        </div>
+                      </div>
                       
-                      {form.password && (
-                        <div style={{ marginTop: 8 }}>
-                          <div style={{ display: 'flex', gap: 4, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
-                            <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} />
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: strength.color }}>
-                            Seguridad: {strength.label}
-                          </span>
+                      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                        ¿Cómo te gustaría unirte?
+                      </h1>
+                      <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>
+                        Selecciona el tipo de cuenta que mejor se adapte a ti
+                      </p>
+
+                      {error && (
+                        <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">
+                          {Icons.shieldAlert({ s: 18 })} {error}
                         </div>
                       )}
-                      
-                      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>Mínimo 8 caracteres (requiere mayúsculas, números y símbolos)</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <label htmlFor="reg-state" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
-                        <select
-                          id="reg-state"
-                          name="state"
-                          autoComplete="address-level1"
-                          className="auth-input auth-select"
-                          value={form.state}
-                          onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }}
-                          required
-                        >
-                          <option value="" disabled>Selecciona un estado</option>
-                          {STATES.map(st => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label htmlFor="reg-city" style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
-                        <select
-                          id="reg-city"
-                          name="city"
-                          autoComplete="address-level2"
-                          className="auth-input auth-select"
-                          value={form.city}
-                          onChange={set('city')}
-                          required
-                          disabled={!form.state}
-                        >
-                          <option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
-                          {form.state && getMunicipalities(form.state).map(m => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </form>
-                )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {regStep === 1 ? (
-                    <button className="auth-btn-primary" type="button" onClick={() => setRegStep(2)}>
-                      Continuar {Icons.arrowRight({ s: 18 })}
-                    </button>
-                  ) : (
-                    <>
-                      <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || !isPasswordValid || !form.city || !form.state}>
-                        {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
-                      </button>
-                      <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>
-                        {Icons.arrowLeft({ s: 16 })} Volver al paso 1
-                      </button>
+                      <fieldset style={{ border: 'none', padding: 0, margin: '0 0 20px' }}>
+                        <legend className="sr-only">Selecciona tu tipo de cuenta</legend>
+                        {ROLES.map(r => (
+                          <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))}
+                            aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
+                            <span style={s.avatar(form.role === r.id)}>{r.icon({ s: 22 })}</span>
+                            <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 14, width: 'calc(100% - 100px)' }}>
+                              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
+                              <span style={{ display: 'block', fontSize: 12, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
+                            </span>
+                            {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)', marginLeft: 'auto' }}>{Icons.check({ s: 20 })}</span>}
+                          </button>
+                        ))}
+                      </fieldset>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <button className="auth-btn-primary" type="button" onClick={() => setRegStep('consent')}>
+                          Continuar {Icons.arrowRight({ s: 18 })}
+                        </button>
+                      </div>
                     </>
                   )}
-                </div>
 
-                <p style={{ textAlign: 'center', marginTop: 24, fontSize: 15, color: 'var(--fg2)' }}>
-                  ¿Ya tienes cuenta?{' '}
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button>
-                </p>
-              </>
-            )}
+                  {/* ── PANTALLA DE CONSENTIMIENTO Y CONFIDENCIALIDAD ── */}
+                  {regStep === 'consent' && (
+                    <div style={{ animation: 'fadeInUp 0.35s ease both' }}>
+                      <div style={{
+                        width: 52, height: 52, borderRadius: '50%',
+                        background: 'rgba(7, 59, 76, 0.08)', color: '#073B4C',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 16px',
+                      }}>
+                        {Icons.shieldCheck ? Icons.shieldCheck({ s: 28 }) : Icons.shield({ s: 28 })}
+                      </div>
 
-            {mode === 'forgot' && (
-              <>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-                  ¿Olvidaste tu contraseña?
-                </h1>
-                <p style={{ fontSize: 15, color: 'var(--fg2)', margin: '0 0 28px', lineHeight: 1.5 }}>
-                  Ingresa tu correo electrónico y te enviaremos un enlace seguro para restablecerla
-                </p>
+                      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 14px', textAlign: 'center', lineHeight: 1.3 }}>
+                        Verificamos y protegemos tu identidad para un camino seguro y confidencial.
+                      </h1>
 
-                <form onSubmit={handleForgotPassword} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {error && (
-                    <div style={s.errorBox} role="alert" aria-live="assertive">
-                      {Icons.shieldAlert({ s: 18 })} {error}
+                      <div style={{
+                        background: '#FFF9F2',
+                        border: '1px solid #E5DCD2',
+                        borderRadius: 16,
+                        padding: '20px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                        marginBottom: 24,
+                        color: 'var(--fg2)',
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                      }}>
+                        <p style={{ margin: 0 }}>
+                          Tu registro nos permite confirmar tu identidad, proteger tu seguridad y ofrecerte caminos más confiables, personalizados y dignos dentro de la plataforma.
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 600, color: '#073B4C' }}>
+                          🔒 Tus datos son confidenciales, están protegidos y nunca serán compartidos sin tu autorización.
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <button
+                          className="auth-btn-primary"
+                          type="button"
+                          onClick={() => {
+                            if (form.role === 'pcd') {
+                              setRegStep('pcd_wizard')
+                            } else {
+                              setRegStep(2)
+                            }
+                          }}
+                          style={{ padding: '15px 20px', fontSize: 15 }}
+                        >
+                          De acuerdo y continuar {Icons.arrowRight({ s: 18 })}
+                        </button>
+                        <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>
+                          {Icons.arrowLeft({ s: 16 })} Cambiar tipo de cuenta
+                        </button>
+                      </div>
                     </div>
                   )}
-                  
-                  <div>
-                    <label htmlFor="forgot-email" style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--fg1)', marginBottom: 8 }}>
-                      Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input 
-                      id="forgot-email" 
-                      name="email" 
-                      type="email" 
-                      autoComplete="email"
-                      className="auth-input" 
-                      value={form.email} 
-                      onChange={set('email')} 
-                      required 
-                      placeholder="ejemplo@correo.com" 
-                    />
-                  </div>
-                  
-                  <button className="auth-btn-primary" type="submit" disabled={sending} style={{ marginTop: 8 }}>
-                    {sending ? 'Enviando...' : 'Enviar enlace'} {Icons.arrowRight({ s: 18 })}
-                  </button>
-                </form>
 
-                <p style={{ textAlign: 'center', marginTop: 32, fontSize: 15, color: 'var(--fg2)' }}>
-                  ¿Recordaste tu contraseña?{' '}
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, color: 'var(--primary)', padding: 0 }} onClick={() => { setMode('login'); setError(''); }}>Inicia sesión aquí</button>
-                </p>
-              </>
-            )}
-          </main>
-          
-          {/* Powered By logo */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'var(--fg3)', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginTop: 32 }}>
-            POWERED BY <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 16, width: 'auto', objectFit: 'contain' }} />
+                  {/* ── WIZARD DE REGISTRO INTEGRAL PCD ── */}
+                  {regStep === 'pcd_wizard' && (
+                    <RegistrationWizard onBackToRoles={() => setRegStep(1)} />
+                  )}
+
+                  {/* ── PASO 2: FORMULARIO PARA TUTOR / INSTITUCIÓN / EMPRESA ── */}
+                  {regStep === 2 && (
+                    <>
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso 2 de 2</p>
+                        <div style={s.progress} role="progressbar" aria-valuenow={2} aria-valuemin={1} aria-valuemax={2} aria-label="Paso 2 de 2">
+                          <div style={s.progressBar(100)} />
+                        </div>
+                      </div>
+
+                      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                        Crea tu cuenta {form.role === 'institution' ? 'institucional' : form.role === 'empresa' ? 'empresarial' : 'de tutor'}
+                      </h1>
+                      <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>
+                        Ingresa tus datos personales para completar el registro
+                      </p>
+
+                      {error && (
+                        <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">
+                          {Icons.shieldAlert({ s: 18 })} {error}
+                        </div>
+                      )}
+
+                      <form onSubmit={e => { e.preventDefault(); handleRegister(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+                        <div>
+                          <label htmlFor="reg-name" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>
+                            {form.role === 'institution' ? 'Nombre de la institución' : form.role === 'empresa' ? 'Nombre de la empresa o contacto' : 'Nombre completo'} <span style={{ color: '#ef4444' }}>*</span>
+                          </label>
+                          <input id="reg-name" name="name" autoComplete="name" className="auth-input" value={form.full_name} onChange={set('full_name')} required placeholder={form.role === 'institution' ? 'Ej. Centro de Inclusión Raíces' : form.role === 'empresa' ? 'Ej. Empresa Inclusiva S.A.' : 'Ej. Ana Pérez'} />
+                        </div>
+                        <div>
+                          <label htmlFor="reg-email" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
+                          <input id="reg-email" name="email" type="email" autoComplete="email" className="auth-input" value={form.email} onChange={set('email')} required placeholder="ejemplo@correo.com" />
+                        </div>
+                        <div>
+                          <label htmlFor="reg-pass" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Contraseña <span style={{ color: '#ef4444' }}>*</span></label>
+                          <div style={s.passWrap}>
+                            <input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} placeholder="Crea una contraseña segura" />
+                            <button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
+                              {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
+                            </button>
+                          </div>
+                          
+                          {form.password && (
+                            <div style={{ marginTop: 6 }}>
+                              <div style={{ display: 'flex', gap: 4, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                                <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} />
+                              </div>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: strength.color }}>
+                                Seguridad: {strength.label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            <label htmlFor="reg-state" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
+                            <select
+                              id="reg-state"
+                              name="state"
+                              autoComplete="address-level1"
+                              className="auth-input auth-select"
+                              value={form.state}
+                              onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }}
+                              required
+                            >
+                              <option value="" disabled>Selecciona un estado</option>
+                              {STATES.map(st => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label htmlFor="reg-city" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
+                            <select
+                              id="reg-city"
+                              name="city"
+                              autoComplete="address-level2"
+                              className="auth-input auth-select"
+                              value={form.city}
+                              onChange={set('city')}
+                              required
+                              disabled={!form.state}
+                            >
+                              <option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
+                              {form.state && getMunicipalities(form.state).map(m => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </form>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || !isPasswordValid || !form.city || !form.state}>
+                          {register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}
+                        </button>
+                        <button className="auth-btn-secondary" type="button" onClick={() => setRegStep('consent')}>
+                          {Icons.arrowLeft({ s: 16 })} Volver
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {regStep !== 'pcd_wizard' && (
+                    <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--fg2)' }}>
+                      ¿Ya tienes cuenta?{' '}
+                      <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button>
+                    </p>
+                  )}
+                </>
+              )}
+
+              {mode === 'forgot' && (
+                <>
+                  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                    ¿Olvidaste tu contraseña?
+                  </h1>
+                  <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 24px', lineHeight: 1.5 }}>
+                    Ingresa tu correo electrónico y te enviaremos un enlace seguro para restablecerla
+                  </p>
+
+                  <form onSubmit={handleForgotPassword} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    {error && (
+                      <div style={s.errorBox} role="alert" aria-live="assertive">
+                        {Icons.shieldAlert({ s: 18 })} {error}
+                      </div>
+                    )}
+                    
+                    <div>
+                      <label htmlFor="forgot-email" style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--fg1)', marginBottom: 8 }}>
+                        Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input 
+                        id="forgot-email" 
+                        name="email" 
+                        type="email" 
+                        autoComplete="email"
+                        className="auth-input" 
+                        value={form.email} 
+                        onChange={set('email')} 
+                        required 
+                        placeholder="ejemplo@correo.com" 
+                      />
+                    </div>
+                    
+                    <button className="auth-btn-primary" type="submit" disabled={sending} style={{ marginTop: 8 }}>
+                      {sending ? 'Enviando...' : 'Enviar enlace'} {Icons.arrowRight({ s: 18 })}
+                    </button>
+                  </form>
+
+                  <p style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: 'var(--fg2)' }}>
+                    ¿Recordaste tu contraseña?{' '}
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError(''); }}>Inicia sesión aquí</button>
+                  </p>
+                </>
+              )}
+            </main>
+            
+            {/* Powered By logo con colores originales */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--fg3)', fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', marginTop: 36 }}>
+              POWERED BY <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 18, width: 'auto', objectFit: 'contain' }} />
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--fg3)', opacity: 0.7, fontWeight: 500, marginTop: 4 }}>
+              v{VERSION}
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Columna derecha: Branding y Gráfico */}
-      <div className="auth-brand-column" style={{ 
-        flex: 1, 
-        background: 'linear-gradient(135deg, #071e22 0%, #0d363c 100%)', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        color: 'white', 
-        padding: 48,
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Grid pattern overlay */}
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          opacity: 0.05, 
-          backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', 
-          backgroundSize: '24px 24px' 
-        }} />
         
-        {/* Decorative subtle circles */}
-        <div className="animate-bubble-1" style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', top: '-100px', right: '-100px' }} />
-        <div className="animate-bubble-2" style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', bottom: '-50px', left: '-50px' }} />
+        {/* Columna derecha: Branding, Información e Ilustración */}
+        <div className="auth-brand-column" style={{ 
+          flex: 1, 
+          background: '#213052', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-between', 
+          color: 'white', 
+          padding: '52px 48px 20px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Organic wavy SVG divider on the left */}
+          <svg
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 70,
+              height: '100%',
+              transform: 'translateX(-99%)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <path d="M100 0 C30 20, 20 70, 100 100 Z" fill="#213052" />
+          </svg>
 
-        <div style={{ textAlign: 'center', zIndex: 2, maxWidth: 460 }}>
+          {/* Grid pattern overlay */}
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            opacity: 0.05, 
+            backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', 
+            backgroundSize: '24px 24px' 
+          }} />
+          
+          {/* Logo "Raíces." Centrado vertical y horizontalmente */}
+          <div style={{ zIndex: 2, display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', width: '100%' }}>
+            <span style={{ 
+              fontFamily: 'var(--font-display)', 
+              fontSize: 52, 
+              fontWeight: 800, 
+              color: 'white', 
+              letterSpacing: '-0.03em',
+              display: 'block',
+            }}>
+              Raíces<span style={{ color: '#FF4D68' }}>.</span>
+            </span>
+          </div>
 
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, margin: '0 0 12px', color: 'white', letterSpacing: '-0.02em' }}>
-            Raíces para florecer
-          </h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
-            Conectando personas con discapacidad, tutores e instituciones en un ecosistema digital de confianza, donde cada paso hacia la autonomía es celebrado y acompañado.
-          </p>
+          {/* Preserved SVG Illustration - rolling hills with character */}
+          <div style={{ zIndex: 2, width: '100%', maxWidth: 360, margin: '24px auto 0' }}>
+            <svg viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block' }}>
+              {/* Decorative dots */}
+              <circle cx="320" cy="60" r="8" fill="#F4C84A" opacity="0.9"/>
+              <circle cx="90" cy="90" r="5" fill="#FF4D68" opacity="0.8"/>
+              <circle cx="360" cy="110" r="4" fill="#CA918E" opacity="0.7"/>
+
+              {/* Rolling hills background */}
+              <path d="M0 220 Q60 160 120 200 Q200 240 280 180 Q350 130 420 160 L420 280 L0 280 Z" fill="#1a5c3a" opacity="0.4"/>
+              {/* Main green hill */}
+              <path d="M-20 250 Q80 170 180 210 Q300 255 440 195 L440 280 L-20 280 Z" fill="#229B58"/>
+              {/* Lighter hill highlight */}
+              <path d="M-20 255 Q80 180 180 215 Q300 258 440 200 L440 260 Q300 230 180 240 Q80 205 -20 275 Z" fill="#2db36b" opacity="0.4"/>
+
+              {/* Dashed path/road */}
+              <path d="M30 268 Q120 238 220 248 Q310 258 400 235" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeDasharray="10 8" strokeLinecap="round" fill="none"/>
+
+              {/* Plant sprout left */}
+              <g transform="translate(75, 210)">
+                <line x1="0" y1="30" x2="0" y2="8" stroke="#A8B86B" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M0 18 Q-10 8 -14 2" stroke="#229B58" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <path d="M0 22 Q10 12 14 6" stroke="#229B58" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <ellipse cx="-14" cy="2" rx="5" ry="4" fill="#229B58" transform="rotate(-30 -14 2)"/>
+                <ellipse cx="14" cy="6" rx="5" ry="4" fill="#A8B86B" transform="rotate(30 14 6)"/>
+              </g>
+
+              {/* Character - smiley person */}
+              <g transform="translate(230, 195)">
+                {/* Body shadow */}
+                <ellipse cx="16" cy="52" rx="14" ry="4" fill="rgba(0,0,0,0.15)"/>
+                {/* Body */}
+                <path d="M6 30 Q4 42 5 50 Q10 54 16 54 Q22 54 27 50 Q28 42 26 30 Z" fill="#F4C84A"/>
+                {/* Head */}
+                <circle cx="16" cy="18" r="16" fill="#F4C84A"/>
+                {/* Smiley face */}
+                <circle cx="11" cy="16" r="2" fill="#073B4C"/>
+                <circle cx="21" cy="16" r="2" fill="#073B4C"/>
+                <path d="M11 22 Q16 27 21 22" stroke="#073B4C" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                {/* Rosy cheeks */}
+                <circle cx="8" cy="20" r="3" fill="#FF4D68" opacity="0.4"/>
+                <circle cx="24" cy="20" r="3" fill="#FF4D68" opacity="0.4"/>
+              </g>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

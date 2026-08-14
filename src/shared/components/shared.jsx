@@ -1,5 +1,6 @@
 /* Raíces para Florecer — Shared Components (React module version) */
 import { useNavigate } from 'react-router-dom'
+import { VERSION } from '../../../version'
 
 export const LeafIcon = ({ size = 16, color = 'currentColor', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} opacity="0.8" style={style}>
@@ -197,15 +198,28 @@ const FOOTER_COLUMNS = [
 ]
 
 export const AppFooter = () => (
-  <footer className="app-footer-main" style={{ background: 'var(--landing-footer-bg)', borderTop: '1px solid var(--landing-footer-border)', padding: '40px 48px 20px', fontFamily: 'var(--font-body)', position: 'relative', overflow: 'hidden' }}>
-    {/* Nodos de luz decorativos en las esquinas del footer */}
-    <div style={{ position: 'absolute', left: '-100px', bottom: '-150px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(202, 145, 142, var(--landing-glow-opacity-rose)) 0%, rgba(202, 145, 142, 0) 70%)', filter: 'blur(45px)', pointerEvents: 'none', zIndex: 0 }}></div>
-    <div style={{ position: 'absolute', right: '-100px', bottom: '-150px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(168, 184, 107, var(--landing-glow-opacity-matcha)) 0%, rgba(168, 184, 107, 0) 70%)', filter: 'blur(45px)', pointerEvents: 'none', zIndex: 0 }}></div>
-
+  <footer className="app-footer-main" style={{ background: 'var(--landing-footer-bg)', borderTop: '1px solid var(--landing-footer-border)', padding: '44px 48px 24px', fontFamily: 'var(--font-body)', position: 'relative', overflow: 'hidden' }}>
+    <style>{`
+      .footer-nav-item {
+        color: var(--landing-footer-text-muted);
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+      .footer-nav-item:hover {
+        color: #FF4D68 !important;
+        transform: translateX(3px);
+      }
+      .footer-bottom-link {
+        color: var(--landing-footer-text-muted);
+        transition: color 0.2s ease;
+      }
+      .footer-bottom-link:hover {
+        color: #FF4D68 !important;
+      }
+    `}</style>
     <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }} className="responsive-footer-grid">
       <div>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--landing-footer-text)', margin: 0, lineHeight: 1.2 }}>
-          <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--landing-footer-border)', textUnderlineOffset: 3 }}>Raíces</span>
+          <span style={{ textDecoration: 'underline', textDecorationColor: '#FF4D68', textUnderlineOffset: 3 }}>Raíces</span>
           <br />
           para florecer.
         </h3>
@@ -220,8 +234,8 @@ export const AppFooter = () => (
             {col.items.map((item, j) => (
               <li 
                 key={j} 
-                className="hover:text-[#FF4D68] transition-colors duration-200" 
-                style={{ fontSize: 14, color: 'var(--landing-footer-text-muted)', cursor: 'pointer' }}
+                className="footer-nav-item" 
+                style={{ fontSize: 14, cursor: 'pointer' }}
               >
                 {item}
               </li>
@@ -233,15 +247,18 @@ export const AppFooter = () => (
     <div style={{ maxWidth: 1100, margin: '28px auto 0', borderTop: '1px solid var(--landing-footer-border)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--landing-footer-text-muted)', position: 'relative', zIndex: 1 }} className="app-footer-bottom footer-bottom">
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <LeafIcon size={14} color="var(--landing-footer-text-muted)" />
+          <LeafIcon size={14} color="#FF4D68" />
           2026. Raíces para florecer. Construida con dignidad y cuidado
         </span>
         <span style={{ opacity: 0.5 }}>·</span>
-        <span>Privacidad · Accesibilidad</span>
+        <span className="footer-bottom-link" style={{ cursor: 'pointer' }}>Privacidad · Accesibilidad</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--landing-footer-text-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', color: '#FFFFFF' }}>
         POWERED BY
-        <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 16, width: 'auto', display: 'block' }} />
+        <img src="/images/Techmaleon_Logo.png" alt="Techmaleon" style={{ height: 22, width: 'auto', display: 'block' }} />
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--landing-footer-text-muted)', opacity: 0.7, fontWeight: 500 }}>
+        v{VERSION}
       </div>
     </div>
   </footer>

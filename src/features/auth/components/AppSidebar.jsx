@@ -41,6 +41,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       { id: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
       { id: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: 'var(--color-empleo)' },
       { id: 'users',         label: 'Usuarios',       icon: Icons.users },
+      { id: 'identities',    label: 'Identidades',    icon: Icons.shieldCheck },
       { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
       { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
       { id: 'settings',      label: 'Config',         icon: Icons.target },
@@ -73,6 +74,9 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
       { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social', hidden: !hasFeature('comunidad') },
     ].filter(item => !item.hidden)
+    if (user?.role === 'pcd') {
+      items.push({ id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas' })
+    }
     if (user?.role === 'tutor') {
       items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
     }

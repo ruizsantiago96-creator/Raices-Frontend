@@ -7,6 +7,7 @@ import { ReviewsTab } from '@features/reviews'
 import OverviewTab from '../components/OverviewTab'
 import IntelligenceTab from '../components/IntelligenceTab'
 import InstitutionsTab from '../components/InstitutionsTab'
+import IdentitiesTab from '../components/IdentitiesTab'
 import SettingsTab from '../components/SettingsTab'
 import AlertsTab from '../components/AlertsTab'
 
@@ -22,6 +23,7 @@ export default function AdminPage() {
     intelligence: 'Inteligencia de necesidades',
     institutions: 'Gestión de instituciones',
     users: 'Gestión de usuarios',
+    identities: 'Verificación de identidad',
     reviews: 'Moderación de reseñas',
     alerts: 'Alertas de riesgo',
     settings: 'Configuración de plataforma',
@@ -39,6 +41,7 @@ export default function AdminPage() {
         {tab === 'intelligence' && <IntelligenceTab />}
         {tab === 'institutions' && <InstitutionsTab />}
         {tab === 'users' && <UsersTab currentUserId={user?.id} />}
+        {tab === 'identities' && <IdentitiesTab />}
         {tab === 'reviews' && <ReviewsTab />}
         {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
         {tab === 'settings' && <SettingsTab />}
