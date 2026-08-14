@@ -60,6 +60,54 @@ export const USER_ENDPOINTS = {
     body: { nombreCompleto: 'string', ciudad: 'string', estado: 'string', urlAvatar: 'string?', profesion: 'string?', bio: 'string?' },
     response: 'Usuario',
   },
+  SAVE_ESCALAS_VIDA: {
+    method: 'POST',
+    path: '/usuarios/escalas-vida',
+    description: 'Guardar escalas de vida y metadatos del usuario',
+    body: {
+      nivelAutonomia: 'number (1-4)',
+      nivelIndependencia: 'number (1-4)',
+      nivelComunicacion: 'number (1-4)',
+      nivelComprension: 'number (1-4)',
+      nivelEnergia: 'number (1-4)',
+      nivelMovilidad: 'number (1-4)',
+      nivelSocial: 'number (1-4)',
+      nivelEmocional: 'number (1-4)',
+      tieneDiagnostico: 'boolean',
+      temporalidadOrigen: 'string?',
+      preferenciaFormato: 'string?',
+      areasInteres: 'string[]?',
+      viabilidadEconomica: 'string?',
+    },
+    response: {
+      escalasVida: 'object',
+      tieneDiagnostico: 'boolean',
+      requiereEvaluacion: 'boolean',
+    },
+  },
+  UPLOAD_DOCUMENTO_IDENTIDAD: {
+    method: 'POST',
+    path: '/usuarios/documento-identidad',
+    description: 'Subir documento de identidad (CURP o identificación oficial)',
+    body: 'FormData (tipo, numeroCurp?, documento)',
+    response: {
+      tipo: 'string',
+      urlDocumento: 'string',
+      estado: 'string',
+      fechaSubida: 'string',
+    },
+  },
+  GET_ESTADO_VALIDACION: {
+    method: 'GET',
+    path: '/usuarios/estado-validacion-identidad',
+    description: 'Estado de validación de identidad del usuario',
+    response: {
+      estado: 'string',
+      tieneCurp: 'boolean',
+      tieneIdentificacion: 'boolean',
+      motivoRechazo: 'string|null',
+    },
+  },
   UPLOAD_AVATAR: {
     method: 'POST',
     path: '/usuarios/avatar',
@@ -724,6 +772,21 @@ export const AI_ENDPOINTS = {
     body: { dependienteId: 'string?' },
     response: 'Recomendacion[]',
   },
+  GET_RESUMEN: {
+    method: 'POST',
+    path: '/ia/resumen',
+    description: 'Genera resumen narrativo IA (1 párrafo + 3 párrafos)',
+    body: null, // usa el usuario autenticado
+    response: {
+      resumenUnParrafo: 'string',
+      resumenTresParrafos: {
+        quienEres: 'string',
+        contexto: 'string',
+        intereses: 'string',
+      },
+      simulado: 'boolean',
+    },
+  },
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -737,6 +800,10 @@ export const CATALOG_ENDPOINTS = {
       parentescos: 'string[]',
       discapacidades: 'string[]',
       etapasVida: 'string[]',
+      temporalidadOrigen: '{ id: string, label: string }[]',
+      preferenciaFormato: '{ id: string, label: string, description: string }[]',
+      areasInteres: '{ id: string, label: string, subcategorias?: object[] }[]',
+      viabilidadEconomica: '{ id: string, label: string, description: string }[]',
       features: 'string[]',
       categorias: 'string[]',
     },
@@ -755,6 +822,26 @@ export const CATALOG_ENDPOINTS = {
     method: 'GET',
     path: '/catalogos/etapas-vida',
     response: '{ id: string, label: string }[]',
+  },
+  GET_TEMPORALIDAD_ORIGEN: {
+    method: 'GET',
+    path: '/catalogos/temporalidad-origen',
+    response: '{ id: string, label: string }[]',
+  },
+  GET_PREFERENCIA_FORMATO: {
+    method: 'GET',
+    path: '/catalogos/preferencia-formato',
+    response: '{ id: string, label: string, description: string }[]',
+  },
+  GET_AREAS_INTERES: {
+    method: 'GET',
+    path: '/catalogos/areas-interes',
+    response: '{ id: string, label: string, subcategorias?: object[] }[]',
+  },
+  GET_VIABILIDAD_ECONOMICA: {
+    method: 'GET',
+    path: '/catalogos/viabilidad-economica',
+    response: '{ id: string, label: string, description: string }[]',
   },
   GET_FEATURES: {
     method: 'GET',
@@ -776,6 +863,37 @@ export const ADMIN_ENDPOINTS = {
     method: 'GET',
     path: '/administracion/estadisticas',
     response: 'EstadisticasAdmin',
+  },
+  GET_DOCUMENTOS_PENDIENTES: {
+    method: 'GET',
+    path: '/administracion/documentos-identidad/pendientes',
+    description: 'Lista de documentos de identidad pendientes de revisión',
+    params: { estado: 'string?' },
+    response: {
+      datos: [{
+        id: 'string',
+        tipo: 'string',
+        urlDocumento: 'string',
+        numeroCurp: 'string|null',
+        estado: 'string',
+        fechaSubida: 'string',
+        usuarioId: 'string',
+        nombreUsuario: 'string',
+        emailUsuario: 'string',
+      }],
+      total: 'number',
+    },
+  },
+  APROBAR_DOCUMENTO: {
+    method: 'POST',
+    path: '/administracion/documentos-identidad/:id/aprobar',
+    response: null, // 204 No Content
+  },
+  RECHAZAR_DOCUMENTO: {
+    method: 'POST',
+    path: '/administracion/documentos-identidad/:id/rechazar',
+    body: { motivo: 'string' },
+    response: null, // 204 No Content
   },
   GET_INTELLIGENCE: {
     method: 'GET',
@@ -870,6 +988,76 @@ export const ADMIN_ENDPOINTS = {
 }
 
 // ═══════════════════════════════════════════════════════════
+// RUTAS DE DESARROLLO
+// ═══════════════════════════════════════════════════════════
+export const RUTAS_ENDPOINTS = {
+  LIST: {
+    method: 'GET',
+    path: '/rutas-desarrollo',
+    params: { estado: 'string?', areaInteres: 'string?' },
+    response: [{
+      id: 'string',
+      usuarioId: 'string',
+      areaInteres: 'string',
+      nombre: 'string',
+      descripcion: 'string',
+      metaFinal: 'string',
+      estado: 'string',
+      prioridad: 'string',
+      totalPasos: 'number',
+      pasosCompletados: 'number',
+      porcentajeProgreso: 'number',
+      fechaLimite: 'string|null',
+      fechaCreacion: 'string',
+    }],
+  },
+  SUMMARY: {
+    method: 'GET',
+    path: '/rutas-desarrollo/resumen',
+    response: {
+      totalRutas: 'number',
+      rutasActivas: 'number',
+      rutasCompletadas: 'number',
+      rutasPausadas: 'number',
+      progresoPromedio: 'number',
+    },
+  },
+  GET: {
+    method: 'GET',
+    path: '/rutas-desarrollo/:id',
+    response: '{ /* campos de ruta */ pasos: Paso[] }',
+  },
+  CREATE: {
+    method: 'POST',
+    path: '/rutas-desarrollo',
+    body: { areaInteres: 'string', nombre: 'string', descripcion: 'string?', metaFinal: 'string?', prioridad: 'string?', fechaLimite: 'string?' },
+  },
+  UPDATE: {
+    method: 'PUT',
+    path: '/rutas-desarrollo/:id',
+    body: 'Partial<Ruta>',
+  },
+  DELETE: {
+    method: 'DELETE',
+    path: '/rutas-desarrollo/:id',
+    response: null,
+  },
+  ADD_PASO: {
+    method: 'POST',
+    path: '/rutas-desarrollo/:id/pasos',
+    body: { titulo: 'string', descripcion: 'string?', orden: 'number?' },
+  },
+  COMPLETAR_PASO: {
+    method: 'PATCH',
+    path: '/rutas-desarrollo/:rutaId/pasos/:pasoId/completar',
+  },
+  DESCOMPLETAR_PASO: {
+    method: 'PATCH',
+    path: '/rutas-desarrollo/:rutaId/pasos/:pasoId/descompletar',
+  },
+}
+
+// ═══════════════════════════════════════════════════════════
 // RESUMEN: TODOS LOS ENDPOINTS
 // ═══════════════════════════════════════════════════════════
 export const ALL_ENDPOINTS = {
@@ -887,6 +1075,7 @@ export const ALL_ENDPOINTS = {
   ...AI_ENDPOINTS,
   ...CATALOG_ENDPOINTS,
   ...ADMIN_ENDPOINTS,
+  ...RUTAS_ENDPOINTS,
 }
 
 /**

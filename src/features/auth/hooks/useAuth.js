@@ -176,6 +176,11 @@ export function useMe() {
         avatar_url: d.urlAvatar,
         is_verified: d.verificado,
         features: d.features ?? {},
+        // Nuevos campos del backend v1.0-v1.5
+        destinatarioRegistro: d.destinatarioRegistro ?? null,
+        curp: d.curp ?? null,
+        telefonoContacto: d.telefonoContacto ?? null,
+        preferenciasAcompanamiento: d.preferenciasAcompanamiento ?? null,
       }
     }),
     enabled: !!token,

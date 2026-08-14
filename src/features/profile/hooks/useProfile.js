@@ -92,3 +92,20 @@ export function useSaveProfiling() {
     },
   })
 }
+
+/**
+ * Guarda las escalas de vida del usuario.
+ * POST /api/usuarios/escalas-vida
+ *
+ * @param {Object} payload - { nivelAutonomia, nivelIndependencia, ..., tieneDiagnostico, temporalidadOrigen, preferenciaFormato, areasInteres, viabilidadEconomica }
+ */
+export function useSaveEscalasVida() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload) => api.post('/usuarios/escalas-vida', payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['perfil'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+    },
+  })
+}

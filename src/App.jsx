@@ -25,6 +25,7 @@ import ProfilePage from '@features/profile/pages/ProfilePage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
+import { RutasPage, EscalasVidaPage } from '@features/rutas'
 
 import DesignPreview from '@features/landing/pages/DesignPreview'
 import MainLayout from '@shared/components/MainLayout'
@@ -169,6 +170,8 @@ export default function App() {
                   <Route path="/institution-portal/registro" element={<ProtectedRoute role="institution"><CrearInstitucionPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
+                  <Route path="/rutas" element={<RutasPage />} />
+                  <Route path="/escalas-vida" element={<EscalasVidaPage />} />
                   <Route path="/explore" element={<ExplorePage />} />
                 </Route>
 

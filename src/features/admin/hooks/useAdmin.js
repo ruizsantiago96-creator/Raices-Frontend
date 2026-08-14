@@ -120,6 +120,47 @@ export function useAdminActiveUsersDetail(opts) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   Documentos de Identidad — Validación administrativa
+   GET  /api/administracion/documentos-identidad/pendientes
+   POST /api/administracion/documentos-identidad/:id/aprobar
+   POST /api/administracion/documentos-identidad/:id/rechazar
+   ═══════════════════════════════════════════════════════════════════ */
+
+export function useAdminVerificaciones(filters = {}, opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  return useQuery({
+    queryKey: ['admin', 'verificaciones', filters],
+    queryFn: () => api.get('/administracion/documentos-identidad/pendientes', { params: filters }).then(r => r.data?.datos ?? r.data),
+    staleTime: 1000 * 60 * 2,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
+  })
+}
+
+export function useAprobarVerificacion(id) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
+    },
+  })
+}
+
+export function useRechazarVerificacion(id) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body) => api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
+    },
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    NOTE: User management hooks have been moved to @features/users
    NOTE: Institution admin hooks have been moved to @features/institutions
    NOTE: Review admin hooks have been moved to @features/reviews

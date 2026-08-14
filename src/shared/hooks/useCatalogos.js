@@ -108,7 +108,15 @@ export function useCatalogos() {
               ? { id: c, value: c, label: c, color: '#01ADFF' }
               : { id: c.id, value: c.id, label: c.label, color: c.color ?? '#01ADFF' })
           : null
-        return { parentescos, discapacidades, etapasVida, features, categorias }
+        // Nuevos catálogos del v1.0-v1.5 del backend
+        const temporalidadOrigen = Array.isArray(data?.temporalidadOrigen) ? data.temporalidadOrigen : null
+        const preferenciaFormato = Array.isArray(data?.preferenciaFormato) ? data.preferenciaFormato : null
+        const areasInteres = Array.isArray(data?.areasInteres) ? data.areasInteres : null
+        const viabilidadEconomica = Array.isArray(data?.viabilidadEconomica) ? data.viabilidadEconomica : null
+        return {
+          parentescos, discapacidades, etapasVida, features, categorias,
+          temporalidadOrigen, preferenciaFormato, areasInteres, viabilidadEconomica,
+        }
       } catch {
         return null
       }
@@ -204,6 +212,12 @@ export function useCatalogos() {
       etapasVida: c?.etapasVida ?? etapasVidaQ.data ?? FALLBACK_ETAPAS_VIDA,
       features: c?.features ?? featuresQ.data ?? FALLBACK_FEATURES,
       categoriasInstitucion: c?.categorias ?? categoriasQ.data ?? FALLBACK_CATEGORIAS,
+
+      // Nuevos catálogos del backend v1.0-v1.5
+      temporalidadOrigen: c?.temporalidadOrigen ?? null,
+      preferenciaFormato: c?.preferenciaFormato ?? null,
+      areasInteres: c?.areasInteres ?? null,
+      viabilidadEconomica: c?.viabilidadEconomica ?? null,
 
       necesidades: [],
       metas: [],

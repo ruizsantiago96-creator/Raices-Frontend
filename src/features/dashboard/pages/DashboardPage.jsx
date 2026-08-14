@@ -30,6 +30,14 @@ export default function DashboardPage() {
   const filledBasics = [profile?.full_name, profile?.city, profile?.state].filter(Boolean).length
   const profilePct = Math.min(100, Math.round(((hasProfiling ? 3 : 0) + filledBasics) / 6 * 100))
   const profileComplete = hasProfiling && filledBasics >= 2
+
+  const userInterests = (() => {
+    try {
+      const local = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
+      if (local && local.length > 0) return local
+    } catch (_) {}
+    return profile?.profiling?.goals || []
+  })()
   return (
     <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -43,6 +51,50 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Tus caminos de interés seleccionados */}
+        {userInterests.length > 0 && (
+          <div className="scroll-reveal animate-fade-in-up" style={{ marginBottom: 32, background: 'linear-gradient(135deg, #073B4C 0%, #0d4d63 100%)', borderRadius: 16, padding: '22px 24px', color: '#fff', boxShadow: '0 4px 18px rgba(7, 59, 76, 0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>✨</span>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, margin: 0, color: '#fff' }}>
+                  Tus caminos de interés prioritarios
+                </h2>
+              </div>
+              <Link to="/explore" style={{ color: '#F4C84A', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Explorar oportunidades {Icons.arrowRight({ s: 14 })}
+              </Link>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {userInterests.map((interest, idx) => (
+                <Link
+                  key={idx}
+                  to={`/explore?query=${encodeURIComponent(interest)}`}
+                  style={{
+                    textDecoration: 'none',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    color: '#fff',
+                    borderRadius: 20,
+                    padding: '6px 14px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  <span>{interest}</span>
+                  {Icons.arrowRight({ s: 12 })}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Banner guía: completar perfil (persistente hasta completar) */}
         {!profileComplete && (
