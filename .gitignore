@@ -11,6 +11,9 @@ dist/
 .env.production
 .env.*.local
 
+# Vite temp files
+vite.config.mjs.timestamp*
+
 # OpenCode config
 .opencode
 
