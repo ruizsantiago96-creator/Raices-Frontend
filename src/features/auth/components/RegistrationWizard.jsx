@@ -224,6 +224,56 @@ const LIST_VIABILIDAD = [
 // Posición 18: Diferenciador (número/letra)
 const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i
 
+// ── Validación CURP ────────────────────────────────────────────
+const VOWELS = 'AEIOU'
+function getFirstInternalVowel(str) {
+  for (let i = 1; i < str.length; i++) {
+    if (VOWELS.includes(str[i])) return str[i]
+  }
+  return 'X'
+}
+
+function validateCurpMatch(curp, nombres, apPat, apMat, birthDate) {
+  if (!curp || curp.length !== 18 || !CURP_REGEX.test(curp)) return { valid: true, errors: [] }
+  if (!birthDate) return { valid: true, errors: [] }
+  const errors = []
+  const c = curp.toUpperCase()
+  const yy = parseInt(c.substring(4, 6), 10)
+  const mm = parseInt(c.substring(6, 8), 10)
+  const dd = parseInt(c.substring(8, 10), 10)
+  const century = /[A-Z]/.test(c[16]) ? 20 : 19
+  const curpYear = century * 100 + yy
+  const [iY, iM, iD] = birthDate.split('-').map(Number)
+  if (curpYear !== iY || mm !== iM || dd !== iD) {
+    errors.push('La fecha de nacimiento no coincide con la CURP. En la CURP aparece ' + String(dd).padStart(2, '0') + '/' + String(mm).padStart(2, '0') + '/' + curpYear + '.')
+  }
+  const p = apPat?.trim().toUpperCase()
+  const m = apMat?.trim().toUpperCase()
+  const n = nombres?.trim().toUpperCase()
+  if (p && m && n) {
+    const nombre = n.split(/\s+/)[0]
+    if (c[0] !== p[0]) errors.push('La CURP no coincide con el apellido paterno.')
+    if (c[1] !== getFirstInternalVowel(p)) errors.push('La CURP no coincide con las iniciales del apellido paterno.')
+    if (c[2] !== m[0]) errors.push('La CURP no coincide con el apellido materno.')
+    if (c[3] !== nombre[0]) errors.push('La CURP no coincide con el nombre.')
+  }
+  return { valid: errors.length === 0, errors }
+}
+
+function CurpIndicator(props) {
+  const { curp, nombres, apPat, apMat, birthDate } = props
+  if (!curp || curp.length === 0) {
+    return <p style={{ fontSize: 11, margin: '4px 0 0', color: 'var(--fg3)' }}>18 caracteres alfanuméricos (ej. GARC850101HDFRL09)</p>
+  }
+  const fmt = CURP_REGEX.test(curp)
+  const full = curp.length === 18
+  const cr = fmt ? validateCurpMatch(curp, nombres, apPat, apMat, birthDate) : { valid: false, errors: [] }
+  const col = !full ? 'var(--fg3)' : !fmt ? '#ef4444' : cr.valid ? '#22c55e' : '#f97316'
+  const ico = !full ? '' : !fmt ? '\u2717' : cr.valid ? '\u2713' : '\u26a0'
+  const txt = !full ? curp.length + '/18 caracteres' : !fmt ? 'Formato de CURP no válido' : cr.valid ? 'CURP válida y coincide con nombre y fecha' : cr.errors[0]
+  return <p style={{ fontSize: 12, margin: '4px 0 0', color: col }}>{ico} {txt}</p>
+}
+
 function getPasswordStrength(password) {
   if (!password) return { label: '', color: 'transparent', score: 0, width: '0%' }
   if (password.length < 8) return { label: 'Débil (mínimo 8 caracteres)', color: '#ef4444', score: 1, width: '33%' }
@@ -250,12 +300,13 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
   // Step 1: General Info
   const [generalForm, setGeneralForm] = useState({
-    full_name: '',
+    nombres: '',
+    apellidoPaterno: '',
+    apellidoMaterno: '',
     birth_date: '',
     domicilio: '',
     email: '',
     password: '',
-    telefono: '',
     curp: '',
     acompanamiento: 'paso_a_paso',
   })
@@ -298,8 +349,8 @@ export default function RegistrationWizard({ onBackToRoles }) {
   const handleGeneralSubmit = (e) => {
     e.preventDefault()
     setError('')
-    if (!generalForm.full_name || !generalForm.email || !generalForm.password) {
-      setError('Por favor, completa los campos requeridos.')
+    if (!generalForm.nombres || !generalForm.apellidoPaterno || !generalForm.apellidoMaterno || !generalForm.email || !generalForm.password) {
+      setError('Por favor, completa todos los campos requeridos.')
       return
     }
     if (generalForm.password.length < 8) {
@@ -307,9 +358,17 @@ export default function RegistrationWizard({ onBackToRoles }) {
       return
     }
     // Validación CURP: si se proporciona, debe cumplir el formato oficial
-    if (generalForm.curp && !CURP_REGEX.test(generalForm.curp)) {
-      setError('La CURP no tiene un formato válido. Debe contener 18 caracteres alfanuméricos con el formato oficial.')
+    if (generalForm.curp && !generalForm.birth_date) {
+      setError('Si ingresas tu CURP, también debes proporcionar tu fecha de nacimiento.')
       return
+    }
+    if (generalForm.curp && !CURP_REGEX.test(generalForm.curp)) {
+      setError('La CURP no tiene un formato válido.')
+      return
+    }
+    if (generalForm.curp) {
+      const r = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date)
+      if (!r.valid) { setError(r.errors[0]); return }
     }
     setWizardStep('condition')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -384,7 +443,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
   // Generate empathetic 3-paragraph summary based on the answers
   const generateNarrative = () => {
-    const name = generalForm.full_name.split(' ')[0] || 'Tú'
+    const name = generalForm.nombres?.split(' ')[0] || 'Tú'
     
     // Párrafo 1: ¿Quién eres?
     const condList = conditionData.conditions.filter(c => c !== 'Prefiero no responder').join(', ') || 'diversidad de fortalezas'
@@ -424,11 +483,10 @@ export default function RegistrationWizard({ onBackToRoles }) {
     try {
       // 1. Registro de cuenta
       const registerPayload = {
-        nombreCompleto: generalForm.full_name,
+        nombreCompleto: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
         email: generalForm.email,
         password: generalForm.password,
         rol: 'pcd',
-        telefonoContacto: generalForm.telefono,
         curp: generalForm.curp,
         domicilio: generalForm.domicilio,
         fechaNacimiento: generalForm.birth_date,
@@ -450,7 +508,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
           id: authResult.usuario?.id,
           email: authResult.usuario?.email || generalForm.email,
           role: 'pcd',
-          full_name: generalForm.full_name,
+          full_name: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
         }
         setRememberMe(true)
         setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
@@ -590,16 +648,29 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
           <div>
             <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Nombre completo PCD <span style={{ color: '#ef4444' }}>*</span>
+              Nombre(s) <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <input
-              type="text"
-              className="auth-input"
-              required
-              placeholder="Nombre y apellidos"
-              value={generalForm.full_name}
-              onChange={e => setGeneralForm({ ...generalForm, full_name: e.target.value })}
-            />
+            <input type="text" className="auth-input" required placeholder="Ej. Juan Carlos"
+              value={generalForm.nombres}
+              onChange={e => setGeneralForm({ ...generalForm, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+                Apellido paterno <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input type="text" className="auth-input" required placeholder="Ej. García"
+                value={generalForm.apellidoPaterno}
+                onChange={e => setGeneralForm({ ...generalForm, apellidoPaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+                Apellido materno <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input type="text" className="auth-input" required placeholder="Ej. López"
+                value={generalForm.apellidoMaterno}
+                onChange={e => setGeneralForm({ ...generalForm, apellidoMaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
@@ -623,26 +694,12 @@ export default function RegistrationWizard({ onBackToRoles }) {
                 type="text"
                 className="auth-input"
                 maxLength={18}
-                style={{ textTransform: 'uppercase', borderColor: generalForm.curp && generalForm.curp.length === 18 ? (CURP_REGEX.test(generalForm.curp) ? '#22c55e' : '#ef4444') : undefined }}
+                style={{ textTransform: 'uppercase', borderColor: generalForm.curp && generalForm.curp.length === 18 ? (CURP_REGEX.test(generalForm.curp) ? (validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date).valid ? '#22c55e' : '#f97316') : '#ef4444') : undefined }}
                 placeholder="ABCD123456HDFXX09"
                 value={generalForm.curp}
                 onChange={e => setGeneralForm({ ...generalForm, curp: e.target.value.toUpperCase() })}
               />
-              {generalForm.curp && generalForm.curp.length > 0 && (
-                <p style={{ fontSize: 12, margin: '4px 0 0', color: generalForm.curp.length === 18 ? (CURP_REGEX.test(generalForm.curp) ? '#22c55e' : '#ef4444') : 'var(--fg3)' }}>
-                  {generalForm.curp.length < 18
-                    ? `${generalForm.curp.length}/18 caracteres`
-                    : CURP_REGEX.test(generalForm.curp)
-                      ? '✓ CURP válida'
-                      : '✗ Formato de CURP no válido'
-                  }
-                </p>
-              )}
-              {!generalForm.curp && (
-                <p style={{ fontSize: 11, margin: '4px 0 0', color: 'var(--fg3)' }}>
-                  18 caracteres alfanuméricos (ej. GARC850101HDFRL09)
-                </p>
-              )}
+              <CurpIndicator curp={generalForm.curp} nombres={generalForm.nombres} apPat={generalForm.apellidoPaterno} apMat={generalForm.apellidoMaterno} birthDate={generalForm.birth_date} />
             </div>
           </div>
 
@@ -671,18 +728,6 @@ export default function RegistrationWizard({ onBackToRoles }) {
                 placeholder="correo@ejemplo.com"
                 value={generalForm.email}
                 onChange={e => setGeneralForm({ ...generalForm, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Teléfono, WhatsApp
-              </label>
-              <input
-                type="tel"
-                className="auth-input"
-                placeholder="Ej. 33 1234 5678"
-                value={generalForm.telefono}
-                onChange={e => setGeneralForm({ ...generalForm, telefono: e.target.value })}
               />
             </div>
           </div>

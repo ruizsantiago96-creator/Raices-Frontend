@@ -35,11 +35,192 @@ function getPasswordStrength(password) {
   }
 }
 
+const PcdDoodle = ({ active }) => (
+  <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Sparkle top-left */}
+    <path
+      d="M9 11 L10.2 13.8 L13 14.6 L10.2 15.4 L9 18.2 L7.8 15.4 L5 14.6 L7.8 13.8 Z"
+      fill={active ? "#FFFFFF" : "#FFB703"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Happy Face Circle */}
+    <circle
+      cx="23"
+      cy="23"
+      r="11"
+      fill={active ? "rgba(255,255,255,0.25)" : "#FDE674"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+    />
+    {/* Eyes */}
+    <circle cx="19.5" cy="20.5" r="1.2" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    <circle cx="26.5" cy="20.5" r="1.2" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    {/* Smile */}
+    <path
+      d="M 19 25 Q 23 28.5 27 25"
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </svg>
+)
+
+const TutorDoodle = ({ active }) => (
+  <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Double leaves top right */}
+    <path
+      d="M 30 18 C 30 12 25 10 23 15 C 25 18 28 19 30 18 Z"
+      fill={active ? "rgba(255,255,255,0.15)" : "#10B981"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M 30 18 C 35 12 37 16 33 19 C 31 18 30 18 30 18 Z"
+      fill={active ? "rgba(255,255,255,0.25)" : "#A8B86B"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    
+    {/* Left character (tutor, larger) */}
+    <circle
+      cx="18"
+      cy="25"
+      r="9"
+      fill={active ? "rgba(255,255,255,0.25)" : "#FDE674"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+    />
+    <circle cx="15.5" cy="23.5" r="1.2" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    <circle cx="20.5" cy="23.5" r="1.2" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    <path
+      d="M 15.5 27 Q 18 29.5 20.5 27"
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      fill="none"
+    />
+    
+    {/* Right character (child/care recipient, smaller) */}
+    <circle
+      cx="29"
+      cy="29"
+      r="7.5"
+      fill={active ? "rgba(255,255,255,0.15)" : "#3A86FF"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+    />
+    <circle cx="27" cy="28" r="1" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    <circle cx="31" cy="28" r="1" fill={active ? "#FFFFFF" : "#0C3B4B"} />
+    <path
+      d="M 27 31.5 Q 29 33.5 31 31.5"
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </svg>
+)
+
+const InstitutionDoodle = ({ active }) => (
+  <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Sprout on roof */}
+    <path d="M 22 9 L 22 4" stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="2" strokeLinecap="round"/>
+    <path
+      d="M 22 4 C 18 2 18 -1 22 1 Z"
+      fill={active ? "rgba(255,255,255,0.2)" : "#10B981"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M 22 4 C 26 2 26 -1 22 1 Z"
+      fill={active ? "rgba(255,255,255,0.3)" : "#A8B86B"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+
+    {/* House base */}
+    <path
+      d="M 12 18 H 32 V 36 H 12 Z"
+      fill={active ? "rgba(255,255,255,0.1)" : "#2F80ED"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+      strokeLinejoin="round"
+    />
+    
+    {/* Roof */}
+    <path
+      d="M 9 18 L 22 9 L 35 18 Z"
+      fill={active ? "rgba(255,255,255,0.25)" : "#FF4D68"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+      strokeLinejoin="round"
+    />
+    
+    {/* Door */}
+    <path
+      d="M 19 36 V 28 C 19 26.5 25 26.5 25 28 V 36 Z"
+      fill={active ? "rgba(255,255,255,0.2)" : "#FDE674"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+    
+    {/* Windows */}
+    <rect x="15" y="21" width="4" height="4" rx="1" fill={active ? "rgba(255,255,255,0.5)" : "#FFFFFF"} stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="1.5" />
+    <rect x="25" y="21" width="4" height="4" rx="1" fill={active ? "rgba(255,255,255,0.5)" : "#FFFFFF"} stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="1.5" />
+  </svg>
+)
+
+const EnterpriseDoodle = ({ active }) => (
+  <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Briefcase handle */}
+    <path d="M 17 16 V 12 C 17 10.5 27 10.5 27 12 V 16" fill="none" stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="2.5" strokeLinecap="round"/>
+    
+    {/* Briefcase body */}
+    <rect
+      x="9"
+      y="16"
+      width="26"
+      height="18"
+      rx="4"
+      fill={active ? "rgba(255,255,255,0.25)" : "#A8B86B"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="2.5"
+      strokeLinejoin="round"
+    />
+    
+    {/* Straps */}
+    <line x1="14" y1="16" x2="14" y2="34" stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="2"/>
+    <line x1="30" y1="16" x2="30" y2="34" stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="2"/>
+    
+    {/* Buckles */}
+    <rect x="12" y="24" width="4" height="4" fill={active ? "rgba(255,255,255,0.5)" : "#FDE674"} stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="1.5" />
+    <rect x="28" y="24" width="4" height="4" fill={active ? "rgba(255,255,255,0.5)" : "#FDE674"} stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="1.5" />
+    
+    {/* Leaf Tag */}
+    <line x1="27" y1="12" x2="32" y2="15" stroke={active ? "#FFFFFF" : "#0C3B4B"} strokeWidth="1.5"/>
+    <path
+      d="M 32 15 C 36 13 38 18 34 20 C 31 19 31 16 32 15 Z"
+      fill={active ? "rgba(255,255,255,0.15)" : "#10B981"}
+      stroke={active ? "#FFFFFF" : "#0C3B4B"}
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 const ROLES = [
-  { id: 'pcd', icon: Icons.heart, title: AUTH_UI.ROLE_PCD_TITLE, desc: AUTH_UI.ROLE_PCD_DESC },
-  { id: 'tutor', icon: Icons.users, title: AUTH_UI.ROLE_TUTOR_TITLE, desc: AUTH_UI.ROLE_TUTOR_DESC },
-  { id: 'institution', icon: Icons.building, title: AUTH_UI.ROLE_INSTITUTION_TITLE, desc: AUTH_UI.ROLE_INSTITUTION_DESC },
-  { id: 'empresa', icon: Icons.briefcase, title: AUTH_UI.ROLE_EMPRESA_TITLE, desc: AUTH_UI.ROLE_EMPRESA_DESC },
+  { id: 'pcd', icon: PcdDoodle, title: AUTH_UI.ROLE_PCD_TITLE, desc: AUTH_UI.ROLE_PCD_DESC },
+  { id: 'tutor', icon: TutorDoodle, title: AUTH_UI.ROLE_TUTOR_TITLE, desc: AUTH_UI.ROLE_TUTOR_DESC },
+  { id: 'institution', icon: InstitutionDoodle, title: AUTH_UI.ROLE_INSTITUTION_TITLE, desc: AUTH_UI.ROLE_INSTITUTION_DESC },
+  { id: 'empresa', icon: EnterpriseDoodle, title: AUTH_UI.ROLE_EMPRESA_TITLE, desc: AUTH_UI.ROLE_EMPRESA_DESC },
 ]
 
 function mapErrorMessage(msg) {
@@ -77,6 +258,7 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [consentChecked, setConsentChecked] = useState(false)
   const login = useLogin()
   const register = useRegister()
   const { addToast } = useUiStore()
@@ -223,10 +405,17 @@ export default function AuthPage() {
       transition: 'all 0.2s ease', marginBottom: 12, fontFamily: 'var(--font-body)',
     }),
     avatar: (active) => ({
-      width: 52, height: 52, borderRadius: '50% 50% 50% 14%',
-      background: active ? 'var(--primary)' : 'var(--primary-subtle)',
-      color: active ? 'white' : 'var(--primary)',
-      display: 'inline-block', verticalAlign: 'middle', textAlign: 'center', lineHeight: '52px'
+      width: 52, height: 52, borderRadius: '50%',
+      background: '#f6eddf',
+      border: active ? '3px solid var(--primary)' : '2px solid #0C3B4B',
+      color: 'var(--primary)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      verticalAlign: 'middle',
+      transition: 'all 0.2s ease',
+      position: 'relative',
+      overflow: 'hidden',
     }),
     progress: { height: 6, background: 'var(--border-color)', borderRadius: 3, marginBottom: 28, overflow: 'hidden' },
     progressBar: (pct) => ({ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }),
@@ -237,17 +426,18 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="auth-page-container" style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh', 
-      fontFamily: 'var(--font-body)', 
-      background: '#f6eddf', 
-      padding: '40px 20px',
-      boxSizing: 'border-box'
-    }}>
+    <div className="auth-page-container">
       <style>{`
+        .auth-page-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          background: #f6eddf;
+          padding: 40px 20px;
+          box-sizing: border-box;
+          font-family: var(--font-body);
+        }
         .auth-card {
           display: flex;
           width: 100%;
@@ -259,8 +449,32 @@ export default function AuthPage() {
           box-shadow: 0 20px 50px rgba(7, 59, 76, 0.08);
           position: relative;
         }
-        .auth-brand-column {
+        .auth-form-column {
+          flex: 1;
           display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 48px 54px;
+          box-sizing: border-box;
+          background: #ffffff;
+          overflow-y: auto;
+        }
+        .auth-brand-column {
+          flex: 1;
+          background: #213052;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          color: white;
+          padding: 52px 48px 20px;
+          position: relative;
+          overflow: hidden;
+        }
+        .auth-brand-illustration {
+          z-index: 2;
+          width: 100%;
+          max-width: 360px;
+          margin: 24px auto 0;
         }
         .auth-input {
           width: 100%;
@@ -351,6 +565,51 @@ export default function AuthPage() {
           color: var(--fg1);
           background: color-mix(in oklch, var(--primary) 10%, transparent);
         }
+        
+        /* Responsive adjustments for laptop screens and small height viewports */
+        @media (max-height: 780px) {
+          .auth-page-container {
+            padding: 16px 20px;
+            align-items: flex-start;
+          }
+          .auth-card {
+            min-height: 580px;
+          }
+          .auth-form-column {
+            padding: 28px 44px;
+          }
+          .auth-brand-column {
+            padding: 36px 36px 20px;
+          }
+          .auth-brand-illustration {
+            max-width: 280px;
+            margin: 16px auto 0;
+          }
+        }
+        @media (max-height: 680px) {
+          .auth-page-container {
+            padding: 8px 12px;
+            align-items: flex-start;
+          }
+          .auth-card {
+            min-height: auto;
+          }
+          .auth-form-column {
+            padding: 20px 32px;
+          }
+          .auth-brand-column {
+            padding: 24px 24px 16px;
+          }
+          .auth-brand-illustration {
+            max-width: 200px;
+            margin: 8px auto 0;
+          }
+        }
+        @media (max-height: 600px) {
+          .auth-brand-illustration {
+            display: none;
+          }
+        }
         @media (max-width: 900px) {
           .auth-card {
             flex-direction: column;
@@ -368,7 +627,7 @@ export default function AuthPage() {
 
       <div className="auth-card">
         {/* Columna izquierda: Formulario */}
-        <div className="auth-form-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 54px', boxSizing: 'border-box', background: '#ffffff' }}>
+        <div className="auth-form-column">
           <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
             
             {/* Logo de marca superior */}
@@ -386,7 +645,7 @@ export default function AuthPage() {
             <main id="main">
               {mode === 'login' && (
                 <>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Te damos la bienvenida a</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bienvenido a tu nuevo camino</p>
                   <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 800, color: '#012b29', margin: '0 0 24px', letterSpacing: '-0.02em' }}>
                     Raíces
                   </h1>
@@ -483,7 +742,9 @@ export default function AuthPage() {
                         {ROLES.map(r => (
                           <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))}
                             aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
-                            <span style={s.avatar(form.role === r.id)}>{r.icon({ s: 22 })}</span>
+                            <span style={s.avatar(form.role === r.id)}>
+                              {r.icon({ active: false })}
+                            </span>
                             <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 14, width: 'calc(100% - 100px)' }}>
                               <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
                               <span style={{ display: 'block', fontSize: 12, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
@@ -538,10 +799,36 @@ export default function AuthPage() {
                         </p>
                       </div>
 
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        cursor: 'pointer',
+                        marginBottom: 20,
+                        fontSize: 14,
+                        color: 'var(--fg1)',
+                        userSelect: 'none',
+                        padding: '4px 8px',
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={consentChecked}
+                          onChange={(e) => setConsentChecked(e.target.checked)}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            cursor: 'pointer',
+                            accentColor: 'var(--primary)',
+                          }}
+                        />
+                        <span>Acepto los términos de confidencialidad y protección de datos</span>
+                      </label>
+
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <button
                           className="auth-btn-primary"
                           type="button"
+                          disabled={!consentChecked}
                           onClick={() => {
                             if (form.role === 'pcd') {
                               setRegStep('pcd_wizard')
@@ -735,17 +1022,7 @@ export default function AuthPage() {
         </div>
         
         {/* Columna derecha: Branding, Información e Ilustración */}
-        <div className="auth-brand-column" style={{ 
-          flex: 1, 
-          background: '#213052', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'space-between', 
-          color: 'white', 
-          padding: '52px 48px 20px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
+        <div className="auth-brand-column">
           {/* Organic wavy SVG divider on the left */}
           <svg
             style={{
@@ -789,7 +1066,7 @@ export default function AuthPage() {
           </div>
 
           {/* Preserved SVG Illustration - rolling hills with character */}
-          <div style={{ zIndex: 2, width: '100%', maxWidth: 360, margin: '24px auto 0' }}>
+          <div className="auth-brand-illustration">
             <svg viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block' }}>
               {/* Decorative dots */}
               <circle cx="320" cy="60" r="8" fill="#F4C84A" opacity="0.9"/>
