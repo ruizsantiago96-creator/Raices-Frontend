@@ -91,12 +91,149 @@ const ESCALAS_OPCIONES = {
   ],
 }
 
+const BookDoodle = () => (
+  <svg width="34" height="34" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Book Cover */}
+    <path
+      d="M 6 12 Q 22 16 38 12 L 38 32 Q 22 36 6 32 Z"
+      fill="#FF4D68"
+      stroke="#0C3B4B"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+    {/* Left Page */}
+    <path
+      d="M 8 13 Q 22 17 22 14 L 22 30 Q 22 33 8 29 Z"
+      fill="#FFFFFF"
+      stroke="#0C3B4B"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Right Page */}
+    <path
+      d="M 36 13 Q 22 17 22 14 L 22 30 Q 22 33 36 29 Z"
+      fill="#FFFFFF"
+      stroke="#0C3B4B"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Spine */}
+    <path d="M 22 14 L 22 32" stroke="#0C3B4B" strokeWidth="1.5" />
+    {/* Text Lines */}
+    <path d="M 11 18 H 19" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M 11 22 H 17" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M 11 26 H 18" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M 25 18 H 33" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M 27 22 H 33" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M 25 26 H 31" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+)
+
+const ImagesDoodle = () => (
+  <svg width="34" height="34" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Frame */}
+    <rect x="9" y="11" width="26" height="22" rx="3" fill="#FFFFFF" stroke="#0C3B4B" strokeWidth="2.2" />
+    {/* Left Mountain */}
+    <path
+      d="M 9 32 L 18 23 L 27 32 Z"
+      fill="#10B981"
+      stroke="#0C3B4B"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Right Mountain */}
+    <path
+      d="M 19 32 L 27 19 L 35 32 Z"
+      fill="#A8B86B"
+      stroke="#0C3B4B"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Sun */}
+    <circle cx="28" cy="16" r="3" fill="#FDE674" stroke="#0C3B4B" strokeWidth="1.5" />
+  </svg>
+)
+
+const AudioDoodle = () => (
+  <svg width="34" height="34" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Arc Headband */}
+    <path
+      d="M 12 24 C 12 13 32 13 32 24"
+      stroke="#0C3B4B"
+      strokeWidth="2.5"
+      fill="none"
+      strokeLinecap="round"
+    />
+    {/* Left Cup */}
+    <rect x="8" y="21" width="6" height="9" rx="2" fill="#3A86FF" stroke="#0C3B4B" strokeWidth="1.8" />
+    {/* Right Cup */}
+    <rect x="30" y="21" width="6" height="9" rx="2" fill="#3A86FF" stroke="#0C3B4B" strokeWidth="1.8" />
+    {/* Connectors */}
+    <path d="M 11 21 L 11 24" stroke="#0C3B4B" strokeWidth="1.8" />
+    <path d="M 33 21 L 33 24" stroke="#0C3B4B" strokeWidth="1.8" />
+    {/* Sound waves */}
+    <path d="M 5 21 C 3 23 3 27 5 29" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+    <path d="M 39 21 C 41 23 41 27 39 29" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+  </svg>
+)
+
+const VideoDoodle = () => (
+  <svg width="34" height="34" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Lower Board */}
+    <rect x="9" y="19" width="26" height="15" rx="2" fill="#2F80ED" stroke="#0C3B4B" strokeWidth="2" />
+    {/* Play Button inside Board */}
+    <path d="M 20 23 L 26 26.5 L 20 30 Z" fill="#FFFFFF" stroke="#0C3B4B" strokeWidth="1.2" strokeLinejoin="round" />
+    {/* Upper Clapper Bar (open) */}
+    <path
+      d="M 9 18 L 35 13 L 36 17 L 10 22 Z"
+      fill="#FF4D68"
+      stroke="#0C3B4B"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    {/* Stripes on clapper bar */}
+    <path d="M 14 17.2 L 17 20.8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M 20 16.2 L 23 19.8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M 26 15.2 L 29 18.8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M 32 14.2 L 35 17.8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+    {/* Hinge */}
+    <circle cx="10" cy="19" r="1.2" fill="#0C3B4B" />
+  </svg>
+)
+
+const PersonSupportDoodle = () => (
+  <svg width="34" height="34" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }}>
+    {/* Helper Face */}
+    <circle cx="17" cy="23" r="8" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2.2" />
+    <circle cx="14.5" cy="21.5" r="1" fill="#0C3B4B" />
+    <circle cx="19.5" cy="21.5" r="1" fill="#0C3B4B" />
+    <path d="M 14.5 25 Q 17 27.5 19.5 25" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+
+    {/* Supported Person Face */}
+    <circle cx="28" cy="25" r="6" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" />
+    <circle cx="26" cy="24.2" r="0.8" fill="#0C3B4B" />
+    <circle cx="30" cy="24.2" r="0.8" fill="#0C3B4B" />
+    <path d="M 26 26.8 Q 28 28.3 30 26.8" stroke="#0C3B4B" strokeWidth="1" strokeLinecap="round" fill="none" />
+
+    {/* Heart Floating */}
+    <path
+      d="M 22.5 13.5 C 21.5 11.5 19.5 11.5 19.5 13 C 19.5 15 22.5 17 22.5 17 C 22.5 17 25.5 15 25.5 13 C 25.5 11.5 23.5 11.5 22.5 13.5 Z"
+      fill="#3A86FF"
+      stroke="#0C3B4B"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 const LIST_FORMATOS = [
-  { id: 'texto', label: 'Leyendo textos', icon: '📖' },
-  { id: 'imagenes', label: 'Con imágenes', icon: '🖼️' },
-  { id: 'audio', label: 'Con audio', icon: '🎧' },
-  { id: 'video', label: 'Con videos', icon: '🎬' },
-  { id: 'persona', label: 'Con apoyo de otra persona', icon: '🤝' },
+  { id: 'texto', label: 'Leyendo textos', icon: BookDoodle },
+  { id: 'imagenes', label: 'Con imágenes', icon: ImagesDoodle },
+  { id: 'audio', label: 'Con audio', icon: AudioDoodle },
+  { id: 'video', label: 'Con videos', icon: VideoDoodle },
+  { id: 'persona', label: 'Con apoyo de otra persona', icon: PersonSupportDoodle },
 ]
 
 const INTEREST_SECTIONS = [
@@ -1080,7 +1217,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
                     transition: 'all 0.2s ease',
                     marginBottom: 4,
                   }}>
-                    {f.icon}
+                    <f.icon />
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: isChecked ? '#073B4C' : 'var(--fg1)' }}>{f.label}</span>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
