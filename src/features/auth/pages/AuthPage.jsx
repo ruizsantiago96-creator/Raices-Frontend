@@ -442,7 +442,8 @@ export default function AuthPage() {
           display: flex;
           width: 100%;
           max-width: 1060px;
-          min-height: 680px;
+          height: min(88vh, 720px);
+          max-height: 720px;
           background: #ffffff;
           border-radius: 28px;
           overflow: hidden;
@@ -573,7 +574,8 @@ export default function AuthPage() {
             align-items: flex-start;
           }
           .auth-card {
-            min-height: 580px;
+            height: min(90vh, 640px);
+            max-height: 640px;
           }
           .auth-form-column {
             padding: 28px 44px;
@@ -592,7 +594,8 @@ export default function AuthPage() {
             align-items: flex-start;
           }
           .auth-card {
-            min-height: auto;
+            height: min(92vh, 560px);
+            max-height: 560px;
           }
           .auth-form-column {
             padding: 20px 32px;
@@ -627,7 +630,7 @@ export default function AuthPage() {
 
       <div className="auth-card">
         {/* Columna izquierda: Formulario */}
-        <div className="auth-form-column">
+        <div className="auth-form-column" style={regStep === 'pcd_wizard' ? { justifyContent: 'flex-start' } : undefined}>
           <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
             
             {/* Logo de marca superior */}

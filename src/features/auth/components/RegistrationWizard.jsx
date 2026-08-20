@@ -5,7 +5,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
-import { normalizeRole } from '../hooks/useAuth'
+
 
 // ── LISTAS Y CATÁLOGOS ───────────────────────────────────────────
 const LIST_ACOMPANAMIENTO = [
@@ -26,13 +26,8 @@ const CONDICIONES_PCD = [
 ]
 
 const NEURODIVERGENCIAS_LIST = [
-  'Autismo',
-  'TDAH',
-  'Dislexia',
-  'Dispraxia',
-  'Síndrome de Tourette',
-  'Altas capacidades/superdotación',
-  'Otro',
+  'Autismo', 'TDAH', 'Dislexia', 'Dispraxia',
+  'Síndrome de Tourette', 'Altas capacidades/superdotación', 'Otro',
 ]
 
 const LIST_TEMPORALIDAD = [
@@ -106,104 +101,36 @@ const LIST_FORMATOS = [
 
 const INTEREST_SECTIONS = [
   {
-    title: 'DEPORTE / MOVIMIENTO',
-    color: '#229B58',
-    items: [
-      'Actividad física general',
-      'Deporte recreativo',
-      'Deporte adaptado',
-      'Competencia',
-      'Rehabilitación funcional',
-      'Movimiento / coordinación',
-      'Actividades al aire libre',
-    ],
+    title: 'DEPORTE / MOVIMIENTO', color: '#229B58',
+    items: ['Actividad física general', 'Deporte recreativo', 'Deporte adaptado', 'Competencia', 'Rehabilitación funcional', 'Movimiento / coordinación', 'Actividades al aire libre'],
   },
   {
-    title: 'BIENESTAR / ATENCIÓN ESPECIALIZADA',
-    color: '#073B4C',
-    items: [
-      'Terapias',
-      'Salud mental / emocional',
-      'Atención médica especializada',
-      'Odontología especializada',
-      'Rehabilitación',
-      'Regulación sensorial',
-      'Estética / cuidado personal especializado',
-    ],
+    title: 'BIENESTAR / ATENCIÓN ESPECIALIZADA', color: '#073B4C',
+    items: ['Terapias', 'Salud mental / emocional', 'Atención médica especializada', 'Odontología especializada', 'Rehabilitación', 'Regulación sensorial', 'Estética / cuidado personal especializado'],
   },
   {
-    title: 'EMPLEO',
-    color: '#FF4D68',
-    items: [
-      'Primer empleo',
-      'Reintegración laboral',
-      'Capacitación laboral',
-      'Empleo adaptado',
-      'Empleo profesional',
-      'Trabajo flexible',
-    ],
+    title: 'EMPLEO', color: '#FF4D68',
+    items: ['Primer empleo', 'Reintegración laboral', 'Capacitación laboral', 'Empleo adaptado', 'Empleo profesional', 'Trabajo flexible'],
   },
   {
-    title: 'AUTOEMPLEO',
-    color: '#D4944C',
-    items: [
-      'Emprendimiento',
-      'Negocio propio',
-      'Venta de productos',
-      'Servicios',
-      'Marca personal',
-      'Economía digital',
-    ],
+    title: 'AUTOEMPLEO', color: '#D4944C',
+    items: ['Emprendimiento', 'Negocio propio', 'Venta de productos', 'Servicios', 'Marca personal', 'Economía digital'],
   },
   {
-    title: 'ARTE / CULTURA / MÚSICA',
-    color: '#9B51E0',
-    items: [
-      'Música',
-      'Danza',
-      'Pintura / dibujo',
-      'Teatro',
-      'Literatura',
-      'Manualidades',
-      'Cultura / eventos',
-    ],
+    title: 'ARTE / CULTURA / MÚSICA', color: '#9B51E0',
+    items: ['Música', 'Danza', 'Pintura / dibujo', 'Teatro', 'Literatura', 'Manualidades', 'Cultura / eventos'],
   },
   {
-    title: 'INDEPENDENCIA',
-    color: '#2F80ED',
-    items: [
-      'Vida cotidiana',
-      'Movilidad',
-      'Comunicación',
-      'Finanzas personales',
-      'Organización diaria',
-      'Vida independiente',
-    ],
+    title: 'INDEPENDENCIA', color: '#2F80ED',
+    items: ['Vida cotidiana', 'Movilidad', 'Comunicación', 'Finanzas personales', 'Organización diaria', 'Vida independiente'],
   },
   {
-    title: 'VIDA SOCIAL',
-    color: '#E14E87',
-    items: [
-      'Amistades',
-      'Eventos',
-      'Relaciones',
-      'Actividades grupales',
-      'Socialización guiada',
-      'Citas / vínculos',
-      'Espacios recreativos',
-    ],
+    title: 'VIDA SOCIAL', color: '#E14E87',
+    items: ['Amistades', 'Eventos', 'Relaciones', 'Actividades grupales', 'Socialización guiada', 'Citas / vínculos', 'Espacios recreativos'],
   },
   {
-    title: 'EXPLORAR POSIBILIDADES',
-    color: '#138A8A',
-    items: [
-      'Descubrir intereses',
-      'Nuevas experiencias',
-      'Inspiración',
-      'Orientación',
-      'Comunidad',
-      'Futuro',
-    ],
+    title: 'EXPLORAR POSIBILIDADES', color: '#138A8A',
+    items: ['Descubrir intereses', 'Nuevas experiencias', 'Inspiración', 'Orientación', 'Comunidad', 'Futuro'],
   },
 ]
 
@@ -214,28 +141,41 @@ const LIST_VIABILIDAD = [
   { id: 'sin_restricciones', label: 'Sin restricciones definidas' },
 ]
 
-// Regex oficial de CURP (Clave Única de Registro de Población)
-// Posición 1-4: Iniciales del nombre
-// Posición 5-10: Fecha nacimiento (AAMMDD)
-// Posición 11: Sexo (H=Mujer, M=Hombre)
-// Posición 12-13: Entidad federativa
-// Posición 14-16: Primeras consonantes nombre+paterno
-// Posición 17: Primera vocal interna apellido paterno
-// Posición 18: Diferenciador (número/letra)
+// ── CURP VALIDATION ──────────────────────────────────────────────
 const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i
-
-// ── Validación CURP ────────────────────────────────────────────
 const VOWELS = 'AEIOU'
+const CONSONANTS = 'BCDFGHJKLMNPQRSTVWXYZ'
+
 function getFirstInternalVowel(str) {
-  for (let i = 1; i < str.length; i++) {
-    if (VOWELS.includes(str[i])) return str[i]
+  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase()
+  for (let i = 1; i < normalized.length; i++) {
+    if (VOWELS.includes(normalized[i])) return normalized[i]
   }
   return 'X'
 }
 
+function getFirstInternalConsonant(str) {
+  if (!str) return 'X'
+  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase()
+  for (let i = 1; i < normalized.length; i++) {
+    if (CONSONANTS.includes(normalized[i])) return normalized[i]
+  }
+  return 'X'
+}
+
+function getCurpName(fullName) {
+  if (!fullName) return ''
+  const parts = fullName.trim().toUpperCase().split(/\s+/)
+  if (parts.length > 1) {
+    const first = parts[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    if (['MARIA', 'MA', 'MA.', 'JOSE', 'J', 'J.'].includes(first)) return parts[1]
+  }
+  return parts[0]
+}
+
 function validateCurpMatch(curp, nombres, apPat, apMat, birthDate) {
-  if (!curp || curp.length !== 18 || !CURP_REGEX.test(curp)) return { valid: true, errors: [] }
-  if (!birthDate) return { valid: true, errors: [] }
+  if (!curp || curp.length !== 18 || !CURP_REGEX.test(curp)) return { valid: true, errors: [], nameIsComplete: false }
+  if (!birthDate) return { valid: true, errors: [], nameIsComplete: false }
   const errors = []
   const c = curp.toUpperCase()
   const yy = parseInt(c.substring(4, 6), 10)
@@ -250,14 +190,24 @@ function validateCurpMatch(curp, nombres, apPat, apMat, birthDate) {
   const p = apPat?.trim().toUpperCase()
   const m = apMat?.trim().toUpperCase()
   const n = nombres?.trim().toUpperCase()
-  if (p && m && n) {
-    const nombre = n.split(/\s+/)[0]
+
+  if (p) {
     if (c[0] !== p[0]) errors.push('La CURP no coincide con el apellido paterno.')
     if (c[1] !== getFirstInternalVowel(p)) errors.push('La CURP no coincide con las iniciales del apellido paterno.')
-    if (c[2] !== m[0]) errors.push('La CURP no coincide con el apellido materno.')
-    if (c[3] !== nombre[0]) errors.push('La CURP no coincide con el nombre.')
+    if (c[13] !== getFirstInternalConsonant(p)) errors.push('La CURP no coincide con las consonantes del apellido paterno.')
   }
-  return { valid: errors.length === 0, errors }
+  if (m) {
+    if (c[2] !== m[0]) errors.push('La CURP no coincide con el apellido materno.')
+    if (c[14] !== getFirstInternalConsonant(m)) errors.push('La CURP no coincide con las consonantes del apellido materno.')
+  }
+  if (n) {
+    const nombre = getCurpName(n)
+    if (c[3] !== nombre[0]) errors.push('La CURP no coincide con el nombre.')
+    if (c[15] !== getFirstInternalConsonant(nombre)) errors.push('La CURP no coincide con las consonantes del nombre.')
+  }
+
+  const nameIsComplete = !!(p && m && n)
+  return { valid: errors.length === 0, errors, nameIsComplete }
 }
 
 function CurpIndicator(props) {
@@ -267,10 +217,16 @@ function CurpIndicator(props) {
   }
   const fmt = CURP_REGEX.test(curp)
   const full = curp.length === 18
-  const cr = fmt ? validateCurpMatch(curp, nombres, apPat, apMat, birthDate) : { valid: false, errors: [] }
-  const col = !full ? 'var(--fg3)' : !fmt ? '#ef4444' : cr.valid ? '#22c55e' : '#f97316'
-  const ico = !full ? '' : !fmt ? '\u2717' : cr.valid ? '\u2713' : '\u26a0'
-  const txt = !full ? curp.length + '/18 caracteres' : !fmt ? 'Formato de CURP no válido' : cr.valid ? 'CURP válida y coincide con nombre y fecha' : cr.errors[0]
+  const cr = fmt ? validateCurpMatch(curp, nombres, apPat, apMat, birthDate) : { valid: false, errors: [], nameIsComplete: false }
+  const col = !full ? 'var(--fg3)' : !fmt ? '#ef4444' : !cr.valid ? '#f97316' : cr.nameIsComplete ? '#22c55e' : 'var(--fg3)'
+  const ico = !full ? '' : !fmt ? '\u2717' : !cr.valid ? '\u26a0' : cr.nameIsComplete ? '\u2713' : '\u2139'
+
+  let txt = ''
+  if (!full) txt = curp.length + '/18 caracteres'
+  else if (!fmt) txt = 'Formato de CURP no válido'
+  else if (!cr.valid) txt = cr.errors[0]
+  else if (cr.nameIsComplete) txt = 'CURP válida y coincide con nombre y fecha'
+  else txt = 'CURP válida (completa tu nombre y apellidos para verificar)'
   return <p style={{ fontSize: 12, margin: '4px 0 0', color: col }}>{ico} {txt}</p>
 }
 
@@ -286,108 +242,128 @@ function getPasswordStrength(password) {
   return { label: 'Fuerte', color: '#22c55e', score: 3, width: '100%' }
 }
 
+// ── SCALE CARD (compact helper) ──────────────────────────────────
+function ScaleCard({ title, desc, options, value, onChange }) {
+  return (
+    <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
+      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
+      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {options.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            style={{
+              padding: '7px 11px', borderRadius: 8,
+              border: `1.5px solid ${value === opt.value ? '#229B58' : '#E5DCD2'}`,
+              background: value === opt.value ? 'rgba(34,155,88,0.08)' : '#ffffff',
+              fontWeight: value === opt.value ? 700 : 500,
+              fontSize: 12, cursor: 'pointer', textAlign: 'left',
+              fontFamily: 'var(--font-body)', color: value === opt.value ? '#073B4C' : 'var(--fg1)',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── STEP ORDER ───────────────────────────────────────────────────
+const STEP_ORDER = [
+  'identity',     // 1: Nombres, apellidos, fecha nacimiento
+  'contact',      // 2: CURP, domicilio
+  'security',     // 3: Email, contraseña
+  'accommodation',// 4: Preferencia de acompañamiento
+  'condition',    // 5: Condición PCD
+  'origin',       // 6: Neurodivergencia, diagnóstico, temporalidad
+  'scales1',      // 7: Escalas A-D
+  'scales2',      // 8: Escalas E-H
+  'formats',      // 9: Formatos de información
+  'interests',    // 10: Intereses
+  'viability',    // 11: Viabilidad económica
+]
+const TOTAL_STEPS = STEP_ORDER.length
+
+// ── NAV BUTTONS (outside render to avoid re-creation) ───────────
+function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, marginTop: 14, flexShrink: 0 }}>
+      <button className="auth-btn-secondary" type="button" onClick={onBack} style={{ flex: 1 }}>
+        {Icons.arrowLeft({ s: 16 })} Volver
+      </button>
+      <button className="auth-btn-primary" type="submit" disabled={submitDisabled} style={{ flex: 2 }}>
+        {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
+      </button>
+    </div>
+  )
+}
+
+// ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function RegistrationWizard({ onBackToRoles }) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
 
-  // Wizard Sub-steps: 'general' -> 'condition' -> 'scales' -> 'formats' -> 'interests' -> 'thanks' -> 'summary'
-  const [wizardStep, setWizardStep] = useState('general')
+  const [wizardStep, setWizardStep] = useState('identity')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [docFile, setDocFile] = useState(null)
   const [showPass, setShowPass] = useState(false)
 
-  // Step 1: General Info
+  // Step 1–3: Datos personales, identificación, cuenta
   const [generalForm, setGeneralForm] = useState({
-    nombres: '',
-    apellidoPaterno: '',
-    apellidoMaterno: '',
-    birth_date: '',
-    domicilio: '',
-    email: '',
-    password: '',
-    curp: '',
-    acompanamiento: 'paso_a_paso',
+    nombres: '', apellidoPaterno: '', apellidoMaterno: '',
+    birth_date: '', domicilio: '', email: '', password: '',
+    curp: '', acompanamiento: 'paso_a_paso',
   })
 
-  // Step 2: Condition & Diagnosis
+  // Step 5–6: Condición y diagnóstico
   const [conditionData, setConditionData] = useState({
-    conditions: [],
-    neurodivergencias: [],
-    neuroOtro: '',
-    tieneDiagnostico: 'si',
-    diagnosticoEspecifico: '',
-    redFlagDiagnostico: false,
-    temporalidad: 'nacimiento',
+    conditions: [], neurodivergencias: [], neuroOtro: '',
+    tieneDiagnostico: 'si', diagnosticoEspecifico: '',
+    redFlagDiagnostico: false, temporalidad: 'nacimiento',
   })
 
-  // Step 3: Life Scales (A to H)
+  // Step 7–8: Escalas de vida
   const [scales, setScales] = useState({
-    autonomia: 3,
-    independencia: 3,
-    comunicacion: 4,
-    comprension: 3,
-    energia: 3,
-    movilidad: 3,
-    social: 3,
-    emocional: 3,
+    autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
+    energia: 3, movilidad: 3, social: 3, emocional: 3,
   })
 
-  // Step 4: Information Format
+  // Step 9: Formatos
   const [formatos, setFormatos] = useState(['texto', 'imagenes'])
 
-  // Step 5: Interests & Viability
+  // Step 10–11: Intereses y viabilidad
   const [selectedInterests, setSelectedInterests] = useState([])
   const [otrosIntereses, setOtrosIntereses] = useState('')
   const [viabilidad, setViabilidad] = useState('sin_restricciones')
 
-  // Step 7: AI Summary Narrative
+  // AI summary
   const [aiNarrative, setAiNarrative] = useState(null)
 
-  // --- Handlers ---
-  const handleGeneralSubmit = (e) => {
-    e.preventDefault()
-    setError('')
-    if (!generalForm.nombres || !generalForm.apellidoPaterno || !generalForm.apellidoMaterno || !generalForm.email || !generalForm.password) {
-      setError('Por favor, completa todos los campos requeridos.')
-      return
-    }
-    if (generalForm.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.')
-      return
-    }
-    // Validación CURP: si se proporciona, debe cumplir el formato oficial
-    if (generalForm.curp && !generalForm.birth_date) {
-      setError('Si ingresas tu CURP, también debes proporcionar tu fecha de nacimiento.')
-      return
-    }
-    if (generalForm.curp && !CURP_REGEX.test(generalForm.curp)) {
-      setError('La CURP no tiene un formato válido.')
-      return
-    }
-    if (generalForm.curp) {
-      const r = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date)
-      if (!r.valid) { setError(r.errors[0]); return }
-    }
-    setWizardStep('condition')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  // ── Helpers ─────────────────────────────────────────────────────
+  const scrollTop = () => {
+    const col = document.querySelector('.auth-form-column')
+    if (col) col.scrollTop = 0
   }
 
+  const stepIndex = STEP_ORDER.indexOf(wizardStep)
+  const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
+
+  // ── Toggle handlers ─────────────────────────────────────────────
   const toggleCondition = (cond) => {
     setConditionData(prev => {
-      let nextConds = [...prev.conditions]
+      let next = [...prev.conditions]
       if (cond === 'Prefiero no responder') {
-        nextConds = nextConds.includes(cond) ? [] : [cond]
+        next = next.includes(cond) ? [] : [cond]
       } else {
-        nextConds = nextConds.filter(c => c !== 'Prefiero no responder')
-        if (nextConds.includes(cond)) {
-          nextConds = nextConds.filter(c => c !== cond)
-        } else {
-          nextConds.push(cond)
-        }
+        next = next.filter(c => c !== 'Prefiero no responder')
+        next = next.includes(cond) ? next.filter(c => c !== cond) : [...next, cond]
       }
-      return { ...prev, conditions: nextConds }
+      return { ...prev, conditions: next }
     })
   }
 
@@ -400,6 +376,80 @@ export default function RegistrationWizard({ onBackToRoles }) {
     }))
   }
 
+  const toggleFormato = (id) => {
+    setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const toggleInterest = (item) => {
+    setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  }
+
+  // ── Navigation handlers ─────────────────────────────────────────
+  // Step 1 → 2: Identity → Contact
+  const handleIdentitySubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (!generalForm.nombres || !generalForm.apellidoPaterno || !generalForm.apellidoMaterno) {
+      setError('Por favor, completa tu nombre y apellidos.')
+      return
+    }
+    if (!generalForm.birth_date) {
+      setError('Por favor, ingresa tu fecha de nacimiento.')
+      return
+    }
+    setWizardStep('contact')
+    scrollTop()
+  }
+
+  // Step 2 → 3: Contact → Security
+  const handleContactSubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (generalForm.curp && !CURP_REGEX.test(generalForm.curp)) {
+      setError('La CURP no tiene un formato válido.')
+      return
+    }
+    if (generalForm.curp) {
+      const r = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date)
+      if (!r.valid) { setError(r.errors[0]); return }
+    }
+    setWizardStep('security')
+    scrollTop()
+  }
+
+  // Step 3 → 4: Security → Accommodation
+  const handleSecuritySubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (!generalForm.email) {
+      setError('Por favor, ingresa tu correo electrónico.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(generalForm.email)) {
+      setError('Por favor, ingresa un correo electrónico válido.')
+      return
+    }
+    if (!generalForm.password || generalForm.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.')
+      return
+    }
+    setWizardStep('accommodation')
+    scrollTop()
+  }
+
+  // Step 4 → 5: Accommodation → Condition
+  const handleAccommodationSubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (!docFile) {
+      setError('Por favor, sube tu identificación oficial PCD o acta de nacimiento.')
+      return
+    }
+    setWizardStep('condition')
+    scrollTop()
+  }
+
+  // Step 5 → 6: Condition → Origin
   const handleConditionSubmit = (e) => {
     e.preventDefault()
     setError('')
@@ -407,55 +457,51 @@ export default function RegistrationWizard({ onBackToRoles }) {
       setError('Selecciona al menos una opción que describa tu condición.')
       return
     }
+    setWizardStep('origin')
+    scrollTop()
+  }
+
+  // Step 6 → 7: Origin → Scales1
+  const handleOriginSubmit = (e) => {
+    e.preventDefault()
+    setError('')
     if (conditionData.conditions.includes('Neurodivergencia (especificar)') && conditionData.neurodivergencias.length === 0) {
       setError('Por favor, selecciona al menos un tipo de neurodivergencia.')
       return
     }
-    setWizardStep('scales')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setWizardStep('scales1')
+    scrollTop()
   }
 
-  const handleScalesSubmit = (e) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('formats')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  // Step 7 → 8: Scales1 → Scales2
+  const handleScales1Submit = (e) => { e.preventDefault(); setWizardStep('scales2'); scrollTop() }
 
-  const toggleFormato = (id) => {
-    setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
+  // Step 8 → 9: Scales2 → Formats
+  const handleScales2Submit = (e) => { e.preventDefault(); setWizardStep('formats'); scrollTop() }
 
+  // Step 9 → 10: Formats → Interests
   const handleFormatsSubmit = (e) => {
     e.preventDefault()
     if (formatos.length === 0) {
       setError('Selecciona al menos un formato en el que prefieres recibir información.')
       return
     }
-    setError('')
     setWizardStep('interests')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollTop()
   }
 
-  const toggleInterest = (item) => {
-    setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
 
-  // Generate empathetic 3-paragraph summary based on the answers
+
+  // ── Final submit ────────────────────────────────────────────────
   const generateNarrative = () => {
     const name = generalForm.nombres?.split(' ')[0] || 'Tú'
-    
-    // Párrafo 1: ¿Quién eres?
     const condList = conditionData.conditions.filter(c => c !== 'Prefiero no responder').join(', ') || 'diversidad de fortalezas'
     const neuroList = conditionData.neurodivergencias.length > 0 ? ` con rasgos de ${conditionData.neurodivergencias.join(', ')}` : ''
     const quienEres = `${name}, eres una persona única, guiada por tu autenticidad y tu deseo de construir tu propio camino. Reconocemos tu valor integral (${condList}${neuroList}), valorando tus talentos individuales y tu perspectiva invaluable dentro de nuestra comunidad.`
 
-    // Párrafo 2: Tu contexto
     const tempoMap = {
-      nacimiento: 'desde tu nacimiento',
-      infancia: 'durante tu infancia',
-      adolescencia: 'durante tu adolescencia',
-      vida_adulta: 'en tu vida adulta',
+      nacimiento: 'desde tu nacimiento', infancia: 'durante tu infancia',
+      adolescencia: 'durante tu adolescencia', vida_adulta: 'en tu vida adulta',
       progresiva: 'de forma evolutiva a lo largo del tiempo',
       en_evaluacion: 'en un proceso activo de exploración y evaluación',
     }
@@ -465,8 +511,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
       : `estás en un momento de búsqueda donde conectar con especialistas clave abrirá nuevas oportunidades.`
     const contexto = `Tu vivencia se ha forjado ${temporalidadTxt}. En tu día a día, equilibras tu autonomía y tus actividades cotidianas con los apoyos necesarios, y ${diagnosticoTxt} Adaptamos cada interacción para que recibas información de la forma más accesible para ti.`
 
-    // Párrafo 3: Lo que te gusta
-    const interesesTxt = selectedInterests.length > 0 
+    const interesesTxt = selectedInterests.length > 0
       ? `destacas un gran entusiasmo por áreas como ${selectedInterests.slice(0, 4).join(', ')}${selectedInterests.length > 4 ? ` y otras ${selectedInterests.length - 4} pasiones más` : ''}.`
       : 'tienes una mente curiosa lista para descubrir nuevas experiencias y pasiones.'
     const loQueTeGusta = `Te apasiona aprender, participar y conectar con tu entorno: ${interesesTxt} En Raíces te acompañaremos exactamente como lo prefieres, acercándote opciones útiles, dignas y a tu medida para que alcances cada una de tus metas.`
@@ -474,14 +519,12 @@ export default function RegistrationWizard({ onBackToRoles }) {
     return { quienEres, contexto, loQueTeGusta }
   }
 
-  // Final submission of all data: register user + save profile & scales
   const handleFinalSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSending(true)
 
     try {
-      // 1. Registro de cuenta
       const registerPayload = {
         nombreCompleto: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
         email: generalForm.email,
@@ -496,12 +539,8 @@ export default function RegistrationWizard({ onBackToRoles }) {
       try {
         const regRes = await api.post('/autenticacion/registro', registerPayload)
         authResult = regRes.data
-      } catch (regErr) {
-        // If user already exists or mock mode
-        console.warn('Registro warning:', regErr)
-      }
+      } catch (regErr) { console.warn('Registro warning:', regErr) }
 
-      // 2. Si se obtuvo token, guardarlo
       if (authResult?.tokenAcceso) {
         const token = authResult.tokenAcceso
         const userObj = {
@@ -515,16 +554,11 @@ export default function RegistrationWizard({ onBackToRoles }) {
         saveUser(userObj, true)
       }
 
-      // 3. Guardar escalas de vida y preferencias de intereses
       const scalesPayload = {
-        nivelAutonomia: scales.autonomia,
-        nivelIndependencia: scales.independencia,
-        nivelComunicacion: scales.comunicacion,
-        nivelComprension: scales.comprension,
-        nivelEnergia: scales.energia,
-        nivelMovilidad: scales.movilidad,
-        nivelSocial: scales.social,
-        nivelEmocional: scales.emocional,
+        nivelAutonomia: scales.autonomia, nivelIndependencia: scales.independencia,
+        nivelComunicacion: scales.comunicacion, nivelComprension: scales.comprension,
+        nivelEnergia: scales.energia, nivelMovilidad: scales.movilidad,
+        nivelSocial: scales.social, nivelEmocional: scales.emocional,
         tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
         diagnosticoEspecifico: conditionData.diagnosticoEspecifico,
         temporalidadOrigen: conditionData.temporalidad,
@@ -532,40 +566,28 @@ export default function RegistrationWizard({ onBackToRoles }) {
         areasInteres: selectedInterests,
         viabilidadEconomica: viabilidad,
       }
+      try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
 
-      try {
-        await api.post('/usuarios/escalas-vida', scalesPayload)
-      } catch (scErr) {
-        console.warn('Scales save notice:', scErr)
-      }
-
-      // 4. Guardar documento de identidad si se subió
       if (docFile) {
         try {
           const fd = new FormData()
           fd.append('tipo', 'identificacion_oficial')
           fd.append('documento', docFile)
-          await api.post('/usuarios/documento-identidad', fd, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          })
-        } catch (docErr) {
-          console.warn('Doc upload notice:', docErr)
-        }
+          await api.post('/usuarios/documento-identidad', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        } catch (docErr) { console.warn('Doc upload notice:', docErr) }
       }
 
-      // Guardar intereses localmente para que el Dashboard los filtre y muestre de inmediato
       localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
       localStorage.setItem('raices_user_viability', viabilidad)
       localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
 
-      // 5. Generar y almacenar la narrativa empática
       const narrative = generateNarrative()
       setAiNarrative(narrative)
       localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
 
       addToast('¡Registro y perfilado completados exitosamente!', 'success')
       setWizardStep('thanks')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollTop()
     } catch (err) {
       console.error('Final submit error:', err)
       const narrative = generateNarrative()
@@ -576,323 +598,298 @@ export default function RegistrationWizard({ onBackToRoles }) {
     }
   }
 
-  const handleFinishAndEnterDashboard = () => {
-    nav('/dashboard', { replace: true })
-  }
+  const handleFinishAndEnterDashboard = () => { nav('/dashboard', { replace: true }) }
 
   const passStrength = getPasswordStrength(generalForm.password)
 
-  // ── RENDER ───────────────────────────────────────────────────────
+
+
+  // ── RENDER ──────────────────────────────────────────────────────
   return (
-    <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', fontFamily: 'var(--font-body)' }}>
-      {/* Barra de progreso superior */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#229B58', textTransform: 'uppercase' }}>
+    <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+
+      {/* ── Progress bar ── */}
+      <div style={{ marginBottom: 20, flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#229B58', textTransform: 'uppercase' }}>
             Registro de Persona con Discapacidad
           </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)' }}>
-            {wizardStep === 'general' && 'Paso 1 de 5'}
-            {wizardStep === 'condition' && 'Paso 2 de 5'}
-            {wizardStep === 'scales' && 'Paso 3 de 5'}
-            {wizardStep === 'formats' && 'Paso 4 de 5'}
-            {wizardStep === 'interests' && 'Paso 5 de 5'}
-            {(wizardStep === 'thanks' || wizardStep === 'summary') && 'Completado ✓'}
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)' }}>
+            {stepIndex >= 0 ? `Paso ${stepIndex + 1} de ${TOTAL_STEPS}` : 'Completado ✓'}
           </span>
         </div>
-        <div style={{ height: 6, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ height: 5, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{
             height: '100%',
             background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
             borderRadius: 3,
             transition: 'width 0.4s ease',
-            width: 
-              wizardStep === 'general' ? '20%' :
-              wizardStep === 'condition' ? '40%' :
-              wizardStep === 'scales' ? '60%' :
-              wizardStep === 'formats' ? '80%' :
-              wizardStep === 'interests' ? '95%' : '100%',
+            width: `${progressPct}%`,
           }} />
         </div>
       </div>
 
+      {/* ── Error ── */}
       {error && (
         <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1.5px solid rgba(239, 68, 68, 0.4)',
-          color: '#ef4444',
-          padding: '12px 16px',
-          borderRadius: 10,
-          fontSize: 14,
-          fontWeight: 600,
-          marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          background: 'rgba(239,68,68,0.1)', border: '1.5px solid rgba(239,68,68,0.4)',
+          color: '#ef4444', padding: '10px 14px', borderRadius: 10, fontSize: 13,
+          fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
+          flexShrink: 0,
         }}>
-          {Icons.shieldAlert({ s: 18 })} {error}
+          {Icons.shieldAlert({ s: 16 })} {error}
         </div>
       )}
 
-      {/* ── PASO 1: INFORMACIÓN GENERAL ── */}
-      {wizardStep === 'general' && (
-        <form onSubmit={handleGeneralSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div style={{ marginBottom: 6 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C', margin: '0 0 6px' }}>
-              Comparte tu información general
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 1: IDENTIDAD (Nombres, apellidos, fecha nacimiento)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'identity' && (
+        <form onSubmit={handleIdentitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Cuéntanos sobre ti
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-              Estos datos nos permiten crear tu cuenta protegida y validar tu identidad de forma segura.
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Comienza con tu nombre completo y fecha de nacimiento.
             </p>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Nombre(s) <span style={{ color: '#ef4444' }}>*</span>
-            </label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Nombre(s) <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="text" className="auth-input" required placeholder="Ej. Juan Carlos"
               value={generalForm.nombres}
               onChange={e => setGeneralForm({ ...generalForm, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Apellido paterno <span style={{ color: '#ef4444' }}>*</span>
-              </label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Apellido paterno <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" className="auth-input" required placeholder="Ej. García"
                 value={generalForm.apellidoPaterno}
                 onChange={e => setGeneralForm({ ...generalForm, apellidoPaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Apellido materno <span style={{ color: '#ef4444' }}>*</span>
-              </label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Apellido materno <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" className="auth-input" required placeholder="Ej. López"
                 value={generalForm.apellidoMaterno}
                 onChange={e => setGeneralForm({ ...generalForm, apellidoMaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Fecha de nacimiento <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input
-                type="date"
-                className="auth-input"
-                required
-                value={generalForm.birth_date}
-                onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                CURP
-              </label>
-              <input
-                type="text"
-                className="auth-input"
-                maxLength={18}
-                style={{ textTransform: 'uppercase', borderColor: generalForm.curp && generalForm.curp.length === 18 ? (CURP_REGEX.test(generalForm.curp) ? (validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date).valid ? '#22c55e' : '#f97316') : '#ef4444') : undefined }}
-                placeholder="ABCD123456HDFXX09"
-                value={generalForm.curp}
-                onChange={e => setGeneralForm({ ...generalForm, curp: e.target.value.toUpperCase() })}
-              />
-              <CurpIndicator curp={generalForm.curp} nombres={generalForm.nombres} apPat={generalForm.apellidoPaterno} apMat={generalForm.apellidoMaterno} birthDate={generalForm.birth_date} />
-            </div>
-          </div>
-
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Domicilio (Ciudad, Estado o Dirección)
-            </label>
-            <input
-              type="text"
-              className="auth-input"
-              placeholder="Ej. Calle Morelos #123, Guadalajara, Jalisco"
-              value={generalForm.domicilio}
-              onChange={e => setGeneralForm({ ...generalForm, domicilio: e.target.value })}
-            />
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento <span style={{ color: '#ef4444' }}>*</span></label>
+            <input type="date" className="auth-input" required
+              value={generalForm.birth_date}
+              onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input
-                type="email"
-                className="auth-input"
-                required
-                placeholder="correo@ejemplo.com"
-                value={generalForm.email}
-                onChange={e => setGeneralForm({ ...generalForm, email: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Contraseña segura <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPass ? 'text' : 'password'}
-                className="auth-input"
-                required
-                placeholder="Mínimo 8 caracteres"
-                value={generalForm.password}
-                onChange={e => setGeneralForm({ ...generalForm, password: e.target.value })}
-                style={{ paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)' }}
-              >
-                {showPass ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
-              </button>
-            </div>
-            {generalForm.password && (
-              <div style={{ marginTop: 6 }}>
-                <div style={{ height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: passStrength.width, background: passStrength.color, transition: 'all 0.3s' }} />
-                </div>
-                <span style={{ fontSize: 12, color: passStrength.color, fontWeight: 600 }}>{passStrength.label}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Subida de documento de identidad */}
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Identificación oficial PCD (Opcional o para validación prioritaria)
-            </label>
-            <div
-              onClick={() => document.getElementById('pcd-doc-input').click()}
-              style={{
-                border: '2px dashed #CA918E',
-                borderRadius: 12,
-                padding: '20px 16px',
-                textAlign: 'center',
-                background: '#FFF9F2',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <div style={{ fontSize: 28, marginBottom: 6 }}>🪪</div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#073B4C' }}>
-                {docFile ? docFile.name : 'Subir archivo (INE, credencial de discapacidad o acta)'}
-              </span>
-              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '4px 0 0' }}>Formatos permitidos: PDF, JPG, PNG (Máx 5MB)</p>
-              <input
-                id="pcd-doc-input"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ display: 'none' }}
-                onChange={e => setDocFile(e.target.files[0])}
-              />
-            </div>
-          </div>
-
-          {/* ¿Cómo prefieres que Raíces te acompañe? */}
-          <div style={{ marginTop: 10 }}>
-            <label style={{ display: 'block', fontSize: 15, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>
-              ¿Cómo prefieres que Raíces te acompañe?
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {LIST_ACOMPANAMIENTO.map(opt => {
-                const isSelected = generalForm.acompanamiento === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setGeneralForm({ ...generalForm, acompanamiento: opt.id })}
-                    style={{
-                      padding: '14px 18px',
-                      borderRadius: 12,
-                      border: `2px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                      background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <div style={{
-                      width: 20, height: 20, borderRadius: '50%',
-                      border: `2px solid ${isSelected ? '#229B58' : '#9ca3af'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}>
-                      {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? '#073B4C' : 'var(--fg1)' }}>{opt.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button className="auth-btn-secondary" type="button" onClick={onBackToRoles} style={{ flex: 1 }}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
-              Continuar a mi condición {Icons.arrowRight({ s: 18 })}
+              Continuar {Icons.arrowRight({ s: 18 })}
             </button>
           </div>
         </form>
       )}
 
-      {/* ── PASO 2: CONDICIÓN Y DIAGNÓSTICO ── */}
-      {wizardStep === 'condition' && (
-        <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C', margin: '0 0 6px' }}>
-              1. Háblanos de tu condición
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 2: CONTACTO (CURP, domicilio)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'contact' && (
+        <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Identificación y ubicación
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-              ¿Qué condición o situación te describe mejor o describe a la persona? (Puedes seleccionar más de una opción.)
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Tu CURP nos ayuda a validar tu identidad. El domicilio es opcional.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>CURP (opcional)</label>
+            <input
+              type="text" className="auth-input" maxLength={18}
+              style={{ textTransform: 'uppercase', borderColor: (() => {
+                if (!generalForm.curp || generalForm.curp.length < 18) return undefined;
+                if (!CURP_REGEX.test(generalForm.curp)) return '#ef4444';
+                const match = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date);
+                if (!match.valid) return '#f97316';
+                if (match.nameIsComplete) return '#22c55e';
+                return undefined;
+              })() }}
+              placeholder="ABCD123456HDFXX09"
+              value={generalForm.curp}
+              onChange={e => setGeneralForm({ ...generalForm, curp: e.target.value.toUpperCase() })}
+            />
+            <CurpIndicator curp={generalForm.curp} nombres={generalForm.nombres} apPat={generalForm.apellidoPaterno} apMat={generalForm.apellidoMaterno} birthDate={generalForm.birth_date} />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Domicilio (Ciudad, Estado o Dirección)</label>
+            <input type="text" className="auth-input" placeholder="Ej. Calle Morelos #123, Guadalajara, Jalisco"
+              value={generalForm.domicilio}
+              onChange={e => setGeneralForm({ ...generalForm, domicilio: e.target.value })} />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar a mi cuenta" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 3: SEGURIDAD (Email, contraseña)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'security' && (
+        <form onSubmit={handleSecuritySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Seguridad de tu cuenta
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Crea credenciales seguras para proteger tu información.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
+            <input type="email" className="auth-input" required placeholder="correo@ejemplo.com"
+              value={generalForm.email}
+              onChange={e => setGeneralForm({ ...generalForm, email: e.target.value })} />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPass ? 'text' : 'password'} className="auth-input" required
+                placeholder="Mínimo 8 caracteres"
+                value={generalForm.password}
+                onChange={e => setGeneralForm({ ...generalForm, password: e.target.value })}
+                style={{ paddingRight: 44 }}
+              />
+              <button type="button" onClick={() => setShowPass(!showPass)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)' }}>
+                {showPass ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+              </button>
+            </div>
+            {generalForm.password && (
+              <div style={{ marginTop: 5 }}>
+                <div style={{ height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: passStrength.width, background: passStrength.color, transition: 'all 0.3s' }} />
+                </div>
+                <span style={{ fontSize: 11, color: passStrength.color, fontWeight: 600 }}>{passStrength.label}</span>
+              </div>
+            )}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('contact'); scrollTop() }} submitLabel="Continuar a preferencias" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: ACOMPAÑAMIENTO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'accommodation' && (
+        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Preferencia de acompañamiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Cómo prefieres que Raíces te acompañe en tu camino?
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {LIST_ACOMPANAMIENTO.map(opt => {
+              const isSelected = generalForm.acompanamiento === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setGeneralForm({ ...generalForm, acompanamiento: opt.id })}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `2px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(34,155,88,0.08)' : '#ffffff',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.2s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? '#073B4C' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Document upload */}
+          <div style={{ marginTop: 4 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+              Identificación oficial PCD <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <div onClick={() => document.getElementById('pcd-doc-input').click()}
+              style={{ border: '2px dashed #CA918E', borderRadius: 12, padding: '16px 14px', textAlign: 'center', background: '#FFF9F2', cursor: 'pointer', transition: 'all 0.2s' }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🪪</div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#073B4C' }}>
+                {docFile ? docFile.name : 'Subir archivo (INE, credencial de discapacidad o acta)'}
+              </span>
+              <p style={{ fontSize: 11, color: 'var(--fg3)', margin: '3px 0 0' }}>PDF, JPG, PNG (Máx 5MB)</p>
+              <input id="pcd-doc-input" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
+                onChange={e => setDocFile(e.target.files[0])} />
+            </div>
+            
+            <p style={{ fontSize: 12, color: 'var(--fg2)', marginTop: 8, lineHeight: 1.4, textAlign: 'left' }}>
+              ¿No tienes tu credencial de discapacidad? Puedes ver cómo conseguirla en la{' '}
+              <a
+                href="https://www.gob.mx/difnacional/acciones-y-programas/credencializacion-de-las-personas-con-discapacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'underline' }}
+              >
+                página credencialización para personas con discapacidad
+              </a>.
+            </p>
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('security'); scrollTop() }} submitLabel="Continuar a mi condición" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 5: CONDICIÓN PCD
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'condition' && (
+        <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Háblanos de tu condición
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Qué condición o situación te describe mejor? (Puedes seleccionar más de una.)
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
             {CONDICIONES_PCD.map(cond => {
               const isChecked = conditionData.conditions.includes(cond)
               return (
-                <button
-                  key={cond}
-                  type="button"
-                  onClick={() => toggleCondition(cond)}
+                <button key={cond} type="button" onClick={() => toggleCondition(cond)}
                   style={{
-                    padding: '14px 16px',
-                    borderRadius: 12,
+                    padding: '12px 14px', borderRadius: 10,
                     border: `1.5px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
+                    background: isChecked ? 'rgba(34,155,88,0.08)' : '#ffffff',
                     color: isChecked ? '#073B4C' : 'var(--fg1)',
-                    fontWeight: isChecked ? 700 : 500,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
+                    fontWeight: isChecked ? 700 : 500, fontSize: 13,
+                    cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
                     transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{
-                    width: 18, height: 18, borderRadius: 4,
-                    border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`,
-                    background: isChecked ? '#229B58' : '#ffffff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
                   }}>
-                    {isChecked && Icons.check({ s: 12 })}
+                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                    {isChecked && Icons.check({ s: 10 })}
                   </div>
                   <span>{cond}</span>
                 </button>
@@ -900,153 +897,88 @@ export default function RegistrationWizard({ onBackToRoles }) {
             })}
           </div>
 
-          {/* Si seleccionó Neurodivergencia */}
+          <NavButtons onBack={() => { setWizardStep('accommodation'); scrollTop() }} submitLabel="Continuar a diagnóstico" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: ORIGEN Y DIAGNÓSTICO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'origin' && (
+        <form onSubmit={handleOriginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ marginBottom: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Origen y diagnóstico
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Esta información nos ayuda a personalizar tu experiencia.
+            </p>
+          </div>
+
+          {/* Neurodivergencia (condicional) */}
           {conditionData.conditions.includes('Neurodivergencia (especificar)') && (
-            <div style={{
-              background: '#FFF9F2',
-              border: '1.5px solid #F4C84A',
-              borderRadius: 14,
-              padding: '20px',
-              animation: 'fadeInUp 0.3s ease both',
-            }}>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 12 }}>
-                Especificar neurodivergencia:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            <div style={{ background: '#FFF9F2', border: '1.5px solid #F4C84A', borderRadius: 12, padding: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>Especificar neurodivergencia:</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
                 {NEURODIVERGENCIAS_LIST.map(nd => {
                   const isChecked = conditionData.neurodivergencias.includes(nd)
                   return (
-                    <button
-                      key={nd}
-                      type="button"
-                      onClick={() => toggleNeuro(nd)}
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        border: `1.5px solid ${isChecked ? '#073B4C' : '#E5DCD2'}`,
-                        background: isChecked ? '#073B4C' : '#ffffff',
-                        color: isChecked ? '#ffffff' : 'var(--fg1)',
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
+                    <button key={nd} type="button" onClick={() => toggleNeuro(nd)}
+                      style={{ padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isChecked ? '#073B4C' : '#E5DCD2'}`, background: isChecked ? '#073B4C' : '#ffffff', color: isChecked ? '#ffffff' : 'var(--fg1)', fontWeight: 600, fontSize: 12, cursor: 'pointer', textAlign: 'left' }}>
                       {nd}
                     </button>
                   )
                 })}
               </div>
-
               {conditionData.neurodivergencias.includes('Otro') && (
-                <div style={{ marginTop: 12 }}>
-                  <input
-                    type="text"
-                    className="auth-input"
-                    placeholder="¿Cuál neurodivergencia?"
-                    value={conditionData.neuroOtro}
-                    onChange={e => setConditionData({ ...conditionData, neuroOtro: e.target.value })}
-                  />
-                </div>
+                <input type="text" className="auth-input" placeholder="¿Cuál neurodivergencia?" style={{ marginTop: 10 }}
+                  value={conditionData.neuroOtro} onChange={e => setConditionData({ ...conditionData, neuroOtro: e.target.value })} />
               )}
             </div>
           )}
 
-          {/* 2. Diagnóstico específico */}
-          <div style={{ borderTop: '1px solid #E5DCD2', paddingTop: 20 }}>
-            <label style={{ display: 'block', fontSize: 15, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>
-              2. ¿Tienes algún diagnóstico en específico?
-            </label>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-              <button
-                type="button"
-                onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'si', redFlagDiagnostico: false })}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: 10,
-                  border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`,
-                  background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
+          {/* Diagnóstico */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿Tienes algún diagnóstico en específico?</label>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+              <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'si', redFlagDiagnostico: false })}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34,155,88,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
                 Sí (especificar)
               </button>
-              <button
-                type="button"
-                onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'no', diagnosticoEspecifico: '', redFlagDiagnostico: true })}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: 10,
-                  border: `2px solid ${conditionData.tieneDiagnostico === 'no' ? '#FF4D68' : '#E5DCD2'}`,
-                  background: conditionData.tieneDiagnostico === 'no' ? 'rgba(255, 77, 104, 0.08)' : '#ffffff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
+              <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'no', diagnosticoEspecifico: '', redFlagDiagnostico: true })}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'no' ? '#FF4D68' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'no' ? 'rgba(255,77,104,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
                 No
               </button>
             </div>
-
             {conditionData.tieneDiagnostico === 'si' ? (
-              <input
-                type="text"
-                className="auth-input"
-                placeholder="Escribe tu diagnóstico formal o clínico"
+              <input type="text" className="auth-input" placeholder="Escribe tu diagnóstico formal o clínico"
                 value={conditionData.diagnosticoEspecifico}
-                onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })}
-              />
+                onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })} />
             ) : (
-              <div style={{
-                background: 'rgba(255, 77, 104, 0.08)',
-                border: '1px solid rgba(255, 77, 104, 0.25)',
-                borderRadius: 10,
-                padding: '12px 16px',
-                fontSize: 13,
-                color: '#073B4C',
-                lineHeight: 1.5,
-              }}>
-                💡 <strong>Nota de acompañamiento:</strong> Al no contar con un diagnóstico formal, te abriremos un camino especializado dentro de la plataforma para conectar con especialistas que te brinden una evaluación oportuna.
+              <div style={{ background: 'rgba(255,77,104,0.08)', border: '1px solid rgba(255,77,104,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#073B4C', lineHeight: 1.5 }}>
+                💡 <strong>Nota:</strong> Al no contar con un diagnóstico formal, te abriremos un camino especializado para conectar con especialistas.
               </div>
             )}
           </div>
 
-          {/* 3. Temporalidad / Origen */}
-          <div style={{ borderTop: '1px solid #E5DCD2', paddingTop: 20 }}>
-            <label style={{ display: 'block', fontSize: 15, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>
-              3. Temporalidad / origen: ¿En qué momento de tu vida comenzó esta condición? (una opción)
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Temporalidad */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿En qué momento comenzó esta condición?</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
               {LIST_TEMPORALIDAD.map(t => {
                 const isSelected = conditionData.temporalidad === t.id
                 return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setConditionData({ ...conditionData, temporalidad: t.id })}
+                  <button key={t.id} type="button" onClick={() => setConditionData({ ...conditionData, temporalidad: t.id })}
                     style={{
-                      padding: '12px 16px',
-                      borderRadius: 10,
+                      padding: '9px 12px', borderRadius: 8,
                       border: `1.5px solid ${isSelected ? '#073B4C' : '#E5DCD2'}`,
                       background: isSelected ? '#073B4C' : '#ffffff',
                       color: isSelected ? '#ffffff' : 'var(--fg1)',
-                      fontWeight: isSelected ? 700 : 500,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{
-                      width: 16, height: 16, borderRadius: '50%',
-                      border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: isSelected ? 700 : 500, fontSize: 12, cursor: 'pointer', textAlign: 'left',
+                      display: 'flex', alignItems: 'center', gap: 8,
                     }}>
-                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffffff' }} />}
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffffff' }} />}
                     </div>
                     <span>{t.label}</span>
                   </button>
@@ -1055,429 +987,210 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => setWizardStep('general')} style={{ flex: 1 }}>
-              {Icons.arrowLeft({ s: 16 })} Volver
-            </button>
-            <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
-              Continuar a Escalas de Vida {Icons.arrowRight({ s: 18 })}
-            </button>
-          </div>
+          <NavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar a Escalas de Vida" />
         </form>
       )}
 
-      {/* ── PASO 3: ESCALAS DE VIDA A-H ── */}
-      {wizardStep === 'scales' && (
-        <form onSubmit={handleScalesSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C', margin: '0 0 6px' }}>
-              4. ¿Cómo vives hoy? (Escalas de Vida)
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 7: ESCALAS A-D
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'scales1' && (
+        <form onSubmit={handleScales1Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Escalas de Vida (1/2)
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-              Selecciona la opción que mejor represente tu situación actual en cada área clave.
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Selecciona la opción que mejor represente tu situación actual.
             </p>
           </div>
 
-          {/* A. Autonomía */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              A. Autonomía: En su vida cotidiana
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Qué tanto participas en decisiones sobre tu vida?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.autonomia.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, autonomia: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.autonomia === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.autonomia === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.autonomia === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participas en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: v })} />
+            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesitas?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: v })} />
+            <ScaleCard title="C. Comunicación" desc="¿Cómo expresas necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: v })} />
+            <ScaleCard title="D. Comprensión" desc="¿Sigues instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
           </div>
 
-          {/* B. Independencia */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              B. Independencia
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Qué nivel de apoyo necesitas para realizar actividades cotidianas?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.independencia.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, independencia: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.independencia === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.independencia === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.independencia === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* C. Comunicación */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              C. Comunicación
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Cómo comprendes y表达 expresas necesidades o ideas?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.comunicacion.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, comunicacion: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.comunicacion === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.comunicacion === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.comunicacion === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* D. Comprensión */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              D. Comprensión
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Qué tan fácilmente sigues instrucciones o decisiones?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.comprension.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, comprension: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.comprension === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.comprension === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.comprension === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* E. Energía / Resistencia */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              E. Energía / Resistencia
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Cómo impactan tu energía, concentración o regulación en el día a día?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.energia.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, energia: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.energia === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.energia === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.energia === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* F. Movilidad */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              F. Movilidad
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Cómo interactúas físicamente con tu entorno?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.movilidad.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, movilidad: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.movilidad === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.movilidad === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.movilidad === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* G. Social */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              G. Social
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Cómo participas o te relacionas con otras personas, grupos o comunidades?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.social.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, social: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.social === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.social === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.social === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* H. Emocional */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: 18 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              H. Emocional
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 12px' }}>¿Cómo impacta tu bienestar emocional en el día a día?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ESCALAS_OPCIONES.emocional.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setScales({ ...scales, emocional: opt.value })}
-                  style={{
-                    padding: '10px 14px', borderRadius: 8,
-                    border: `1.5px solid ${scales.emocional === opt.value ? '#229B58' : '#E5DCD2'}`,
-                    background: scales.emocional === opt.value ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    fontWeight: scales.emocional === opt.value ? 700 : 500,
-                    fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => setWizardStep('condition')} style={{ flex: 1 }}>
-              {Icons.arrowLeft({ s: 16 })} Volver
-            </button>
-            <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
-              Continuar a Formatos {Icons.arrowRight({ s: 18 })}
-            </button>
-          </div>
+          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar a Escalas E-H" />
         </form>
       )}
 
-      {/* ── PASO 4: PREFERENCIA DE FORMATO DE INFORMACIÓN ── */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 8: ESCALAS E-H
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'scales2' && (
+        <form onSubmit={handleScales2Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Escalas de Vida (2/2)
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Continúa evaluando tu día a día en estas áreas.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan tu energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: v })} />
+            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúas físicamente con tu entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: v })} />
+            <ScaleCard title="G. Social" desc="¿Cómo participas con personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: v })} />
+            <ScaleCard title="H. Emocional" desc="¿Cómo impacta tu bienestar emocional?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: v })} />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar a formatos" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 9: FORMATOS DE INFORMACIÓN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'formats' && (
-        <form onSubmit={handleFormatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C', margin: '0 0 6px' }}>
+        <form onSubmit={handleFormatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
               ¿Cómo prefieres recibir información?
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-              Para adaptar mejor la forma en que te acompañamos, cuéntanos cómo te resulta más cómodo aprender y comunicarte. (Opción múltiple)
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Cuéntanos cómo te resulta más cómodo aprender y comunicarte. (Opción múltiple)
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
             {LIST_FORMATOS.map(f => {
               const isChecked = formatos.includes(f.id)
               return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => toggleFormato(f.id)}
+                <button key={f.id} type="button" onClick={() => toggleFormato(f.id)}
                   style={{
-                    padding: '20px 18px',
-                    borderRadius: 14,
+                    padding: '16px 14px', borderRadius: 14,
                     border: `2px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 8,
+                    background: isChecked ? 'rgba(34,155,88,0.08)' : '#ffffff',
+                    cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                     transition: 'all 0.2s ease',
-                  }}
-                >
-                  <span style={{ fontSize: 32 }}>{f.icon}</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: isChecked ? '#073B4C' : 'var(--fg1)' }}>
-                    {f.label}
-                  </span>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`,
-                    background: isChecked ? '#229B58' : '#ffffff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginTop: 4,
                   }}>
-                    {isChecked && Icons.check({ s: 12 })}
+                  <span style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: '50%',
+                    background: '#f6eddf',
+                    border: isChecked ? '3px solid #229B58' : '2px solid #0C3B4B',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 26,
+                    transition: 'all 0.2s ease',
+                    marginBottom: 4,
+                  }}>
+                    {f.icon}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: isChecked ? '#073B4C' : 'var(--fg1)' }}>{f.label}</span>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    {isChecked && Icons.check({ s: 11 })}
                   </div>
                 </button>
               )
             })}
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => setWizardStep('scales')} style={{ flex: 1 }}>
-              {Icons.arrowLeft({ s: 16 })} Volver
-            </button>
-            <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
-              Explorar mis temas favoritos {Icons.arrowRight({ s: 18 })}
-            </button>
-          </div>
+          <NavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Explorar mis temas favoritos" />
         </form>
       )}
 
-      {/* ── PASO 5: INTERESES ESTILO TIKTOK ("¿Qué caminos te gustaría explorar?") ── */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 10: INTERESES (scrollable internally)
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'interests' && (
-        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF4D68', color: '#fff', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
-              ✨ Explora tus pasiones
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF4D68', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
+                ✨ Explora tus pasiones
+              </div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 6px', lineHeight: 1.2 }}>
+                ¿Qué caminos te gustaría explorar?
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+                Toca todos los temas que te llamen la atención. Personalizaremos tu feed y actividades recomendadas.
+              </p>
             </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: '#073B4C', margin: '0 0 8px', lineHeight: 1.2 }}>
-              ¿Qué caminos te gustaría explorar?
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {INTEREST_SECTIONS.map((sec) => (
+                <div key={sec.title} style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: '14px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: sec.color }} />
+                    <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: sec.color, margin: 0, textTransform: 'uppercase' }}>{sec.title}</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {sec.items.map((item) => {
+                      const isSelected = selectedInterests.includes(item)
+                      return (
+                        <button key={item} type="button" onClick={() => toggleInterest(item)}
+                          style={{
+                            padding: '6px 13px', borderRadius: 18,
+                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
+                            background: isSelected ? sec.color : '#F6EDDF',
+                            color: isSelected ? '#ffffff' : '#073B4C',
+                            fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+                            transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+                            transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                          }}>
+                          <span>{item}</span>
+                          {isSelected && Icons.check({ s: 11 })}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ height: 16 }} />
+          </div>
+
+          {/* Fixed nav at bottom */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5DCD2', flexShrink: 0 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('scales2'); scrollTop() }} style={{ flex: 1 }}>
+              {Icons.arrowLeft({ s: 16 })} Volver
+            </button>
+            <button className="auth-btn-primary" type="button" onClick={() => { setWizardStep('viability'); scrollTop() }} style={{ flex: 2 }}>
+              Continuar a viabilidad {Icons.arrowRight({ s: 18 })}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 11: VIABILIDAD ECONÓMICA
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'viability' && (
+        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Viabilidad económica
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-              Toca todos los temas que te llamen la atención. Personalizaremos tu feed y actividades recomendadas con lo que elijas.
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Esto nos ayuda a recomendarte opciones acordes a tu presupuesto.
             </p>
           </div>
 
-          {/* Categorías con chips interactivos estilo TikTok */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {INTEREST_SECTIONS.map((sec) => (
-              <div
-                key={sec.title}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #E5DCD2',
-                  borderRadius: 16,
-                  padding: '20px 18px',
-                  boxShadow: '0 2px 8px rgba(7, 59, 76, 0.04)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: sec.color }} />
-                  <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.08em', color: sec.color, margin: 0, textTransform: 'uppercase' }}>
-                    {sec.title}
-                  </h3>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {sec.items.map((item) => {
-                    const isSelected = selectedInterests.includes(item)
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => toggleInterest(item)}
-                        style={{
-                          padding: '8px 16px',
-                          borderRadius: 20,
-                          border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
-                          background: isSelected ? sec.color : '#F6EDDF',
-                          color: isSelected ? '#ffffff' : '#073B4C',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 13.5,
-                          fontWeight: isSelected ? 700 : 500,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          transform: isSelected ? 'scale(1.03)' : 'scale(1)',
-                          transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
-                        }}
-                      >
-                        <span>{item}</span>
-                        {isSelected && Icons.check({ s: 13 })}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Campo libre de Otros intereses */}
-          <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 16, padding: '18px' }}>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 6 }}>
-              Otros temas: Escríbenos qué otro tema te gustaría explorar
-            </label>
-            <input
-              type="text"
-              className="auth-input"
-              placeholder="Ej. Robótica accesible, astronomía, ajedrez adaptado..."
-              value={otrosIntereses}
-              onChange={e => setOtrosIntereses(e.target.value)}
-            />
-          </div>
-
-          {/* Viabilidad Económica */}
-          <div style={{ background: '#FFF9F2', border: '1.5px solid #CA918E', borderRadius: 16, padding: '20px' }}>
-            <label style={{ display: 'block', fontSize: 15, fontWeight: 800, color: '#073B4C', marginBottom: 12 }}>
-              ¿Qué tipo de opciones son más viables para ti hoy?
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+          <div style={{ background: '#FFF9F2', border: '1.5px solid #CA918E', borderRadius: 14, padding: '16px' }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
               {LIST_VIABILIDAD.map((v) => {
                 const isSelected = viabilidad === v.id
                 return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setViabilidad(v.id)}
+                  <button key={v.id} type="button" onClick={() => setViabilidad(v.id)}
                     style={{
-                      padding: '12px 14px',
-                      borderRadius: 10,
+                      padding: '10px 12px', borderRadius: 10,
                       border: `2px solid ${isSelected ? '#073B4C' : '#E5DCD2'}`,
                       background: isSelected ? '#073B4C' : '#ffffff',
                       color: isSelected ? '#ffffff' : 'var(--fg1)',
-                      fontWeight: isSelected ? 700 : 500,
-                      fontSize: 13.5,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{
-                      width: 16, height: 16, borderRadius: '50%',
-                      border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: isSelected ? 700 : 500, fontSize: 12.5,
+                      cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
                     }}>
-                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffffff' }} />}
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffffff' }} />}
                     </div>
                     <span>{v.label}</span>
                   </button>
@@ -1486,8 +1199,14 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => setWizardStep('formats')} style={{ flex: 1 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#073B4C', marginBottom: 5 }}>Otros temas que te gustaría explorar</label>
+            <input type="text" className="auth-input" placeholder="Ej. Robótica accesible, astronomía, ajedrez adaptado..."
+              value={otrosIntereses} onChange={e => setOtrosIntereses(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('interests'); scrollTop() }} style={{ flex: 1 }}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="submit" disabled={sending} style={{ flex: 2 }}>
@@ -1497,156 +1216,88 @@ export default function RegistrationWizard({ onBackToRoles }) {
         </form>
       )}
 
-      {/* ── PASO 6: VALIDACIÓN DE IDENTIDAD Y MENSAJE DE AGRADECIMIENTO ── */}
+      {/* ═══════════════════════════════════════════════════════════
+           THANKS SCREEN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'thanks' && (
         <div style={{
-          background: '#ffffff',
-          border: '1.5px solid #E5DCD2',
-          borderRadius: 24,
-          padding: '40px 32px',
-          textAlign: 'center',
-          boxShadow: '0 8px 30px rgba(7, 59, 76, 0.08)',
-          animation: 'fadeInUp 0.4s ease both',
+          background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 24,
+          padding: '36px 28px', textAlign: 'center',
+          boxShadow: '0 8px 30px rgba(7,59,76,0.08)', animation: 'fadeInUp 0.4s ease both',
         }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: 'rgba(34, 155, 88, 0.12)', color: '#229B58',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 20px', fontSize: 36,
-          }}>
-            🌱
-          </div>
-
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: '#073B4C', margin: '0 0 16px', lineHeight: 1.25 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34,155,88,0.12)', color: '#229B58', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>🌱</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 14px', lineHeight: 1.25 }}>
             Muchas gracias por tu confianza y tu apertura para conocerte.
           </h2>
-
-          <div style={{ color: 'var(--fg2)', fontSize: 15, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32, maxWidth: 520, margin: '0 auto 32px' }}>
-            <p style={{ margin: 0 }}>
-              Esta información nos permitirá darte opciones claras y personalizadas.
-            </p>
+          <div style={{ color: 'var(--fg2)', fontSize: 14, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto 28px' }}>
+            <p style={{ margin: 0 }}>Esta información nos permitirá darte opciones claras y personalizadas.</p>
             <p style={{ margin: 0, fontWeight: 500, color: '#073B4C' }}>
               Una vez que validemos tu identidad, te haremos llegar un correo para que puedas encontrar nuevas posibilidades, caminos para tu desarrollo y formar parte de esta gran comunidad.
             </p>
           </div>
-
-          <button
-            className="auth-btn-primary"
-            type="button"
-            onClick={() => {
-              setWizardStep('summary')
-              window.scrollTo({ top: 0, behavior: 'smooth' })
-            }}
-            style={{ minWidth: 260, padding: '14px 28px', fontSize: 16 }}
-          >
+          <button className="auth-btn-primary" type="button"
+            onClick={() => { setWizardStep('summary'); scrollTop() }}
+            style={{ minWidth: 240, padding: '14px 24px', fontSize: 15 }}>
             Ver mi Resumen de Bienvenida {Icons.sparkles({ s: 18 })}
           </button>
         </div>
       )}
 
-      {/* ── PASO 7: PANTALLA DE BIENVENIDA CON RESUMEN IA EN 3 PÁRRAFOS ── */}
+      {/* ═══════════════════════════════════════════════════════════
+           SUMMARY / BIENVENIDA
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'summary' && (
         <div style={{
-          background: '#ffffff',
-          border: '1.5px solid #E5DCD2',
-          borderRadius: 24,
-          padding: '36px 30px',
-          boxShadow: '0 8px 30px rgba(7, 59, 76, 0.08)',
-          animation: 'fadeInUp 0.4s ease both',
+          background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 24,
+          padding: '30px 26px', boxShadow: '0 8px 30px rgba(7,59,76,0.08)',
+          animation: 'fadeInUp 0.4s ease both', overflowY: 'auto',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <span style={{ fontSize: 12, fontWeight: 800, color: '#FF4D68', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Narrativa de Identidad
-              </span>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: '#073B4C', margin: '4px 0 0' }}>
-                Bienvenido a Raíces
-              </h2>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#FF4D68', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Narrativa de Identidad</span>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '4px 0 0' }}>Bienvenido a Raíces</h2>
             </div>
-            <div style={{
-              background: 'linear-gradient(135deg, #073B4C 0%, #229B58 100%)',
-              color: '#ffffff',
-              padding: '6px 14px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}>
-              {Icons.sparkles({ s: 14 })} Generado por IA
+            <div style={{ background: 'linear-gradient(135deg, #073B4C 0%, #229B58 100%)', color: '#ffffff', padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+              {Icons.sparkles({ s: 13 })} Generado por IA
             </div>
           </div>
 
-          <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 24px', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>
             A través de nuestra inteligencia artificial hemos captado tu esencia para acompañarte en tu desarrollo:
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
-            {/* 1. ¿Quién eres? */}
-            <div style={{
-              background: '#F0F7F6',
-              border: '1.5px solid #229B58',
-              borderRadius: 16,
-              padding: '20px',
-              position: 'relative',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>🌟</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, color: '#073B4C', margin: 0 }}>
-                  1. ¿Quién eres?
-                </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            <div style={{ background: '#F0F7F6', border: '1.5px solid #229B58', borderRadius: 14, padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>🌟</span>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>1. ¿Quién eres?</h3>
               </div>
-              <p style={{ fontSize: 14, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.quienEres || 'Eres una persona única con grandes fortalezas, talentos y metas por cumplir.'}
               </p>
             </div>
-
-            {/* 2. Tu contexto */}
-            <div style={{
-              background: '#FFF9F2',
-              border: '1.5px solid #F4C84A',
-              borderRadius: 16,
-              padding: '20px',
-              position: 'relative',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>🧭</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, color: '#073B4C', margin: 0 }}>
-                  2. Tu contexto
-                </h3>
+            <div style={{ background: '#FFF9F2', border: '1.5px solid #F4C84A', borderRadius: 14, padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>🧭</span>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>2. Tu contexto</h3>
               </div>
-              <p style={{ fontSize: 14, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.contexto || 'Tu entorno y experiencias han formado tu historia, y adaptamos cada herramienta para ti.'}
               </p>
             </div>
-
-            {/* 3. Lo que te gusta */}
-            <div style={{
-              background: '#FFF5F6',
-              border: '1.5px solid #FF4D68',
-              borderRadius: 16,
-              padding: '20px',
-              position: 'relative',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>🎯</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, color: '#073B4C', margin: 0 }}>
-                  3. Lo que te gusta
-                </h3>
+            <div style={{ background: '#FFF5F6', border: '1.5px solid #FF4D68', borderRadius: 14, padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>🎯</span>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>3. Lo que te gusta</h3>
               </div>
-              <p style={{ fontSize: 14, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.loQueTeGusta || 'Tus intereses guían tu camino hacia nuevas conexiones, oportunidades y desarrollo.'}
               </p>
             </div>
           </div>
 
-          <button
-            className="auth-btn-primary"
-            type="button"
-            onClick={handleFinishAndEnterDashboard}
-            style={{ width: '100%', padding: '16px 24px', fontSize: 16 }}
-          >
+          <button className="auth-btn-primary" type="button" onClick={handleFinishAndEnterDashboard}
+            style={{ width: '100%', padding: '14px 20px', fontSize: 15 }}>
             Ir a mi Dashboard personalizado {Icons.arrowRight({ s: 18 })}
           </button>
         </div>
