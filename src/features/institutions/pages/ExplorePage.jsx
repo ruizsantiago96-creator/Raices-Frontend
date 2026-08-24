@@ -33,8 +33,6 @@ function useDebounce(value, delay) {
 
 export default function ExplorePage() {
   const [params] = useSearchParams()
-  const [search, setSearch] = useState(params.get('q') ?? '')
-  const [category, setCategory] = useState(params.get('category') ?? '')
   const [tipoDiscapacidad, setTipoDiscapacidad] = useState('')
   const [edad, setEdad] = useState('')
   const [ciudad, setCiudad] = useState('')
@@ -76,11 +74,13 @@ export default function ExplorePage() {
   ]
 
   const isAuthenticated = !!token
-
-  useEffect(() => {
-    setSearch(params.get('q') ?? '')
-    setCategory(params.get('category') ?? '')
-  }, [params])
+  const urlQuery = params.get('q') ?? ''
+  const urlCategory = params.get('category') ?? ''
+  const [search, setSearch] = useState(urlQuery)
+  const [category, setCategory] = useState(urlCategory)
+  // Sync when URL params change (e.g. from TopNav search bar navigation)
+  if (urlQuery !== search) setSearch(urlQuery)
+  if (urlCategory !== category) setCategory(urlCategory)
 
   const debouncedSearch = useDebounce(search, 400)
 

@@ -141,11 +141,10 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
   const { data: members = [] } = useMiembrosDestacados(50) // load up to 50 members to allow starting chats
   const sendMessage = useSendMessage()
 
-  useEffect(() => {
-    if (isFloating) {
-      setActivePartnerIdState(floatingChatPartnerId)
-    }
-  }, [floatingChatPartnerId, isFloating])
+  // Sync floating chat partner when it changes (avoids setState-in-effect lint error)
+  if (isFloating && floatingChatPartnerId !== activePartnerId) {
+    setActivePartnerIdState(floatingChatPartnerId)
+  }
 
   const setActivePartnerId = (id) => {
     setActivePartnerIdState(id)
