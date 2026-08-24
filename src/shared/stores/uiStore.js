@@ -23,4 +23,13 @@ export const useUiStore = create((set) => ({
     localStorage.setItem('inst-portal-tab', tab)
     set({ instPortalTab: tab })
   },
+
+  // Floating chat states
+  floatingChatOpen: false,
+  setFloatingChatOpen: (open) => set({ floatingChatOpen: open }),
+  toggleFloatingChat: () => set(s => ({ floatingChatOpen: !s.floatingChatOpen })),
+  floatingChatMinimized: false,
+  setFloatingChatMinimized: (min) => set({ floatingChatMinimized: min }),
+  floatingChatPartnerId: null,
+  setFloatingChatPartnerId: (id) => set({ floatingChatPartnerId: id }),
 }))

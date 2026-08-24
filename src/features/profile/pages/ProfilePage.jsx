@@ -325,73 +325,72 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Perfil de necesidades */}
-              {data?.profiling ? (
-                <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
-                  <div style={s.sectionTitle}>
-                    <span>{PROFILE_UI.NEEDS_PROFILE_TITLE}</span>
-                    <a href="/onboarding" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {Icons.edit ? Icons.edit({ s: 13 }) : '✏️'} {PROFILE_UI.RETAKE_TEST_LINK}
-                    </a>
+              {/* Preferencias seleccionadas en registro */}
+              {(() => {
+                let regInterests = []
+                try {
+                  regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
+                } catch (_) {}
+                if (regInterests.length === 0 && !data?.profiling) return null
+                return (
+                  <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
+                    <div style={s.sectionTitle}>
+                      <span>Tus preferencias</span>
+                    </div>
+                    {regInterests.length > 0 && (
+                      <div style={{ marginBottom: data?.profiling ? 16 : 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Intereses seleccionados</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {regInterests.map((interest, i) => (
+                            <span key={i} style={s.chip(CATEGORY_COLORS['social'] ?? 'var(--primary)')}>{interest}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {data?.profiling?.life_stage && stage && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={s.chip('var(--primary)')}>{stage.label}</span>
+                          {data.profiling.age && (
+                            <span style={s.chip('#4A5568')}>{data.profiling.age} años</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {disabilities.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {disabilities.map((d, i) => (
+                            <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {data?.profiling?.communication_modes?.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {data?.profiling?.communication_modes?.map((m, i) => (
+                            <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {data?.profiling?.mobility_needs?.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {data?.profiling?.mobility_needs?.map((m, i) => (
+                            <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {stage && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={s.chip('var(--primary)')}>{stage.label}</span>
-                        {data?.profiling?.age && (
-                          <span style={s.chip('#4A5568')}>
-                            {data.profiling.age} años
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {disabilities.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {disabilities.map((d, i) => (
-                          <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {data?.profiling?.communication_modes?.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {data?.profiling?.communication_modes?.map((m, i) => (
-                          <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {data?.profiling?.mobility_needs?.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {data?.profiling?.mobility_needs?.map((m, i) => (
-                          <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="profile-card animate-fade-in-up delay-2" style={{ ...s.card, textAlign: 'center' }}>
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                    {Icons.target ? Icons.target({ s: 22 }) : '🎯'}
-                  </div>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{PROFILE_UI.EMPTY_TITLE}</h3>
-                  <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>{PROFILE_UI.EMPTY_DESCRIPTION}</p>
-                  <a href="/onboarding">
-                    <button className="btn-primary" style={{ fontSize: 14, padding: '10px 24px' }}>
-                      {PROFILE_UI.COMPLETE_NOW_BUTTON} {Icons.arrowRight ? Icons.arrowRight({ s: 14 }) : '→'}
-                    </button>
-                  </a>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Tarjeta: Dirección */}
               <div className="profile-card animate-fade-in-up delay-3" style={s.card}>

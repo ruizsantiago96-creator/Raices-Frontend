@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useLogin, useRegister } from '../hooks/useAuth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, BrandMark } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
@@ -454,7 +454,7 @@ export default function AuthPage() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: flex-start;
           padding: 48px 54px;
           box-sizing: border-box;
           background: #ffffff;
@@ -631,13 +631,11 @@ export default function AuthPage() {
       <div className="auth-card">
         {/* Columna izquierda: Formulario */}
         <div className="auth-form-column" style={regStep === 'pcd_wizard' ? { justifyContent: 'flex-start' } : undefined}>
-          <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
+          <div style={{ maxWidth: 440, width: '100%', margin: 'auto' }}>
             
             {/* Logo de marca superior */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28 }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: '#073B4C' }}>
-                Raíces<span style={{ color: '#FF4D68' }}>.</span>
-              </span>
+              <BrandMark size={24} onClick={() => nav('/')} />
             </div>
 
             {/* Volver al inicio */}
@@ -648,10 +646,7 @@ export default function AuthPage() {
             <main id="main">
               {mode === 'login' && (
                 <>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bienvenido a tu nuevo camino</p>
-                  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 800, color: '#012b29', margin: '0 0 24px', letterSpacing: '-0.02em' }}>
-                    Raíces
-                  </h1>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bienvenido a tu nuevo camino</p>
 
                   <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                     {error && (

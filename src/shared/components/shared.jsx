@@ -105,19 +105,19 @@ export const CATEGORY_COLORS = {
 }
 
 export const BrandMark = ({ onClick, size = 22, light = false }) => (
-  <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-block', verticalAlign: 'baseline', whiteSpace: 'nowrap', padding: 0 }}>
+  <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'baseline', whiteSpace: 'nowrap', padding: 0 }}>
     <span style={{
       fontFamily: 'var(--font-body)', fontSize: size, fontWeight: 700,
       color: light ? 'white' : 'var(--fg1)',
-      textDecoration: 'underline',
-      textDecorationColor: light ? 'rgba(255,255,255,0.5)' : 'var(--primary)',
-      textUnderlineOffset: 3, textDecorationThickness: 2,
-      marginRight: 4,
     }}>
       Raíces
     </span>
-    <span className="brand-subtitle" style={{ fontFamily: 'var(--font-body)', fontSize: size, fontWeight: 700, color: light ? 'rgba(255,255,255,0.85)' : 'var(--fg1)' }}>
-      {' para florecer.'}
+    <span style={{
+      fontFamily: 'var(--font-body)', fontSize: size, fontWeight: 900,
+      color: 'var(--color-coral)',
+      marginLeft: 1,
+    }}>
+      .
     </span>
   </button>
 )

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
+import { useUpdateProfile } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 
@@ -443,6 +444,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
+  const updateProfile = useUpdateProfile()
 
   const [wizardStep, setWizardStep] = useState('identity')
   const [sending, setSending] = useState(false)
@@ -705,6 +707,31 @@ export default function RegistrationWizard({ onBackToRoles }) {
       }
       try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
 
+      // Guardar perfil de necesidades (reemplaza el flujo del onboarding)
+      try {
+        await updateProfile.mutateAsync({
+          full_name: registerPayload.nombreCompleto,
+          profiling: {
+            disability_types: conditionData.conditions.filter(c => c !== 'Prefiero no responder'),
+            severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
+            communication_modes: [],
+            mobility_needs: conditionData.conditions,
+            tech_access: [],
+            preferred_zones: [],
+            needs: [],
+            goals: selectedInterests,
+            support_areas: [],
+            education_history: [],
+            therapy_history: [],
+            life_stage: null,
+            current_concerns: null,
+            support_level: null,
+            birth_date: generalForm.birth_date,
+            age: null,
+          },
+        })
+      } catch (profErr) { console.warn('Profiling save notice:', profErr) }
+
       if (docFile) {
         try {
           const fd = new FormData()
@@ -734,8 +761,6 @@ export default function RegistrationWizard({ onBackToRoles }) {
       setSending(false)
     }
   }
-
-  const handleFinishAndEnterDashboard = () => { nav('/dashboard', { replace: true }) }
 
   const passStrength = getPasswordStrength(generalForm.password)
 
@@ -967,7 +992,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
           {/* Document upload */}
           <div style={{ marginTop: 4 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-              Identificación oficial PCD <span style={{ color: '#ef4444' }}>*</span>
+              Identificación oficial Persona con Discapacidad <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div onClick={() => document.getElementById('pcd-doc-input').click()}
               style={{ border: '2px dashed #CA918E', borderRadius: 12, padding: '16px 14px', textAlign: 'center', background: '#FFF9F2', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -1433,9 +1458,9 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </div>
           </div>
 
-          <button className="auth-btn-primary" type="button" onClick={handleFinishAndEnterDashboard}
+          <button className="auth-btn-primary" type="button" onClick={() => nav('/auth')}
             style={{ width: '100%', padding: '14px 20px', fontSize: 15 }}>
-            Ir a mi Dashboard personalizado {Icons.arrowRight({ s: 18 })}
+            Comencemos tu camino en Raíces   {Icons.arrowRight({ s: 18 })}
           </button>
         </div>
       )}

@@ -76,6 +76,12 @@ export default function ExplorePage() {
   ]
 
   const isAuthenticated = !!token
+
+  useEffect(() => {
+    setSearch(params.get('q') ?? '')
+    setCategory(params.get('category') ?? '')
+  }, [params])
+
   const debouncedSearch = useDebounce(search, 400)
 
   const filters = {

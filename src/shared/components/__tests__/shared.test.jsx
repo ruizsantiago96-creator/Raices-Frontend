@@ -138,9 +138,9 @@ describe('BrandMark', () => {
     expect(screen.getByText('Raíces')).toBeInTheDocument()
   })
 
-  it('renders "para florecer." subtitle', () => {
+  it('renders "." dot', () => {
     render(withRouter(<BrandMark onClick={() => {}} />))
-    expect(screen.getByText(/para florecer/)).toBeInTheDocument()
+    expect(screen.getByText('.')).toBeInTheDocument()
   })
 
   it('calls onClick when clicked', async () => {

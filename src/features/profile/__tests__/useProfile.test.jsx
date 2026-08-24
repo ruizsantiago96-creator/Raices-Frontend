@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@test/renderWithProviders'
-import { useProfile, useUpdateProfile, useSaveProfiling } from '../hooks/useProfile'
+import { useProfile, useUpdateProfile } from '../hooks/useProfile'
 import userEvent from '@testing-library/user-event'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
@@ -99,41 +99,5 @@ describe('features/profile/hooks/useProfile', () => {
     })
   })
 
-  describe('useSaveProfiling', () => {
-    it('saves profiling data via POST', async () => {
-      vi.mocked(api.post).mockResolvedValue({ data: { exito: true } })
 
-      function SaveButton() {
-        const { mutate } = useSaveProfiling()
-        return <button onClick={() => mutate({ needs: ['test'] })}>Save</button>
-      }
-
-      const user = userEvent.setup()
-      renderWithProviders(<SaveButton />)
-      await user.click(screen.getByText('Save'))
-
-      await waitFor(() => {
-        expect(api.post).toHaveBeenCalledWith('/usuarios/perfil-necesidades', {
-          tiposDiscapacidad: [],
-          severidadDiscapacidad: null,
-          modosComunicacion: [],
-          necesidadesMovilidad: [],
-          accesoTecnologia: [],
-          zonasPreferidas: [],
-          necesidades: ['test'],
-          metasActuales: [],
-          areasApoyo: [],
-          historialEducacion: [],
-          historialTerapia: [],
-          etapaVida: null,
-          preocupacionesActuales: null,
-          nivelApoyo: null,
-          edad: null,
-          experienciaLaboral: null,
-          experienciaSocial: null,
-          fechaNacimiento: null,
-        })
-      })
-    })
-  })
 })

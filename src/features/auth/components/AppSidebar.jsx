@@ -69,10 +69,9 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
 
     items = [
       { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
-      { id: 'explore', label: 'Explorar', icon: Icons.search, path: '/explore' },
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
-      { id: 'social', label: 'Comunidad', icon: Icons.message, path: '/social', hidden: !hasFeature('comunidad') },
+      { id: 'social', label: 'Comunidad', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
     ].filter(item => !item.hidden)
     if (user?.role === 'pcd') {
       items.push({ id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas' })

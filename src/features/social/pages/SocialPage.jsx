@@ -15,7 +15,7 @@ import {
   useCommunityStats,
   useMiembrosDestacados,
 } from '../hooks/useCommunity'
-import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
+
 import { useAuthStore } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
@@ -365,100 +365,7 @@ function AboutCommunity() {
   )
 }
 
-/* ─── Direct Messages ───────────────────────────────────── */
-function DirectMessages({ currentUserId }) {
-  const [activePartnerId, setActivePartnerId] = useState(null)
-  const [text, setText] = useState('')
-  const chatEndRef = useRef(null)
-  const { data: conversations = [], isLoading: convsLoading } = useConversations()
-  const { data: messages = [] } = useMessages(activePartnerId)
-  const sendMessage = useSendMessage()
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const handleSend = (e) => {
-    e.preventDefault()
-    if (!text.trim() || !activePartnerId || sendMessage.isPending) return
-    sendMessage.mutate({ toId: activePartnerId, content: text }, { onSuccess: () => setText('') })
-  }
-
-  const activeConv = conversations.find(c => c.partner?.id === activePartnerId)
-
-  return (
-    <div className="grid-messages" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-      <div style={{ borderRight: '1px solid var(--border-color)', overflowY: 'auto' }}>
-        <div style={{ padding: '16px 16px 12px', fontWeight: 700, fontSize: 13, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>              {SOCIAL_UI.MESSAGES_TITLE}
-        </div>
-        {convsLoading ? (
-          <div style={{ padding: 20, color: 'var(--fg3)', fontSize: 13 }}>{SOCIAL_UI.LOADING}</div>
-        ) : conversations.length === 0 ? (
-          <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg3)', fontSize: 13 }}>
-            <div style={{ marginBottom: 8 }}>{Icons.message({ s: 24 })}</div>
-            {SOCIAL_UI.MESSAGES_EMPTY}<br />{SOCIAL_UI.MESSAGES_EMPTY_HINT}
-          </div>
-        ) : (
-          conversations.filter(conv => conv.partner).map(conv => (
-            <button key={conv.partner.id} onClick={() => setActivePartnerId(conv.partner.id)}
-              style={{ width: '100%', textAlign: 'left', padding: '12px 16px', border: 'none', borderBottom: '1px solid var(--border-color)', background: activePartnerId === conv.partner.id ? 'var(--primary-subtle)' : 'transparent', cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50% 50% 50% 14%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
-                {(conv.partner.full_name?.[0] ?? '?').toUpperCase()}
-              </div>
-              <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--fg1)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.partner.full_name}</span>
-                  {conv.unread > 0 && <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 6px', flexShrink: 0, marginLeft: 6 }}>{conv.unread}</span>}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--fg3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.last_message}</div>
-              </div>
-            </button>
-          ))
-        )}
-      </div>
-
-      {activePartnerId ? (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontSize: 15, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14 }}>
-              {(activeConv?.partner.full_name?.[0] ?? '?').toUpperCase()}
-            </div>
-            {activeConv?.partner.full_name ?? SOCIAL_UI.USER_FALLBACK}
-          </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {messages.map(msg => {
-              const mine = msg.from_id === currentUserId
-              return (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                  <span style={{ background: mine ? 'var(--primary)' : 'var(--bg-warm)', color: mine ? '#fff' : 'var(--fg1)', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: '10px 14px', fontSize: 14, maxWidth: '72%', border: mine ? 'none' : '1px solid var(--border-color)', lineHeight: 1.5, wordBreak: 'break-word' }}>
-                    {msg.content}
-                    <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2, textAlign: mine ? 'right' : 'left' }}>
-                      {new Date(msg.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </span>
-                </div>
-              )
-            })}
-            <div ref={chatEndRef} />
-          </div>
-          <form onSubmit={handleSend} style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: 8 }}>
-            <input value={text} onChange={e => setText(e.target.value)} placeholder={SOCIAL_UI.MESSAGE_PLACEHOLDER}
-              style={{ flex: 1, height: 42, padding: '0 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-pill)', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
-            <button type="submit" disabled={!text.trim() || sendMessage.isPending}
-              style={{ width: 42, height: 42, borderRadius: '50%', background: text.trim() ? 'var(--primary)' : 'var(--border-color)', border: 'none', color: '#fff', cursor: text.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {Icons.send({ s: 18 })}
-            </button>
-          </form>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--fg3)', fontSize: 14 }}>
-          {Icons.message({ s: 32 })}
-          <span>{SOCIAL_UI.SELECT_CONVERSATION}</span>
-        </div>
-      )}
-    </div>
-  )
-}
 
 /* ═══════════════════════════════════════════════════════════ */
 /* ═══ SocialPage (main) ════════════════════════════════════ */
@@ -510,7 +417,6 @@ export default function SocialPage() {
         <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24 }}>
           {[
             { key: 'community', label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
-            { key: 'messages', label: SOCIAL_UI.TAB_MESSAGES, icon: Icons.message },
             { key: 'about', label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
@@ -522,8 +428,6 @@ export default function SocialPage() {
 
         {mainTab === 'about' ? (
           <AboutCommunity />
-        ) : mainTab === 'messages' ? (
-          <DirectMessages currentUserId={user?.id} />
         ) : (
           <div className="grid-sidebar-main">
             {/* ── Sidebar ── */}

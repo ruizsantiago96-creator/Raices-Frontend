@@ -11,10 +11,10 @@ import { AccessibilityBar } from '@features/a11y'
 import FCMProvider from '@features/notifications/components/FCMProvider'
 import LandingPage from '@features/landing/pages/LandingPage'
 import AuthPage from '@features/auth/pages/AuthPage'
-import OnboardingPage from '@features/profile/pages/OnboardingPage'
 import DashboardPage from '@features/dashboard/pages/DashboardPage'
 import ExplorePage from '@features/institutions/pages/ExplorePage'
 import SocialPage from '@features/social/pages/SocialPage'
+import MessagesPage from '@features/social/pages/MessagesPage'
 import FavoritesPage from '@features/favorites/pages/FavoritesPage'
 import InstitutionPage from '@features/institutions/pages/InstitutionPage'
 import CrearInstitucionPage from '@features/institutions/pages/CrearInstitucionPage'
@@ -155,9 +155,9 @@ export default function App() {
 
                 {/* 🛡️ Rutas Protegidas que comparten el MainLayout Global */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                  <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/social" element={<FeatureGuard feature="comunidad"><SocialPage /></FeatureGuard>} />
+                  <Route path="/messages" element={<FeatureGuard feature="comunidad"><MessagesPage /></FeatureGuard>} />
                   <Route path="/favorites" element={<FeatureGuard feature="favoritos"><FavoritesPage /></FeatureGuard>} />
                   <Route path="/institution/nueva" element={<CrearInstitucionPage />} />
                   <Route path="/institution/:id" element={<InstitutionPage />} />

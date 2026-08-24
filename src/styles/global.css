@@ -52,7 +52,7 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
      Verde vivo    : #229B58
      Amarillo sol  : #F4C84A
      Coral         : #FF4D68
-     Crema         : #f6eddf  → BODY BG
+     Crema         : #fff9f2  → BODY BG
      ═══════════════════════════════════════════ */
 
   /* Colors - Primary (Azul Petróleo) */
@@ -77,7 +77,7 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --accent-dark: #b57a77;
 
   /* Colors - Background */
-  --bg-warm: #f6eddf;      /* Crema - body bg */
+  --bg-warm: #fff9f2;      /* Crema - body bg */
   --bg-cool: #F5EDE3;
   --bg-surface: #FFFFFF;
 
@@ -824,7 +824,7 @@ html[data-theme="dark"] .btn-secondary:hover {
   padding: 0 32px;
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
-  background: var(--bg-surface);
+  background: var(--bg-warm);
   border-bottom: 1px solid var(--border-color);
   font-family: var(--font-body);
   box-sizing: border-box;
