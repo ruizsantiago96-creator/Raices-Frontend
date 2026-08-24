@@ -9,17 +9,33 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: pnpm/action-setup@v4
-      with:
-        version: 10
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'pnpm'
-    - run: pnpm install --no-frozen-lockfile
-    - run: pnpm run lint
-    - run: pnpm audit --audit-level=high
-      continue-on-error: true
-    - run: pnpm run build
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Instalar dependencias con lockfile congelado
+        run: pnpm install --frozen-lockfile
+
+      - name: Revisar estilo y calidad (Lint)
+        run: pnpm run lint
+
+      - name: Auditoría de seguridad de dependencias
+        run: pnpm audit --audit-level=high
+
+      - name: Ejecutar suite de pruebas
+        run: pnpm test -- --run
+
+      - name: Compilar para producción (Build)
+        run: pnpm run build
