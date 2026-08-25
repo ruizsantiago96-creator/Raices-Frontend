@@ -461,7 +461,7 @@ export default function AccessibilityBar() {
           style={getPanelStyle()}
         >
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: 'var(--primary)' }}>{I.access(22)}</span> Accesibilidad
+            <span style={{ color: 'var(--color-coral, #FF4D68)' }}>{I.access(22)}</span> Accesibilidad
           </h2>
 
           {/* ═══ SECCIÓN VISUAL ═══ */}
@@ -655,18 +655,18 @@ export default function AccessibilityBar() {
         }
         
         .glass-button.active {
-          background: color-mix(in srgb, var(--primary) 15%, rgba(255, 255, 255, 0.45));
-          border-color: var(--primary);
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 15%, rgba(255, 255, 255, 0.45));
+          border-color: var(--color-coral, #FF4D68);
           border-width: 1.5px;
-          color: var(--primary) !important;
+          color: var(--color-coral, #FF4D68) !important;
           font-weight: 800 !important;
           box-shadow: 
             inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-            0 4px 12px rgba(0, 78, 82, 0.1);
+            0 4px 12px rgba(255, 77, 104, 0.15);
         }
         
         .glass-button.active:hover {
-          background: color-mix(in srgb, var(--primary) 22%, rgba(255, 255, 255, 0.55));
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 22%, rgba(255, 255, 255, 0.55));
         }
         
         html[data-theme="dark"] .glass-button {
@@ -684,34 +684,35 @@ export default function AccessibilityBar() {
         }
         
         html[data-theme="dark"] .glass-button.active {
-          background: color-mix(in srgb, var(--primary) 25%, rgba(255, 255, 255, 0.02));
-          border-color: var(--primary);
-          color: var(--primary) !important;
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 25%, rgba(255, 255, 255, 0.02));
+          border-color: var(--color-coral, #FF4D68);
+          color: var(--color-coral, #FF4D68) !important;
           box-shadow: 
             inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-            0 4px 12px rgba(63, 172, 145, 0.15);
+            0 4px 12px rgba(255, 77, 104, 0.2);
         }
         
         html[data-theme="dark"] .glass-button.active:hover {
-          background: color-mix(in srgb, var(--primary) 35%, rgba(255, 255, 255, 0.04));
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 35%, rgba(255, 255, 255, 0.04));
         }
 
         .liquid-glass-trigger {
-          background: var(--primary) !important;
+          background: var(--color-coral, #FF4D68) !important;
           border: 1px solid rgba(255, 255, 255, 0.25) !important;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           box-shadow: 
             inset 0 1.5px 0 0 rgba(255, 255, 255, 0.3),
-            0 8px 30px rgba(0, 43, 41, 0.2);
+            0 8px 30px rgba(255, 77, 104, 0.25);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .liquid-glass-trigger:hover {
           transform: translateY(-2px) scale(1.04);
+          background: #E03B56 !important;
           box-shadow: 
             inset 0 1.5px 0 0 rgba(255, 255, 255, 0.4),
-            0 12px 35px rgba(0, 43, 41, 0.3);
+            0 12px 35px rgba(255, 77, 104, 0.35);
         }
 
         .liquid-glass-trigger:active {
@@ -738,8 +739,8 @@ export default function AccessibilityBar() {
         }
 
         .glass-switch.active {
-          background: var(--primary);
-          border-color: var(--primary);
+          background: var(--color-coral, #FF4D68);
+          border-color: var(--color-coral, #FF4D68);
         }
 
         .glass-switch-thumb {
@@ -756,7 +757,7 @@ export default function AccessibilityBar() {
 
         .glass-switch.active .glass-switch-thumb {
           left: 22px;
-          box-shadow: 0 2px 6px rgba(0, 43, 41, 0.3);
+          box-shadow: 0 2px 6px rgba(255, 77, 104, 0.3);
         }
 
         html[data-theme="dark"] .glass-switch {
@@ -801,7 +802,7 @@ function Toggle({ icon, label, on, onToggle, hint }) {
           cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)',
         }}>
-        <span style={{ color: on ? 'var(--primary)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.25s' }}>{icon}</span>
+        <span style={{ color: on ? 'var(--color-coral, #FF4D68)' : OFF_COLOR, flexShrink: 0, transition: 'color 0.25s' }}>{icon}</span>
         <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{label}</span>
         <span aria-hidden="true" className={`glass-switch ${on ? 'active' : ''}`}>
           <span className="glass-switch-thumb" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { Icons, AppFooter } from '@shared/components/shared'
 import { useAuthStore } from '@features/auth'
 
@@ -411,8 +411,18 @@ export default function LandingPage() {
     }
   }, [token, user, nav])
 
+  // Redireccionar de inmediato en el render si ya hay sesión activa
+  if (token) {
+    if (user) {
+      if (user.role === 'admin') return <Navigate to="/admin" replace />
+      if (user.role === 'institution') return <Navigate to="/institution-portal" replace />
+      return <Navigate to="/dashboard" replace />
+    }
+    return null
+  }
+
   return (
-    <div style={{ background: '#f6eddf', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
+    <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)', color: 'var(--fg1)', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <style>{`
         @keyframes iconJumpBounce {
           0% { transform: translateY(0) scale(1); }
@@ -488,16 +498,18 @@ export default function LandingPage() {
       {/* ── TOPBAR ── */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        background: '#f6eddf', borderBottom: '1px solid #E5DCD2',
+        background: 'var(--landing-bg-topbar)', borderBottom: '1px solid var(--landing-border-topbar)',
+        backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
         height: 60, display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', padding: '0 32px', boxSizing: 'border-box',
+        transition: 'all 0.3s ease',
       }}>
         {/* Logo */}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#012b29', letterSpacing: '-0.03em' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--landing-title)', letterSpacing: '-0.03em' }}>
             Raíces<span style={{ color: '#FF4D68' }}>.</span>
           </span>
         </button>
@@ -509,9 +521,9 @@ export default function LandingPage() {
               key={link.id}
               onClick={() => { setActiveNav(link.id); scrollToSection(link.id) }}
               style={{
-                background: activeNav === link.id ? '#012b29' : 'transparent',
-                color: activeNav === link.id ? '#fff' : '#012b29',
-                border: '1.5px solid #012b29',
+                background: activeNav === link.id ? 'var(--landing-title)' : 'transparent',
+                color: activeNav === link.id ? 'var(--bg-warm)' : 'var(--landing-text-topbar)',
+                border: '1.5px solid var(--landing-title)',
                 borderRadius: 20, padding: '6px 16px',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 fontFamily: 'var(--font-body)',
@@ -737,7 +749,7 @@ export default function LandingPage() {
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 5.5vw, 58px)',
           fontWeight: 800,
-          color: '#012b29',
+          color: 'var(--landing-title)',
           lineHeight: 1.15,
           margin: '0 0 20px',
           maxWidth: 760,
@@ -750,7 +762,7 @@ export default function LandingPage() {
 
         <p style={{
           fontSize: 18,
-          color: '#4A5C5C',
+          color: 'var(--landing-text-muted)',
           lineHeight: 1.6,
           maxWidth: 600,
           margin: 0,
@@ -763,8 +775,8 @@ export default function LandingPage() {
 
       {/* ── SECTION 1: PRIMERO TE CONOCEMOS ── */}
       <div id="conocerte" style={{ position: 'relative' }}>
-        {/* Top Wave: transition from #f6eddf to #b6c6cf */}
-        <div style={{ lineHeight: 0, width: '100%', overflow: 'hidden', background: '#f6eddf' }}>
+        {/* Top Wave: transition from var(--bg-warm) to var(--landing-sec1-bg) */}
+        <div style={{ lineHeight: 0, width: '100%', overflow: 'hidden', background: 'var(--bg-warm)', transition: 'background-color 0.3s ease' }}>
           <svg
             viewBox="0 0 1440 60"
             fill="none"
@@ -773,28 +785,29 @@ export default function LandingPage() {
           >
             <path
               d="M0,0 C380,60 1060,60 1440,0 L1440,60 L0,60 Z"
-              fill="#b6c6cf"
+              fill="var(--landing-sec1-bg)"
             />
           </svg>
         </div>
 
         <section
           style={{
-            background: '#b6c6cf',
+            background: 'var(--landing-sec1-bg)',
             padding: '40px 32px 48px',
+            transition: 'background-color 0.3s ease',
           }}
         >
           <div style={{ maxWidth: 1000, margin: '0 auto' }}>
             <p style={{
               fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
-              color: '#073B4C', textTransform: 'uppercase', marginBottom: 12,
+              color: 'var(--landing-text-topbar)', textTransform: 'uppercase', marginBottom: 12,
             }}>
               PRIMERO, TE CONOCEMOS
             </p>
             <h2 style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(24px, 4vw, 36px)',
-              fontWeight: 800, color: '#082a42ff',
+              fontWeight: 800, color: 'var(--landing-title)',
               margin: '0 0 48px', lineHeight: 1.2, maxWidth: 560,
             }}>
               Tres pasos para comprender qué es importante para ti
@@ -810,11 +823,11 @@ export default function LandingPage() {
                   key={step.num}
                   className="step-card"
                   style={{
-                    background: '#fff',
+                    background: 'var(--landing-card-bg)',
                     borderRadius: 16,
                     padding: '28px 24px',
-                    boxShadow: '0 4px 16px rgba(7, 59, 76, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    boxShadow: 'var(--landing-card-shadow)',
+                    border: '1px solid var(--landing-card-border)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -849,11 +862,11 @@ export default function LandingPage() {
                   <h3 style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: 15, fontWeight: 700,
-                    color: '#012b29', margin: 0, lineHeight: 1.3,
+                    color: 'var(--landing-title)', margin: 0, lineHeight: 1.3,
                   }}>
                     {step.title}
                   </h3>
-                  <p style={{ fontSize: 13.5, color: '#4A5C5C', margin: 0, lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 13.5, color: 'var(--landing-text-muted)', margin: 0, lineHeight: 1.6 }}>
                     {step.desc}
                   </p>
                 </div>
@@ -862,8 +875,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Bottom Wave: transition from #b6c6cf to #FFF9F2 */}
-        <div style={{ lineHeight: 0, width: '100%', overflow: 'hidden', background: '#b6c6cf' }}>
+        {/* Bottom Wave: transition from var(--landing-sec1-bg) to var(--landing-sec2-bg) */}
+        <div style={{ lineHeight: 0, width: '100%', overflow: 'hidden', background: 'var(--landing-sec1-bg)', transition: 'background-color 0.3s ease' }}>
           <svg
             viewBox="0 0 1440 60"
             fill="none"
@@ -872,7 +885,7 @@ export default function LandingPage() {
           >
             <path
               d="M0,0 C380,60 1060,60 1440,0 L1440,60 L0,60 Z"
-              fill="#FFF9F2"
+              fill="var(--landing-sec2-bg)"
             />
           </svg>
         </div>
@@ -881,7 +894,7 @@ export default function LandingPage() {
       {/* ── SECTION 2: DESPUÉS AVANZAMOS ── */}
       <section
         id="comunidad"
-        style={{ background: '#FFF9F2', padding: '72px 32px' }}
+        style={{ background: 'var(--landing-sec2-bg)', padding: '72px 32px', transition: 'background-color 0.3s ease' }}
       >
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <p style={{
@@ -893,12 +906,12 @@ export default function LandingPage() {
           <h2 style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(24px, 4vw, 36px)',
-            fontWeight: 800, color: '#012b29',
+            fontWeight: 800, color: 'var(--landing-title)',
             margin: '0 0 12px', lineHeight: 1.2, maxWidth: 560,
           }}>
             Lo que recibes para seguir tu camino
           </h2>
-          <p style={{ fontSize: 16, color: '#4A5C5C', margin: '0 0 48px', maxWidth: 520, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, color: 'var(--landing-text-muted)', margin: '0 0 48px', maxWidth: 520, lineHeight: 1.6 }}>
             A partir de lo que conocemos de ti, acercamos opciones, acompañamiento y conexiones que pueden crecer y cambiar contigo.
           </p>
 
@@ -912,8 +925,8 @@ export default function LandingPage() {
                 key={feat.title}
                 className="feature-card"
                 style={{
-                  background: '#fff',
-                  border: '1px solid #E5DCD2',
+                  background: 'var(--landing-card-bg)',
+                  border: '1px solid var(--landing-card-border)',
                   borderRadius: 20,
                   padding: '32px 24px 28px',
                   display: 'flex',
@@ -921,17 +934,17 @@ export default function LandingPage() {
                   alignItems: 'center',
                   gap: 14,
                   textAlign: 'center',
-                  boxShadow: '0 1px 6px rgba(1,43,41,0.05)',
+                  boxShadow: 'var(--landing-card-shadow)',
                   cursor: 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 88 }}>
                   {feat.icon}
                 </div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#012b29', margin: 0, lineHeight: 1.3 }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--landing-title)', margin: 0, lineHeight: 1.3 }}>
                   {feat.title}
                 </h3>
-                <p style={{ fontSize: 13.5, color: '#4A5C5C', margin: 0, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13.5, color: 'var(--landing-text-muted)', margin: 0, lineHeight: 1.6 }}>
                   {feat.desc}
                 </p>
               </div>
@@ -951,8 +964,8 @@ export default function LandingPage() {
                 key={feat.title}
                 className="feature-card"
                 style={{
-                  background: '#fff',
-                  border: '1px solid #E5DCD2',
+                  background: 'var(--landing-card-bg)',
+                  border: '1px solid var(--landing-card-border)',
                   borderRadius: 20,
                   padding: '32px 24px 28px',
                   display: 'flex',
@@ -960,17 +973,17 @@ export default function LandingPage() {
                   alignItems: 'center',
                   gap: 14,
                   textAlign: 'center',
-                  boxShadow: '0 1px 6px rgba(1,43,41,0.05)',
+                  boxShadow: 'var(--landing-card-shadow)',
                   cursor: 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 88 }}>
                   {feat.icon}
                 </div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#012b29', margin: 0, lineHeight: 1.3 }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--landing-title)', margin: 0, lineHeight: 1.3 }}>
                   {feat.title}
                 </h3>
-                <p style={{ fontSize: 13.5, color: '#4A5C5C', margin: 0, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13.5, color: 'var(--landing-text-muted)', margin: 0, lineHeight: 1.6 }}>
                   {feat.desc}
                 </p>
               </div>

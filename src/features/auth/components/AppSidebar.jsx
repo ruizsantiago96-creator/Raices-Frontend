@@ -5,6 +5,26 @@ import { useMe } from '../hooks/useAuth'
 import { Icons, LeafIcon } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 
+const PlantEmoji = () => (
+  <svg width="20" height="30" viewBox="16 6 40 66" fill="none" style={{ display: 'block' }}>
+    {/* Pot */}
+    <path d="M22 47 L25 69 C25.5 71, 46.5 71, 47 69 L50 47 Z" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3.5" strokeLinejoin="round" />
+    <rect x="20" y="42" width="32" height="6" rx="3" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3" />
+    {/* Pot Face */}
+    <circle cx="32" cy="57" r="1.5" fill="#0C3B4B" />
+    <circle cx="40" cy="57" r="1.5" fill="#0C3B4B" />
+    <path d="M34 61 Q36 63 38 61" stroke="#0C3B4B" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    {/* Stem */}
+    <path d="M36 42 C36 30, 36 22, 36 15" stroke="#0C3B4B" strokeWidth="3.5" strokeLinecap="round" />
+    {/* Left Leaf */}
+    <path d="M36 30 C24 30, 18 20, 24 14 C32 14, 36 24, 36 30 Z" fill="#229B58" stroke="#0C3B4B" strokeWidth="3.2" strokeLinejoin="round" />
+    {/* Right Leaf */}
+    <path d="M36 22 C46 22, 52 14, 48 8 C40 8, 36 16, 36 22 Z" fill="#A8B86B" stroke="#0C3B4B" strokeWidth="3.2" strokeLinejoin="round" />
+    {/* Little flower bud top */}
+    <circle cx="36" cy="13" r="3.5" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" />
+  </svg>
+)
+
 export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount, alertCritical, stats }) => {
   const { user } = useAuthStore()
   const { data: meData, isFetching } = useMe()
@@ -58,7 +78,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
                user?.role === 'institution' ? Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
                user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-               <LeafIcon size={18} color="rgba(255,255,255,0.9)" />
+               <PlantEmoji />
     title = 'Raíces'
     // ── Filtrar items según features del usuario ────────────────────
     const features = user?.features ?? {}
@@ -97,7 +117,13 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
         {/* Brand logo at top */}
         <div className="sidebar-logo-container" style={{ padding: '8px 0 24px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
           <div style={{ position: 'relative', width: 36, height: 36 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 'var(--radius-md)',
+              background: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '#FBF6EE' : 'var(--primary)',
+              border: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '1.5px solid #EFE5D8' : 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxSizing: 'border-box',
+            }}>
               {logoIcon}
             </div>
             {/* Indicador de sincronización cuando se refrescan permisos */}
@@ -110,7 +136,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                   width: 14, height: 14,
                   borderRadius: '50%',
                   background: 'var(--color-warning)',
-                  border: '2px solid var(--bg-surface)',
+                  border: '2px solid var(--sidebar-bg)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   animation: 'spin 1s linear infinite',
                 }}
@@ -213,10 +239,10 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
 
         {/* Volver a la app link for sub-portals */}
         {mode !== 'app' && (
-          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
+          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
             <Link to="/dashboard" className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
-              color: 'rgba(255,255,255,0.45)',
+              color: 'var(--sidebar-fg)',
               marginRight: 0,
             }}>
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
@@ -227,15 +253,22 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
 
         {/* User profile (only main app) */}
         {mode === 'app' && user && (
-          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
+          <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
             <Link to="/profile" className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
               marginRight: 0,
             }}>
               <div style={{ position: 'relative', width: 24, height: 24, flexShrink: 0 }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700 }}>
-                  {(user.full_name ?? '?')[0]?.toUpperCase()}
-                </div>
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                    <circle cx="12" cy="12" r="10.5" fill="#FDE674" stroke="#0C3B4B" strokeWidth="1.8" />
+                    <circle cx="8.5" cy="10.5" r="1.2" fill="#0C3B4B" />
+                    <circle cx="15.5" cy="10.5" r="1.2" fill="#0C3B4B" />
+                    <path d="M8.5 14 C10 16.5, 14 16.5, 15.5 14" fill="none" stroke="#0C3B4B" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                )}
                 {/* Dot de sincronización en el avatar */}
                 {isFetching && (
                   <div
@@ -246,7 +279,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                       width: 8, height: 8,
                       borderRadius: '50%',
                       background: 'var(--color-warning)',
-                      border: '1.5px solid rgba(0,29,38,0.92)',
+                      border: '1.5px solid var(--sidebar-bg)',
                       animation: 'spin 1s linear infinite',
                     }}
                   />
@@ -408,9 +441,16 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ position: 'relative', width: 32, height: 32, flexShrink: 0 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>
-                    {(user?.full_name ?? '?')[0]?.toUpperCase()}
-                  </div>
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <svg width="32" height="32" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                      <circle cx="12" cy="12" r="10.5" fill="#FDE674" stroke="#0C3B4B" strokeWidth="1.8" />
+                      <circle cx="8.5" cy="10.5" r="1.2" fill="#0C3B4B" />
+                      <circle cx="15.5" cy="10.5" r="1.2" fill="#0C3B4B" />
+                      <path d="M8.5 14 C10 16.5, 14 16.5, 15.5 14" fill="none" stroke="#0C3B4B" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  )}
                   {isFetching && (
                     <div
                       aria-label="Actualizando"

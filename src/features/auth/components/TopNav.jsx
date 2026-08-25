@@ -342,23 +342,18 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
             onClick={toggleDarkMode}
             aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
             title={darkMode ? 'Modo claro' : 'Modo oscuro'}
-            style={{
-              width: 40, height: 40, borderRadius: '50%',
-              background: 'transparent',
-              border: '1px solid var(--border-color)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--fg2)',
-              transition: 'all 0.2s ease',
-            }}
+            className="topnav-icon-btn"
           >
             {darkMode ? (
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4"/>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="5" fill="#FFB703" stroke="#0C3B4B" strokeWidth="2.5" />
+                <path d="M12 2 L12 4 M12 20 L12 22 M2 12 L4 12 M20 12 L22 12 M5 5 L6.5 6.5 M17.5 17.5 L19 19 M5 19 L6.5 17.5 M17.5 6.5 L19 5" stroke="#0C3B4B" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M20 4 L20.5 5.5 L22 6 L20.5 6.5 L20 8 L19.5 6.5 L18 6 L19.5 5.5 Z" fill="#FDE674" stroke="#0C3B4B" strokeWidth="1.2" strokeLinejoin="round" />
               </svg>
             ) : (
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3a7.5 7.5 0 0 0 7.5 7.5 7.5 7.5 0 1 1-7.5-7.5Z" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
+                <path d="M21 3 L21.6 4.8 L23.5 5.5 L21.6 6.2 L21 8 L20.4 6.2 L18.5 5.5 L20.4 4.8 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="1.2" strokeLinejoin="round" />
               </svg>
             )}
           </button>
@@ -373,16 +368,13 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
             }}
             aria-label="Mensajes"
             title="Mensajes"
-            style={{
-              width: 40, height: 40, borderRadius: '50%',
-              background: 'transparent',
-              border: '1px solid var(--border-color)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--fg2)',
-              transition: 'all 0.2s ease',
-            }}
+            className="topnav-icon-btn"
           >
-            {Icons.message({ s: 18 })}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M 17 14.5 C 19 14.5, 20.5 13, 20.5 11 L 20.5 6.5 C 20.5 4.5, 19 3, 17 3 L 7 3 C 5 3, 3.5 4.5, 3.5 6.5 L 3.5 11 C 3.5 13, 5 14.5, 7 14.5 L 8 14.5 L 5.5 18.5 L 9.5 14.5 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
+              <circle cx="9" cy="8.5" r="1.5" fill="#fff" />
+              <circle cx="15" cy="8.5" r="1.5" fill="#fff" />
+            </svg>
           </button>
         )}
 
@@ -393,17 +385,14 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
               onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
               aria-label="Notificaciones"
               title="Notificaciones"
-              style={{
-                width: 40, height: 40, borderRadius: '50%',
-                background: 'transparent',
-                border: '1px solid var(--border-color)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--fg2)',
-                transition: 'all 0.2s ease',
-                position: 'relative',
-              }}
+              className="topnav-icon-btn"
+              style={{ position: 'relative' }}
             >
-              {Icons.bell({ s: 18 })}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4 A 2.2 2.2 0 0 1 12 1" stroke="#0C3B4B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <circle cx="12" cy="18" r="2.8" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2.2" />
+                <path d="M12 3.5 C9 3.5, 7 5.5, 7 9.5 L7 13.5 C7 14.5, 5 15.5, 5 15.5 L19 15.5 C19 15.5, 17 14.5, 17 13.5 L17 9.5 C17 5.5, 15 3.5, 12 3.5 Z" fill="#F4C84A" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
+              </svg>
               {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute', top: 10, right: 10,
@@ -519,15 +508,18 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
             >
               <div style={{
                 width: 36, height: 36, borderRadius: '50%',
-                background: user.avatar_url ? 'transparent' : hashColor(user.full_name ?? ''),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-display)',
                 overflow: 'hidden', flexShrink: 0,
               }}>
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  (user.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                  <svg width="36" height="36" viewBox="0 0 36 36" style={{ display: 'block' }}>
+                    <circle cx="18" cy="18" r="16.5" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2.5" />
+                    <circle cx="13" cy="16" r="1.8" fill="#0C3B4B" />
+                    <circle cx="23" cy="16" r="1.8" fill="#0C3B4B" />
+                    <path d="M13 21 C15 24.5, 21 24.5, 23 21" fill="none" stroke="#0C3B4B" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
                 )}
               </div>
               <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg2)' }} className="topnav-username">

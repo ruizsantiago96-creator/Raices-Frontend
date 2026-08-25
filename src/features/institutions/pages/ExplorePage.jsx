@@ -10,6 +10,7 @@ import MapView from '../components/MapView'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import BackendFallback from '@shared/components/BackendFallback'
 import { INSTITUTION_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import { getToken } from '@shared/lib/storage'
 
 const PAGE_SIZE = 50
 
@@ -73,7 +74,14 @@ export default function ExplorePage() {
     })),
   ]
 
-  const isAuthenticated = !!token
+  // ── Fuente única de verdad para la sesión ──────────────────────
+  // Esta ruta ya está protegida por <ProtectedRoute>, así que si llegamos
+  // aquí el usuario TIENE sesión. El token del store puede quedar
+  // momentáneamente desincronizado del storage real (p. ej. login sin
+  // "Recordarme" guarda en sessionStorage, o un forceLogout en curso
+  // desde api.js), lo que hacía parpadear/aparecer la vista de invitado.
+  // Consultamos también el storage antes de asumir "no autenticado".
+  const isAuthenticated = !!token || !!getToken()
   const urlQuery = params.get('q') ?? ''
   const urlCategory = params.get('category') ?? ''
   const [search, setSearch] = useState(urlQuery)

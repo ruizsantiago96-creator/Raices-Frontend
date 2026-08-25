@@ -45,6 +45,61 @@ const CATEGORY_BADGE_LABEL = {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Helper: get emoji by category
+   ═══════════════════════════════════════════════════════════ */
+const getCategoryEmoji = (category) => {
+  const normalized = (category ?? '').toLowerCase()
+  if (normalized.includes('salud') || normalized.includes('terapia') || normalized === 'funcional') {
+    return (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+        <path d="M12 19.5 C12 19.5, 5 14, 5 9 C5 5.8, 7 3.5, 9.8 3.5 C11.2 3.5, 11.8 4.2, 12 5 C12.2 4.2, 12.8 3.5, 14.2 3.5 C17 3.5, 19 5.8, 19 9 C19 14, 12 19.5, 12 19.5 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" strokeLinejoin="round" />
+        <circle cx="9.5" cy="8.5" r="1" fill="#0C3B4B" />
+        <circle cx="14.5" cy="8.5" r="1" fill="#0C3B4B" />
+        <path d="M10 11.5 C11 13, 13 13, 14 11.5" fill="none" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (normalized.includes('educa') || normalized === 'educativo') {
+    return (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+        <path d="M12 4 L18 8 L18 12" stroke="#FFB703" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="18" cy="13" r="1.5" fill="#FFB703" stroke="#0C3B4B" strokeWidth="1" />
+        <path d="M7 10 L7 14 C7 16, 17 16, 17 14 L17 10 Z" fill="#10B981" stroke="#0C3B4B" strokeWidth="2" strokeLinejoin="round" />
+        <polygon points="12,3 21,7.5 12,12 3,7.5" fill="#3A86FF" stroke="#0C3B4B" strokeWidth="2" strokeLinejoin="round" />
+        <circle cx="10" cy="12.5" r="0.8" fill="#FFFFFF" />
+        <circle cx="14" cy="12.5" r="0.8" fill="#FFFFFF" />
+        <path d="M11 14 C11.5 14.8, 12.5 14.8, 13 14" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (normalized.includes('empleo') || normalized.includes('laboral')) {
+    return (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+        <path d="M9 5 C9 3.5, 15 3.5, 15 5" fill="none" stroke="#0C3B4B" strokeWidth="2" strokeLinecap="round" />
+        <rect x="4" y="6" width="16" height="12" rx="3" fill="#FB8500" stroke="#0C3B4B" strokeWidth="2" />
+        <rect x="11" y="9" width="2" height="3" rx="0.5" fill="#FFB703" stroke="#0C3B4B" strokeWidth="1.2" />
+        <circle cx="8" cy="11.5" r="0.9" fill="#0C3B4B" />
+        <circle cx="16" cy="11.5" r="0.9" fill="#0C3B4B" />
+        <path d="M10.5 14 C11.5 15, 12.5 15, 13.5 14" fill="none" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  // Default to social/comunidad/recreación
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+      <circle cx="9.5" cy="12" r="6.2" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" />
+      <circle cx="7.5" cy="10.5" r="0.8" fill="#FFFFFF" />
+      <circle cx="11.5" cy="10.5" r="0.8" fill="#FFFFFF" />
+      <path d="M8.5 13.5 C9 14.5, 10 14.5, 10.5 13.5" fill="none" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="15.5" cy="12" r="6.2" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2" />
+      <circle cx="13.5" cy="10.5" r="0.8" fill="#0C3B4B" />
+      <circle cx="17.5" cy="10.5" r="0.8" fill="#0C3B4B" />
+      <path d="M14.5 13.5 C15 14.5, 16 14.5, 16.5 13.5" fill="none" stroke="#0C3B4B" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    FeedCard — Reddit/TikTok-style post card
    ═══════════════════════════════════════════════════════════ */
 function FeedCard({ inst, isFav, onToggleFav }) {
@@ -72,14 +127,22 @@ function FeedCard({ inst, isFav, onToggleFav }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <div style={{
             width: 42, height: 42, borderRadius: '50% 50% 50% 14%',
-            background: `color-mix(in oklch, ${color} 14%, transparent)`,
-            color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 16, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            overflow: 'hidden',
+            ...(inst.logo_url ? {
+              background: `color-mix(in oklch, ${color} 14%, transparent)`,
+              border: 'none',
+            } : {
+              background: '#FBF6EE',
+              border: '1px solid #EFE5D8',
+            })
           }}>
-            {inst.logo_url
-              ? <img src={inst.logo_url} alt="" style={{ width: 42, height: 42, borderRadius: 'inherit', objectFit: 'cover' }} />
-              : (inst.name?.[0] ?? '?').toUpperCase()
-            }
+            {inst.logo_url ? (
+              <img src={inst.logo_url} alt="" style={{ width: 42, height: 42, borderRadius: 'inherit', objectFit: 'cover' }} />
+            ) : (
+              getCategoryEmoji(inst.category)
+            )}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{
