@@ -122,10 +122,12 @@ const WelcomeIllustration = () => (
   </svg>
 )
 
-export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
+export function DirectMessages({ currentUserId, isFloating = false, onClose, dragHandleProps }) {
   const floatingChatPartnerId = useUiStore(s => s.floatingChatPartnerId)
   const setFloatingChatPartnerId = useUiStore(s => s.setFloatingChatPartnerId)
   const setFloatingChatMinimized = useUiStore(s => s.setFloatingChatMinimized)
+  const floatingChatMaximized = useUiStore(s => s.floatingChatMaximized)
+  const setFloatingChatMaximized = useUiStore(s => s.setFloatingChatMaximized)
   const navigate = useNavigate()
 
   const [activePartnerId, setActivePartnerIdState] = useState(isFloating ? floatingChatPartnerId : null)
@@ -204,10 +206,14 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
       <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
         
         {/* Chats Header - Reddit Style */}
-        <div style={{
-          height: 56, padding: '0 16px', borderBottom: '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-        }}>
+        <div 
+          {...(isFloating ? dragHandleProps : {})}
+          style={{
+            height: 56, padding: '0 16px', borderBottom: '1px solid var(--border-color)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            ...(isFloating ? dragHandleProps?.style : {})
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 20, display: 'flex', alignItems: 'center' }}>💬</span>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
@@ -313,11 +319,15 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
       {activePartnerId ? (
         <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
           {/* Header del Chat */}
-          <div style={{
-            height: 56, padding: '0 20px', borderBottom: '1px solid var(--border-color)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'var(--bg-surface)'
-          }}>
+          <div 
+            {...(isFloating ? dragHandleProps : {})}
+            style={{
+              height: 56, padding: '0 20px', borderBottom: '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'var(--bg-surface)',
+              ...(isFloating ? dragHandleProps?.style : {})
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <ChatAvatar name={activeConv?.partner.full_name ?? ''} src={activeConv?.partner.avatar_url} status={activeConv?.partner.is_active ? 'online' : 'offline'} size={36} />
               <div>
@@ -341,6 +351,17 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                     </svg>
+                  </button>
+                  <button onClick={() => setFloatingChatMaximized(!floatingChatMaximized)} title={floatingChatMaximized ? "Restaurar" : "Maximizar"} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 4, display: 'flex', alignItems: 'center' }}>
+                    {floatingChatMaximized ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      </svg>
+                    )}
                   </button>
                   <button onClick={() => setFloatingChatMinimized(true)} title="Minimizar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 4, display: 'flex', alignItems: 'center' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -482,11 +503,15 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
         /* Empty State - Reddit style */
         <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
           {/* Header of Empty State with window controls if isFloating */}
-          <div style={{
-            height: 56, padding: '0 20px', borderBottom: '1px solid var(--border-color)',
-            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-            background: 'var(--bg-surface)'
-          }}>
+          <div 
+            {...(isFloating ? dragHandleProps : {})}
+            style={{
+              height: 56, padding: '0 20px', borderBottom: '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+              background: 'var(--bg-surface)',
+              ...(isFloating ? dragHandleProps?.style : {})
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--fg3)' }}>
               {isFloating && (
                 <>
@@ -497,6 +522,17 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose }) {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                     </svg>
+                  </button>
+                  <button onClick={() => setFloatingChatMaximized(!floatingChatMaximized)} title={floatingChatMaximized ? "Restaurar" : "Maximizar"} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 4, display: 'flex', alignItems: 'center' }}>
+                    {floatingChatMaximized ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      </svg>
+                    )}
                   </button>
                   <button onClick={() => setFloatingChatMinimized(true)} title="Minimizar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 4, display: 'flex', alignItems: 'center' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

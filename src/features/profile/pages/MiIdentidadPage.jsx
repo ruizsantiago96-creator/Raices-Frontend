@@ -247,11 +247,11 @@ export default function MiIdentidadPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
             Configuración
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>
-            {activeTab === 'verificacion'
-              ? 'Sube tu CURP e identificación oficial para verificar tu cuenta'
-              : 'Administra la seguridad y acceso de tu cuenta'}
-          </p>
+          {activeTab === 'verificacion' && (
+            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>
+              Sube tu CURP e identificación oficial para verificar tu cuenta
+            </p>
+          )}
         </div>
 
         {/* Tab switcher */}
@@ -375,7 +375,7 @@ export default function MiIdentidadPage() {
                     borderRadius: 8, fontSize: 13,
                   }}>
                     <div style={{ color: 'var(--fg3)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                      Identificación oficial
+                      Identificación oficial 
                     </div>
                     <div style={{ color: status?.tieneIdentificacion ? 'var(--fg1)' : 'var(--fg3)', fontWeight: 600 }}>
                       {status?.tieneIdentificacion ? '✓ Subido' : 'No subido'}

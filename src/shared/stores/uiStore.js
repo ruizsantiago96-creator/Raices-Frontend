@@ -30,6 +30,8 @@ export const useUiStore = create((set) => ({
   toggleFloatingChat: () => set(s => ({ floatingChatOpen: !s.floatingChatOpen })),
   floatingChatMinimized: false,
   setFloatingChatMinimized: (min) => set({ floatingChatMinimized: min }),
+  floatingChatMaximized: false,
+  setFloatingChatMaximized: (max) => set({ floatingChatMaximized: max }),
   floatingChatPartnerId: null,
   setFloatingChatPartnerId: (id) => set({ floatingChatPartnerId: id }),
 }))
