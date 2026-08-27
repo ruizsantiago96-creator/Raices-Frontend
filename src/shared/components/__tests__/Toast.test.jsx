@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, act } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, act, fireEvent } from '@testing-library/react'
 import ToastContainer from '../Toast'
 import { useUiStore } from '../../stores/uiStore'
 
@@ -91,19 +90,17 @@ describe('shared/components/Toast', () => {
   // Dismiss
   // ═══════════════════════════════════════════════════════════════
   describe('dismiss', () => {
-    it('removes toast when close button is clicked', async () => {
-      const user = userEvent.setup()
+    it('removes toast when close button is clicked', () => {
       act(() => { useUiStore.getState().addToast('Dismissible') })
       render(<ToastContainer />)
 
       const closeBtn = screen.getByRole('button', { name: /cerrar notificación/i })
-      await user.click(closeBtn)
+      fireEvent.click(closeBtn)
 
       expect(screen.queryByText('Dismissible')).not.toBeInTheDocument()
     })
 
-    it('removes only the clicked toast, not others', async () => {
-      const user = userEvent.setup()
+    it('removes only the clicked toast, not others', () => {
       act(() => {
         useUiStore.getState().addToast('Keep me')
         useUiStore.getState().addToast('Remove me')
@@ -112,7 +109,7 @@ describe('shared/components/Toast', () => {
 
       const closeButtons = screen.getAllByRole('button', { name: /cerrar notificación/i })
       // Click the second toast's close button (index 1)
-      await user.click(closeButtons[1])
+      fireEvent.click(closeButtons[1])
 
       expect(screen.getByText('Keep me')).toBeInTheDocument()
       expect(screen.queryByText('Remove me')).not.toBeInTheDocument()

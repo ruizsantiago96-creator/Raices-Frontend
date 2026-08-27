@@ -336,8 +336,36 @@ export const DISCOVERY_ENDPOINTS = {
   SEARCH: {
     method: 'GET',
     path: '/descubrimiento',
-    params: { busqueda: 'string?', categoria: 'string?', ciudad: 'string?', estado: 'string?', tipoDiscapacidad: 'string?', pagina: 'number', limite: 'number' },
+    params: { busqueda: 'string?', categoria: 'string?', categorias: 'string? (CSV: laboral,funcional)', ciudad: 'string?', estado: 'string?', tipoDiscapacidad: 'string?', pagina: 'number', limite: 'number' },
     response: { datos: 'Institucion[]', total: 'number', paginas: 'number' },
+  },
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTERACCIONES Y RECOMENDACIONES
+// ═══════════════════════════════════════════════════════════
+export const INTERACTION_ENDPOINTS = {
+  CREATE: {
+    method: 'POST',
+    path: '/usuarios/interacciones',
+    description: 'Registrar una interacción del usuario con una institución',
+    body: { institucionId: 'string', tipo: 'guardar | ver_detalle | click_card', categoria: 'string?' },
+    response: { id: 'string', tipo: 'string', createdAt: 'string (ISO)' },
+  },
+  GET_PESOS: {
+    method: 'GET',
+    path: '/usuarios/interacciones/pesos',
+    description: 'Acumulado de puntos de los últimos 30 días (guardar: 10, ver_detalle: 5, click_card: 2)',
+    response: { totalPuntos: 'number', desglose: { guardar: 'number', ver_detalle: 'number', click_card: 'number' } },
+  },
+}
+
+export const RECOMMENDATION_ENDPOINTS = {
+  GET: {
+    method: 'GET',
+    path: '/usuarios/recomendaciones',
+    description: 'Instituciones recomendadas (60% coincidencias de perfil + 40% histórico de comportamiento)',
+    response: { datos: 'Institucion[]', total: 'number' },
   },
 }
 
@@ -1066,6 +1094,8 @@ export const ALL_ENDPOINTS = {
   ...DEPENDENT_ENDPOINTS,
   ...INSTITUTION_ENDPOINTS,
   ...DISCOVERY_ENDPOINTS,
+  ...INTERACTION_ENDPOINTS,
+  ...RECOMMENDATION_ENDPOINTS,
   ...REVIEW_ENDPOINTS,
   ...FAVORITE_ENDPOINTS,
   ...COMMUNITY_ENDPOINTS,

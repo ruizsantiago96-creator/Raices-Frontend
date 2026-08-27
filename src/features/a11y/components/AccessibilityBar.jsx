@@ -697,22 +697,22 @@ export default function AccessibilityBar() {
         }
 
         .liquid-glass-trigger {
-          background: var(--color-coral, #FF4D68) !important;
+          background: #4d7e55 !important;
           border: 1px solid rgba(255, 255, 255, 0.25) !important;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           box-shadow: 
             inset 0 1.5px 0 0 rgba(255, 255, 255, 0.3),
-            0 8px 30px rgba(255, 77, 104, 0.25);
+            0 8px 30px rgba(77, 126, 85, 0.25);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .liquid-glass-trigger:hover {
           transform: translateY(-2px) scale(1.04);
-          background: #E03B56 !important;
+          background: #3c6b44 !important;
           box-shadow: 
             inset 0 1.5px 0 0 rgba(255, 255, 255, 0.4),
-            0 12px 35px rgba(255, 77, 104, 0.35);
+            0 12px 35px rgba(77, 126, 85, 0.35);
         }
 
         .liquid-glass-trigger:active {

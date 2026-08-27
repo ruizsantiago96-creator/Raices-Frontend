@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useInstitutions } from '../hooks/useInstitutions'
+import { useInstitutions, useDiscovery } from '../hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
+import { useRegistrarInteraccion } from '../hooks/useInteractions'
+import { useRecomendaciones } from '../hooks/useRecommendations'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
@@ -110,8 +112,22 @@ export default function ExplorePage() {
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error, refetch } = useInstitutions(filters)
   const { data: favIds = new Set() } = useFavoriteIds()
   const toggle = useToggleFavorite()
+  const trackInteraccion = useRegistrarInteraccion()
+  const { data: recomendaciones = [], isLoading: loadingRecomendaciones } = useRecomendaciones()
 
   const favSet = favIds instanceof Set ? favIds : new Set(Array.isArray(favIds) ? favIds : [])
+
+  // ── Tracking helpers ─────────────────────────────────────────────
+  const trackClick = (inst) => {
+    if (isAuthenticated && inst?.id) {
+      trackInteraccion.mutate({ institucionId: inst.id, tipo: 'click_card', categoria: inst.category })
+    }
+  }
+  const trackGuardar = (inst) => {
+    if (isAuthenticated && inst?.id) {
+      trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category })
+    }
+  }
 
   const mockInstitutions = MOCK_INSTITUTIONS.filter(inst => {
     const matchesSearch = !debouncedSearch || inst.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || inst.city.toLowerCase().includes(debouncedSearch.toLowerCase()) || inst.description.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -180,6 +196,25 @@ export default function ExplorePage() {
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
         <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
       </div>
+
+      {/* ── Recomendaciones personalizadas ───────────────────────── */}
+      {!loadingRecomendaciones && recomendaciones.length > 0 && !category && !debouncedSearch && (
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Recomendadas para ti</h2>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 16px' }}>Basadas en tu perfil y actividad reciente</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+            {recomendaciones.slice(0, 4).map((inst) => (
+              <InstitutionCard
+                key={inst.id}
+                inst={inst}
+                isFav={favSet.has(String(inst.id))}
+                onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }}
+                onClick={() => trackClick(inst)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       <div className="explore-search-bar" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)', pointerEvents: 'none', display: 'flex' }}>{Icons.search({ s: 18 })}</span>
@@ -244,12 +279,12 @@ export default function ExplorePage() {
       {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
       {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }} onClick={() => trackClick(inst)} /></div>)}</div>
           {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => toggle.mutate(inst.id)} /></div>)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }} onClick={() => trackClick(inst)} /></div>)}</div>
           {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
         </>
       )}
@@ -273,10 +308,10 @@ function ErrorState({ onRetry }) {
   return <BackendFallback method={INSTITUTION_ENDPOINTS.LIST.method} endpoint={INSTITUTION_ENDPOINTS.LIST.path} onRetry={onRetry} />
 }
 
-function InstitutionCard({ inst, isFav, onToggleFav }) {
+function InstitutionCard({ inst, isFav, onToggleFav, onClick }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div style={{ height: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'box-shadow 0.2s ease' }}
+    <div style={{ height: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'box-shadow 0.2s ease', cursor: onClick ? 'pointer' : undefined }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
       onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
     >
@@ -289,16 +324,16 @@ function InstitutionCard({ inst, isFav, onToggleFav }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--fg3)' }}>{Icons.mapPin({ s: 14 })} {inst.city}{inst.state ? `, ${inst.state}` : ''}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
         <span style={{ fontSize: 13, color: '#D4944C', display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.star({ s: 14, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}<span style={{ color: 'var(--fg3)' }}>({inst.rating_count ?? 0})</span></span>
-        {isFav !== undefined && (<Link to={`/institution/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>)}
+        {isFav !== undefined && (<Link onClick={onClick} to={`/institution/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>)}
       </div>
     </div>
   )
 }
 
-function InstitutionRow({ inst, isFav, onToggleFav }) {
+function InstitutionRow({ inst, isFav, onToggleFav, onClick }) {
   const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 16, transition: 'box-shadow 0.2s ease' }}
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 16, transition: 'box-shadow 0.2s ease', cursor: onClick ? 'pointer' : undefined }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
       onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
     >
@@ -315,7 +350,7 @@ function InstitutionRow({ inst, isFav, onToggleFav }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {onToggleFav && (<button onClick={onToggleFav} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isFav ? '#C4789A' : 'var(--fg3)', padding: 4, display: 'flex' }}>{Icons.heart({ s: 18, filled: isFav })}</button>)}
-        <Link to={`/institution/${inst.id}`} style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid var(--border-color)', borderRadius: 8 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>
+        <Link onClick={onClick} to={`/institution/${inst.id}`} style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid var(--border-color)', borderRadius: 8 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>
       </div>
     </div>
   )
