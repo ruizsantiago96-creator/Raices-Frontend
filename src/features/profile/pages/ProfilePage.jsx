@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useAuthStore } from '@features/auth'
+import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
@@ -118,7 +118,6 @@ function SearchableSelect({ label, value, onChange, options, placeholder, disabl
 }
 
 export default function ProfilePage() {
-  const { logout } = useAuthStore()
   const { data, isLoading, isError } = useProfile()
   const { data: catalogos } = useCatalogos()
   const LIFE_STAGES = catalogos?.etapasVida ?? []
@@ -415,67 +414,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Tarjeta: Seguridad */}
-              <div className="profile-card animate-fade-in-up delay-4" style={s.card}>
-                <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                    Seguridad
-                  </h3>
-                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cambiar contraseña</h4>
-                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Recibe notificaciones en tiempo real y alertas del equipo.</p>
-                    </div>
-                    <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}>
-                      {Icons.edit ? Icons.edit({ s: 14 }) : '✏️'} Cambiar contraseña
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Autenticación de dos factores (2FA)</h4>
-                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Mantén tu cuenta segura habilitando la verificación en dos pasos.</p>
-                    </div>
-                    <div style={{ width: 44, height: 24, borderRadius: 12, background: 'var(--primary)', position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 2px' }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', marginLeft: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tarjeta: Zona de Peligro */}
-              <div className="profile-card animate-fade-in-up delay-5" style={s.card}>
-                <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--color-error, #DC3545)', margin: 0 }}>
-                    Zona de peligro
-                  </h3>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cerrar sesión en todos los dispositivos</h4>
-                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Cierra sesión en todas las sesiones activas.</p>
-                    </div>
-                    <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={logout}>
-                      Cerrar sesión
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Eliminar cuenta</h4>
-                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Elimina permanentemente tu cuenta y todos los datos asociados.</p>
-                    </div>
-                    <button style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--color-error, #DC3545)', background: 'transparent', color: 'var(--color-error, #DC3545)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in oklch, var(--color-error, #DC3545) 8%, transparent)' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
-                      Eliminar cuenta
-                    </button>
-                  </div>
-                </div>
-              </div>
 
             </>
           )}

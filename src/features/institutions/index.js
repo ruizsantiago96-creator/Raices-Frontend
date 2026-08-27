@@ -9,7 +9,7 @@
 export { default as MapView } from './components/MapView'
 
 // ── Hooks ──────────────────────────────────────────────────────────
-export { useInstitutions, useDiscovery, useCrearInstitucion, useMiInstitucion, useUpdateMiInstitucion } from './hooks/useInstitutions'
+export { useInstitutions, useDiscovery, useCrearInstitucion, useMiInstitucion, useUpdateMiInstitucion, useValidarCsfQr, useDeleteMyInstitution } from './hooks/useInstitutions'
 export { useReviews } from './hooks/useReviews'
 export { useRegistrarInteraccion, useInteraccionesPesos } from './hooks/useInteractions'
 export { useRecomendaciones } from './hooks/useRecommendations'

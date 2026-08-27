@@ -276,3 +276,35 @@ export function useInstitutionDetail(id) {
     enabled: !!id,
   })
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CSF QR Validation
+   POST /instituciones/validar-csf-qr
+   ═══════════════════════════════════════════════════════════ */
+
+export function useValidarCsfQr() {
+  return useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData()
+      formData.append('archivo', file)
+      return api.post('/instituciones/validar-csf-qr', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then(r => r.data)
+    },
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Delete My Institution
+   DELETE /instituciones/mi-institucion
+   ═══════════════════════════════════════════════════════════ */
+
+export function useDeleteMyInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.delete('/instituciones/mi-institucion').then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['mi-institucion'] })
+    },
+  })
+}

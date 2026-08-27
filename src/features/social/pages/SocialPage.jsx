@@ -14,6 +14,7 @@ import {
   useDeletePost,
   useCommunityStats,
   useMiembrosDestacados,
+  useConectemos,
 } from '../hooks/useCommunity'
 
 import { useAuthStore } from '@features/auth'
@@ -375,6 +376,9 @@ export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState(null)
   const [newPost, setNewPost] = useState('')
   const [mainTab, setMainTab] = useState('community')
+  const [conectemosCategoria, setConectemosCategoria] = useState(null)
+  const { data: conectemosData } = useConectemos({ categoriaCreativa: conectemosCategoria, enabled: mainTab === 'conectemos' })
+  const conectemosPosts = conectemosData?.posts ?? []
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const { addToast } = useUiStore()
 
@@ -409,7 +413,7 @@ export default function SocialPage() {
 
         {/* Header */}
         <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Comunidad</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Conectemos</h1>
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Conecta, comparte y crece junto a otros</p>
         </div>
 
@@ -417,6 +421,7 @@ export default function SocialPage() {
         <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24 }}>
           {[
             { key: 'community', label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
+            { key: 'conectemos', label: 'Conectemos', icon: Icons.sparkles },
             { key: 'about', label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
@@ -428,6 +433,46 @@ export default function SocialPage() {
 
         {mainTab === 'about' ? (
           <AboutCommunity />
+        ) : mainTab === 'conectemos' ? (
+          <div>
+            {/* Category filter */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+              {[null, 'arte', 'dibujo', 'historia', 'general'].map(cat => (
+                <button
+                  key={cat ?? 'all'}
+                  onClick={() => setConectemosCategoria(cat)}
+                  style={{
+                    padding: '7px 16px', borderRadius: 20, border: '1px solid',
+                    borderColor: conectemosCategoria === cat ? 'var(--primary)' : 'var(--border-color)',
+                    background: conectemosCategoria === cat ? 'var(--primary-subtle)' : 'transparent',
+                    color: conectemosCategoria === cat ? 'var(--primary)' : 'var(--fg2)',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Todos'}
+                </button>
+              ))}
+            </div>
+            {conectemosPosts.length === 0 ? (
+              <div style={{
+                background: 'var(--bg-surface)', border: '1px dashed var(--border-color)',
+                borderRadius: 14, padding: 48, textAlign: 'center',
+              }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  {Icons.sparkles({ s: 24 })}
+                </div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Aún no hay creaciones</h3>
+                <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>Las creaciones de la comunidad aparecerán aquí.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                {conectemosPosts.map((post) => (
+                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="grid-sidebar-main">
             {/* ── Sidebar ── */}

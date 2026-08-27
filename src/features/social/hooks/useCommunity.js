@@ -256,3 +256,96 @@ export function useMiembrosDestacados(limite = 6) {
     }),
   })
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FOROS INSTITUCIONALES
+   ═══════════════════════════════════════════════════════════ */
+
+function mapForo(f) {
+  return {
+    id: f.id,
+    titulo: f.titulo ?? f.title ?? '',
+    descripcion: f.descripcion ?? f.description ?? '',
+    preguntaDetonante: f.preguntaDetonante ?? f.pregunta_detonante ?? '',
+    autorNombre: f.autorNombre ?? f.autor_nombre ?? f.creadoPorNombre ?? '',
+    autorId: f.autorId ?? f.autor_id ?? f.creadoPor ?? '',
+    respuestasCount: f.respuestasCount ?? f.respuestas_count ?? 0,
+    fechaCreacion: f.fechaCreacion ?? f.fecha_creacion ?? f.created_at ?? '',
+  }
+}
+
+function mapForoDetalle(f) {
+  const foro = mapForo(f)
+  const respuestas = (f.respuestas ?? []).map(r => ({
+    id: r.id,
+    contenido: r.contenido ?? r.content ?? '',
+    autorNombre: r.autorNombre ?? r.autor_nombre ?? r.nombreAutor ?? 'Anónimo',
+    autorId: r.autorId ?? r.autor_id ?? '',
+    autorAvatar: r.autorAvatar ?? r.autor_avatar ?? null,
+    fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
+  }))
+  return { ...foro, respuestas }
+}
+
+export function useForos() {
+  return useQuery({
+    queryKey: ['foros'],
+    queryFn: () => api.get('/comunidad/foros').then(r => {
+      const res = r.data
+      const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+      return arr.map(mapForo)
+    }),
+  })
+}
+
+export function useForoDetail(foroId) {
+  return useQuery({
+    queryKey: ['foro', foroId],
+    queryFn: () => api.get(`/comunidad/foros/${foroId}`).then(r => mapForoDetalle(r.data)),
+    enabled: !!foroId,
+  })
+}
+
+export function useCreateForo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data) => api.post('/comunidad/foros', {
+      titulo: data.titulo,
+      descripcion: data.descripcion,
+      preguntaDetonante: data.preguntaDetonante,
+    }).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['foros'] }),
+  })
+}
+
+export function useCreateForoRespuesta(foroId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data) => api.post(`/comunidad/foros/${foroId}/respuestas`, {
+      contenido: data.contenido,
+    }).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['foro', foroId] }),
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONECTEMOS (Galería pública)
+   ═══════════════════════════════════════════════════════════ */
+
+export function useConectemos(opts = {}) {
+  const { categoriaCreativa, pagina = 1, limite = 20 } = opts
+  return useQuery({
+    queryKey: ['conectemos', categoriaCreativa, pagina, limite],
+    queryFn: () => {
+      const params = {}
+      if (categoriaCreativa) params.categoriaCreativa = categoriaCreativa
+      if (pagina > 1) params.pagina = pagina
+      if (limite !== 20) params.limite = limite
+      return api.get('/comunidad/conectemos/publicaciones', { params }).then(r => {
+        const res = r.data
+        const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+        return { posts: arr.map(mapPostFromBackend), total: res?.total ?? arr.length }
+      })
+    },
+  })
+}

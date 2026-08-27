@@ -138,10 +138,10 @@ export function useAdminVerificaciones(filters = {}, opts) {
   })
 }
 
-export function useAprobarVerificacion(id) {
+export function useAprobarVerificacion() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
+    mutationFn: (id) => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
       qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
@@ -149,14 +149,44 @@ export function useAprobarVerificacion(id) {
   })
 }
 
-export function useRechazarVerificacion(id) {
+export function useRechazarVerificacion() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body) => api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
+    mutationFn: ({ id, ...body }) => api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
       qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
     },
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Auditoría — Logs de administración
+   GET  /api/administracion/auditoria
+   GET  /api/administracion/auditoria/estadisticas
+   ═══════════════════════════════════════════════════════════════════ */
+
+export function useAdminAuditoria(filters = {}, opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  return useQuery({
+    queryKey: ['admin', 'auditoria', filters],
+    queryFn: () => api.get('/administracion/auditoria', { params: filters }).then(r => r.data),
+    staleTime: 1000 * 60 * 2,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
+  })
+}
+
+export function useAdminAuditoriaStats(opts) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  return useQuery({
+    queryKey: ['admin', 'auditoria-stats'],
+    queryFn: () => api.get('/administracion/auditoria/estadisticas').then(r => r.data),
+    staleTime: 1000 * 60 * 5,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
   })
 }
 

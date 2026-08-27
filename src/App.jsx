@@ -14,6 +14,7 @@ import AuthPage from '@features/auth/pages/AuthPage'
 import DashboardPage from '@features/dashboard/pages/DashboardPage'
 import ExplorePage from '@features/institutions/pages/ExplorePage'
 import SocialPage from '@features/social/pages/SocialPage'
+import ForosPage from '@features/social/pages/ForosPage'
 import MessagesPage from '@features/social/pages/MessagesPage'
 import FavoritesPage from '@features/favorites/pages/FavoritesPage'
 import InstitutionPage from '@features/institutions/pages/InstitutionPage'
@@ -22,6 +23,7 @@ import EditarInstitucionPage from '@features/institutions/pages/EditarInstitucio
 import AdminPage from '@features/admin/pages/AdminPage'
 import InstitutionPortalPage from '@features/institutions/pages/InstitutionPortalPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
+import MiIdentidadPage from '@features/profile/pages/MiIdentidadPage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
@@ -157,11 +159,13 @@ export default function App() {
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/social" element={<FeatureGuard feature="comunidad"><SocialPage /></FeatureGuard>} />
+                  <Route path="/foros" element={<FeatureGuard feature="comunidad"><ForosPage /></FeatureGuard>} />
                   <Route path="/messages" element={<FeatureGuard feature="comunidad"><MessagesPage /></FeatureGuard>} />
                   <Route path="/favorites" element={<FeatureGuard feature="favoritos"><FavoritesPage /></FeatureGuard>} />
                   <Route path="/institution/nueva" element={<CrearInstitucionPage />} />
                   <Route path="/institution/:id" element={<InstitutionPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/mi-identidad" element={<MiIdentidadPage />} />
                   <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                   <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                   <Route path="/jobs" element={<FeatureGuard feature="postulaciones"><JobsPage /></FeatureGuard>} />

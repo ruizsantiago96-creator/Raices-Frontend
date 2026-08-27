@@ -25,9 +25,9 @@ export const SOCIAL_TOAST = {
 // ─── Textos de UI ─────────────────────────────────────────
 export const SOCIAL_UI = {
   // Tabs
-  TAB_COMMUNITY: 'Comunidad',
+  TAB_COMMUNITY: 'Conectemos',
   TAB_MESSAGES: 'Mensajes ',
-  TAB_ABOUT: 'Conectemos',
+  TAB_ABOUT: 'Comunidad',
   
   // Publicación
   POST_PLACEHOLDER: '¿Qué te gustaría compartir con la comunidad?',

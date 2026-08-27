@@ -556,7 +556,7 @@ export const TopNav = ({ currentPage: _currentPage, user, onLogout }) => {
                   </Link>
 
                   <Link
-                    to="/profile"
+                    to="/mi-identidad?tab=seguridad"
                     onClick={() => setDropdownOpen(false)}
                     className="dropdown-item"
                   >

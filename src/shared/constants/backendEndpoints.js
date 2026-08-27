@@ -43,6 +43,12 @@ export const AUTH_ENDPOINTS = {
     path: '/autenticacion/yo',
     response: { id: 'string', email: 'string', nombreCompleto: 'string', rol: 'string', ciudad: 'string', estado: 'string', urlAvatar: 'string|null', verificado: 'boolean' },
   },
+  CERRAR_SESION: {
+    method: 'POST',
+    path: '/autenticacion/cerrar-sesion',
+    description: 'Eliminar cookies httpOnly (logout server-side). Llamar además de limpiar tokens del cliente.',
+    response: null, // 204 No Content
+  },
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -124,6 +130,24 @@ export const USER_ENDPOINTS = {
     path: '/usuarios/perfil-necesidades',
     body: 'PerfilNecesidades',
     response: 'PerfilNecesidades',
+  },
+  GET_PROFILE_PCD: {
+    method: 'GET',
+    path: '/usuarios/perfil-pcd/:pcdUserId',
+    description: 'Ver perfil de PCD (diferenciado por rol: padre_tutor, tutor, institucion, admin)',
+    response: 'UsuarioConPerfil',
+  },
+  GET_ONBOARDING: {
+    method: 'GET',
+    path: '/usuarios/onboarding',
+    description: 'Estado de completitud del onboarding — retorna campos faltantes y porcentaje',
+    response: { porcentaje: 'number', camposFaltantes: 'string[]' },
+  },
+  GET_ESPECIALISTAS: {
+    method: 'GET',
+    path: '/usuarios/especialistas',
+    description: 'Especialistas recomendados por matching (edad, discapacidad, ubicación)',
+    response: { datos: 'Especialista[]', total: 'number' },
   },
 }
 
@@ -327,6 +351,19 @@ export const INSTITUTION_ENDPOINTS = {
     body: 'Partial<Institucion>',
     response: 'Institucion',
   },
+  DELETE_MY_INSTITUTION: {
+    method: 'DELETE',
+    path: '/instituciones/mi-institucion',
+    description: 'Eliminar mi institución (soft-delete)',
+    response: null, // 204 No Content
+  },
+  VALIDATE_CSF_QR: {
+    method: 'POST',
+    path: '/instituciones/validar-csf-qr',
+    description: 'Validar código QR de Constancia de Situación Fiscal (multipart: PDF o imagen)',
+    body: 'FormData (archivo)',
+    response: { valido: 'boolean', datos: 'object | null' },
+  },
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -366,6 +403,12 @@ export const RECOMMENDATION_ENDPOINTS = {
     path: '/usuarios/recomendaciones',
     description: 'Instituciones recomendadas (60% coincidencias de perfil + 40% histórico de comportamiento)',
     response: { datos: 'Institucion[]', total: 'number' },
+  },
+  GET_PESOS: {
+    method: 'GET',
+    path: '/usuarios/interacciones/pesos',
+    description: 'Pesos de comportamiento por categoría (últimos 30 días)',
+    response: { totalPuntos: 'number', desglose: { guardar: 'number', ver_detalle: 'number', click_card: 'number' } },
   },
 }
 
@@ -509,6 +552,41 @@ export const COMMUNITY_ENDPOINTS = {
     path: '/comunidad/miembros',
     params: { limite: 'number?' },
     response: { miembros: 'UsuarioComunidad[]' },
+  },
+  // ── Foros institucionales (tipo Classroom) ──────────────
+  CREATE_FORO: {
+    method: 'POST',
+    path: '/comunidad/foros',
+    description: 'Crear foro institucional con pregunta detonante (solo institucion, admin)',
+    body: { titulo: 'string', descripcion: 'string?', preguntaDetonante: 'string' },
+    response: 'Foro',
+  },
+  GET_FOROS: {
+    method: 'GET',
+    path: '/comunidad/foros',
+    description: 'Listar foros activos (público)',
+    response: { datos: 'Foro[]', total: 'number' },
+  },
+  GET_FORO_DETAIL: {
+    method: 'GET',
+    path: '/comunidad/foros/:id',
+    description: 'Detalle de foro con respuestas',
+    response: 'ForoConRespuestas',
+  },
+  CREATE_FORO_RESPUESTA: {
+    method: 'POST',
+    path: '/comunidad/foros/:id/respuestas',
+    description: 'Responder pregunta detonante del foro',
+    body: { contenido: 'string' },
+    response: 'ForoRespuesta',
+  },
+  // ── Conectemos (galería pública) ──────────────────────
+  GET_CONECTEMOS: {
+    method: 'GET',
+    path: '/comunidad/conectemos/publicaciones',
+    description: 'Galería pública de creaciones de usuarios PCD (Conectemos)',
+    params: { categoriaCreativa: 'string?', pagina: 'number?', limite: 'number?' },
+    response: { datos: 'Publicacion[]', total: 'number' },
   },
 }
 
@@ -718,6 +796,23 @@ export const JOB_ENDPOINTS = {
     response: { id: 'string', estado: 'string (pendiente)' },
   },
   // ── Endpoints de postulaciones ──────────────────────
+  GET_POSTULANTES_VACANTE: {
+    method: 'GET',
+    path: '/empleo/postulantes-vacante',
+    description: 'Postulantes de una vacante específica (rol institucion o admin)',
+    params: { vacanteId: 'string (requerido)' },
+    response: {
+      datos: [{
+        id: 'string',
+        usuarioId: 'string',
+        nombreUsuario: 'string',
+        emailUsuario: 'string',
+        cartaPresentacion: 'string',
+        estado: 'string',
+        fechaCreacion: 'string (ISO)',
+      }],
+    },
+  },
   GET_POSTULACIONES: {
     method: 'GET',
     path: '/empleo/postulantes-institucion',
@@ -881,6 +976,18 @@ export const CATALOG_ENDPOINTS = {
     path: '/catalogos/categorias',
     response: '{ id: string, label: string, color: string }[]',
   },
+  GET_SUBCATEGORIAS_COMUNIDAD: {
+    method: 'GET',
+    path: '/catalogos/subcategorias-comunidad',
+    description: 'Subcategorías de grupos de comunidad',
+    response: '{ id: string, label: string }[]',
+  },
+  GET_TONO_CONTEXTUAL: {
+    method: 'GET',
+    path: '/catalogos/tono-contextual',
+    description: 'Tono contextual de la plataforma (para IA, notificaciones, etc.)',
+    response: '{ id: string, label: string, description: string }[]',
+  },
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1013,6 +1120,40 @@ export const ADMIN_ENDPOINTS = {
       ultimaActualizacion: 'string (ISO)',
     },
   },
+  // ── Auditoría ──────────────────────
+  GET_AUDITORIA: {
+    method: 'GET',
+    path: '/administracion/auditoria',
+    description: 'Logs de auditoría (paginado, con filtros por usuarioId, accion, recurso, fechas)',
+    params: { pagina: 'number?', limite: 'number?', usuarioId: 'string?', accion: 'string?', recurso: 'string?', fechaDesde: 'string?', fechaHasta: 'string?' },
+    response: { datos: 'AuditoriaLog[]', total: 'number', pagina: 'number', limite: 'number', totalPaginas: 'number' },
+  },
+  GET_AUDITORIA_ESTADISTICAS: {
+    method: 'GET',
+    path: '/administracion/auditoria/estadisticas',
+    description: 'Resumen de auditoría (contadores por acción, usuarios más activos, etc.)',
+    response: 'AuditoriaEstadisticas',
+  },
+  // ── Verificación identidad institución ──────────────
+  GET_INSTITUTION_VERIFICATION: {
+    method: 'GET',
+    path: '/administracion/instituciones/:id/verificacion-identidad',
+    description: 'Estado de verificación de identidad de la institución (CURP + ID del representante legal)',
+    response: { estado: 'string', tieneCurp: 'boolean', tieneIdentificacion: 'boolean', verificada: 'boolean' },
+  },
+}
+
+// ═══════════════════════════════════════════════════════════
+// MULTIMEDIA / STORAGE
+// ═══════════════════════════════════════════════════════════
+export const MULTIMEDIA_ENDPOINTS = {
+  UPLOAD: {
+    method: 'POST',
+    path: '/multimedia',
+    description: 'Subir imagen o video (max 10MB, multipart). Campo: archivo.',
+    body: 'FormData (archivo)',
+    response: { url: 'string' },
+  },
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1105,6 +1246,7 @@ export const ALL_ENDPOINTS = {
   ...AI_ENDPOINTS,
   ...CATALOG_ENDPOINTS,
   ...ADMIN_ENDPOINTS,
+  ...MULTIMEDIA_ENDPOINTS,
   ...RUTAS_ENDPOINTS,
 }
 

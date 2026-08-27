@@ -64,6 +64,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       { id: 'identities',    label: 'Identidades',    icon: Icons.shieldCheck },
       { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
       { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
+      { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
       { id: 'settings',      label: 'Config',         icon: Icons.target },
     ]
   } else if (mode === 'institution') {
@@ -91,7 +92,8 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
-      { id: 'social', label: 'Comunidad', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
+      { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
+      { id: 'foros', label: 'Foros', icon: Icons.message, path: '/foros', hidden: !hasFeature('comunidad') },
     ].filter(item => !item.hidden)
     if (user?.role === 'pcd') {
       items.push({ id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas' })
@@ -105,6 +107,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     if (user?.role === 'admin') {
       items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
     }
+
   }
 
   return (

@@ -10,7 +10,7 @@
  */
 
 // ── Admin Core Hooks ───────────────────────────────────────────────
-export { useAdminStats, useAdminAnalytics, useNeedsIntelligence, useAdminAlerts, useAdminSettings, useUpdateSettings, useAdminDetailedAnalytics, useAdminActiveUsersDetail, useAdminVerificaciones, useAprobarVerificacion, useRechazarVerificacion } from './hooks/useAdmin'
+export { useAdminStats, useAdminAnalytics, useNeedsIntelligence, useAdminAlerts, useAdminSettings, useUpdateSettings, useAdminDetailedAnalytics, useAdminActiveUsersDetail, useAdminVerificaciones, useAprobarVerificacion, useRechazarVerificacion, useAdminAuditoria, useAdminAuditoriaStats } from './hooks/useAdmin'
 
 // ── Re-exports for backward compatibility ──────────────────────────
 // Users (now in @features/users)

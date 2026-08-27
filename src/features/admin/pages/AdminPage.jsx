@@ -10,6 +10,7 @@ import InstitutionsTab from '../components/InstitutionsTab'
 import IdentitiesTab from '../components/IdentitiesTab'
 import SettingsTab from '../components/SettingsTab'
 import AlertsTab from '../components/AlertsTab'
+import AuditTab from '../components/AuditTab'
 
 export default function AdminPage() {
   const navigate = useNavigate()
@@ -27,6 +28,7 @@ export default function AdminPage() {
     reviews: 'Moderación de reseñas',
     alerts: 'Alertas de riesgo',
     settings: 'Configuración de plataforma',
+    audit: 'Auditoría',
   }
 
   return (
@@ -45,6 +47,7 @@ export default function AdminPage() {
         {tab === 'reviews' && <ReviewsTab />}
         {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
         {tab === 'settings' && <SettingsTab />}
+        {tab === 'audit' && <AuditTab />}
       </div>
     </main>
   )
