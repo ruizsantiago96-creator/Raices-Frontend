@@ -131,7 +131,7 @@ export default function InstitutionPortalPage() {
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border-color)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>Subir Constancia de Situación Fiscal (CSF)</div>
-                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>Desde Editar institución > Sección CSF</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>Desde Editar institución {">"} Sección CSF</div>
                   </div>
                   <button onClick={() => navigate('/institution-portal/editar')} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     Ir a editar
