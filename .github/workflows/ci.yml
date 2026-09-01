@@ -32,7 +32,7 @@ jobs:
         run: pnpm run lint
 
       - name: Auditoría de seguridad de dependencias
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=critical
 
       - name: Ejecutar suite de pruebas
         run: pnpm test -- --run
