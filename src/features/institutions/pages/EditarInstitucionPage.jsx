@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMe, useAuthStore } from '@features/auth'
-import { useMiInstitucion, useUpdateMiInstitucion } from '../hooks/useInstitutions'
+import { useMiInstitucion, useUpdateMiInstitucion, useValidarCsfQr } from '../hooks/useInstitutions'
+import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
+import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import InstitutionPortalSidebar from '../components/InstitutionPortalSidebar'
 import MobileInstitutionDrawer from '../components/MobileInstitutionDrawer'
@@ -61,6 +63,12 @@ export default function EditarInstitucionPage() {
   })
 
   const [nuevoServicio, setNuevoServicio] = useState('')
+  const [csfFile, setCsfFile] = useState(null)
+  const [csfResult, setCsfResult] = useState(null)
+  const csfInputRef = useRef(null)
+  const { addToast } = useUiStore()
+  const validarCsf = useValidarCsfQr()
+  const { data: identidadStatus } = useEstadoValidacion()
 
   // Populate form when institution data loads
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -118,6 +126,18 @@ export default function EditarInstitucionPage() {
 
   const removeServicio = (srv) => {
     setForm(prev => ({ ...prev, servicios: prev.servicios.filter(s => s !== srv) }))
+  }
+
+  const handleCsfUpload = async () => {
+    if (!csfFile) return
+    try {
+      const result = await validarCsf.mutateAsync(csfFile)
+      setCsfResult(result)
+      addToast('CSF validada correctamente', 'success')
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.error || 'Error al validar la CSF'
+      addToast(msg, 'error')
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -438,7 +458,124 @@ export default function EditarInstitucionPage() {
               )}
             </div>
 
-            {/* Botones */}
+            {/* Sección: Constancia de Situación Fiscal */}
+            <div className="animate-fade-in-up delay-5b" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {Icons.shieldCheck({ s: 18 })} Constancia de Situación Fiscal (CSF)
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 16px' }}>
+                Sube tu CSF con código QR para validación automática. Este documento es requerido para la verificación de tu institución.
+              </p>
+
+              <input
+                ref={csfInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) setCsfFile(file)
+                }}
+              />
+
+              {csfResult ? (
+                <div style={{
+                  padding: '14px 16px', borderRadius: 10,
+                  background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  {Icons.check({ s: 16 })}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#10B981' }}>CSF validada exitosamente</div>
+                    {csfResult.rfc && <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>RFC: {csfResult.rfc}</div>}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => csfInputRef.current?.click()}
+                    style={{
+                      padding: '10px 16px', borderRadius: 10,
+                      border: '1px solid var(--border-color)', background: 'var(--bg-warm)',
+                      color: 'var(--fg1)', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                      fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    {Icons.upload({ s: 14 })} {csfFile ? 'Cambiar archivo' : 'Seleccionar CSF'}
+                  </button>
+                  {csfFile && (
+                    <>
+                      <span style={{ fontSize: 13, color: 'var(--fg2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {csfFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCsfUpload}
+                        disabled={validarCsf.isPending}
+                        style={{
+                          padding: '10px 20px', borderRadius: 10, border: 'none',
+                          background: 'var(--primary)', color: '#fff',
+                          fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          opacity: validarCsf.isPending ? 0.7 : 1,
+                        }}
+                      >
+                        {validarCsf.isPending ? (
+                          <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'block' }} />
+                        ) : Icons.shieldCheck({ s: 14 })}
+                        Validar CSF
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sección: Estado de verificación */}
+            <div className="animate-fade-in-up delay-5c" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {Icons.activity({ s: 18 })} Estado de verificación
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* Identity documents */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: identidadStatus?.tieneCurp ? 'rgba(16,185,129,0.12)' : 'rgba(212,148,76,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {identidadStatus?.tieneCurp ? Icons.check({ s: 14 }) : Icons.upload({ s: 14 })}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>CURP + Identificación oficial</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                      {identidadStatus?.estado === 'aprobado' ? 'Documentos aprobados' : identidadStatus?.estado === 'pendiente' ? 'En revisión' : 'Sube tus documentos desde Configuración > Verificación de identidad'}
+                    </div>
+                  </div>
+                  {!identidadStatus?.tieneCurp && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/configuracion?tab=verificacion')}
+                      style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Subir documentos
+                    </button>
+                  )}
+                </div>
+
+                {/* CSF */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: csfResult ? 'rgba(16,185,129,0.12)' : 'rgba(212,148,76,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {csfResult ? Icons.check({ s: 14 }) : Icons.upload({ s: 14 })}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>Constancia de Situación Fiscal</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                      {csfResult ? 'CSF validada' : 'Sube tu CSF con código QR arriba'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+n            {/* Botones */}
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 48 }}>
               <button type="button" onClick={() => navigate('/institution-portal')} className="btn-secondary" style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, minWidth: 140 }} disabled={updateInst.isPending}>
                 Cancelar

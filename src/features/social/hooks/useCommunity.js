@@ -7,6 +7,8 @@ function mapGroup(g) {
     name: g.nombre ?? g.name ?? 'Sin nombre',
     description: g.descripcion ?? g.description,
     is_public: g.esPublico ?? g.is_public,
+    // Backend NO devuelve esMiembro en el listado; usamos false por defecto
+    // y actualizamos optimísticamente al unirse/salir
     is_member: g.esMiembro ?? g.es_miembro ?? g.isMember ?? g.is_member ?? false,
     member_count: g.cantidadMiembros ?? g.member_count ?? 0,
   }
@@ -17,13 +19,14 @@ function mapPost(p) {
     ...p,
     content: p.content ?? p.contenido,
     author_id: p.author_id ?? p.autorId ?? p.autor_id,
-    author_name: p.author_name ?? p.nombreAutor ?? p.autorNombre,
-    author_avatar: p.author_avatar ?? p.avatarAutor ?? p.autorAvatar,
+    // Backend plano: nombreCompleto y urlAvatar están en raíz
+    author_name: p.author_name ?? p.nombreCompleto ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
+    author_avatar: p.author_avatar ?? p.urlAvatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
     created_at: p.created_at ?? p.fechaCreacion,
     group_name: p.group_name ?? p.nombreGrupo,
-    like_count: p.like_count ?? p.cantidadMeGusta ?? 0,
+    like_count: p.like_count ?? p.cantidadMeGustas ?? p.likesCount ?? 0,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
-    liked_by_me: p.liked_by_me ?? p.meGustaUsuario,
+    liked_by_me: p.liked_by_me ?? p.usuarioMeGusta ?? p.likedByMe ?? false,
   }
 }
 
@@ -32,7 +35,9 @@ function mapComment(c) {
     ...c,
     content: c.content ?? c.contenido,
     author_id: c.author_id ?? c.autorId ?? c.autor_id,
-    author_name: c.author_name ?? c.nombreAutor ?? c.autorNombre,
+    // Backend: nombreCompleto está en raíz del comentario
+    author_name: c.author_name ?? c.nombreCompleto ?? c.nombreAutor ?? c.autorNombre ?? 'Anónimo',
+    author_avatar: c.urlAvatar ?? c.autorAvatar ?? c.autor_avatar ?? null,
     created_at: c.created_at ?? c.fechaCreacion,
   }
 }
@@ -49,22 +54,24 @@ export function useGroups() {
 }
 
 /**
- * Normaliza un post del backend con autor anidado.
+ * Normaliza un post del backend.
  *
- * Backend: { id, titulo, contenido, autor: { id, nombre, avatar }, likesCount, likedByMe, fechaCreacion }
- * Frontend: { id, content, author_id, author_name, author_avatar, like_count, liked_by_me, created_at, title }
+ * Backend plano: { id, autorId, contenido, grupoId, cantidadMeGustas,
+ *   fechaCreacion, nombreCompleto, urlAvatar, usuarioMeGusta, ... }
+ * Frontend: { id, content, author_id, author_name, author_avatar,
+ *   like_count, liked_by_me, created_at, title }
  */
 function mapPostFromBackend(p) {
-  const autor = p.autor ?? {}
   return {
     ...p,
     title: p.titulo ?? p.title ?? '',
     content: p.contenido ?? p.content ?? '',
-    author_id: autor.id ?? p.author_id ?? p.autorId ?? p.autor_id,
-    author_name: autor.nombre ?? p.author_name ?? p.nombreAutor ?? p.autorNombre ?? 'Anónimo',
-    author_avatar: autor.avatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? null,
-    like_count: p.likesCount ?? p.like_count ?? p.cantidadMeGusta ?? 0,
-    liked_by_me: p.likedByMe ?? p.liked_by_me ?? p.meGustaUsuario ?? false,
+    author_id: p.author_id ?? p.autorId ?? p.autor_id,
+    // Backend plano: nombreCompleto está en raíz, NO anidado en "autor"
+    author_name: p.nombreCompleto ?? p.author_name ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
+    author_avatar: p.urlAvatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
+    like_count: p.cantidadMeGustas ?? p.likesCount ?? p.like_count ?? 0,
+    liked_by_me: p.usuarioMeGusta ?? p.likedByMe ?? p.liked_by_me ?? false,
     created_at: p.fechaCreacion ?? p.created_at,
     group_name: p.group_name ?? p.nombreGrupo,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
@@ -76,7 +83,7 @@ function mapPostFromBackend(p) {
  *
  * GET /api/comunidad/publicaciones
  * Params: { grupoId?, pagina?, limite?, buscar? }
- * Response: { datos: Publicacion[], meta: { total, pagina, limite, totalPaginas } }
+ * Response: { datos: Publicacion[], total, pagina, limite, totalPaginas }
  *
  * @param {Object} options
  * @param {string} [options.grupoId] - Filtrar por grupo
@@ -102,13 +109,10 @@ export function usePosts(groupIdOrOptions) {
       if (buscar?.trim()) params.buscar = buscar.trim()
       return api.get('/comunidad/publicaciones', { params }).then(r => {
         const res = r.data
-        const meta = res?.meta ?? null
         const arr = Array.isArray(res) ? res.map(mapPostFromBackend) : (res?.datos ?? []).map(mapPostFromBackend)
-        return { posts: arr, meta }
+        return arr
       })
     },
-    // Mantener compatibilidad: si el caller espera un array plano, lo desempaquetamos
-    select: (data) => data.posts,
   })
 }
 
@@ -145,7 +149,11 @@ export function useToggleLike() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (postId) => api.post(`/comunidad/publicaciones/${postId}/me-gusta`).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['posts'] }),
+    // Refrescar datos reales del backend después de cada like
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['posts'] })
+      qc.invalidateQueries({ queryKey: ['conectemos'] })
+    },
   })
 }
 
@@ -170,7 +178,32 @@ export function useCreateComment(postId) {
       }
       return api.post(`/comunidad/publicaciones/${postId}/comentarios`, payload).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['comments', postId] }),
+    // Optimistic: agregar comentario al instante en la UI
+    onMutate: (data) => {
+      const content = data.content ?? data.contenido
+      const newComment = {
+        id: `temp-${Date.now()}`,
+        content,
+        author_name: data.authorName ?? 'Tú',
+        author_id: data.authorId,
+        created_at: new Date().toISOString(),
+        _isOptimistic: true,
+      }
+      const previous = qc.getQueryData(['comments', postId])
+      qc.setQueryData(['comments', postId], (old) => {
+        if (!old) return [newComment]
+        return [...old, newComment]
+      })
+      return { previous }
+    },
+    onError: (_err, _data, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['comments', postId], context.previous)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['comments', postId] })
+    },
   })
 }
 
@@ -243,7 +276,8 @@ export function useMiembrosDestacados(limite = 6) {
     queryKey: ['miembrosDestacados', limite],
     queryFn: () => api.get('/comunidad/miembros', { params: { limite } }).then(r => {
       const res = r.data
-      const arr = res?.miembros ?? (Array.isArray(res) ? res : [])
+      // Backend devuelve { datos: [...], total, ... } o { miembros: [...] }
+      const arr = res?.datos ?? res?.miembros ?? (Array.isArray(res) ? res : [])
       return arr.map(m => ({
         id: m.id,
         nombreCompleto: m.nombreCompleto ?? m.nombre_completo ?? m.full_name ?? 'Sin nombre',
@@ -251,7 +285,7 @@ export function useMiembrosDestacados(limite = 6) {
         ciudad: m.ciudad ?? m.city ?? '',
         estado: m.estado ?? m.state ?? '',
         urlAvatar: m.urlAvatar ?? m.url_avatar ?? m.avatar_url ?? null,
-        biografia: m.biografia ?? m.bio ?? '',
+        biografia: m.bio ?? m.biografia ?? '',
       }))
     }),
   })
@@ -262,29 +296,62 @@ export function useMiembrosDestacados(limite = 6) {
    ═══════════════════════════════════════════════════════════ */
 
 function mapForo(f) {
+  // Backend: preguntasDetonantes es un ARRAY, nombreInstitucion en vez de autorNombre
+  const preguntas = f.preguntasDetonantes ?? f.preguntaDetonante ?? []
+  const preguntaDetonante = Array.isArray(preguntas) ? preguntas[0] ?? '' : preguntas
   return {
     id: f.id,
     titulo: f.titulo ?? f.title ?? '',
     descripcion: f.descripcion ?? f.description ?? '',
-    preguntaDetonante: f.preguntaDetonante ?? f.pregunta_detonante ?? '',
-    autorNombre: f.autorNombre ?? f.autor_nombre ?? f.creadoPorNombre ?? '',
-    autorId: f.autorId ?? f.autor_id ?? f.creadoPor ?? '',
+    // Backend devuelve array "preguntasDetonantes"; normalizamos a string para UI legacy
+    preguntaDetonante,
+    preguntasDetonantes: Array.isArray(preguntas) ? preguntas : [preguntas],
+    // Backend: nombreInstitucion en vez de autorNombre
+    autorNombre: f.nombreInstitucion ?? f.autorNombre ?? f.autor_nombre ?? f.creadoPorNombre ?? '',
+    autorId: f.creadorId ?? f.autorId ?? f.autor_id ?? f.creadoPor ?? '',
     respuestasCount: f.respuestasCount ?? f.respuestas_count ?? 0,
     fechaCreacion: f.fechaCreacion ?? f.fecha_creacion ?? f.created_at ?? '',
+    exclusivoPadres: f.exclusivoPadres ?? false,
+    activo: f.activo ?? true,
   }
 }
 
 function mapForoDetalle(f) {
   const foro = mapForo(f)
-  const respuestas = (f.respuestas ?? []).map(r => ({
-    id: r.id,
-    contenido: r.contenido ?? r.content ?? '',
-    autorNombre: r.autorNombre ?? r.autor_nombre ?? r.nombreAutor ?? 'Anónimo',
-    autorId: r.autorId ?? r.autor_id ?? '',
-    autorAvatar: r.autorAvatar ?? r.autor_avatar ?? null,
-    fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
-  }))
-  return { ...foro, respuestas }
+  // Backend: "preguntasConRespuestas" en vez de "respuestas"
+  const preguntasConRespuestas = f.preguntasConRespuestas ?? []
+  // Normalizamos a array de respuestas plano
+  const respuestas = []
+  if (Array.isArray(preguntasConRespuestas)) {
+    preguntasConRespuestas.forEach((pcr, idx) => {
+      if (pcr?.respuestas && Array.isArray(pcr.respuestas)) {
+        pcr.respuestas.forEach(r => {
+          respuestas.push({
+            id: r.id,
+            contenido: r.contenido ?? r.content ?? '',
+            preguntaIndex: r.preguntaIndex ?? idx,
+            autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
+            autorId: r.autorId ?? r.autor_id ?? '',
+            autorAvatar: r.urlAvatar ?? r.autorAvatar ?? r.autor_avatar ?? null,
+            fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
+          })
+        })
+      }
+    })
+  }
+  // Fallback: si backend devuelve "respuestas" legacy
+  if (respuestas.length === 0 && Array.isArray(f.respuestas)) {
+    respuestas.push(...f.respuestas.map(r => ({
+      id: r.id,
+      contenido: r.contenido ?? r.content ?? '',
+      preguntaIndex: r.preguntaIndex ?? 0,
+      autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
+      autorId: r.autorId ?? r.autor_id ?? '',
+      autorAvatar: r.urlAvatar ?? r.autorAvatar ?? r.autor_avatar ?? null,
+      fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
+    })))
+  }
+  return { ...foro, respuestas, preguntasConRespuestas }
 }
 
 export function useForos() {
@@ -312,7 +379,8 @@ export function useCreateForo() {
     mutationFn: (data) => api.post('/comunidad/foros', {
       titulo: data.titulo,
       descripcion: data.descripcion,
-      preguntaDetonante: data.preguntaDetonante,
+      preguntasDetonantes: data.preguntasDetonantes ?? (data.preguntaDetonante ? [data.preguntaDetonante] : []),
+      exclusivoPadres: data.exclusivoPadres ?? false,
     }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['foros'] }),
   })
@@ -322,6 +390,7 @@ export function useCreateForoRespuesta(foroId) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data) => api.post(`/comunidad/foros/${foroId}/respuestas`, {
+      preguntaIndex: data.preguntaIndex ?? 0,
       contenido: data.contenido,
     }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['foro', foroId] }),

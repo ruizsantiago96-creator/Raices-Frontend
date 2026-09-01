@@ -383,8 +383,8 @@ function getPasswordStrength(password) {
 // ── SCALE CARD (compact helper) ──────────────────────────────────
 function ScaleCard({ title, desc, options, value, onChange }) {
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
+      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>{title}</h3>
       <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {options.map(opt => (
@@ -394,11 +394,11 @@ function ScaleCard({ title, desc, options, value, onChange }) {
             onClick={() => onChange(opt.value)}
             style={{
               padding: '7px 11px', borderRadius: 8,
-              border: `1.5px solid ${value === opt.value ? '#229B58' : '#E5DCD2'}`,
-              background: value === opt.value ? 'rgba(34,155,88,0.08)' : '#ffffff',
+              border: `1.5px solid ${value === opt.value ? 'var(--primary)' : 'var(--border-color)'}`,
+              background: value === opt.value ? 'var(--primary-subtle)' : 'var(--bg-cool)',
               fontWeight: value === opt.value ? 700 : 500,
               fontSize: 12, cursor: 'pointer', textAlign: 'left',
-              fontFamily: 'var(--font-body)', color: value === opt.value ? '#073B4C' : 'var(--fg1)',
+              fontFamily: 'var(--font-body)', color: value === opt.value ? 'var(--primary)' : 'var(--fg1)',
             }}
           >
             {opt.label}
@@ -708,26 +708,43 @@ export default function RegistrationWizard({ onBackToRoles }) {
       try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
 
       // Guardar perfil de necesidades (reemplaza el flujo del onboarding)
+      // Calcular etapa de vida desde fecha de nacimiento
+      const calcLifeStage = (birthDate) => {
+        if (!birthDate) return null
+        const age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        if (age <= 5) return 'infancia_temprana'
+        if (age <= 12) return 'infancia'
+        if (age <= 17) return 'adolescencia'
+        if (age <= 29) return 'juventud'
+        if (age <= 59) return 'adultez'
+        return 'adulto_mayor'
+      }
+      const calcAge = (birthDate) => {
+        if (!birthDate) return null
+        return Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      }
+      const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
+      const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
       try {
         await updateProfile.mutateAsync({
           full_name: registerPayload.nombreCompleto,
           profiling: {
-            disability_types: conditionData.conditions.filter(c => c !== 'Prefiero no responder'),
+            disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
             severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
-            communication_modes: [],
-            mobility_needs: conditionData.conditions,
-            tech_access: [],
+            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
+            mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
+            tech_access: formatos,
             preferred_zones: [],
             needs: [],
             goals: selectedInterests,
             support_areas: [],
             education_history: [],
             therapy_history: [],
-            life_stage: null,
-            current_concerns: null,
-            support_level: null,
+            life_stage: calcLifeStage(generalForm.birth_date),
+            current_concerns: conditionData.diagnosticoEspecifico || null,
+            support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
             birth_date: generalForm.birth_date,
-            age: null,
+            age: calcAge(generalForm.birth_date),
           },
         })
       } catch (profErr) { console.warn('Profiling save notice:', profErr) }
@@ -995,9 +1012,9 @@ export default function RegistrationWizard({ onBackToRoles }) {
               Identificación oficial Persona con Discapacidad <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div onClick={() => document.getElementById('pcd-doc-input').click()}
-              style={{ border: '2px dashed #CA918E', borderRadius: 12, padding: '16px 14px', textAlign: 'center', background: '#FFF9F2', cursor: 'pointer', transition: 'all 0.2s' }}>
+              style={{ border: '2px dashed var(--primary)', borderRadius: 12, padding: '16px 14px', textAlign: 'center', background: 'var(--bg-cool)', cursor: 'pointer', transition: 'all 0.2s' }}>
               <div style={{ fontSize: 24, marginBottom: 4 }}>🪪</div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#073B4C' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>
                 {docFile ? docFile.name : 'Subir archivo (INE, credencial de discapacidad o acta)'}
               </span>
               <p style={{ fontSize: 11, color: 'var(--fg3)', margin: '3px 0 0' }}>PDF, JPG, PNG (Máx 5MB)</p>
@@ -1277,7 +1294,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {INTEREST_SECTIONS.map((sec) => (
-                <div key={sec.title} style={{ background: '#ffffff', border: '1px solid #E5DCD2', borderRadius: 14, padding: '14px 14px' }}>
+                <div key={sec.title} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '14px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                     <div style={{ width: 7, height: 7, borderRadius: '50%', background: sec.color }} />
                     <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: sec.color, margin: 0, textTransform: 'uppercase' }}>{sec.title}</h3>
@@ -1289,9 +1306,9 @@ export default function RegistrationWizard({ onBackToRoles }) {
                         <button key={item} type="button" onClick={() => toggleInterest(item)}
                           style={{
                             padding: '6px 13px', borderRadius: 18,
-                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
-                            background: isSelected ? sec.color : '#F6EDDF',
-                            color: isSelected ? '#ffffff' : '#073B4C',
+                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid var(--border-color)',
+                            background: isSelected ? sec.color : 'var(--bg-cool)',
+                            color: isSelected ? '#ffffff' : 'var(--fg1)',
                             fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
                             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
                             transform: isSelected ? 'scale(1.03)' : 'scale(1)',
@@ -1336,8 +1353,8 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </p>
           </div>
 
-          <div style={{ background: '#FFF9F2', border: '1.5px solid #CA918E', borderRadius: 14, padding: '16px' }}>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
+          <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: '16px' }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
               {LIST_VIABILIDAD.map((v) => {
                 const isSelected = viabilidad === v.id
@@ -1345,13 +1362,13 @@ export default function RegistrationWizard({ onBackToRoles }) {
                   <button key={v.id} type="button" onClick={() => setViabilidad(v.id)}
                     style={{
                       padding: '10px 12px', borderRadius: 10,
-                      border: `2px solid ${isSelected ? '#073B4C' : '#E5DCD2'}`,
-                      background: isSelected ? '#073B4C' : '#ffffff',
+                      border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}`,
+                      background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
                       color: isSelected ? '#ffffff' : 'var(--fg1)',
                       fontWeight: isSelected ? 700 : 500, fontSize: 12.5,
                       cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
                     }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : 'var(--fg3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffffff' }} />}
                     </div>
                     <span>{v.label}</span>
@@ -1383,17 +1400,17 @@ export default function RegistrationWizard({ onBackToRoles }) {
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'thanks' && (
         <div style={{
-          background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 24,
+          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 24,
           padding: '36px 28px', textAlign: 'center',
-          boxShadow: '0 8px 30px rgba(7,59,76,0.08)', animation: 'fadeInUp 0.4s ease both',
+          boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 0.4s ease both',
         }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34,155,88,0.12)', color: '#229B58', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>🌱</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 14px', lineHeight: 1.25 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>🌱</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 14px', lineHeight: 1.25 }}>
             Muchas gracias por tu confianza y tu apertura para conocerte.
           </h2>
           <div style={{ color: 'var(--fg2)', fontSize: 14, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto 28px' }}>
             <p style={{ margin: 0 }}>Esta información nos permitirá darte opciones claras y personalizadas.</p>
-            <p style={{ margin: 0, fontWeight: 500, color: '#073B4C' }}>
+            <p style={{ margin: 0, fontWeight: 500, color: 'var(--fg1)' }}>
               Una vez que validemos tu identidad, te haremos llegar un correo para que puedas encontrar nuevas posibilidades, caminos para tu desarrollo y formar parte de esta gran comunidad.
             </p>
           </div>
@@ -1410,16 +1427,16 @@ export default function RegistrationWizard({ onBackToRoles }) {
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'summary' && (
         <div style={{
-          background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 24,
-          padding: '30px 26px', boxShadow: '0 8px 30px rgba(7,59,76,0.08)',
+          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 24,
+          padding: '30px 26px', boxShadow: 'var(--shadow-lg)',
           animation: 'fadeInUp 0.4s ease both', overflowY: 'auto',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#FF4D68', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Narrativa de Identidad</span>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '4px 0 0' }}>Bienvenido a Raíces</h2>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--color-coral)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Narrativa de Identidad</span>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '4px 0 0' }}>Bienvenido a Raíces</h2>
             </div>
-            <div style={{ background: 'linear-gradient(135deg, #073B4C 0%, #229B58 100%)', color: '#ffffff', padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#ffffff', padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
               {Icons.sparkles({ s: 13 })} Generado por IA
             </div>
           </div>
@@ -1429,30 +1446,30 @@ export default function RegistrationWizard({ onBackToRoles }) {
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-            <div style={{ background: '#F0F7F6', border: '1.5px solid #229B58', borderRadius: 14, padding: '16px' }}>
+            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--primary)', borderRadius: 14, padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <span style={{ fontSize: 16 }}>🌟</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>1. ¿Quién eres?</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>1. ¿Quién eres?</h3>
               </div>
-              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.quienEres || 'Eres una persona única con grandes fortalezas, talentos y metas por cumplir.'}
               </p>
             </div>
-            <div style={{ background: '#FFF9F2', border: '1.5px solid #F4C84A', borderRadius: 14, padding: '16px' }}>
+            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-amarillo)', borderRadius: 14, padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <span style={{ fontSize: 16 }}>🧭</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>2. Tu contexto</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>2. Tu contexto</h3>
               </div>
-              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.contexto || 'Tu entorno y experiencias han formado tu historia, y adaptamos cada herramienta para ti.'}
               </p>
             </div>
-            <div style={{ background: '#FFF5F6', border: '1.5px solid #FF4D68', borderRadius: 14, padding: '16px' }}>
+            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-coral)', borderRadius: 14, padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <span style={{ fontSize: 16 }}>🎯</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#073B4C', margin: 0 }}>3. Lo que te gusta</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>3. Lo que te gusta</h3>
               </div>
-              <p style={{ fontSize: 13, color: '#073B4C', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
                 {aiNarrative?.loQueTeGusta || 'Tus intereses guían tu camino hacia nuevas conexiones, oportunidades y desarrollo.'}
               </p>
             </div>

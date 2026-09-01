@@ -121,13 +121,15 @@ export default function ProfilePage() {
   const { data, isLoading, isError } = useProfile()
   const { data: catalogos } = useCatalogos()
   const LIFE_STAGES = catalogos?.etapasVida ?? []
+  const DISABILITY_TYPES = catalogos?.tiposDiscapacidad ?? []
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
   const deleteAvatar = useEliminarAvatar()
   const { addToast } = useUiStore()
 
-  const [editingMode, setEditingMode] = useState(null) // 'profile' | 'address' | null
+  const [editingMode, setEditingMode] = useState(null) // 'profile' | 'address' | 'profiling' | null
   const [form, setForm] = useState(null)
+  const [profilingForm, setProfilingForm] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const fileInputRef = useRef(null)
 
@@ -186,6 +188,39 @@ export default function ProfilePage() {
         ciudad: form.city,
         estado: form.state,
       })
+      addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
+      setEditingMode(null)
+    } catch {
+      addToast(PROFILE_TOAST.PROFILE_UPDATE_ERROR, 'error')
+    }
+  }
+
+  const startProfilingEdit = () => {
+    const p = data?.profiling ?? {}
+    setProfilingForm({
+      disability_types: p.disability_types ?? [],
+      life_stage: p.life_stage ?? null,
+      communication_modes: p.communication_modes ?? [],
+      mobility_needs: p.mobility_needs ?? [],
+      goals: p.goals ?? [],
+      current_concerns: p.current_concerns ?? '',
+    })
+    setEditingMode('profiling')
+  }
+
+  const toggleArrayItem = (field, value) => {
+    setProfilingForm(f => {
+      const arr = f[field]
+      return {
+        ...f,
+        [field]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value],
+      }
+    })
+  }
+
+  const handleSaveProfiling = async () => {
+    try {
+      await update.mutateAsync({ profiling: profilingForm })
       addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
       setEditingMode(null)
     } catch {
@@ -335,6 +370,9 @@ export default function ProfilePage() {
                   <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
                     <div style={s.sectionTitle}>
                       <span>Tus preferencias</span>
+                      <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={startProfilingEdit}>
+                        {Icons.edit({ s: 13 })} Editar preferencias
+                      </button>
                     </div>
                     {regInterests.length > 0 && (
                       <div style={{ marginBottom: data?.profiling ? 16 : 0 }}>
@@ -390,6 +428,87 @@ export default function ProfilePage() {
                   </div>
                 )
               })()}
+
+              {/* Tarjeta: Editar Preferencias (inline) */}
+              {editingMode === 'profiling' && profilingForm && (
+                <div className="profile-card animate-fade-in-up" style={s.card}>
+                  <div style={s.sectionTitle}>
+                    <span>Editar Preferencias</span>
+                  </div>
+
+                  {/* Tipos de discapacidad */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Tipos de discapacidad</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {DISABILITY_TYPES.map(d => {
+                        const val = d.value ?? d
+                        const label = d.label ?? d
+                        const active = profilingForm.disability_types.includes(val)
+                        return (
+                          <button key={val} onClick={() => toggleArrayItem('disability_types', val)}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Etapa de vida */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Etapa de vida</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {LIFE_STAGES.map(ls => {
+                        const active = profilingForm.life_stage === ls.id
+                        return (
+                          <button key={ls.id} onClick={() => setProfilingForm(f => ({ ...f, life_stage: active ? null : ls.id }))}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                            {ls.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Necesidades de movilidad */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Necesidades de movilidad</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {['Silla de ruedas', 'Bastón', 'Andadera', 'Prótesis', 'Ninguna', 'Otra'].map(m => {
+                        const active = profilingForm.mobility_needs.includes(m)
+                        return (
+                          <button key={m} onClick={() => toggleArrayItem('mobility_needs', m)}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                            {m}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preocupaciones actuales */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Cuéntanos sobre ti (opcional)</div>
+                    <textarea
+                      rows={3}
+                      value={profilingForm.current_concerns}
+                      onChange={e => setProfilingForm(f => ({ ...f, current_concerns: e.target.value }))}
+                      placeholder="Ej: Busco apoyo para terapia de lenguaje, me interesa empleo inclusivo..."
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 10, fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  {/* Botones */}
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                    <button onClick={() => setEditingMode(null)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={handleSaveProfiling} disabled={update.isPending} className="btn-primary" style={{ padding: '8px 20px', fontSize: 13 }}>
+                      {update.isPending ? 'Guardando...' : 'Guardar preferencias'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Tarjeta: Dirección */}
               <div className="profile-card animate-fade-in-up delay-3" style={s.card}>

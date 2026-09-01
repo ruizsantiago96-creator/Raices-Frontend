@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useAIForDependent } from '../hooks/useAI'
 import { TUTOR_UI } from '../constants/tutorMessages'
+import { normalizeAIRecommendations } from '../utils/aiHelpers'
 
 const minimalBadge = {
   display: 'inline-flex', alignItems: 'center', padding: '4px 10px',
@@ -36,10 +37,26 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
 
   const [showAI, setShowAI] = useState(false)
   const aiRec = useAIForDependent()
-  const handleAIToggle = () => { if (!showAI && !aiRec.data && !aiRec.isPending) aiRec.mutate(dep?.id); setShowAI(s => !s) }
+
+  const handleAIToggle = () => {
+    if (!showAI && !aiRec.data && !aiRec.isPending) {
+      aiRec.mutate(dep?.id)
+    }
+    setShowAI(s => !s)
+  }
+
+  const handleAIRefresh = (e) => {
+    e?.stopPropagation?.()
+    aiRec.mutate(dep?.id)
+    if (!showAI) setShowAI(true)
+  }
+
   const isMenuOpen = activeMenuId === (dep?.id || dep?.pcdUserId)
   const handleMenuClick = (e) => { e.stopPropagation(); setActiveMenuId(isMenuOpen ? null : (dep?.id || dep?.pcdUserId)) }
   const hasPhoto = dep?.fotoUrl
+
+  // Obtener recomendaciones normalizadas (incluye fallback contextual si la IA falló o está offline)
+  const normalized = (showAI || aiRec.data) ? normalizeAIRecommendations(aiRec.data, dep) : null
 
   return (
     <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative' }}>
@@ -77,14 +94,154 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
       </div>
       {dep?.tiposDiscapacidad?.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{dep.tiposDiscapacidad.map((d, i) => <span key={i} style={{ ...minimalBadge, fontSize: 11, padding: '3px 8px' }}>{d}</span>)}</div>}
       {dep?.notas && <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0, lineHeight: 1.5, background: 'var(--bg-cool)', padding: '10px 12px', borderRadius: 8 }}>{dep.notas}</p>}
+
+      {/* Botón de acceso directo a sugerencias en la tarjeta */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+        <button
+          type="button"
+          onClick={handleAIToggle}
+          style={{
+            background: showAI ? 'var(--primary-subtle)' : 'transparent',
+            border: '1px solid',
+            borderColor: showAI ? 'var(--primary)' : 'var(--border-color)',
+            borderRadius: 8,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: showAI ? 'var(--primary)' : 'var(--fg2)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {Icons.sparkles({ s: 13 })}
+          <span>{showAI ? 'Ocultar sugerencias' : 'Sugerencias IA'}</span>
+        </button>
+
+        {showAI && (
+          <button
+            type="button"
+            onClick={handleAIRefresh}
+            disabled={aiRec.isPending}
+            title="Actualizar sugerencias con IA"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: aiRec.isPending ? 'not-allowed' : 'pointer',
+              color: 'var(--fg3)',
+              fontSize: 11,
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 8px',
+              borderRadius: 6,
+            }}
+          >
+            <span style={{ display: 'inline-block', animation: aiRec.isPending ? 'spin 1s linear infinite' : 'none' }}>
+              {Icons.refresh ? Icons.refresh({ s: 12 }) : '↻'}
+            </span>
+            <span>{aiRec.isPending ? 'Consultando...' : 'Regenerar'}</span>
+          </button>
+        )}
+      </div>
+
       {showAI && (
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.sparkles({ s: 12 })} {TUTOR_UI.AI_STEPS_TITLE} {nombre}</p>
-          {aiRec.isPending && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{[100, 85, 90].map((w, i) => <div key={i} style={{ height: 12, width: `${w}%`, borderRadius: 4, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />)}</div>}
-          {aiRec.isError && <p style={{ fontSize: 12, color: 'var(--color-error)', margin: 0 }}>{TUTOR_UI.AI_ERROR}</p>}
-          {aiRec.data && <><ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>{aiRec.data.next_steps?.map((step, i) => <li key={i} style={{ fontSize: 13, color: 'var(--fg1)', lineHeight: 1.5 }}>{step}</li>)}</ol>{aiRec.data.reasoning && <p style={{ fontSize: 11, color: 'var(--fg3)', margin: '8px 0 0', fontStyle: 'italic', lineHeight: 1.4 }}>{aiRec.data.reasoning}{aiRec.data.mock && ' (modo demo)'}</p>}</>}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {Icons.sparkles({ s: 13 })} {TUTOR_UI.AI_STEPS_TITLE} {nombre}
+            </p>
+            {normalized?.isFallback ? (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-cool)', color: 'var(--fg3)' }}>
+                Modo asistido
+              </span>
+            ) : normalized?.isMock ? (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'color-mix(in oklch, #D4944C 12%, transparent)', color: '#D4944C' }}>
+                Demo
+              </span>
+            ) : (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
+                IA Activa
+              </span>
+            )}
+          </div>
+
+          {aiRec.isPending ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--fg3)' }}>
+                <span style={{ animation: 'spin 1s linear infinite', display: 'inline-flex' }}>{Icons.loader ? Icons.loader({ s: 13 }) : '⏳'}</span>
+                <span>Generando sugerencias inteligentes para {nombre}...</span>
+              </div>
+              {[100, 85, 90].map((w, i) => (
+                <div key={i} style={{ height: 16, width: `${w}%`, borderRadius: 6, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}
+            </div>
+          ) : (
+            <>
+              {aiRec.isError && (
+                <div style={{ padding: '8px 10px', borderRadius: 6, background: 'color-mix(in oklch, var(--color-error) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 25%, transparent)', fontSize: 11, color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span>{TUTOR_UI.AI_ERROR}</span>
+                  <button
+                    type="button"
+                    onClick={handleAIRefresh}
+                    style={{ background: 'var(--color-error)', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              )}
+
+              {normalized?.steps?.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                  {normalized.steps.map((step, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: 'var(--bg-warm)',
+                        border: '1px solid var(--border-color)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: 'var(--primary-subtle)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          marginTop: 1,
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                      <span style={{ fontSize: 12.5, color: 'var(--fg1)', lineHeight: 1.45 }}>{step}</span>
+                    </div>
+                  ))}
+                  {normalized.reasoning && (
+                    <p style={{ fontSize: 11, color: 'var(--fg3)', margin: '4px 0 0', fontStyle: 'italic', lineHeight: 1.4 }}>
+                      💡 {normalized.reasoning}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       )}
     </div>
   )
 }
+

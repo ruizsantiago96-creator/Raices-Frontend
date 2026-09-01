@@ -6,7 +6,7 @@
  */
 
 // ── Hooks ──────────────────────────────────────────────────────────
-export { useChat, useAINextSteps, useAIForDependent } from './hooks/useAI'
+export { useChat, useAINextSteps, useAIForDependent, useAIResumen } from './hooks/useAI'
 export {
   useDependientes,
   useAddDependiente,
@@ -24,3 +24,7 @@ export { usePermisos, useUpdatePermisos, useRegisterDependiente, DEFAULT_PERMISO
 
 // ── Components ─────────────────────────────────────────────────────
 export { default as PermissionsModal } from './components/PermissionsModal'
+
+// ── Utils ──────────────────────────────────────────────────────────
+export { normalizeAIRecommendations, generateContextualRecommendations } from './utils/aiHelpers'
+

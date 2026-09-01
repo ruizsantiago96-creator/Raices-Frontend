@@ -31,14 +31,14 @@ function mapConversation(conv) {
 /**
  * Mapea un mensaje del backend al formato que el frontend espera.
  *
- * Backend: { id, emisorId, receptorId, contenido, fechaCreacion, leido }
+ * Backend: { id, remitenteId, destinatarioId, contenido, fechaCreacion, leido }
  * Frontend: { id, from_id, to_id, content, created_at }
  */
 function mapMessage(msg) {
   return {
     ...msg,
-    from_id: msg.emisorId ?? msg.from_id ?? msg.from,
-    to_id: msg.receptorId ?? msg.to_id ?? msg.to,
+    from_id: msg.remitenteId ?? msg.emisorId ?? msg.from_id ?? msg.from,
+    to_id: msg.destinatarioId ?? msg.receptorId ?? msg.to_id ?? msg.to,
     content: msg.contenido ?? msg.content ?? msg.text,
     created_at: msg.fechaCreacion ?? msg.created_at ?? msg.timestamp,
     read: msg.leido ?? msg.read ?? false,

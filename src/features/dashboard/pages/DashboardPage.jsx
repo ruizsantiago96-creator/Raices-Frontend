@@ -9,6 +9,7 @@ import BackendFallback from '@shared/components/BackendFallback'
 import { DISCOVERY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
+import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
 
 /* ═══════════════════════════════════════════════════════════
    Helper: timeAgo
@@ -488,6 +489,14 @@ export default function DashboardPage() {
                 {tab.label}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ── AI Cards ── */}
+        {!isLoading && (
+          <div style={{ marginBottom: 4 }}>
+            <NextStepsCard />
+            <ProfileSummaryCard />
           </div>
         )}
 

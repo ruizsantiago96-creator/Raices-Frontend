@@ -83,7 +83,7 @@ function SkeletonCard() {
   )
 }
 
-function CommentSection({ postId }) {
+function CommentSection({ postId, currentUser }) {
   const { data: comments = [], isLoading } = useComments(postId)
   const createComment = useCreateComment(postId)
   const [text, setText] = useState('')
@@ -91,7 +91,10 @@ function CommentSection({ postId }) {
   const submit = (e) => {
     e.preventDefault()
     if (!text.trim() || createComment.isPending) return
-    createComment.mutate({ content: text }, { onSuccess: () => setText('') })
+    createComment.mutate(
+      { content: text, authorName: currentUser?.name ?? currentUser?.full_name ?? 'Tú', authorId: currentUser?.id },
+      { onSuccess: () => setText('') }
+    )
   }
 
   return (
@@ -139,14 +142,24 @@ function CommentSection({ postId }) {
   )
 }
 
-function PostCard({ post, onLike, currentUserId }) {
+function PostCard({ post, onLike, currentUserId, currentUserName }) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(post.content)
+  const [liked, setLiked] = useState(!!post.liked_by_me)
+  const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const updatePost = useUpdatePost(post.id)
   const deletePost = useDeletePost(post.id)
   const { addToast } = useUiStore()
   const isAuthor = post.author_id === currentUserId
+
+  const handleLike = () => {
+    const newLiked = !liked
+    setLiked(newLiked)
+    setLikeCount(prev => prev + (newLiked ? 1 : -1))
+    // Llamar al backend en background, sin bloquear la UI
+    onLike()
+  }
 
   const handleSaveEdit = () => {
     if (!editContent.trim()) return
@@ -207,9 +220,9 @@ function PostCard({ post, onLike, currentUserId }) {
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
-        <button onClick={onLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: post.liked_by_me ? '#e04e6e' : 'var(--fg3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}>
-          {Icons.heart({ s: 16, filled: !!post.liked_by_me })}
-          {post.like_count ?? 0}
+        <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: liked ? '#e04e6e' : 'var(--fg3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontFamily: 'var(--font-body)', transition: 'all 0.15s', transform: liked ? 'scale(1.1)' : 'scale(1)' }}>
+          {Icons.heart({ s: 16, filled: liked })}
+          {likeCount}
         </button>
         <button onClick={() => setShowComments((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: showComments ? 'var(--primary)' : 'var(--fg3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}>
           {Icons.message({ s: 16 })}
@@ -217,7 +230,7 @@ function PostCard({ post, onLike, currentUserId }) {
         </button>
       </div>
 
-      {showComments && <CommentSection postId={post.id} />}
+      {showComments && <CommentSection postId={post.id} currentUser={{ id: currentUserId, name: currentUserName }} />}
     </div>
   )
 }
@@ -468,7 +481,7 @@ export default function SocialPage() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                 {conectemosPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} />
+                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} currentUserName={user?.name} />
                 ))}
               </div>
             )}

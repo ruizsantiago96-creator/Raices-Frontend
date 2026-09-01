@@ -3,6 +3,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
 import { useAllJobApplicants, useMyJobPostings } from '../hooks/useInstitutionJobs'
 import { useMiInstitucion } from '../hooks/useInstitutions'
+import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import PostulacionesTab from '../components/PostulacionesTab'
 import CandidatosTab from '../components/CandidatosTab'
 import { PORTAL_UI } from '../constants/institutionPortalMessages'
@@ -18,6 +19,7 @@ export default function InstitutionPortalPage() {
   const onTab = useUiStore(s => s.setInstPortalTab)
 
   const { data: institution, isLoading: loadingInst } = useMiInstitucion()
+  const { data: identidadStatus } = useEstadoValidacion()
 
   const hasInstitution = !loadingInst && !!institution
   const isActive = institution?.is_active && institution?.is_verified
@@ -89,6 +91,62 @@ export default function InstitutionPortalPage() {
               }}>
                 {Icons.edit({ s: 14 })} Editar
               </button>
+            </div>
+          )}
+
+          {/* Verification checklist — only when not yet verified */}
+          {!institution.is_verified && (
+            <div className="animate-fade-in-up" style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+              borderRadius: 14, padding: 24, marginBottom: 24,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {Icons.shieldCheck({ s: 18 })} Pasos para verificar tu institución
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 20px' }}>
+                Completa todos los pasos para que tu institución aparezca como verificada y puedas publicar vacantes.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Step 1: Identity documents */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: identidadStatus?.estado === 'aprobado' ? 'rgba(16,185,129,0.06)' : 'var(--bg-warm)', borderRadius: 10, border: '1px solid', borderColor: identidadStatus?.estado === 'aprobado' ? 'rgba(16,185,129,0.2)' : 'var(--border-color)' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: identidadStatus?.estado === 'aprobado' ? '#10B981' : 'var(--border-color)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                    {identidadStatus?.estado === 'aprobado' ? Icons.check({ s: 14 }) : '1'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>Subir CURP e Identificación oficial</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                      {identidadStatus?.estado === 'aprobado' ? 'Documentos aprobados ✓' : identidadStatus?.estado === 'pendiente' ? 'Documentos en revisión...' : 'Desde Configuración > Verificación de identidad'}
+                    </div>
+                  </div>
+                  {identidadStatus?.estado !== 'aprobado' && identidadStatus?.estado !== 'pendiente' && (
+                    <button onClick={() => navigate('/configuracion?tab=verificacion')} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      Ir a subir
+                    </button>
+                  )}
+                </div>
+
+                {/* Step 2: CSF */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border-color)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>Subir Constancia de Situación Fiscal (CSF)</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>Desde Editar institución > Sección CSF</div>
+                  </div>
+                  <button onClick={() => navigate('/institution-portal/editar')} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    Ir a editar
+                  </button>
+                </div>
+
+                {/* Step 3: Admin review */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border-color)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>Esperar revisión del administrador</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)' }}>El equipo revisará tu documentación y aprobará tu institución</div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

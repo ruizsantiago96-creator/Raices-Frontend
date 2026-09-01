@@ -53,7 +53,7 @@ export function useAINextSteps() {
   const cached = qc.getQueryData(['ai', 'next-steps'])
 
   const mutation = useMutation({
-    mutationFn: () => api.post('/ia/recomendaciones').then(r => r.data),
+    mutationFn: () => api.post('/ia/recomendaciones', {}).then(r => r.data),
     onSuccess: (data) => {
       qc.setQueryData(['ai', 'next-steps'], data)
     },
@@ -111,4 +111,67 @@ export function useAIForDependent() {
       }
     },
   })
+}
+
+/**
+ * Resumen narrativo IA del perfil del usuario.
+ *
+ * POST /api/ia/resumen
+ *
+ * Response shape:
+ *   { resumenUnParrafo: string, resumenTresParrafos: { quienEres, contexto, intereses }, simulado: boolean }
+ *
+ * Usage:
+ *   const resumen = useAIResumen()
+ *   // User clicks button → call resumen.fetch()
+ *   const data = resumen.data
+ *   // data.resumenUnParrafo = "María es una mujer de 28 años..."
+ *   // data.resumenTresParrafos.quienEres = "..."
+ *   // data.resumenTresParrafos.contexto = "..."
+ *   // data.resumenTresParrafos.intereses = "..."
+ */
+const RESUMEN_STORAGE_KEY = 'ai_resumen_last_fetch_ts'
+const RESUMEN_DEBOUNCE_MS = 5 * 60 * 1000 // 5 min entre requests
+
+export function useAIResumen() {
+  const { token } = useAuthStore()
+  const qc = useQueryClient()
+  const cached = qc.getQueryData(['ai', 'resumen'])
+
+  const mutation = useMutation({
+    mutationFn: () => api.post('/ia/resumen', {}).then(r => r.data),
+    onSuccess: (data) => {
+      qc.setQueryData(['ai', 'resumen'], data)
+    },
+    onError: (error) => {
+      if (error.response?.status === 429) {
+        localStorage.removeItem(RESUMEN_STORAGE_KEY)
+        console.warn('[AI Resumen] Rate limit alcanzado (429).')
+      }
+    },
+  })
+
+  const canFetch = useCallback(() => {
+    if (!token) return false
+    const lastTs = Number(localStorage.getItem(RESUMEN_STORAGE_KEY) ?? 0)
+    return Date.now() - lastTs >= RESUMEN_DEBOUNCE_MS
+  }, [token])
+
+  const fetch = useCallback(() => {
+    if (!token) return
+    const lastTs = Number(localStorage.getItem(RESUMEN_STORAGE_KEY) ?? 0)
+    if (Date.now() - lastTs < RESUMEN_DEBOUNCE_MS) return
+    localStorage.setItem(RESUMEN_STORAGE_KEY, String(Date.now()))
+    mutation.mutate()
+  }, [token, mutation])
+
+  return {
+    data: cached ?? mutation.data ?? null,
+    isLoading: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    isRateLimited: mutation.error?.response?.status === 429,
+    canFetch,
+    fetch,
+  }
 }
