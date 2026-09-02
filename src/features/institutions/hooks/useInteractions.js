@@ -3,19 +3,24 @@ import api from '@shared/lib/api'
 
 /**
  * Hook para registrar una interacción del usuario con una institución.
- * POST /api/usuarios/interacciones
+ * POST /api/recommendations/interaccion
  *
  * @param {'guardar' | 'ver_detalle' | 'click_card'} tipo
  * @param {string} institucionId
  * @param {string} [categoria]
+ *
+ * Pesos del backend:
+ * - guardar: 10 puntos
+ * - ver_detalle: 5 puntos
+ * - click_card: 2 puntos
  */
 export function registrarInteraccion(institucionId, tipo, categoria) {
-  return api.post('/usuarios/interacciones', { institucionId, tipo, categoria })
+  return api.post('/recommendations/interaccion', { institucionId, tipo, categoria })
 }
 
 /**
  * Hook mutación para registrar interacciones.
- * Invalida automáticamente la query de pesos para mantener la UI sincronizada.
+ * Invalida automáticamente las queries de recomendaciones para mantener la UI sincronizada.
  */
 export function useRegistrarInteraccion() {
   const qc = useQueryClient()
@@ -23,21 +28,9 @@ export function useRegistrarInteraccion() {
     mutationFn: ({ institucionId, tipo, categoria }) =>
       registrarInteraccion(institucionId, tipo, categoria).then(r => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['interacciones-pesos'] })
+      // Invalidar recomendaciones para que se recalculen con la nueva interacción
+      qc.invalidateQueries({ queryKey: ['recomendaciones'] })
+      qc.invalidateQueries({ queryKey: ['recomendaciones-especialistas'] })
     },
-  })
-}
-
-/**
- * Hook para obtener el acumulado de puntos de interacciones (últimos 30 días).
- * GET /api/usuarios/interacciones/pesos
- *
- * Pesos: guardar=10, ver_detalle=5, click_card=2
- */
-export function useInteraccionesPesos() {
-  return useQuery({
-    queryKey: ['interacciones-pesos'],
-    queryFn: () => api.get('/usuarios/interacciones/pesos').then(r => r.data),
-    staleTime: 1000 * 60 * 5, // 5 minutos — no necesita refetch frecuente
   })
 }

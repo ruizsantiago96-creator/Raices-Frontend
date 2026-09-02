@@ -114,11 +114,13 @@ export function useRegister() {
   const { addToast } = useUiStore()
   return useMutation({
     mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }) => {
+      // Mapear roles del frontend a los valores que acepta el backend
+      const ROLE_MAP = { tutor: 'padre_tutor', empresa: 'empresa', institution: 'institucion' }
       const body = {
         ...rest,
         // El backend usa "nombreCompleto" para validación y "nombre" internamente para instituciones
         ...(role === 'institution' ? { nombre: full_name, nombreCompleto: full_name } : { nombreCompleto: full_name }),
-        rol: role,
+        rol: ROLE_MAP[role] || role,
         ciudad: city,
         estado: state,
       }
@@ -128,10 +130,10 @@ export function useRegister() {
       const rememberMe = variables?._rememberMe ?? true
       const role = variables?.role
 
-      // Para instituciones, el backend solo confirma el registro (sin token)
-      if (role === 'institution' && !raw.tokenAcceso) {
-        console.log('[Auth] Institution registered — no token returned. Redirecting to login.')
-        addToast(raw.mensaje ?? 'Institución registrada correctamente. Inicia sesión para continuar.', 'success')
+      // Para instituciones/empresa, el backend puede no retornar token
+      if ((role === 'institution' || role === 'empresa') && !raw.tokenAcceso) {
+        console.log('[Auth] ' + role + ' registered — no token returned. Redirecting to login.')
+        addToast(raw.mensaje ?? 'Registro exitoso. Inicia sesión para continuar.', 'success')
         nav('/auth')
         return
       }

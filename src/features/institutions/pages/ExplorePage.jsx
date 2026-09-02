@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useInstitutions, useDiscovery } from '../hooks/useInstitutions'
+import { useInstitutions } from '../hooks/useInstitutions'
+import { useRecomendaciones } from '../hooks/useRecommendations'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useRegistrarInteraccion } from '../hooks/useInteractions'
-import { useRecomendaciones } from '../hooks/useRecommendations'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
@@ -113,7 +113,8 @@ export default function ExplorePage() {
   const { data: favIds = new Set() } = useFavoriteIds()
   const toggle = useToggleFavorite()
   const trackInteraccion = useRegistrarInteraccion()
-  const { data: recomendaciones = [], isLoading: loadingRecomendaciones } = useRecomendaciones()
+  const { data: recomendacionesData, isLoading: loadingRecomendaciones } = useRecomendaciones()
+  const recomendaciones = recomendacionesData?.instituciones ?? []
 
   const favSet = favIds instanceof Set ? favIds : new Set(Array.isArray(favIds) ? favIds : [])
 
@@ -323,7 +324,14 @@ function InstitutionCard({ inst, isFav, onToggleFav, onClick }) {
       <div style={{ fontSize: 14, color: 'var(--fg3)', lineHeight: 1.5, flex: 1 }}>{inst.description?.slice(0, 80)}{inst.description?.length > 80 ? '...' : ''}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--fg3)' }}>{Icons.mapPin({ s: 14 })} {inst.city}{inst.state ? `, ${inst.state}` : ''}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
-        <span style={{ fontSize: 13, color: '#D4944C', display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.star({ s: 14, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}<span style={{ color: 'var(--fg3)' }}>({inst.rating_count ?? 0})</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {inst.final_score != null && (
+            <span style={{ fontSize: 12, color: '#229B58', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              {Icons.sparkles({ s: 12 })} {Math.round(inst.final_score * 100)}%
+            </span>
+          )}
+          <span style={{ fontSize: 13, color: '#D4944C', display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.star({ s: 14, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}<span style={{ color: 'var(--fg3)' }}>({inst.rating_count ?? 0})</span></span>
+        </div>
         {isFav !== undefined && (<Link onClick={onClick} to={`/institution/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>Ver más {Icons.arrowRight({ s: 14 })}</Link>)}
       </div>
     </div>

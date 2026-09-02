@@ -8,7 +8,7 @@ const DEBOUNCE_MS = 5 * 60 * 1000 // 5 min entre requests (respeta rate limit de
 
 /**
  * Hook para el chat de IA.
- * POST /api/ia/conversacion
+ * POST /api/ai/chat
  *
  * @returns {Object} Mutation result con { mutate, mutateAsync, data, isPending, isError, error }
  *
@@ -20,7 +20,7 @@ const DEBOUNCE_MS = 5 * 60 * 1000 // 5 min entre requests (respeta rate limit de
  */
 export function useChat() {
   return useMutation({
-    mutationFn: (data) => api.post('/ia/conversacion', data).then(r => r.data),
+    mutationFn: (data) => api.post('/ai/chat', data).then(r => r.data),
     onError: (error) => {
       // Manejo específico para rate limit 429
       if (error.response?.status === 429) {
@@ -33,7 +33,7 @@ export function useChat() {
 /**
  * AI Recommendations — MANUAL trigger only (prevents 429 spam).
  *
- * POST /api/ia/recomendaciones
+ * POST /api/ai/recommend
  *
  * Response shape:
  *   { proximosPasos: string[], razonamiento: string, sugerenciasInstitucion?: [], simulado: boolean }
@@ -53,7 +53,7 @@ export function useAINextSteps() {
   const cached = qc.getQueryData(['ai', 'next-steps'])
 
   const mutation = useMutation({
-    mutationFn: () => api.post('/ia/recomendaciones', {}).then(r => r.data),
+    mutationFn: () => api.post('/ai/recommend', {}).then(r => r.data),
     onSuccess: (data) => {
       qc.setQueryData(['ai', 'next-steps'], data)
     },
@@ -95,7 +95,7 @@ export function useAINextSteps() {
 /**
  * Recomendaciones IA personalizadas para un familiar específico (on-demand).
  *
- * POST /api/ia/recomendaciones
+ * POST /api/ai/recommend/:dependienteId
  * Body: { dependienteId: string }
  *
  * @param {string} dependentId - ID del dependiente
@@ -104,7 +104,7 @@ export function useAINextSteps() {
 export function useAIForDependent() {
   return useMutation({
     mutationFn: (dependentId) =>
-      api.post('/ia/recomendaciones', { dependienteId: dependentId }).then(r => r.data),
+      api.post(`/ai/recommend/${dependentId}`, {}).then(r => r.data),
     onError: (error) => {
       if (error.response?.status === 429) {
         console.warn('[AI Dependent] Rate limit alcanzado (429).')
@@ -116,19 +116,15 @@ export function useAIForDependent() {
 /**
  * Resumen narrativo IA del perfil del usuario.
  *
- * POST /api/ia/resumen
+ * POST /api/ai/recommend (mismo endpoint, diferente interpretación)
  *
  * Response shape:
- *   { resumenUnParrafo: string, resumenTresParrafos: { quienEres, contexto, intereses }, simulado: boolean }
+ *   { proximosPasos: string[], razonamiento: string, simulado: boolean }
  *
  * Usage:
  *   const resumen = useAIResumen()
  *   // User clicks button → call resumen.fetch()
  *   const data = resumen.data
- *   // data.resumenUnParrafo = "María es una mujer de 28 años..."
- *   // data.resumenTresParrafos.quienEres = "..."
- *   // data.resumenTresParrafos.contexto = "..."
- *   // data.resumenTresParrafos.intereses = "..."
  */
 const RESUMEN_STORAGE_KEY = 'ai_resumen_last_fetch_ts'
 const RESUMEN_DEBOUNCE_MS = 5 * 60 * 1000 // 5 min entre requests
@@ -139,7 +135,7 @@ export function useAIResumen() {
   const cached = qc.getQueryData(['ai', 'resumen'])
 
   const mutation = useMutation({
-    mutationFn: () => api.post('/ia/resumen', {}).then(r => r.data),
+    mutationFn: () => api.post('/ai/recommend', {}).then(r => r.data),
     onSuccess: (data) => {
       qc.setQueryData(['ai', 'resumen'], data)
     },

@@ -8,13 +8,14 @@ import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import PasswordRequirements from './PasswordRequirements'
+import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 
 
-// ── LISTAS Y CATÁLOGOS ───────────────────────────────────────────
-const LIST_ACOMPANAMIENTO = [
-  { id: 'cuenta', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos y comunidades' },
-  { id: 'paso_a_paso', label: 'Me gustaría recibir recomendaciones paso a paso.', desc: 'Te guiaremos con rutas sugeridas a tu propio ritmo' },
-  { id: 'apoyo_necesario', label: 'Prefiero contar con apoyo cuando lo necesite.', desc: 'Acceso directo a acompañamiento y orientación' },
+// ── LISTAS Y CATÁLOGOS (adaptados para tutor) ────────────────────
+const DESTINATARIOS = [
+  { id: 'hijo', label: 'Mi hijo/a', desc: 'Soy padre o madre de una persona con discapacidad' },
+  { id: 'familiar', label: 'Un familiar', desc: 'Cuido a un familiar con discapacidad' },
+  { id: 'cuidado', label: 'Alguien a mi cuidado', desc: 'Tengo a mi cargo a una persona con discapacidad' },
 ]
 
 const CONDICIONES_PCD = [
@@ -42,57 +43,11 @@ const LIST_TEMPORALIDAD = [
   { id: 'en_evaluacion', label: 'Actualmente está en proceso de evaluación' },
 ]
 
-const ESCALAS_OPCIONES = {
-  autonomia: [
-    { value: 4, label: 'Tomo decisiones con autonomía' },
-    { value: 3, label: 'Participo con apoyo ocasional' },
-    { value: 2, label: 'Requiero guía frecuente' },
-    { value: 1, label: 'Requiero representación o apoyo constante' },
-  ],
-  independencia: [
-    { value: 4, label: 'Me desenvuelvo con autonomía' },
-    { value: 3, label: 'Requiero apoyo en algunas actividades' },
-    { value: 2, label: 'Requiero apoyo frecuente' },
-    { value: 1, label: 'Requiero acompañamiento constante' },
-  ],
-  comunicacion: [
-    { value: 5, label: 'Verbal fluida' },
-    { value: 4, label: 'Verbal limitada' },
-    { value: 3, label: 'No verbal con comunicación funcional (señas, dispositivos, apoyos visuales)' },
-    { value: 2, label: 'No verbal con apoyo constante' },
-    { value: 1, label: 'En desarrollo / exploración' },
-  ],
-  comprension: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  energia: [
-    { value: 4, label: 'Alta → Participo activamente en la mayoría de actividades' },
-    { value: 3, label: 'Media → Participo bien con pausas o equilibrio' },
-    { value: 2, label: 'Variable → Depende del día, entorno o condición' },
-    { value: 1, label: 'Baja → Requiero actividades de baja demanda o periodos cortos' },
-  ],
-  movilidad: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  social: [
-    { value: 4, label: 'Participo con facilidad' },
-    { value: 3, label: 'Participo con algunas barreras' },
-    { value: 2, label: 'Requiero apoyo frecuente' },
-    { value: 1, label: 'Requiero acompañamiento constante' },
-  ],
-  emocional: [
-    { value: 4, label: 'Poco o nada' },
-    { value: 3, label: 'Algunas veces' },
-    { value: 2, label: 'Frecuentemente' },
-    { value: 1, label: 'Requiero apoyo constante' },
-  ],
-}
+const LIST_ACOMPANAMIENTO = [
+  { id: 'cuenta', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos y comunidades' },
+  { id: 'paso_a_paso', label: 'Me gustaría recibir recomendaciones paso a paso.', desc: 'Te guiaremos con rutas sugeridas a tu propio ritmo' },
+  { id: 'apoyo_necesario', label: 'Prefiero contar con apoyo cuando lo necesite.', desc: 'Acceso directo a acompañamiento y orientación' },
+]
 
 const LIST_FORMATOS = [
   { id: 'texto', label: 'Leyendo textos', icon: '📖' },
@@ -101,7 +56,6 @@ const LIST_FORMATOS = [
   { id: 'video', label: 'Con videos', icon: '🎬' },
   { id: 'persona', label: 'Con apoyo de otra persona', icon: '🤝' },
 ]
-
 
 const INTEREST_SECTIONS = [
   {
@@ -144,6 +98,58 @@ const LIST_VIABILIDAD = [
   { id: 'moderada', label: 'Inversión moderada' },
   { id: 'sin_restricciones', label: 'Sin restricciones definidas' },
 ]
+
+const ESCALAS_OPCIONES = {
+  autonomia: [
+    { value: 4, label: 'Toma decisiones con autonomía' },
+    { value: 3, label: 'Participa con apoyo ocasional' },
+    { value: 2, label: 'Requiere guía frecuente' },
+    { value: 1, label: 'Requiere representación o apoyo constante' },
+  ],
+  independencia: [
+    { value: 4, label: 'Se desenvuelve con autonomía' },
+    { value: 3, label: 'Requiere apoyo en algunas actividades' },
+    { value: 2, label: 'Requiere apoyo frecuente' },
+    { value: 1, label: 'Requiere acompañamiento constante' },
+  ],
+  comunicacion: [
+    { value: 5, label: 'Verbal fluida' },
+    { value: 4, label: 'Verbal limitada' },
+    { value: 3, label: 'No verbal con comunicación funcional (señas, dispositivos, apoyos visuales)' },
+    { value: 2, label: 'No verbal con apoyo constante' },
+    { value: 1, label: 'En desarrollo / exploración' },
+  ],
+  comprension: [
+    { value: 4, label: 'Independiente' },
+    { value: 3, label: 'Con apoyo ocasional' },
+    { value: 2, label: 'Con apoyo frecuente' },
+    { value: 1, label: 'Con apoyo total' },
+  ],
+  energia: [
+    { value: 4, label: 'Alta → Participa activamente en la mayoría de actividades' },
+    { value: 3, label: 'Media → Participa bien con pausas o equilibrio' },
+    { value: 2, label: 'Variable → Depende del día, entorno o condición' },
+    { value: 1, label: 'Baja → Requiere actividades de baja demanda o periodos cortos' },
+  ],
+  movilidad: [
+    { value: 4, label: 'Independiente' },
+    { value: 3, label: 'Con apoyo ocasional' },
+    { value: 2, label: 'Con apoyo frecuente' },
+    { value: 1, label: 'Con apoyo total' },
+  ],
+  social: [
+    { value: 4, label: 'Participa con facilidad' },
+    { value: 3, label: 'Participa con algunas barreras' },
+    { value: 2, label: 'Requiere apoyo frecuente' },
+    { value: 1, label: 'Requiere acompañamiento constante' },
+  ],
+  emocional: [
+    { value: 4, label: 'Poco o nada' },
+    { value: 3, label: 'Algunas veces' },
+    { value: 2, label: 'Frecuentemente' },
+    { value: 1, label: 'Requiere apoyo constante' },
+  ],
+}
 
 // ── CURP VALIDATION ──────────────────────────────────────────────
 const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i
@@ -234,67 +240,36 @@ function CurpIndicator(props) {
   return <p style={{ fontSize: 12, margin: '4px 0 0', color: col }}>{ico} {txt}</p>
 }
 
-// ── SCALE CARD (compact helper) ──────────────────────────────────
+// ── SCALE CARD ───────────────────────────────────────────────────
 function ScaleCard({ title, desc, options, value, onChange }) {
   return (
-    <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
+      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>{title}</h3>
       <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {options.map(opt => {
-          const isSelected = value === opt.value
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange(opt.value)}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 8,
-                border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-body)',
-                color: isSelected ? '#073B4C' : 'var(--fg1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>{opt.label}</span>
-              {isSelected && (
-                <span style={{ color: '#229B58', fontWeight: 800, fontSize: 13, flexShrink: 0, marginLeft: 6 }}>
-                  ✓
-                </span>
-              )}
-            </button>
-          )
-        })}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {options.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            style={{
+              padding: '7px 11px', borderRadius: 8,
+              border: `1.5px solid ${value === opt.value ? 'var(--primary)' : 'var(--border-color)'}`,
+              background: value === opt.value ? 'var(--primary-subtle)' : 'var(--bg-cool)',
+              fontWeight: value === opt.value ? 700 : 500,
+              fontSize: 12, cursor: 'pointer', textAlign: 'left',
+              fontFamily: 'var(--font-body)', color: value === opt.value ? 'var(--primary)' : 'var(--fg1)',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
     </div>
   )
 }
 
-// ── STEP ORDER ───────────────────────────────────────────────────
-const STEP_ORDER = [
-  'identity',     // 1: Nombres, apellidos, fecha nacimiento
-  'security',     // 2: Email, contraseña
-  'accommodation',// 3: Preferencia de acompañamiento
-  'condition',    // 4: Condición PCD
-  'origin',       // 5: Neurodivergencia, diagnóstico, temporalidad
-  'scales1',      // 6: Escalas A-D
-  'scales2',      // 7: Escalas E-H
-  'formats',      // 8: Formatos de información
-  'interests',    // 9: Intereses
-  'viability',    // 10: Viabilidad económica
-]
-const TOTAL_STEPS = STEP_ORDER.length
-
-// ── NAV BUTTONS (outside render to avoid re-creation) ───────────
+// ── NAV BUTTONS ──────────────────────────────────────────────────
 function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
   return (
     <div style={{ display: 'flex', gap: 12, marginTop: 14, flexShrink: 0 }}>
@@ -308,8 +283,25 @@ function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
   )
 }
 
+// ── STEP ORDER ───────────────────────────────────────────────────
+const STEP_ORDER = [
+  'identity',        // 1: Nombres, apellidos, fecha nacimiento
+  'contact',         // 2: CURP (obligatorio), domicilio
+  'security',        // 3: Email, contraseña
+  'relationship',    // 4: ¿Para quién es el perfil?
+  'accommodation',   // 5: Preferencia de acompañamiento
+  'condition',       // 6: Condición PCD de la persona a cargo
+  'origin',          // 7: Neurodivergencia, diagnóstico, temporalidad
+  'scales1',         // 8: Escalas A-D
+  'scales2',         // 9: Escalas E-H
+  'formats',         // 10: Formatos de información
+  'interests',       // 11: Intereses
+  'viability',       // 12: Viabilidad económica
+]
+const TOTAL_STEPS = STEP_ORDER.length
+
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function RegistrationWizard({ onBackToRoles }) {
+export default function TutorRegistrationWizard({ onBackToRoles }) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
@@ -321,36 +313,41 @@ export default function RegistrationWizard({ onBackToRoles }) {
   const [docFile, setDocFile] = useState(null)
   const [showPass, setShowPass] = useState(false)
 
-  // Step 1–3: Datos personales, identificación, cuenta
+  // Step 1–3: Datos personales del tutor
   const [generalForm, setGeneralForm] = useState({
     nombres: '', apellidoPaterno: '', apellidoMaterno: '',
     birth_date: '', domicilio: '', email: '', password: '',
-    curp: '', acompanamiento: '',
+    curp: '', acompanamiento: 'paso_a_paso',
+    estado: '', ciudad: '',
   })
 
-  // Step 5–6: Condición y diagnóstico
+  // Step 4: ¿Para quién es el perfil?
+  const [destinatario, setDestinatario] = useState('hijo')
+  const [nombreDependiente, setNombreDependiente] = useState('')
+
+  // Step 5–6: Condición y diagnóstico de la persona a cargo
   const [conditionData, setConditionData] = useState({
     conditions: [], neurodivergencias: [], neuroOtro: '',
-    tieneDiagnostico: '', diagnosticoEspecifico: '',
-    redFlagDiagnostico: false, temporalidad: '',
+    tieneDiagnostico: 'si', diagnosticoEspecifico: '',
+    redFlagDiagnostico: false, temporalidad: 'nacimiento',
   })
 
-  // Step 7–8: Escalas de vida
+  // Step 7–8: Escalas de vida de la persona a cargo
   const [scales, setScales] = useState({
-    autonomia: null, independencia: null, comunicacion: null, comprension: null,
-    energia: null, movilidad: null, social: null, emocional: null,
+    autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
+    energia: 3, movilidad: 3, social: 3, emocional: 3,
   })
 
   // Step 9: Formatos
-  const [formatos, setFormatos] = useState([])
+  const [formatos, setFormatos] = useState(['texto', 'imagenes'])
 
   // Step 10–11: Intereses y viabilidad
   const [selectedInterests, setSelectedInterests] = useState([])
   const [otrosIntereses, setOtrosIntereses] = useState('')
-  const [viabilidad, setViabilidad] = useState('')
+  const [viabilidad, setViabilidad] = useState('sin_restricciones')
 
-  // AI summary
-  const [aiNarrative, setAiNarrative] = useState(null)
+  // Tone label derived from destinatario
+  const toneLabel = destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado'
 
   // ── Helpers ─────────────────────────────────────────────────────
   const scrollTop = () => {
@@ -393,7 +390,6 @@ export default function RegistrationWizard({ onBackToRoles }) {
   }
 
   // ── Navigation handlers ─────────────────────────────────────────
-  // Step 1 → 2: Identity → Security
   const handleIdentitySubmit = (e) => {
     e.preventDefault()
     setError('')
@@ -405,11 +401,31 @@ export default function RegistrationWizard({ onBackToRoles }) {
       setError('Por favor, ingresa tu fecha de nacimiento.')
       return
     }
+    setWizardStep('contact')
+    scrollTop()
+  }
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (!generalForm.curp) {
+      setError('La CURP es obligatoria para el registro de tutor.')
+      return
+    }
+    if (!CURP_REGEX.test(generalForm.curp)) {
+      setError('La CURP no tiene un formato válido.')
+      return
+    }
+    const r = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date)
+    if (!r.valid) { setError(r.errors[0]); return }
+    if (!generalForm.estado || !generalForm.ciudad) {
+      setError('Por favor, selecciona tu estado y municipio.')
+      return
+    }
     setWizardStep('security')
     scrollTop()
   }
 
-  // Step 3 → 4: Security → Accommodation
   const handleSecuritySubmit = (e) => {
     e.preventDefault()
     setError('')
@@ -426,35 +442,35 @@ export default function RegistrationWizard({ onBackToRoles }) {
       setError(`Tu contraseña debe cumplir con todos los requisitos. Te hace falta: ${missingPassCriteria.map(m => m.missingText).join(', ')}.`)
       return
     }
+    setWizardStep('relationship')
+    scrollTop()
+  }
+
+  const handleRelationshipSubmit = (e) => {
+    e.preventDefault()
+    setError('')
     setWizardStep('accommodation')
     scrollTop()
   }
 
-  // Step 3 → 4: Accommodation → Condition
   const handleAccommodationSubmit = (e) => {
     e.preventDefault()
     setError('')
-    if (!generalForm.acompanamiento) {
-      setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.')
-      return
-    }
     setWizardStep('condition')
     scrollTop()
   }
 
-  // Step 5 → 6: Condition → Origin
   const handleConditionSubmit = (e) => {
     e.preventDefault()
     setError('')
     if (conditionData.conditions.length === 0) {
-      setError('Selecciona al menos una opción que describa tu condición.')
+      setError('Selecciona al menos una opción que describa la condición.')
       return
     }
     setWizardStep('origin')
     scrollTop()
   }
 
-  // Step 5 → 6: Origin → Scales1
   const handleOriginSubmit = (e) => {
     e.preventDefault()
     setError('')
@@ -462,43 +478,13 @@ export default function RegistrationWizard({ onBackToRoles }) {
       setError('Por favor, selecciona al menos un tipo de neurodivergencia.')
       return
     }
-    if (!conditionData.tieneDiagnostico) {
-      setError('Por favor, indica si cuentas con un diagnóstico específico.')
-      return
-    }
-    if (!conditionData.temporalidad) {
-      setError('Por favor, indica en qué momento comenzó esta condición.')
-      return
-    }
     setWizardStep('scales1')
     scrollTop()
   }
 
-  // Step 7 → 8: Scales1 → Scales2
-  const handleScales1Submit = (e) => {
-    e.preventDefault()
-    setError('')
-    if (scales.autonomia === null || scales.independencia === null || scales.comunicacion === null || scales.comprension === null) {
-      setError('Por favor, selecciona una opción en cada una de las 4 áreas.')
-      return
-    }
-    setWizardStep('scales2')
-    scrollTop()
-  }
+  const handleScales1Submit = (e) => { e.preventDefault(); setWizardStep('scales2'); scrollTop() }
+  const handleScales2Submit = (e) => { e.preventDefault(); setWizardStep('formats'); scrollTop() }
 
-  // Step 8 → 9: Scales2 → Formats
-  const handleScales2Submit = (e) => {
-    e.preventDefault()
-    setError('')
-    if (scales.energia === null || scales.movilidad === null || scales.social === null || scales.emocional === null) {
-      setError('Por favor, selecciona una opción en cada una de las 4 áreas.')
-      return
-    }
-    setWizardStep('formats')
-    scrollTop()
-  }
-
-  // Step 9 → 10: Formats → Interests
   const handleFormatsSubmit = (e) => {
     e.preventDefault()
     if (formatos.length === 0) {
@@ -509,31 +495,29 @@ export default function RegistrationWizard({ onBackToRoles }) {
     scrollTop()
   }
 
-
-
   // ── Final submit ────────────────────────────────────────────────
   const generateNarrative = () => {
-    const name = generalForm.nombres?.split(' ')[0] || 'Tú'
+    const name = nombreDependiente || (generalForm.nombres?.split(' ')[0] || 'tu ser querido')
     const condList = conditionData.conditions.filter(c => c !== 'Prefiero no responder').join(', ') || 'diversidad de fortalezas'
     const neuroList = conditionData.neurodivergencias.length > 0 ? ` con rasgos de ${conditionData.neurodivergencias.join(', ')}` : ''
-    const quienEres = `${name}, eres una persona única, guiada por tu autenticidad y tu deseo de construir tu propio camino. Reconocemos tu valor integral (${condList}${neuroList}), valorando tus talentos individuales y tu perspectiva invaluable dentro de nuestra comunidad.`
+    const quienEres = `Como cuidador/a de ${name}, reconoces su valor integral (${condList}${neuroList}) y buscas los mejores caminos para su desarrollo. Tu dedicación y amor son la base de su crecimiento, y juntos construirán un futuro lleno de posibilidades.`
 
     const tempoMap = {
-      nacimiento: 'desde tu nacimiento', infancia: 'durante tu infancia',
-      adolescencia: 'durante tu adolescencia', vida_adulta: 'en tu vida adulta',
+      nacimiento: 'desde su nacimiento', infancia: 'durante su infancia',
+      adolescencia: 'durante su adolescencia', vida_adulta: 'en su vida adulta',
       progresiva: 'de forma evolutiva a lo largo del tiempo',
       en_evaluacion: 'en un proceso activo de exploración y evaluación',
     }
-    const temporalidadTxt = tempoMap[conditionData.temporalidad] || 'en tu recorrido de vida'
+    const temporalidadTxt = tempoMap[conditionData.temporalidad] || 'en su recorrido de vida'
     const diagnosticoTxt = conditionData.tieneDiagnostico === 'si' && conditionData.diagnosticoEspecifico
-      ? `cuentas con un diagnóstico específico (${conditionData.diagnosticoEspecifico}) que orienta tus apoyos.`
-      : `estás en un momento de búsqueda donde conectar con especialistas clave abrirá nuevas oportunidades.`
-    const contexto = `Tu vivencia se ha forjado ${temporalidadTxt}. En tu día a día, equilibras tu autonomía y tus actividades cotidianas con los apoyos necesarios, y ${diagnosticoTxt} Adaptamos cada interacción para que recibas información de la forma más accesible para ti.`
+      ? `${name} cuenta con un diagnóstico específico (${conditionData.diagnosticoEspecifico}) que orienta sus apoyos.`
+      : `están en un momento de búsqueda donde conectar con especialistas clave abrirá nuevas oportunidades.`
+    const contexto = `La vivencia de ${name} se ha forjado ${temporalidadTxt}. En su día a día, se equilibra su autonomía y sus actividades cotidianas con los apoyos necesarios, y ${diagnosticoTxt} Adaptamos cada interacción para que ${name} reciba información de la forma más accesible para él/ella.`
 
     const interesesTxt = selectedInterests.length > 0
-      ? `destacas un gran entusiasmo por áreas como ${selectedInterests.slice(0, 4).join(', ')}${selectedInterests.length > 4 ? ` y otras ${selectedInterests.length - 4} pasiones más` : ''}.`
-      : 'tienes una mente curiosa lista para descubrir nuevas experiencias y pasiones.'
-    const loQueTeGusta = `Te apasiona aprender, participar y conectar con tu entorno: ${interesesTxt} En Raíces te acompañaremos exactamente como lo prefieres, acercándote opciones útiles, dignas y a tu medida para que alcances cada una de tus metas.`
+      ? `${name} muestra un gran entusiasmo por áreas como ${selectedInterests.slice(0, 4).join(', ')}${selectedInterests.length > 4 ? ` y otras ${selectedInterests.length - 4} pasiones más` : ''}.`
+      : `${name} tiene una mente curiosa lista para descubrir nuevas experiencias y pasiones.`
+    const loQueTeGusta = `En Raíces te acompañaremos a ti y a ${name} exactamente como lo prefieres, acercándote opciones útiles, dignas y a la medida para que alcancen cada una de sus metas.`
 
     return { quienEres, contexto, loQueTeGusta }
   }
@@ -544,13 +528,22 @@ export default function RegistrationWizard({ onBackToRoles }) {
     setSending(true)
 
     try {
+      const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim()
+
+      // 1. Registrar tutor
       const registerPayload = {
-        nombreCompleto: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
+        nombreCompleto,
         email: generalForm.email,
         password: generalForm.password,
-        rol: 'pcd',
-        ...(generalForm.curp ? { curp: generalForm.curp } : {}),
+        rol: 'padre_tutor',
+        curp: generalForm.curp,
+        domicilio: generalForm.domicilio,
         fechaNacimiento: generalForm.birth_date,
+        ciudad: generalForm.ciudad,
+        estado: generalForm.estado,
+        destinatarioRegistro: destinatario === 'hijo' ? 'para_hijo' : 'para_familiar',
+        telefonoContacto: '',
+        preferenciasAcompanamiento: generalForm.acompanamiento,
       }
 
       let authResult = null
@@ -564,19 +557,20 @@ export default function RegistrationWizard({ onBackToRoles }) {
         const userObj = {
           id: authResult.usuario?.id,
           email: authResult.usuario?.email || generalForm.email,
-          role: 'pcd',
-          full_name: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
+          role: 'tutor',
+          full_name: nombreCompleto,
         }
         setRememberMe(true)
         setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
         saveUser(userObj, true)
       }
 
+      // 2. Guardar escalas de vida
       const scalesPayload = {
-        nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
-        nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
-        nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
-        nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
+        nivelAutonomia: scales.autonomia, nivelIndependencia: scales.independencia,
+        nivelComunicacion: scales.comunicacion, nivelComprension: scales.comprension,
+        nivelEnergia: scales.energia, nivelMovilidad: scales.movilidad,
+        nivelSocial: scales.social, nivelEmocional: scales.emocional,
         tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
         diagnosticoEspecifico: conditionData.diagnosticoEspecifico,
         temporalidadOrigen: conditionData.temporalidad,
@@ -586,8 +580,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
       }
       try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
 
-      // Guardar perfil de necesidades (reemplaza el flujo del onboarding)
-      // Calcular etapa de vida desde fecha de nacimiento
+      // 3. Guardar perfil del tutor
       const calcLifeStage = (birthDate) => {
         if (!birthDate) return null
         const age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -606,7 +599,9 @@ export default function RegistrationWizard({ onBackToRoles }) {
       const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
       try {
         await updateProfile.mutateAsync({
-          full_name: registerPayload.nombreCompleto,
+          full_name: nombreCompleto,
+          city: generalForm.ciudad,
+          state: generalForm.estado,
           profiling: {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
             severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
@@ -628,6 +623,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
         })
       } catch (profErr) { console.warn('Profiling save notice:', profErr) }
 
+      // 4. Subir documento de identidad
       if (docFile) {
         try {
           const fd = new FormData()
@@ -637,21 +633,32 @@ export default function RegistrationWizard({ onBackToRoles }) {
         } catch (docErr) { console.warn('Doc upload notice:', docErr) }
       }
 
+      // 5. Registrar persona a cargo (dependiente)
+      const depPayload = {
+        nombreCompleto: nombreDependiente || (generalForm.nombres + ' ' + generalForm.apellidoPaterno).trim(),
+        parentesco: destinatario === 'hijo' ? 'Hijo/a' : destinatario === 'familiar' ? 'Familiar' : 'Persona a mi cuidado',
+        tiposDiscapacidad: disabilityTypes,
+        notas: conditionData.diagnosticoEspecifico || null,
+      }
+      try {
+        await api.post('/usuarios/dependientes', depPayload)
+      } catch (depErr) { console.warn('Dependiente save notice:', depErr) }
+
+      // 6. Guardar localmente
       localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
       localStorage.setItem('raices_user_viability', viabilidad)
       localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
 
       const narrative = generateNarrative()
-      setAiNarrative(narrative)
       localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
 
-      addToast('¡Registro y perfilado completados exitosamente!', 'success')
+      addToast('¡Registro completado exitosamente!', 'success')
       setWizardStep('thanks')
       scrollTop()
     } catch (err) {
       console.error('Final submit error:', err)
       const narrative = generateNarrative()
-      setAiNarrative(narrative)
+      localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
       setWizardStep('thanks')
     } finally {
       setSending(false)
@@ -660,8 +667,6 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
   const passStrength = getPasswordStrength(generalForm.password)
 
-
-
   // ── RENDER ──────────────────────────────────────────────────────
   return (
     <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
@@ -669,8 +674,8 @@ export default function RegistrationWizard({ onBackToRoles }) {
       {/* ── Progress bar ── */}
       <div style={{ marginBottom: 20, flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#229B58', textTransform: 'uppercase' }}>
-            Registro de Persona con Discapacidad
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#3A86FF', textTransform: 'uppercase' }}>
+            Registro de Tutor / Cuidador
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)' }}>
             {stepIndex >= 0 ? `Paso ${stepIndex + 1} de ${TOTAL_STEPS}` : 'Completado ✓'}
@@ -679,7 +684,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
         <div style={{ height: 5, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{
             height: '100%',
-            background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
+            background: 'linear-gradient(90deg, #3A86FF 0%, #073B4C 100%)',
             borderRadius: 3,
             transition: 'width 0.4s ease',
             width: `${progressPct}%`,
@@ -709,7 +714,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
               Cuéntanos sobre ti
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Comienza con tu nombre completo y fecha de nacimiento.
+              Como cuidador/a, necesitamos tus datos para crear tu cuenta.
             </p>
           </div>
 
@@ -754,7 +759,72 @@ export default function RegistrationWizard({ onBackToRoles }) {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 2: SEGURIDAD (Email, contraseña)
+           STEP 2: CONTACTO (CURP obligatoria, ubicación)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'contact' && (
+        <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Identificación y ubicación
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Tu CURP es necesaria para validar tu identidad como tutor.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>CURP <span style={{ color: '#ef4444' }}>*</span></label>
+            <input
+              type="text" className="auth-input" maxLength={18} required
+              style={{ textTransform: 'uppercase', borderColor: (() => {
+                if (!generalForm.curp || generalForm.curp.length < 18) return undefined;
+                if (!CURP_REGEX.test(generalForm.curp)) return '#ef4444';
+                const match = validateCurpMatch(generalForm.curp, generalForm.nombres, generalForm.apellidoPaterno, generalForm.apellidoMaterno, generalForm.birth_date);
+                if (!match.valid) return '#f97316';
+                if (match.nameIsComplete) return '#22c55e';
+                return undefined;
+              })() }}
+              placeholder="ABCD123456HDFXX09"
+              value={generalForm.curp}
+              onChange={e => setGeneralForm({ ...generalForm, curp: e.target.value.toUpperCase() })}
+            />
+            <CurpIndicator curp={generalForm.curp} nombres={generalForm.nombres} apPat={generalForm.apellidoPaterno} apMat={generalForm.apellidoMaterno} birthDate={generalForm.birth_date} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
+              <select className="auth-input auth-select" required
+                value={generalForm.estado}
+                onChange={e => setGeneralForm({ ...generalForm, estado: e.target.value, ciudad: '' })}>
+                <option value="" disabled>Selecciona un estado</option>
+                {STATES.map(st => <option key={st} value={st}>{st}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
+              <select className="auth-input auth-select" required disabled={!generalForm.estado}
+                value={generalForm.ciudad}
+                onChange={e => setGeneralForm({ ...generalForm, ciudad: e.target.value })}>
+                <option value="" disabled>{generalForm.estado ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
+                {generalForm.estado && getMunicipalities(generalForm.estado).map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Domicilio (opcional)</label>
+            <input type="text" className="auth-input" placeholder="Ej. Calle Morelos #123, Guadalajara, Jalisco"
+              value={generalForm.domicilio}
+              onChange={e => setGeneralForm({ ...generalForm, domicilio: e.target.value })} />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar a mi cuenta" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 3: SEGURIDAD (Email, contraseña)
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'security' && (
         <form onSubmit={handleSecuritySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -802,38 +872,38 @@ export default function RegistrationWizard({ onBackToRoles }) {
             )}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('contact'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 4: ACOMPAÑAMIENTO
+           STEP 4: RELACIÓN / ¿Para quién es el perfil?
            ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'accommodation' && (
-        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+      {wizardStep === 'relationship' && (
+        <form onSubmit={handleRelationshipSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              Preferencia de acompañamiento
+              ¿Para quién es el perfil?
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Cómo prefieres que Raíces te acompañe en tu camino?
+              Esto nos ayudará a personalizar las preguntas y el tono de la plataforma.
             </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {LIST_ACOMPANAMIENTO.map(opt => {
-              const isSelected = generalForm.acompanamiento === opt.id
+            {DESTINATARIOS.map(opt => {
+              const isSelected = destinatario === opt.id
               return (
-                <button key={opt.id} type="button" onClick={() => setGeneralForm({ ...generalForm, acompanamiento: opt.id })}
+                <button key={opt.id} type="button" onClick={() => setDestinatario(opt.id)}
                   style={{
                     padding: '14px 16px', borderRadius: 12,
-                    border: `2px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                    background: isSelected ? 'rgba(34,155,88,0.08)' : '#ffffff',
+                    border: `2px solid ${isSelected ? '#3A86FF' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(58,134,255,0.08)' : '#ffffff',
                     textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
                     transition: 'all 0.2s ease',
                   }}>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? '#3A86FF' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#3A86FF' }} />}
                   </div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? '#073B4C' : 'var(--fg1)' }}>{opt.label}</div>
@@ -844,21 +914,90 @@ export default function RegistrationWizard({ onBackToRoles }) {
             })}
           </div>
 
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Nombre de {destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado'} <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input type="text" className="auth-input" required
+              placeholder={destinatario === 'hijo' ? 'Ej. Santiago' : destinatario === 'familiar' ? 'Ej. María' : 'Ej. Carlos'}
+              value={nombreDependiente}
+              onChange={e => setNombreDependiente(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''))} />
+          </div>
+
           <NavButtons onBack={() => { setWizardStep('security'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 5: CONDICIÓN PCD
+           STEP 5: ACOMPAÑAMIENTO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'accommodation' && (
+        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Preferencia de acompañamiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Cómo prefieres que Raíces te acompañe en el camino de {toneLabel}?
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {LIST_ACOMPANAMIENTO.map(opt => {
+              const isSelected = generalForm.acompanamiento === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setGeneralForm({ ...generalForm, acompanamiento: opt.id })}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `2px solid ${isSelected ? '#3A86FF' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(58,134,255,0.08)' : '#ffffff',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.2s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? '#3A86FF' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#3A86FF' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? '#073B4C' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Document upload */}
+          <div style={{ marginTop: 4 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+              Identificación oficial (opcional)
+            </label>
+            <div onClick={() => document.getElementById('tutor-doc-input').click()}
+              style={{ border: '2px dashed var(--primary)', borderRadius: 12, padding: '16px 14px', textAlign: 'center', background: 'var(--bg-cool)', cursor: 'pointer', transition: 'all 0.2s' }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🪪</div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>
+                {docFile ? docFile.name : 'Subir archivo (INE, credencial o acta)'}
+              </span>
+              <p style={{ fontSize: 11, color: 'var(--fg3)', margin: '3px 0 0' }}>PDF, JPG, PNG (Máx 5MB)</p>
+              <input id="tutor-doc-input" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
+                onChange={e => setDocFile(e.target.files[0])} />
+            </div>
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship'); scrollTop() }} submitLabel="Continuar a condición" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: CONDICIÓN PCD (de la persona a cargo)
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'condition' && (
         <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              Háblanos de tu condición
+              Condición de {toneLabel}
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Qué condición o situación te describe mejor? (Puedes seleccionar más de una.)
+              ¿Qué condición o situación describe mejor a {toneLabel}? (Puedes seleccionar más de una.)
             </p>
           </div>
 
@@ -869,14 +1008,14 @@ export default function RegistrationWizard({ onBackToRoles }) {
                 <button key={cond} type="button" onClick={() => toggleCondition(cond)}
                   style={{
                     padding: '12px 14px', borderRadius: 10,
-                    border: `1.5px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34,155,88,0.08)' : '#ffffff',
+                    border: `1.5px solid ${isChecked ? '#3A86FF' : '#E5DCD2'}`,
+                    background: isChecked ? 'rgba(58,134,255,0.08)' : '#ffffff',
                     color: isChecked ? '#073B4C' : 'var(--fg1)',
                     fontWeight: isChecked ? 700 : 500, fontSize: 13,
                     cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
                     transition: 'all 0.15s ease',
                   }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#3A86FF' : '#9ca3af'}`, background: isChecked ? '#3A86FF' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
                     {isChecked && Icons.check({ s: 10 })}
                   </div>
                   <span>{cond}</span>
@@ -885,21 +1024,21 @@ export default function RegistrationWizard({ onBackToRoles }) {
             })}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('accommodation'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('accommodation'); scrollTop() }} submitLabel="Continuar a diagnóstico" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 6: ORIGEN Y DIAGNÓSTICO
+           STEP 7: ORIGEN Y DIAGNÓSTICO
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'origin' && (
         <form onSubmit={handleOriginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div style={{ marginBottom: 0 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              Origen y diagnóstico
+              Origen y diagnóstico de {toneLabel}
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Esta información nos ayuda a personalizar tu experiencia.
+              Esta información nos ayuda a personalizar la experiencia de {toneLabel}.
             </p>
           </div>
 
@@ -927,10 +1066,10 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
           {/* Diagnóstico */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿Tienes algún diagnóstico en específico?</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿Tiene algún diagnóstico en específico?</label>
             <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
               <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'si', redFlagDiagnostico: false })}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34,155,88,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#3A86FF' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(58,134,255,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
                 Sí (especificar)
               </button>
               <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'no', diagnosticoEspecifico: '', redFlagDiagnostico: true })}
@@ -939,14 +1078,14 @@ export default function RegistrationWizard({ onBackToRoles }) {
               </button>
             </div>
             {conditionData.tieneDiagnostico === 'si' ? (
-              <input type="text" className="auth-input" placeholder="Escribe tu diagnóstico formal o clínico"
+              <input type="text" className="auth-input" placeholder="Escribe el diagnóstico formal o clínico"
                 value={conditionData.diagnosticoEspecifico}
                 onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })} />
-            ) : conditionData.tieneDiagnostico === 'no' ? (
+            ) : (
               <div style={{ background: 'rgba(255,77,104,0.08)', border: '1px solid rgba(255,77,104,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#073B4C', lineHeight: 1.5 }}>
-                💡 <strong>Nota:</strong> Al no contar con un diagnóstico formal, te abriremos un camino especializado para conectar con especialistas.
+                💡 <strong>Nota:</strong> Al no contar con un diagnóstico formal, le abriremos un camino especializado para conectar con especialistas.
               </div>
-            ) : null}
+            )}
           </div>
 
           {/* Temporalidad */}
@@ -975,62 +1114,62 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </div>
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar a Escalas de Vida" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 7: ESCALAS A-D
+           STEP 8: ESCALAS A-D
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'scales1' && (
         <form onSubmit={handleScales1Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              Escalas de Vida (1/2)
+              Escalas de Vida de {toneLabel} (1/2)
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Selecciona la opción que mejor represente tu situación actual.
+              Selecciona la opción que mejor represente la situación actual de {toneLabel}.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participas en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: v })} />
-            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesitas?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: v })} />
-            <ScaleCard title="C. Comunicación" desc="¿Cómo expresas necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: v })} />
-            <ScaleCard title="D. Comprensión" desc="¿Sigues instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
+            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participa en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: v })} />
+            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesita?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: v })} />
+            <ScaleCard title="C. Comunicación" desc="¿Cómo expresa necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: v })} />
+            <ScaleCard title="D. Comprensión" desc="¿Sigue instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar a Escalas E-H" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 8: ESCALAS E-H
+           STEP 9: ESCALAS E-H
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'scales2' && (
         <form onSubmit={handleScales2Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              Escalas de Vida (2/2)
+              Escalas de Vida de {toneLabel} (2/2)
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Continúa evaluando tu día a día en estas áreas.
+              Continúa evaluando el día a día de {toneLabel} en estas áreas.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan tu energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: v })} />
-            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúas físicamente con tu entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: v })} />
-            <ScaleCard title="G. Social" desc="¿Cómo participas con personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: v })} />
-            <ScaleCard title="H. Emocional" desc="¿Cómo impacta tu bienestar emocional?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: v })} />
+            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan su energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: v })} />
+            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúa físicamente con su entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: v })} />
+            <ScaleCard title="G. Social" desc="¿Cómo participa con personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: v })} />
+            <ScaleCard title="H. Emocional" desc="¿Cómo impacta su bienestar emocional?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: v })} />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar a formatos" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 9: FORMATOS DE INFORMACIÓN
+           STEP 10: FORMATOS DE INFORMACIÓN
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'formats' && (
         <form onSubmit={handleFormatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -1039,7 +1178,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
               ¿Cómo prefieres recibir información?
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Cuéntanos cómo te resulta más cómodo aprender y comunicarte. (Opción múltiple)
+              Cuéntanos cómo resulta más cómodo para ti y {toneLabel}. (Opción múltiple)
             </p>
           </div>
 
@@ -1050,14 +1189,14 @@ export default function RegistrationWizard({ onBackToRoles }) {
                 <button key={f.id} type="button" onClick={() => toggleFormato(f.id)}
                   style={{
                     padding: '16px 14px', borderRadius: 14,
-                    border: `2px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                    cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    border: `2px solid ${isChecked ? '#3A86FF' : '#E5DCD2'}`,
+                    background: isChecked ? 'rgba(58,134,255,0.08)' : '#ffffff',
+                    cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                     transition: 'all 0.2s ease',
                   }}>
-                  <span style={{ fontSize: 32 }}>{f.icon}</span>
+                  <span style={{ fontSize: 28 }}>{f.icon}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: isChecked ? '#073B4C' : 'var(--fg1)' }}>{f.label}</span>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#3A86FF' : '#9ca3af'}`, background: isChecked ? '#3A86FF' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                     {isChecked && Icons.check({ s: 11 })}
                   </div>
                 </button>
@@ -1065,25 +1204,25 @@ export default function RegistrationWizard({ onBackToRoles }) {
             })}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Explorar mis temas favoritos" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 10: INTERESES (scrollable internally)
+           STEP 11: INTERESES
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'interests' && (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF4D68', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
-                ✨ Explora tus pasiones
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#3A86FF', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
+                ✨ Explora pasiones juntos
               </div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 6px', lineHeight: 1.2 }}>
-                ¿Qué caminos te gustaría explorar?
+                ¿Qué caminos les gustaría explorar?
               </h2>
               <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-                Toca todos los temas que te llamen la atención. Personalizaremos tu feed y actividades recomendadas.
+                Toca todos los temas que les llamen la atención. Personalizaremos el feed y actividades recomendadas.
               </p>
             </div>
 
@@ -1101,8 +1240,8 @@ export default function RegistrationWizard({ onBackToRoles }) {
                         <button key={item} type="button" onClick={() => toggleInterest(item)}
                           style={{
                             padding: '6px 13px', borderRadius: 18,
-                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
-                            background: isSelected ? sec.color : '#ffffff',
+                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid var(--border-color)',
+                            background: isSelected ? sec.color : 'var(--bg-cool)',
                             color: isSelected ? '#ffffff' : 'var(--fg1)',
                             fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
                             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -1124,18 +1263,18 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
           {/* Fixed nav at bottom */}
           <div style={{ display: 'flex', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5DCD2', flexShrink: 0 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('scales2'); scrollTop() }} style={{ flex: 1 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('formats'); scrollTop() }} style={{ flex: 1 }}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="button" onClick={() => { setWizardStep('viability'); scrollTop() }} style={{ flex: 2 }}>
-              Continuar {Icons.arrowRight({ s: 18 })}
+              Continuar a viabilidad {Icons.arrowRight({ s: 18 })}
             </button>
           </div>
         </div>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 11: VIABILIDAD ECONÓMICA
+           STEP 12: VIABILIDAD ECONÓMICA
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'viability' && (
         <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -1144,28 +1283,27 @@ export default function RegistrationWizard({ onBackToRoles }) {
               Viabilidad económica
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Esto nos ayuda a recomendarte opciones acordes a tu presupuesto.
+              Esto nos ayuda a recomendarles opciones acordes a su presupuesto.
             </p>
           </div>
 
-          <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: '16px' }}>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
+          <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: '16px' }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ustedes hoy?</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
               {LIST_VIABILIDAD.map((v) => {
                 const isSelected = viabilidad === v.id
                 return (
                   <button key={v.id} type="button" onClick={() => setViabilidad(v.id)}
                     style={{
-                      padding: '12px 14px', borderRadius: 10,
-                      border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                      background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                      color: isSelected ? '#073B4C' : 'var(--fg1)',
+                      padding: '10px 12px', borderRadius: 10,
+                      border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}`,
+                      background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
+                      color: isSelected ? '#ffffff' : 'var(--fg1)',
                       fontWeight: isSelected ? 700 : 500, fontSize: 12.5,
                       cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
-                      transition: 'all 0.15s ease',
                     }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#229B58' }} />}
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : 'var(--fg3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffffff' }} />}
                     </div>
                     <span>{v.label}</span>
                   </button>
@@ -1175,7 +1313,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#073B4C', marginBottom: 5 }}>Otros temas que te gustaría explorar</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#073B4C', marginBottom: 5 }}>Otros temas que les gustaría explorar</label>
             <input type="text" className="auth-input" placeholder="Ej. Robótica accesible, astronomía, ajedrez adaptado..."
               value={otrosIntereses} onChange={e => setOtrosIntereses(e.target.value)} />
           </div>
@@ -1185,7 +1323,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="submit" disabled={sending} style={{ flex: 2 }}>
-              {sending ? 'Guardando mi perfil...' : 'Guardar y continuar'} {Icons.check({ s: 18 })}
+              {sending ? 'Guardando perfil...' : 'Guardar y continuar'} {Icons.check({ s: 18 })}
             </button>
           </div>
         </form>
@@ -1200,80 +1338,20 @@ export default function RegistrationWizard({ onBackToRoles }) {
           padding: '36px 28px', textAlign: 'center',
           boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 0.4s ease both',
         }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>🌱</div>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(58,134,255,0.12)', color: '#3A86FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>🌱</div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 14px', lineHeight: 1.25 }}>
-            Muchas gracias por tu confianza y tu apertura para conocerte.
+            ¡Gracias por tu confianza, cuidador/a!
           </h2>
           <div style={{ color: 'var(--fg2)', fontSize: 14, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto 28px' }}>
-            <p style={{ margin: 0 }}>Esta información nos permitirá darte opciones claras y personalizadas.</p>
+            <p style={{ margin: 0 }}>Tu registro nos permitirá acompañarte y acompañar a {toneLabel} con opciones claras y personalizadas.</p>
             <p style={{ margin: 0, fontWeight: 500, color: 'var(--fg1)' }}>
-              Una vez que validemos tu identidad, te haremos llegar un correo para que puedas encontrar nuevas posibilidades, caminos para tu desarrollo y formar parte de esta gran comunidad.
+              Una vez que validemos tu identidad, te haremos llegar un correo para que puedan encontrar nuevas posibilidades, caminos de desarrollo y formar parte de esta gran comunidad.
             </p>
           </div>
           <button className="auth-btn-primary" type="button"
-            onClick={() => { setWizardStep('summary'); scrollTop() }}
+            onClick={() => nav('/auth')}
             style={{ minWidth: 240, padding: '14px 24px', fontSize: 15 }}>
-            Ver mi Resumen de Bienvenida {Icons.sparkles({ s: 18 })}
-          </button>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           SUMMARY / BIENVENIDA
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'summary' && (
-        <div style={{
-          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 24,
-          padding: '30px 26px', boxShadow: 'var(--shadow-lg)',
-          animation: 'fadeInUp 0.4s ease both', overflowY: 'auto',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-            <div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--color-coral)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Narrativa de Identidad</span>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '4px 0 0' }}>Bienvenido a Raíces</h2>
-            </div>
-            <div style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#ffffff', padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
-              {Icons.sparkles({ s: 13 })} Generado por IA
-            </div>
-          </div>
-
-          <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>
-            A través de nuestra inteligencia artificial hemos captado tu esencia para acompañarte en tu desarrollo:
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--primary)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🌟</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>1. ¿Quién eres?</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.quienEres || 'Eres una persona única con grandes fortalezas, talentos y metas por cumplir.'}
-              </p>
-            </div>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-amarillo)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🧭</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>2. Tu contexto</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.contexto || 'Tu entorno y experiencias han formado tu historia, y adaptamos cada herramienta para ti.'}
-              </p>
-            </div>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-coral)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🎯</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>3. Lo que te gusta</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.loQueTeGusta || 'Tus intereses guían tu camino hacia nuevas conexiones, oportunidades y desarrollo.'}
-              </p>
-            </div>
-          </div>
-
-          <button className="auth-btn-primary" type="button" onClick={() => nav('/auth')}
-            style={{ width: '100%', padding: '14px 20px', fontSize: 15 }}>
-            Comencemos tu camino en Raíces   {Icons.arrowRight({ s: 18 })}
+            Comenzar {Icons.arrowRight({ s: 18 })}
           </button>
         </div>
       )}

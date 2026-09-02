@@ -1,8 +1,9 @@
 import { useMemo, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe, useProfile } from '@features/auth'
-import { useDiscovery } from '@features/institutions'
+import { useRecomendaciones, useRecomendacionesEspecialistas, useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
+import { useRegistrarInteraccion } from '@features/institutions/hooks/useInteractions'
 import { usePosts, useToggleLike, useForos } from '@features/social'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import BackendFallback from '@shared/components/BackendFallback'
@@ -216,6 +217,16 @@ function FeedCard({ inst, isFav, onToggleFav }) {
         padding: '14px 24px 20px',
         borderTop: '1px solid var(--border-color)',
       }}>
+        {inst.final_score != null && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 12px', borderRadius: 20,
+            background: 'rgba(34, 155, 88, 0.08)', color: '#229B58',
+            fontSize: 13, fontWeight: 600,
+          }}>
+            {Icons.sparkles({ s: 13 })} {Math.round(inst.final_score * 100)}% match
+          </span>
+        )}
         {inst.rating_avg != null && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -350,12 +361,17 @@ function sortFeed(items, mode) {
    ═══════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { data: profile } = useProfile()
-  const { data: recommendations = [], isLoading: instLoading, isError: discoveryError, refetch: refetchDiscovery } = useDiscovery()
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const { data: recomendacionesData, isLoading: instLoading, isError: discoveryError, refetch: refetchDiscovery } = useRecomendaciones()
+  const recommendations = recomendacionesData?.instituciones ?? []
+  const { data: especialistasData, isLoading: especialistasLoading } = useRecomendacionesEspecialistas()
+  const especialistas = especialistasData?.especialistas ?? []
   const { data: posts = [], isLoading: postsLoading } = usePosts({ limite: 20 })
   const { data: foros = [], isLoading: forosLoading } = useForos()
   const { data: favIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
   const toggleLike = useToggleLike()
+  const trackInteraccion = useRegistrarInteraccion()
   const [sortMode, setSortMode] = useState('relevantes')
 
   // ── User interests from localStorage or profile (used silently for sorting)
@@ -451,7 +467,20 @@ export default function DashboardPage() {
   // ── Sort the feed
   const feed = useMemo(() => sortFeed(unifiedFeed, sortMode), [unifiedFeed, sortMode])
 
-  const isLoading = instLoading || postsLoading || forosLoading
+  // ── Tracking helpers ─────────────────────────────────────────────
+  const trackClick = useCallback((inst) => {
+    if (inst?.id) {
+      trackInteraccion.mutate({ institucionId: inst.id, tipo: 'click_card', categoria: inst.category })
+    }
+  }, [trackInteraccion])
+
+  const trackVerDetalle = useCallback((inst) => {
+    if (inst?.id) {
+      trackInteraccion.mutate({ institucionId: inst.id, tipo: 'ver_detalle', categoria: inst.category })
+    }
+  }, [trackInteraccion])
+
+  const isLoading = instLoading || postsLoading || forosLoading || especialistasLoading
   const hasAnyContent = feed.length > 0
 
   // ── Track engagement when user saves
@@ -497,6 +526,122 @@ export default function DashboardPage() {
           <div style={{ marginBottom: 4 }}>
             <NextStepsCard />
             <ProfileSummaryCard />
+          </div>
+        )}
+
+        {/* ── Onboarding Banner ── */}
+        {onboardingStatus && !onboardingStatus.onboardingCompleto && (
+          <div
+            className="animate-fade-in-up"
+            style={{
+              background: 'linear-gradient(135deg, rgba(47,128,237,0.08) 0%, rgba(99,102,241,0.08) 100%)',
+              border: '1px solid rgba(47,128,237,0.2)',
+              borderRadius: 16, padding: 20, marginBottom: 16,
+              display: 'flex', alignItems: 'center', gap: 16,
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(47,128,237,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              {Icons.user({ s: 20 })}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 2 }}>
+                Completa tu perfil ({onboardingStatus.porcentaje ?? 0}%)
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                {onboardingStatus.camposFaltantes?.length > 0
+                  ? `Falta: ${onboardingStatus.camposFaltantes.slice(0, 3).join(', ')}`
+                  : 'Para recibir mejores recomendaciones'
+                }
+              </div>
+            </div>
+            <Link to="/profile" style={{
+              padding: '8px 16px', borderRadius: 8,
+              background: 'var(--primary)', color: '#fff',
+              fontSize: 13, fontWeight: 600, textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+              Completar {Icons.arrowRight({ s: 14 })}
+            </Link>
+          </div>
+        )}
+
+        {/* ── Especialistas Recomendados ── */}
+        {!especialistasLoading && especialistas.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                  Especialistas para ti
+                </h2>
+                <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '2px 0 0' }}>
+                  Basados en tu perfil y ubicación
+                </p>
+              </div>
+              <Link to="/explore" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Ver todos {Icons.arrowRight({ s: 13 })}
+              </Link>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+              {especialistas.slice(0, 5).map((esp) => (
+                <div
+                  key={esp.id}
+                  onClick={() => trackClick(esp)}
+                  style={{
+                    minWidth: 200, maxWidth: 240, flex: '0 0 auto',
+                    background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+                    borderRadius: 12, padding: 16,
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      background: 'var(--primary-subtle)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, fontWeight: 700, color: 'var(--primary)',
+                    }}>
+                      {esp.nombre?.[0] ?? '?'}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {esp.nombre}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {Icons.mapPin({ s: 11 })} {esp.ciudad ?? 'Online'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                    {esp.calificacionPromedio != null && esp.calificacionPromedio > 0 && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#D4944C' }}>
+                        {Icons.star({ s: 12, filled: true })} {esp.calificacionPromedio?.toFixed(1)}
+                      </span>
+                    )}
+                    {esp.modalidad && (
+                      <span style={{ padding: '2px 6px', borderRadius: 4, background: 'var(--bg-cool)', color: 'var(--fg3)', fontSize: 11 }}>
+                        {esp.modalidad}
+                      </span>
+                    )}
+                  </div>
+                  {esp.final_score != null && (
+                    <div style={{ marginTop: 8, fontSize: 11, color: 'var(--fg3)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <span>Compatibilidad</span>
+                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{Math.round(esp.final_score * 100)}%</span>
+                      </div>
+                      <div style={{ height: 4, background: 'var(--border-color)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${esp.final_score * 100}%`, background: 'var(--primary)', borderRadius: 2 }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

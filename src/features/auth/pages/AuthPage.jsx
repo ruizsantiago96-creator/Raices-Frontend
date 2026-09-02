@@ -10,8 +10,12 @@ import { VERSION } from '../../../../version'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { AUTH_MESSAGES, AUTH_UI, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
 import RegistrationWizard from '../components/RegistrationWizard'
+import TutorRegistrationWizard from '../components/TutorRegistrationWizard'
+import InstitutionRegistrationWizard from '../components/InstitutionRegistrationWizard'
+import EnterpriseRegistrationWizard from '../components/EnterpriseRegistrationWizard'
 import { ROLES } from '../constants/roles'
-import { getPasswordStrength } from '../lib/passwordStrength'
+import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
+import PasswordRequirements from '../components/PasswordRequirements'
 import { mapErrorMessage } from '../lib/mapErrorMessage'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -121,7 +125,7 @@ export default function AuthPage() {
   };
 
   const strength = getPasswordStrength(form.password);
-  const isPasswordValid = form.password.length >= 8 && /[A-Z]/.test(form.password) && /[0-9]/.test(form.password) && /[^A-Za-z0-9]/.test(form.password);
+  const { isValid: isPasswordValid } = checkPasswordCriteria(form.password);
 
   const s = {
     page: { minHeight: '100vh', background: 'var(--bg-warm)', display: 'block', fontFamily: 'var(--font-body)' },
@@ -342,7 +346,7 @@ export default function AuthPage() {
 
       <div className="auth-card">
         {/* Columna izquierda: Formulario */}
-        <div className="auth-form-column" style={regStep === 'pcd_wizard' ? { justifyContent: 'flex-start' } : undefined}>
+        <div className="auth-form-column" style={(regStep === 'pcd_wizard' || regStep === 'tutor_wizard' || regStep === 'institution_wizard' || regStep === 'empresa_wizard') ? { justifyContent: 'flex-start' } : undefined}>
           <div style={{ maxWidth: 440, width: '100%', margin: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28 }}>
               <BrandMark size={24} onClick={() => nav('/')} />
@@ -421,13 +425,16 @@ export default function AuthPage() {
                         <span>Acepto los términos de confidencialidad y protección de datos</span>
                       </label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <button className="auth-btn-primary" type="button" disabled={!consentChecked} onClick={() => { if (form.role === 'pcd') setRegStep('pcd_wizard'); else setRegStep(2) }} style={{ padding: '15px 20px', fontSize: 15 }}>De acuerdo y continuar {Icons.arrowRight({ s: 18 })}</button>
+                        <button className="auth-btn-primary" type="button" disabled={!consentChecked} onClick={() => { if (form.role === 'pcd') setRegStep('pcd_wizard'); else if (form.role === 'tutor') setRegStep('tutor_wizard'); else if (form.role === 'institution') setRegStep('institution_wizard'); else if (form.role === 'empresa') setRegStep('empresa_wizard'); else setRegStep(2) }} style={{ padding: '15px 20px', fontSize: 15 }}>De acuerdo y continuar {Icons.arrowRight({ s: 18 })}</button>
                         <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>{Icons.arrowLeft({ s: 16 })} Cambiar tipo de cuenta</button>
                       </div>
                     </div>
                   )}
 
                   {regStep === 'pcd_wizard' && <RegistrationWizard onBackToRoles={() => setRegStep(1)} />}
+                  {regStep === 'tutor_wizard' && <TutorRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
+                  {regStep === 'institution_wizard' && <InstitutionRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
+                  {regStep === 'empresa_wizard' && <EnterpriseRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
 
                   {regStep === 2 && (
                     <>
@@ -441,7 +448,22 @@ export default function AuthPage() {
                         <div>
                           <label htmlFor="reg-pass" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Contraseña <span style={{ color: '#ef4444' }}>*</span></label>
                           <div style={s.passWrap}><input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} placeholder="Crea una contraseña segura" /><button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>{showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}</button></div>
-                          {form.password && <div style={{ marginTop: 6 }}><div style={{ display: 'flex', gap: 4, height: 4, background: 'var(--border-color)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}><div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} /></div><span style={{ fontSize: 11, fontWeight: 600, color: strength.color }}>Seguridad: {strength.label}</span></div>}
+                          {form.password && (
+                            <div style={{ marginTop: 6 }}>
+                              <div style={{ display: 'flex', gap: 4, height: 4, background: 'var(--border-color)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                                <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: strength.color }}>Seguridad: {strength.label}</span>
+                                {isPasswordValid && (
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    {Icons.check({ s: 13 })} Lista para registrar
+                                  </span>
+                                )}
+                              </div>
+                              <PasswordRequirements password={form.password} />
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: 10 }}>
                           <div style={{ flex: 1 }}><label htmlFor="reg-state" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label><select id="reg-state" name="state" autoComplete="address-level1" className="auth-input auth-select" value={form.state} onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }} required><option value="" disabled>Selecciona un estado</option>{STATES.map(st => <option key={st} value={st}>{st}</option>)}</select></div>
@@ -453,9 +475,7 @@ export default function AuthPage() {
                         <button className="auth-btn-secondary" type="button" onClick={() => setRegStep('consent')}>{Icons.arrowLeft({ s: 16 })} Volver</button>
                       </div>
                     </>
-                  )}
-
-                  {regStep !== 'pcd_wizard' && <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--fg2)' }}>¿Ya tienes cuenta?{' '}<button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button></p>}
+                  )}                    {regStep !== 'pcd_wizard' && regStep !== 'tutor_wizard' && regStep !== 'institution_wizard' && regStep !== 'empresa_wizard' && <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--fg2)' }}>¿Ya tienes cuenta?{' '}<button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button></p>}
                 </>
               )}
 

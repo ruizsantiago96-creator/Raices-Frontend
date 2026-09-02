@@ -4,23 +4,6 @@
 **Proyecto:** Raíces — Plataforma de inclusión  
 **Archivo principal:** `src/features/dashboard/pages/DashboardPage.jsx`
 
----
-
-## 1. Vista General
-
-El feed es un **timeline unificado estilo Reddit** que mezcla 3 tipos de contenido:
-
-```
-┌─────────────────────────────────────────────┐
-│  🔥 Relevantes │ 🕐 Recientes │ ⭐ Populares │  ← Tabs de ordenamiento
-├─────────────────────────────────────────────┤
-│  📌 Instituciones (de /descubrimiento)       │
-│  📌 Publicaciones de comunidad (de /comunidad/publicaciones)
-│  📌 Foros de discusión (de /comunidad/foros) │
-├─────────────────────────────────────────────┤
-│  Cada item se scorea y se ordena            │
-└─────────────────────────────────────────────┘
-```
 
 ---
 
@@ -72,7 +55,7 @@ Todos los items se normalizan a una forma común:
 if (hasPreferences && !activeCategories.has(inst.category)) continue
 ```
 
-**Publicaciones y foros:** Siempre se muestran todos (no se filtran por preferencias).
+**Publicaciones y foros:** Siempre se muestran todos (no se filtran por preferencias por ahora, se planea hacer).
 
 ### Paso 3: Scoring (función `scoreItem`)
 
