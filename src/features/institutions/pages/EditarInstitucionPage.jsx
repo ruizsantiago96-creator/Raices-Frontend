@@ -180,7 +180,7 @@ export default function EditarInstitucionPage() {
         Object.entries(datos).filter(([, v]) => v !== undefined)
       )
 
-      await updateInst.mutateAsync({ id: institution.id || institution._id, ...datosLimpios })
+      await updateInst.mutateAsync(datosLimpios)
       setSuccessMsg('Institución actualizada correctamente.')
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || 'Error al actualizar la institución.'

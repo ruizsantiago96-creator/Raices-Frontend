@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
@@ -13,6 +14,34 @@ function normalizeText(text) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+}
+
+function splitSpanishFullName(fullName = '') {
+  const clean = (fullName || '').trim().replace(/\s+/g, ' ')
+  if (!clean || clean === '—') return { firstName: '—', lastName: '—' }
+
+  const words = clean.split(' ')
+  if (words.length === 1) {
+    return { firstName: words[0], lastName: '—' }
+  }
+  if (words.length === 2) {
+    return { firstName: words[0], lastName: words[1] }
+  }
+  if (words.length === 3) {
+    // e.g. "Lourdes Ruiz Santiago" -> Nombre: "Lourdes", Apellido: "Ruiz Santiago"
+    return { firstName: words[0], lastName: `${words[1]} ${words[2]}` }
+  }
+  if (words.length === 4) {
+    // 4 palabras en nombres hispanos (2 nombres de pila + 2 apellidos):
+    // ej: "Lourdes Josefina Ruiz Santiago"
+    // firstName: "Lourdes Josefina"
+    // lastName: "Ruiz Santiago"
+    return { firstName: `${words[0]} ${words[1]}`, lastName: `${words[2]} ${words[3]}` }
+  }
+  // 5 o más palabras: los dos últimos suelen ser los apellidos (Paterno y Materno)
+  const lastName = words.slice(-2).join(' ')
+  const firstName = words.slice(0, -2).join(' ')
+  return { firstName, lastName }
 }
 
 function getNormalizedStateKey(stateName) {
@@ -135,12 +164,10 @@ export default function ProfilePage() {
 
   const startEdit = (mode) => {
     const fullNameVal = data?.full_name ?? ''
-    const parts = fullNameVal.trim().split(' ')
-    const fName = parts[0] || ''
-    const lName = parts.slice(1).join(' ') || ''
+    const { firstName: fName, lastName: lName } = splitSpanishFullName(fullNameVal)
     setForm({
-      first_name: fName,
-      last_name: lName,
+      first_name: fName === '—' ? '' : fName,
+      last_name: lName === '—' ? '' : lName,
       full_name: fullNameVal,
       city: data?.city ?? '',
       state: data?.state ?? '',
@@ -268,9 +295,7 @@ export default function ProfilePage() {
 
   const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
   const fullName = data?.full_name ?? '—'
-  const nameParts = fullName.trim().split(' ')
-  const firstName = nameParts[0] || '—'
-  const lastName = nameParts.slice(1).join(' ') || '—'
+  const { firstName, lastName } = splitSpanishFullName(fullName)
 
   return (
     <>
@@ -333,11 +358,16 @@ export default function ProfilePage() {
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {Icons.mail({ s: 13 })} {data?.email}
                       </span>
-                      {(data?.city || data?.state) && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {Icons.mapPin({ s: 13 })} {[data?.city, data?.state].filter(Boolean).join(', ')}
-                        </span>
-                      )}
+                      <Link
+                        to="/mi-identidad?tab=verificacion"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          color: 'inherit', textDecoration: 'none',
+                        }}
+                        title="Ubicación verificada en Mi Identidad"
+                      >
+                        {Icons.mapPin({ s: 13 })} {[data?.city, data?.state].filter(Boolean).join(', ') || 'Agregar ubicación'}
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -510,28 +540,7 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Tarjeta: Dirección */}
-              <div className="profile-card animate-fade-in-up delay-3" style={s.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                    Dirección
-                  </h3>
-                  <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={() => startEdit('address')}>
-                    {Icons.edit({ s: 13 })} Editar
-                  </button>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-                  <div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>País</div>
-                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>México</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ciudad / Estado</div>
-                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{[data?.city, data?.state].filter(Boolean).join(', ') || 'No especificado'}</div>
-                  </div>
-                </div>
-              </div>
 
 
 
@@ -624,55 +633,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Edit Address Modal Overlay */}
-      {editingMode === 'address' && (
-        <div onClick={() => setEditingMode(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
-            
-            {/* Close Button */}
-            <button onClick={() => setEditingMode(null)} style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-warm)'}>
-              {Icons.x({ s: 16 })}
-            </button>
 
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Editar dirección</h3>
-            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 24px' }}>Actualiza tus datos para mantener tu perfil al día.</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={labelStyle}>País</label>
-                  <input style={{ ...inputStyle, background: 'var(--bg-warm)', cursor: 'not-allowed' }} value="México" disabled />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <SearchableSelect
-                    label="Estado"
-                    value={form.state}
-                    onChange={val => setForm(f => ({ ...f, state: val, city: '' }))}
-                    options={STATES}
-                    placeholder="Selecciona un estado..."
-                  />
-                  <SearchableSelect
-                    label="Ciudad / Municipio"
-                    value={form.city}
-                    onChange={val => setForm(f => ({ ...f, city: val }))}
-                    options={form.state ? getMunicipalities(getNormalizedStateKey(form.state)) : []}
-                    placeholder={form.state ? "Selecciona..." : "Elige un estado"}
-                    disabled={!form.state}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-              <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }} onClick={() => setEditingMode(null)}>Cerrar</button>
-              <button onClick={handleSave} style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }} disabled={update.isPending}>
-                {update.isPending ? 'Guardando...' : 'Guardar cambios'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }

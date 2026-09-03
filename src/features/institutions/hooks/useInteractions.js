@@ -3,7 +3,7 @@ import api from '@shared/lib/api'
 
 /**
  * Hook para registrar una interacción del usuario con una institución.
- * POST /api/recommendations/interaccion
+ * POST /api/usuarios/interacciones
  *
  * @param {'guardar' | 'ver_detalle' | 'click_card'} tipo
  * @param {string} institucionId
@@ -15,7 +15,7 @@ import api from '@shared/lib/api'
  * - click_card: 2 puntos
  */
 export function registrarInteraccion(institucionId, tipo, categoria) {
-  return api.post('/recommendations/interaccion', { institucionId, tipo, categoria })
+  return api.post('/usuarios/interacciones', { institucionId, tipo, categoria })
 }
 
 /**
@@ -32,5 +32,21 @@ export function useRegistrarInteraccion() {
       qc.invalidateQueries({ queryKey: ['recomendaciones'] })
       qc.invalidateQueries({ queryKey: ['recomendaciones-especialistas'] })
     },
+  })
+}
+
+/**
+ * Hook para consultar pesos de interacción acumulados del usuario (últimos 30 días).
+ * GET /api/usuarios/interacciones/pesos
+ */
+export function useInteraccionesPesos() {
+  return useQuery({
+    queryKey: ['interacciones', 'pesos'],
+    queryFn: () =>
+      api
+        .get('/usuarios/interacciones/pesos')
+        .then(r => r.data)
+        .catch(() => ({})),
+    staleTime: 1000 * 60 * 5,
   })
 }

@@ -1,10 +1,109 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useAuthStore } from '@features/auth'
+import { useAuthStore, useProfile, useUpdateProfile } from '@features/auth'
 import { useEstadoValidacion, useSubirDocumentoIdentidad } from '../hooks/useDocumentoIdentidad'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
+
+const normalizeText = (text = '') =>
+  text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+function SearchableSelect({ label, value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  const displayValue = isOpen ? userSearch : (value || '')
+  const normSearch = normalizeText(displayValue)
+  const filteredOptions = options.filter(opt =>
+    normalizeText(opt).includes(normSearch)
+  )
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+      {label && <label style={labelStyle}>{label}</label>}
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          style={{ ...inputStyle, paddingRight: 32 }}
+          value={displayValue}
+          onChange={e => {
+            setUserSearch(e.target.value)
+            setIsOpen(true)
+            if (!e.target.value) onChange('')
+          }}
+          onFocus={() => {
+            if (!disabled) {
+              setUserSearch(value || '')
+              setIsOpen(true)
+            }
+          }}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--fg3)', display: 'flex', alignItems: 'center' }}>
+          {Icons.chevronDown ? Icons.chevronDown({ s: 15 }) : '▼'}
+        </div>
+      </div>
+
+      {isOpen && !disabled && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: 4,
+          maxHeight: 180,
+          overflowY: 'auto',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 8,
+          boxShadow: 'var(--shadow-md)',
+          zIndex: 1010,
+        }}>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map(opt => (
+              <div
+                key={opt}
+                onClick={() => {
+                  onChange(opt)
+                  setIsOpen(false)
+                }}
+                style={{
+                  padding: '10px 12px',
+                  fontSize: 13.5,
+                  color: 'var(--fg1)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in oklch, var(--primary) 6%, var(--bg-surface))'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {opt}
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: '12px', fontSize: 13, color: 'var(--fg3)', textAlign: 'center' }}>
+              No se encontraron resultados
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 const MAX_SIZE_MB = 10
@@ -228,11 +327,37 @@ function DocumentUploader({ tipo, numeroCurp, onUploaded, isUploaded }) {
 
 export default function MiIdentidadPage() {
   const { data: status, isLoading, isError } = useEstadoValidacion()
+  const { data: profile } = useProfile()
+  const updateProfile = useUpdateProfile()
+  const { addToast } = useUiStore()
   const [curpNumber, setCurpNumber] = useState('')
+  const [isEditingAddress, setIsEditingAddress] = useState(false)
+  const [addressForm, setAddressForm] = useState({ state: '', city: '' })
   const { logout } = useAuthStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const activeTab = tabParam === 'seguridad' ? 'seguridad' : 'verificacion'
+
+  const handleStartEditAddress = () => {
+    setAddressForm({
+      state: profile?.state ?? '',
+      city: profile?.city ?? '',
+    })
+    setIsEditingAddress(true)
+  }
+
+  const handleSaveAddress = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        estado: addressForm.state,
+        ciudad: addressForm.city,
+      })
+      addToast('Dirección guardada correctamente', 'success')
+      setIsEditingAddress(false)
+    } catch {
+      addToast('Error al guardar la dirección', 'error')
+    }
+  }
 
   const estado = status?.estado ?? 'sin_documentos'
   const config = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.sin_documentos
@@ -546,6 +671,100 @@ export default function MiIdentidadPage() {
                   </p>
                 </div>
               )}
+
+              {/* Tarjeta: Dirección y Domicilio (trasladado desde Perfil a Verificación) */}
+              <div className="animate-fade-in-up delay-3" style={{
+                background: 'var(--bg-surface, #fff)', border: '1px solid var(--border-color)',
+                borderRadius: 14, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 14 }}>
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                      Dirección y Ubicación
+                    </h3>
+                    <p style={{ fontSize: 12.5, color: 'var(--fg3)', margin: '2px 0 0' }}>
+                      Indica tu ubicación para validar tu domicilio y conectar con oportunidades locales
+                    </p>
+                  </div>
+                  {!isEditingAddress && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{
+                        fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6,
+                        borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer',
+                        background: 'var(--bg-surface)', fontWeight: 600,
+                      }}
+                      onClick={handleStartEditAddress}
+                    >
+                      {Icons.edit({ s: 13 })} Editar
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingAddress ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-warm, #f8fafc)', borderRadius: 10 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>País</div>
+                      <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>México</div>
+                    </div>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-warm, #f8fafc)', borderRadius: 10 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ciudad / Estado</div>
+                      <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>
+                        {[profile?.city, profile?.state].filter(Boolean).join(', ') || 'No especificado'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                      <div>
+                        <label style={labelStyle}>País</label>
+                        <input style={{ ...inputStyle, background: 'var(--bg-warm)', cursor: 'not-allowed', marginTop: 4 }} value="México" disabled />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div>
+                          <label style={labelStyle}>Estado</label>
+                          <SearchableSelect
+                            value={addressForm.state}
+                            onChange={val => setAddressForm(f => ({ ...f, state: val, city: '' }))}
+                            options={STATES}
+                            placeholder="Selecciona un estado..."
+                          />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Ciudad / Municipio</label>
+                          <SearchableSelect
+                            value={addressForm.city}
+                            onChange={val => setAddressForm(f => ({ ...f, city: val }))}
+                            options={addressForm.state ? getMunicipalities(addressForm.state) : []}
+                            placeholder={addressForm.state ? "Selecciona..." : "Elige un estado primero"}
+                            disabled={!addressForm.state}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingAddress(false)}
+                        style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveAddress}
+                        disabled={updateProfile.isPending}
+                        className="btn-primary"
+                        style={{ padding: '8px 20px', fontSize: 13, borderRadius: 8 }}
+                      >
+                        {updateProfile.isPending ? 'Guardando...' : 'Guardar dirección'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )
         )}

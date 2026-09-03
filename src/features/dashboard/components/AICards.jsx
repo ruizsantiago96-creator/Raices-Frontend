@@ -72,12 +72,14 @@ export function NextStepsCard() {
               }}>
                 {i + 1}
               </div>
-              <span style={{ fontSize: 14, color: 'var(--fg1)', lineHeight: 1.5 }}>{paso}</span>
+              <span style={{ fontSize: 14, color: 'var(--fg1)', lineHeight: 1.5 }}>
+                {typeof paso === 'string' ? paso : (paso?.paso || paso?.descripcion || paso?.titulo || '')}
+              </span>
             </div>
           ))}
           {normalized.reasoning && (
             <div style={{ fontSize: 12, color: 'var(--fg3)', fontStyle: 'italic', marginTop: 4, lineHeight: 1.5 }}>
-              💡 {normalized.reasoning}
+              💡 {typeof normalized.reasoning === 'string' ? normalized.reasoning : ''}
             </div>
           )}
         </div>

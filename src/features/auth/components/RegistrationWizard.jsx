@@ -309,7 +309,7 @@ function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
 }
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function RegistrationWizard({ onBackToRoles }) {
+export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
@@ -320,6 +320,22 @@ export default function RegistrationWizard({ onBackToRoles }) {
   const [error, setError] = useState('')
   const [docFile, setDocFile] = useState(null)
   const [showPass, setShowPass] = useState(false)
+
+  const handleFinishToLogin = () => {
+    try {
+      useAuthStore.setState({ token: null, user: null, refreshToken: null })
+      localStorage.removeItem('raices_token')
+      sessionStorage.removeItem('raices_token')
+      localStorage.removeItem('raices_user')
+      sessionStorage.removeItem('raices_user')
+    } catch (_) {}
+
+    if (onGoToLogin) {
+      onGoToLogin(generalForm.email)
+    } else {
+      nav('/auth?mode=login', { replace: true })
+    }
+  }
 
   // Step 1–3: Datos personales, identificación, cuenta
   const [generalForm, setGeneralForm] = useState({
@@ -389,6 +405,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
   }
 
   const toggleInterest = (item) => {
+    setError('')
     setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
@@ -506,6 +523,18 @@ export default function RegistrationWizard({ onBackToRoles }) {
       return
     }
     setWizardStep('interests')
+    scrollTop()
+  }
+
+  // Step 10 → 11: Interests → Viability
+  const handleInterestsSubmit = (e) => {
+    if (e) e.preventDefault()
+    setError('')
+    if (selectedInterests.length === 0) {
+      setError('Por favor, selecciona al menos un tema que te gustaría explorar para continuar.')
+      return
+    }
+    setWizardStep('viability')
     scrollTop()
   }
 
@@ -1073,19 +1102,25 @@ export default function RegistrationWizard({ onBackToRoles }) {
            STEP 10: INTERESES (scrollable internally)
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'interests' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <form onSubmit={handleInterestsSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF4D68', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
                 ✨ Explora tus pasiones
               </div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 6px', lineHeight: 1.2 }}>
-                ¿Qué caminos te gustaría explorar?
+                ¿Qué caminos te gustaría explorar? <span style={{ color: '#ef4444' }}>*</span>
               </h2>
               <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-                Toca todos los temas que te llamen la atención. Personalizaremos tu feed y actividades recomendadas.
+                Selecciona al menos un tema que te llame la atención para continuar. Personalizaremos tu feed y actividades recomendadas.
               </p>
             </div>
+
+            {error && (
+              <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#ef4444', fontWeight: 600, marginBottom: 12 }}>
+                ⚠️ {error}
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {INTEREST_SECTIONS.map((sec) => (
@@ -1124,14 +1159,14 @@ export default function RegistrationWizard({ onBackToRoles }) {
 
           {/* Fixed nav at bottom */}
           <div style={{ display: 'flex', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5DCD2', flexShrink: 0 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('scales2'); scrollTop() }} style={{ flex: 1 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setError(''); setWizardStep('formats'); scrollTop() }} style={{ flex: 1 }}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
-            <button className="auth-btn-primary" type="button" onClick={() => { setWizardStep('viability'); scrollTop() }} style={{ flex: 2 }}>
+            <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
               Continuar {Icons.arrowRight({ s: 18 })}
             </button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
@@ -1271,7 +1306,7 @@ export default function RegistrationWizard({ onBackToRoles }) {
             </div>
           </div>
 
-          <button className="auth-btn-primary" type="button" onClick={() => nav('/auth')}
+          <button className="auth-btn-primary" type="button" onClick={handleFinishToLogin}
             style={{ width: '100%', padding: '14px 20px', fontSize: 15 }}>
             Comencemos tu camino en Raíces   {Icons.arrowRight({ s: 18 })}
           </button>

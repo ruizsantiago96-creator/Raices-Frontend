@@ -301,7 +301,7 @@ const STEP_ORDER = [
 const TOTAL_STEPS = STEP_ORDER.length
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function TutorRegistrationWizard({ onBackToRoles }) {
+export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
@@ -1349,7 +1349,17 @@ export default function TutorRegistrationWizard({ onBackToRoles }) {
             </p>
           </div>
           <button className="auth-btn-primary" type="button"
-            onClick={() => nav('/auth')}
+            onClick={() => {
+              try {
+                useAuthStore.setState({ token: null, user: null, refreshToken: null })
+                localStorage.removeItem('raices_token')
+                sessionStorage.removeItem('raices_token')
+                localStorage.removeItem('raices_user')
+                sessionStorage.removeItem('raices_user')
+              } catch (_) {}
+              if (onGoToLogin) onGoToLogin(generalForm.email)
+              else nav('/auth?mode=login', { replace: true })
+            }}
             style={{ minWidth: 240, padding: '14px 24px', fontSize: 15 }}>
             Comenzar {Icons.arrowRight({ s: 18 })}
           </button>

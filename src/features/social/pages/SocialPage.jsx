@@ -18,6 +18,7 @@ import {
 } from '../hooks/useCommunity'
 
 import { useAuthStore } from '@features/auth'
+import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { Icons } from '@shared/components/shared'
 import { AppSidebar, TopNav } from '@features/auth'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
@@ -388,6 +389,9 @@ function AboutCommunity() {
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState(null)
   const [newPost, setNewPost] = useState('')
+  const [pendingFile, setPendingFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const uploadMedia = useUploadMultimedia()
   const [mainTab, setMainTab] = useState('community')
   const [conectemosCategoria, setConectemosCategoria] = useState(null)
   const { data: conectemosData } = useConectemos({ categoriaCreativa: conectemosCategoria, enabled: mainTab === 'conectemos' })
@@ -403,14 +407,44 @@ export default function SocialPage() {
   const joinGroup = useJoinGroup()
   const leaveGroup = useLeaveGroup()
 
-  const handleSubmit = (e) => {
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('El archivo excede 10 MB', 'error')
+      return
+    }
+    setPendingFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!newPost.trim() || createPost.isPending) return
+    if (!newPost.trim() && !pendingFile) return
+    if (createPost.isPending || uploadMedia.isPending) return
+
+    let mediaUrl = ''
+    if (pendingFile) {
+      try {
+        const result = await uploadMedia.mutateAsync(pendingFile)
+        mediaUrl = result?.url ?? ''
+      } catch {
+        addToast('Error al subir el archivo', 'error')
+        return
+      }
+    }
+
+    const content = mediaUrl
+      ? `${newPost}${newPost.trim() ? '\n\n' : ''}${mediaUrl}`
+      : newPost
+
     createPost.mutate(
-      { content: newPost, grupoId: activeGroupId ?? undefined },
+      { content, grupoId: activeGroupId ?? undefined },
       {
         onSuccess: () => {
           setNewPost('')
+          setPendingFile(null)
+          setPreviewUrl(null)
           addToast(SOCIAL_TOAST.POST_CREATED, 'success')
         },
         onError: () => {
@@ -552,10 +586,34 @@ export default function SocialPage() {
                   <form onSubmit={handleSubmit} style={{ flex: 1 }}>
                     <textarea rows={3} value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder={SOCIAL_UI.POST_PLACEHOLDER}
                       style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                      <button type="submit" className="btn-primary" disabled={!newPost.trim() || createPost.isPending}
+
+                    {/* File preview */}
+                    {previewUrl && (
+                      <div style={{ position: 'relative', marginTop: 10, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-color)', display: 'inline-block' }}>
+                        {pendingFile?.type?.startsWith('video/') ? (
+                          <video src={previewUrl} style={{ maxWidth: '100%', maxHeight: 160, display: 'block', borderRadius: 10 }} controls />
+                        ) : (
+                          <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 160, display: 'block', borderRadius: 10, objectFit: 'cover' }} />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setPendingFile(null); setPreviewUrl(null) }}
+                          style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--fg3)', fontSize: 13, fontWeight: 600 }}>
+                        {Icons.camera({ s: 18 })}
+                        <span>Adjuntar</span>
+                        <input type="file" accept="image/*,video/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+                      </label>
+                      <button type="submit" className="btn-primary" disabled={(!newPost.trim() && !pendingFile) || createPost.isPending || uploadMedia.isPending}
                         style={{ fontSize: 15, padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {createPost.isPending ? SOCIAL_UI.POST_BUTTON_LOADING : SOCIAL_UI.POST_BUTTON}
+                        {createPost.isPending || uploadMedia.isPending ? SOCIAL_UI.POST_BUTTON_LOADING : SOCIAL_UI.POST_BUTTON}
                         {Icons.send({ s: 16 })}
                       </button>
                     </div>

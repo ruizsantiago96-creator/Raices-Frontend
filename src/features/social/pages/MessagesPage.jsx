@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
 import { useMiembrosDestacados } from '../hooks/useCommunity'
+import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { useAuthStore, useMe } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { SOCIAL_UI } from '../constants/socialMessages'
@@ -133,6 +134,9 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose, dra
   const [activePartnerId, setActivePartnerIdState] = useState(isFloating ? floatingChatPartnerId : null)
   const [text, setText] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [pendingFile, setPendingFile] = useState(null)
+  const [pendingFileName, setPendingFileName] = useState('')
+  const uploadMedia = useUploadMultimedia()
   const [showNewChatModal, setShowNewChatModal] = useState(false)
   const [activeNewPartner, setActiveNewPartner] = useState(null)
   const [modalSearchQuery, setModalSearchQuery] = useState('')
@@ -159,10 +163,37 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose, dra
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = (e) => {
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) return
+    setPendingFile(file)
+    setPendingFileName(file.name)
+  }
+
+  const handleSend = async (e) => {
     e.preventDefault()
-    if (!text.trim() || !activePartnerId || sendMessage.isPending) return
-    sendMessage.mutate({ toId: activePartnerId, content: text }, { onSuccess: () => setText('') })
+    if ((!text.trim() && !pendingFile) || !activePartnerId || sendMessage.isPending) return
+
+    let content = text
+    if (pendingFile) {
+      try {
+        const result = await uploadMedia.mutateAsync(pendingFile)
+        const url = result?.url ?? ''
+        content = url ? `${content}${content.trim() ? '\n' : ''}${url}` : content
+      } catch {
+        // silently fail on upload error
+      }
+    }
+
+    if (!content.trim()) return
+    sendMessage.mutate({ toId: activePartnerId, content }, {
+      onSuccess: () => {
+        setText('')
+        setPendingFile(null)
+        setPendingFileName('')
+      }
+    })
   }
 
   const activeConv = conversations.find(c => c.partner?.id === activePartnerId) || 
@@ -446,6 +477,14 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose, dra
 
           {/* Formulario de Envío de Mensaje */}
           <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+            {/* Pending file indicator */}
+            {pendingFile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 12px', borderRadius: 8, background: 'var(--bg-warm)', border: '1px solid var(--border-color)', fontSize: 13 }}>
+                <span style={{ color: 'var(--primary)' }}>📎</span>
+                <span style={{ flex: 1, color: 'var(--fg2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pendingFileName}</span>
+                <button type="button" onClick={() => { setPendingFile(null); setPendingFileName('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, padding: 0 }}>✕</button>
+              </div>
+            )}
             <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               
               {/* Pill Container */}
@@ -469,11 +508,12 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose, dra
                 />
                 
                 {/* Adjuntar Archivo */}
-                <button type="button" title="Adjuntar archivo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', padding: 4, display: 'flex', alignItems: 'center' }}>
+                <label title="Adjuntar archivo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: pendingFile ? 'var(--primary)' : 'var(--fg3)', padding: 4, display: 'flex', alignItems: 'center' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                   </svg>
-                </button>
+                  <input type="file" accept="image/*,video/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+                </label>
                 
                 {/* Nota de voz */}
                 <button type="button" title="Mensaje de voz" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', padding: 4, display: 'flex', alignItems: 'center' }}>
@@ -486,15 +526,19 @@ export function DirectMessages({ currentUserId, isFloating = false, onClose, dra
               </div>
 
               {/* Botón enviar */}
-              <button type="submit" disabled={!text.trim() || sendMessage.isPending}
+              <button type="submit" disabled={(!text.trim() && !pendingFile) || sendMessage.isPending || uploadMedia.isPending}
                 style={{
                   width: 44, height: 44, borderRadius: '50%',
-                  background: text.trim() ? 'var(--primary)' : 'var(--border-color)',
-                  border: 'none', color: '#fff', cursor: text.trim() ? 'pointer' : 'default',
+                  background: (text.trim() || pendingFile) ? 'var(--primary)' : 'var(--border-color)',
+                  border: 'none', color: '#fff', cursor: (text.trim() || pendingFile) ? 'pointer' : 'default',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0, transition: 'all 0.2s'
                 }}>
-                {Icons.send({ s: 18 })}
+                {sendMessage.isPending || uploadMedia.isPending ? (
+                  <span style={{ fontSize: 16, animation: 'spin 0.8s linear infinite' }}>⏳</span>
+                ) : (
+                  Icons.send({ s: 18 })
+                )}
               </button>
             </form>
           </div>

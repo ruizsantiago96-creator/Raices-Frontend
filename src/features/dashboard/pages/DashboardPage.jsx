@@ -2,15 +2,16 @@ import { useMemo, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe, useProfile } from '@features/auth'
 import { useRecomendaciones, useRecomendacionesEspecialistas, useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
+import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
-import { useRegistrarInteraccion } from '@features/institutions/hooks/useInteractions'
+import { useRegistrarInteraccion, useInteraccionesPesos } from '@features/institutions/hooks/useInteractions'
 import { usePosts, useToggleLike, useForos } from '@features/social'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
-import BackendFallback from '@shared/components/BackendFallback'
-import { DISCOVERY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
+import ProfileCompletionModal from '../components/ProfileCompletionModal'
+import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 
 /* ═══════════════════════════════════════════════════════════
    Helper: timeAgo
@@ -289,41 +290,131 @@ function FeedCard({ inst, isFav, onToggleFav }) {
 /* ═══════════════════════════════════════════════════════════
    Score an item using interest→category mapping + engagement
    ═══════════════════════════════════════════════════════════ */
-function scoreItem(item, interests, interestWeights, engagementWeights) {
+function scoreItem(item, interests = [], interestWeights = {}, engagementWeights = {}) {
   let score = 0
-  const cat = (item._category ?? '').toLowerCase()
+  const cat = String(item?._category ?? '').toLowerCase()
 
   // 1. Category match from registration interests
-  if (interestWeights[cat]) {
+  if (interestWeights?.[cat]) {
     score += interestWeights[cat] * 10
   }
 
   // 2. Engagement boost from saves/clicks
-  if (engagementWeights[cat]) {
+  if (engagementWeights?.[cat]) {
     score += engagementWeights[cat]
   }
 
   // 3. Text-level matching (fallback for granular interests)
-  const name = (item._title ?? item.name ?? '').toLowerCase()
-  const desc = (item._description ?? item.description ?? item.content ?? item.preguntaDetonante ?? '').toLowerCase()
+  const name = String(item?._title ?? item?.name ?? '').toLowerCase()
+  const desc = String(item?._description ?? item?.description ?? item?.content ?? item?.preguntaDetonante ?? '').toLowerCase()
 
-  for (const interest of interests) {
-    const i = interest.toLowerCase()
-    if (name.includes(i)) score += 5
-    if (desc.includes(i)) score += 3
+  if (Array.isArray(interests)) {
+    for (const interest of interests) {
+      const i = typeof interest === 'string' ? interest.toLowerCase() : ''
+      if (i && name.includes(i)) score += 5
+      if (i && desc.includes(i)) score += 3
+    }
   }
 
   // 4. Popularity boost (likes + comments + responses)
-  score += (item._likes ?? 0) * 2
-  score += (item._comments ?? 0) * 1.5
+  score += (Number(item?._likes) || 0) * 2
+  score += (Number(item?._comments) || 0) * 1.5
 
   // 5. Recency boost (newer = higher score)
-  const age = item._createdAt ? (Date.now() - new Date(item._createdAt).getTime()) / (1000 * 60 * 60) : 999
+  const age = item?._createdAt ? (Date.now() - new Date(item._createdAt).getTime()) / (1000 * 60 * 60) : 999
   if (age < 1) score += 20       // < 1 hour
   else if (age < 24) score += 10  // < 1 day
   else if (age < 72) score += 5   // < 3 days
 
   return score
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BehaviorWeightsCard — Pesos de comportamiento por categoría
+   ═══════════════════════════════════════════════════════════ */
+function BehaviorWeightsCard() {
+  const { data, isLoading } = useInteraccionesPesos()
+  const pesos = data?.pesos ?? {}
+  const hasAny = Object.values(pesos).some(v => v > 0)
+
+  if (isLoading) return null
+  if (!hasAny) return null
+
+  const CATEGORY_CONFIG = {
+    funcional: { label: 'Salud', color: '#FF4D68', icon: '❤️' },
+    educativo: { label: 'Educación', color: '#3A86FF', icon: '📚' },
+    laboral: { label: 'Empleo', color: '#FB8500', icon: '💼' },
+    social: { label: 'Comunidad', color: '#FDE674', icon: '🤝' },
+  }
+
+  const maxWeight = Math.max(...Object.values(pesos), 1)
+
+  return (
+    <div
+      className="animate-fade-in-up"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 16,
+        padding: 24,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        marginBottom: 16,
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div
+          style={{
+            width: 38, height: 38, borderRadius: '50% 50% 50% 14%',
+            background: 'color-mix(in oklch, #FB8500 12%, transparent)',
+            color: '#FB8500',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+          {Icons.barChart({ s: 18 })}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)' }}>
+            Tus intereses
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+            Basado en tu actividad de los últimos 30 días
+          </div>
+        </div>
+      </div>
+
+      {/* Weight bars */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
+          const weight = pesos[key] ?? 0
+          const pct = Math.round((weight / maxWeight) * 100)
+          return (
+            <div key={key}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{config.icon}</span>
+                  {config.label}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: config.color }}>
+                  {weight} pts
+                </span>
+              </div>
+              <div style={{ height: 6, background: 'var(--border-color)', borderRadius: 3, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${pct}%`,
+                    background: config.color,
+                    borderRadius: 3,
+                    transition: 'width 0.6s ease',
+                  }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -362,8 +453,11 @@ function sortFeed(items, mode) {
 export default function DashboardPage() {
   const { data: profile } = useProfile()
   const { data: onboardingStatus } = useOnboardingStatus()
-  const { data: recomendacionesData, isLoading: instLoading, isError: discoveryError, refetch: refetchDiscovery } = useRecomendaciones()
-  const recommendations = recomendacionesData?.instituciones ?? []
+  const { data: recomendacionesData, isLoading: instLoading, refetch: refetchDiscovery } = useRecomendaciones()
+  const { data: allInstitutions = [] } = useInstitutions({})
+  // Si las recomendaciones fallan (500), usar TODAS las instituciones como fallback
+  const discoveryError = recomendacionesData?._backendError === true
+  const recommendations = discoveryError ? allInstitutions : (recomendacionesData?.instituciones ?? [])
   const { data: especialistasData, isLoading: especialistasLoading } = useRecomendacionesEspecialistas()
   const especialistas = especialistasData?.especialistas ?? []
   const { data: posts = [], isLoading: postsLoading } = usePosts({ limite: 20 })
@@ -373,14 +467,32 @@ export default function DashboardPage() {
   const toggleLike = useToggleLike()
   const trackInteraccion = useRegistrarInteraccion()
   const [sortMode, setSortMode] = useState('relevantes')
+  const { data: user } = useMe()
+  const { data: identidadStatus } = useEstadoValidacion()
+
+  // Verificación y validación de identidad
+  const isVerified = Boolean(user?.is_verified || identidadStatus?.estado === 'aprobado')
+  const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
+  const isIncomplete = Boolean(onboardingStatus && !onboardingStatus.onboardingCompleto)
+
+  // Debe salir si fue rechazado por el admin, o si aún no está verificado y su perfil está incompleto.
+  // Estado en memoria de componente: al recargar la página vuelve a aparecer si le dio a "Más tarde".
+  const [modalDismissed, setModalDismissed] = useState(false)
+  const shouldShowProfileModal = !modalDismissed && (isRejected || (!isVerified && isIncomplete))
+
+  const handleDismissModal = () => {
+    setModalDismissed(true)
+  }
 
   // ── User interests from localStorage or profile (used silently for sorting)
   const userInterests = (() => {
     try {
       const local = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
-      if (local && local.length > 0) return local
+      if (Array.isArray(local) && local.length > 0) return local
     } catch (_) {}
-    return profile?.profiling?.goals || []
+    const profileGoals = profile?.profiling?.goals
+    if (Array.isArray(profileGoals)) return profileGoals
+    return []
   })()
 
   // ── Interest-based category weights (from registration)
@@ -392,7 +504,7 @@ export default function DashboardPage() {
   // ── Active categories from user's registration interests
   const activeCategories = useMemo(() => {
     const cats = new Set()
-    for (const [cat, weight] of Object.entries(interestWeights)) {
+    for (const [cat, weight] of Object.entries(interestWeights || {})) {
       if (weight > 0) cats.add(cat)
     }
     return cats
@@ -403,16 +515,20 @@ export default function DashboardPage() {
   // ── Build unified feed: normalize all items to a common shape
   const unifiedFeed = useMemo(() => {
     const items = []
+    const recs = Array.isArray(recommendations) ? recommendations : []
+    const postList = Array.isArray(posts) ? posts : []
+    const forumList = Array.isArray(foros) ? foros : []
 
     // Institutions → filtered by active categories from user interests
-    for (const inst of recommendations) {
+    for (const inst of recs) {
+      if (!inst) continue
       // If user has preferences, only show institutions matching their categories
       if (hasPreferences && !activeCategories.has(inst.category)) continue
 
       items.push({
         _type: 'institution',
         _id: `inst-${inst.id}`,
-        _score: 0,
+        _score: inst.final_score != null ? inst.final_score * 100 : 0,
         _createdAt: inst.created_at,
         _category: inst.category,
         _title: inst.name,
@@ -425,7 +541,8 @@ export default function DashboardPage() {
 
     // Community posts → always shown (community is social, everyone sees it)
     // But boost posts if user has social interest
-    for (const post of posts) {
+    for (const post of postList) {
+      if (!post) continue
       items.push({
         _type: 'post',
         _id: `post-${post.id}`,
@@ -441,7 +558,8 @@ export default function DashboardPage() {
     }
 
     // Forums → always shown (community content)
-    for (const forum of foros) {
+    for (const forum of forumList) {
+      if (!forum) continue
       items.push({
         _type: 'forum',
         _id: `forum-${forum.id}`,
@@ -480,7 +598,7 @@ export default function DashboardPage() {
     }
   }, [trackInteraccion])
 
-  const isLoading = instLoading || postsLoading || forosLoading || especialistasLoading
+  const isLoading = (instLoading && !discoveryError) || postsLoading || forosLoading || especialistasLoading
   const hasAnyContent = feed.length > 0
 
   // ── Track engagement when user saves
@@ -526,49 +644,18 @@ export default function DashboardPage() {
           <div style={{ marginBottom: 4 }}>
             <NextStepsCard />
             <ProfileSummaryCard />
+            <BehaviorWeightsCard />
           </div>
         )}
 
-        {/* ── Onboarding Banner ── */}
-        {onboardingStatus && !onboardingStatus.onboardingCompleto && (
-          <div
-            className="animate-fade-in-up"
-            style={{
-              background: 'linear-gradient(135deg, rgba(47,128,237,0.08) 0%, rgba(99,102,241,0.08) 100%)',
-              border: '1px solid rgba(47,128,237,0.2)',
-              borderRadius: 16, padding: 20, marginBottom: 16,
-              display: 'flex', alignItems: 'center', gap: 16,
-            }}
-          >
-            <div style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: 'rgba(47,128,237,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              {Icons.user({ s: 20 })}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 2 }}>
-                Completa tu perfil ({onboardingStatus.porcentaje ?? 0}%)
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
-                {onboardingStatus.camposFaltantes?.length > 0
-                  ? `Falta: ${onboardingStatus.camposFaltantes.slice(0, 3).join(', ')}`
-                  : 'Para recibir mejores recomendaciones'
-                }
-              </div>
-            </div>
-            <Link to="/profile" style={{
-              padding: '8px 16px', borderRadius: 8,
-              background: 'var(--primary)', color: '#fff',
-              fontSize: 13, fontWeight: 600, textDecoration: 'none',
-              whiteSpace: 'nowrap',
-            }}>
-              Completar {Icons.arrowRight({ s: 14 })}
-            </Link>
-          </div>
-        )}
+        {/* ── Modal popup para completar perfil al iniciar sesión ── */}
+        <ProfileCompletionModal
+          isOpen={shouldShowProfileModal}
+          onboardingStatus={onboardingStatus}
+          isRejected={isRejected}
+          identidadStatus={identidadStatus}
+          onClose={handleDismissModal}
+        />
 
         {/* ── Especialistas Recomendados ── */}
         {!especialistasLoading && especialistas.length > 0 && (
@@ -645,10 +732,27 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* ── Institutions Error Banner ── */}
+        {discoveryError && (
+          <div style={{
+            background: 'rgba(220, 53, 69, 0.06)',
+            border: '1px solid rgba(220, 53, 69, 0.2)',
+            borderRadius: 12, padding: '14px 20px', marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#DC3545' }}>No se pudieron cargar las recomendaciones</div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>El feed de comunidades sigue disponible más abajo.</div>
+            </div>
+            <button onClick={() => refetchDiscovery()} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #DC3545', background: 'transparent', color: '#DC3545', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              Reintentar
+            </button>
+          </div>
+        )}
+
         {/* ── Feed ── */}
-        {discoveryError ? (
-          <BackendFallback method={DISCOVERY_ENDPOINTS.SEARCH.method} endpoint={DISCOVERY_ENDPOINTS.SEARCH.path} onRetry={() => refetchDiscovery()} />
-        ) : isLoading ? (
+        {isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[0, 1, 2].map(i => <FeedItemSkeleton key={i} />)}
           </div>

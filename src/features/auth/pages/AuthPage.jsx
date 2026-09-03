@@ -42,6 +42,23 @@ export default function AuthPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    const m = params.get('mode')
+    if (m === 'login') {
+      setMode('login')
+      setRegStep(1)
+    } else if (m === 'register') {
+      setMode('register')
+    }
+  }, [params])
+
+  const goToLogin = (email = '') => {
+    if (email) setForm(f => ({ ...f, email }))
+    setMode('login')
+    setRegStep(1)
+    nav('/auth?mode=login', { replace: true })
+  }
+
   const didLoginRef = useRef(false)
   useEffect(() => { return () => { didLoginRef.current = false } }, [])
 
@@ -431,8 +448,8 @@ export default function AuthPage() {
                     </div>
                   )}
 
-                  {regStep === 'pcd_wizard' && <RegistrationWizard onBackToRoles={() => setRegStep(1)} />}
-                  {regStep === 'tutor_wizard' && <TutorRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
+                  {regStep === 'pcd_wizard' && <RegistrationWizard onBackToRoles={() => setRegStep(1)} onGoToLogin={goToLogin} />}
+                  {regStep === 'tutor_wizard' && <TutorRegistrationWizard onBackToRoles={() => setRegStep(1)} onGoToLogin={goToLogin} />}
                   {regStep === 'institution_wizard' && <InstitutionRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
                   {regStep === 'empresa_wizard' && <EnterpriseRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
 

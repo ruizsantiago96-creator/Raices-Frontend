@@ -4,7 +4,7 @@ import { mapInstitucion } from './useInstitutions'
 
 /**
  * Hook para obtener instituciones recomendadas personalizadas.
- * GET /api/recommendations
+ * GET /api/usuarios/recomendaciones
  *
  * Algoritmo nuevo (server-side):
  * - Score de intereses (60%): coincidencia por tokens entre metasActuales + areasInteres
@@ -18,21 +18,33 @@ export function useRecomendaciones({ pagina = 1, limite = 20 } = {}) {
   return useQuery({
     queryKey: ['recomendaciones', { pagina, limite }],
     queryFn: async () => {
-      const r = await api.get('/recommendations', { params: { pagina, limite } })
-      const res = r.data
-      const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      return {
-        instituciones: data.map(mapInstitucion),
-        paginacion: res?.paginacion ?? { total: data.length, pagina: 1, limite: 20, totalPaginas: 1 },
+      try {
+        const r = await api.get('/usuarios/recomendaciones', { params: { pagina, limite } })
+        const res = r.data
+        const data = Array.isArray(res) ? res : (res?.datos ?? [])
+        return {
+          instituciones: data.map(mapInstitucion),
+          paginacion: res?.paginacion ?? { total: data.length, pagina, limite, totalPaginas: 1 },
+        }
+      } catch (err) {
+        // Si el backend devuelve 500 (faltan metasActuales/escalasVida/areasInteres),
+        // devolver resultado vacío en vez de lanzar error
+        console.warn('[Recomendaciones] Backend error:', err.response?.status, err.message)
+        return {
+          instituciones: [],
+          paginacion: { total: 0, pagina, limite, totalPaginas: 0 },
+          _backendError: true,
+        }
       }
     },
     staleTime: 1000 * 60 * 10, // 10 minutos — las recomendaciones no cambian tan rápido
+    retry: false, // No reintentar — el error es por datos faltantes, no por red
   })
 }
 
 /**
  * Hook para obtener especialistas recomendados personalizados.
- * GET /api/recommendations/especialistas
+ * GET /api/usuarios/especialistas
  *
  * Algoritmo nuevo (server-side):
  * - Tipo de discapacidad (40%): coincidencia entre tipos del usuario y especialista
@@ -46,7 +58,7 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
   return useQuery({
     queryKey: ['recomendaciones-especialistas', { pagina, limite }],
     queryFn: async () => {
-      const r = await api.get('/recommendations/especialistas', { params: { pagina, limite } })
+      const r = await api.get('/usuarios/especialistas', { params: { pagina, limite } })
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
       return {
@@ -60,7 +72,7 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
 
 /**
  * Hook para verificar el estado de onboarding del usuario.
- * GET /api/recommendations/onboarding
+ * GET /api/usuarios/onboarding
  *
  * Retorna:
  * - onboardingCompleto: boolean
@@ -71,7 +83,7 @@ export function useOnboardingStatus() {
   return useQuery({
     queryKey: ['onboarding-status'],
     queryFn: async () => {
-      const r = await api.get('/recommendations/onboarding')
+      const r = await api.get('/usuarios/onboarding')
       return r.data
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
