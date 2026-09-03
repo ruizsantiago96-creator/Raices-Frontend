@@ -42,15 +42,18 @@ export default function AuthPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  useEffect(() => {
-    const m = params.get('mode')
-    if (m === 'login') {
+  const urlMode = params.get('mode')
+  const [prevUrlMode, setPrevUrlMode] = useState(urlMode)
+
+  if (prevUrlMode !== urlMode) {
+    setPrevUrlMode(urlMode)
+    if (urlMode === 'login') {
       setMode('login')
       setRegStep(1)
-    } else if (m === 'register') {
+    } else if (urlMode === 'register') {
       setMode('register')
     }
-  }, [params])
+  }
 
   const goToLogin = (email = '') => {
     if (email) setForm(f => ({ ...f, email }))
