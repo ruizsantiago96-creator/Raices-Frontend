@@ -20,35 +20,7 @@ function getAccionStyle(accion) {
   return { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8' }
 }
 
-function AuditStatsBar({ stats }) {
-  if (!stats) return null
-  return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {[
-        { label: 'Total registros', value: stats.totalRegistros ?? stats.total ?? 0, icon: Icons.barChart },
-        { label: 'Usuarios activos', value: stats.usuariosActivos ?? 0, icon: Icons.users },
-        { label: 'Acciones hoy', value: stats.accionesHoy ?? 0, icon: Icons.activity },
-      ].map((s, i) => (
-        <div key={i} style={{
-          flex: 1, minWidth: 160, padding: '14px 18px',
-          background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-          borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12,
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: 'var(--primary-subtle)',
-            color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            {s.icon({ s: 16 })}
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)' }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: 'var(--fg3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+
 
 function AuditLogRow({ log }) {
   const accionStyle = getAccionStyle(log.accion)
@@ -123,8 +95,18 @@ export default function AuditTab() {
         </div>
       </div>
 
-      {/* Stats */}
-      <AuditStatsBar stats={stats} />
+      {/* Inline summary strip */}
+      {stats && (
+        <div style={{
+          display: 'flex', gap: 20, marginBottom: 20, padding: '8px 0',
+          borderBottom: '1px solid var(--border-color)', fontSize: 12, color: 'var(--fg3)',
+        }}>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{stats.totalRegistros ?? stats.total ?? 0}</strong> registros</span>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{stats.accionesHoy ?? 0}</strong> acciones hoy</span>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{stats.usuariosActivos ?? 0}</strong> usuarios activos</span>
+        </div>
+      )}
+
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>

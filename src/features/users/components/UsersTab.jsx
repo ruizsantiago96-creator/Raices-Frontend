@@ -47,8 +47,8 @@ function EmptyState({ icon, title, sub }) {
 }
 
 function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
-  return (
-    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000 }}>
+  return createPortal(
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: danger ? 'color-mix(in oklch, var(--color-error) 14%, transparent)' : 'var(--primary-subtle)', color: danger ? 'var(--color-error)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -62,7 +62,8 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
           <button onClick={onConfirm} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: danger ? 'var(--color-error)' : 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{confirmLabel}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -118,7 +119,14 @@ export default function UsersTab({ currentUserId }) {
     onError: (e) => addToast(e.response?.data?.message ?? 'Error', 'error'),
   })
   const doDelete = () => {
-    deleteUser.mutate(confirm.id, { onSuccess: () => { addToast('Usuario eliminado', 'success'); setConfirm(null); setActionMenuId(null) } })
+    if (!confirm?.id) return
+    const idToDelete = confirm.id
+    setConfirm(null)
+    setActionMenuId(null)
+    deleteUser.mutate(idToDelete, {
+      onSuccess: () => addToast('Usuario eliminado', 'success'),
+      onError: (e) => addToast(e.response?.data?.message ?? 'Error al eliminar', 'error'),
+    })
   }
   const openEdit = (u) => {
     setEditUser(u)
@@ -267,8 +275,8 @@ export default function UsersTab({ currentUserId }) {
       )}
 
       {/* Edit Modal */}
-      {editUser && (
-        <div onClick={() => setEditUser(null)} className="modal-overlay" style={{ zIndex: 1000 }}>
+      {editUser && createPortal(
+        <div onClick={() => setEditUser(null)} className="modal-overlay" style={{ zIndex: 9999 }}>
           <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -293,7 +301,8 @@ export default function UsersTab({ currentUserId }) {
               <button onClick={doEdit} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{USERS_UI.EDIT_SAVE}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirm */}
@@ -309,8 +318,8 @@ export default function UsersTab({ currentUserId }) {
       )}
 
       {/* Role Change Select */}
-      {roleConfirm && (
-        <div onClick={() => setRoleConfirm(null)} className="modal-overlay" style={{ zIndex: 1000 }}>
+      {roleConfirm && createPortal(
+        <div onClick={() => setRoleConfirm(null)} className="modal-overlay" style={{ zIndex: 9999 }}>
           <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -336,7 +345,8 @@ export default function UsersTab({ currentUserId }) {
               <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setRoleConfirm(null)}>{USERS_UI.EDIT_CANCEL}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

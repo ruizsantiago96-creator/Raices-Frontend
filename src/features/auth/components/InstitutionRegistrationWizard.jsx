@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { Icons } from '@shared/components/shared'
-import { setRememberMe, saveUser } from '@shared/lib/storage'
+import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
+import { setRememberMe, saveToken, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import PasswordRequirements from './PasswordRequirements'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
@@ -52,6 +52,14 @@ const SERVICE_CATEGORIES = [
   },
 ]
 
+// ── CATEGORÍAS PRINCIPALES (backend: funcional|educativo|laboral|social) ─
+const INSTITUTION_CATEGORIES = [
+  { id: 'funcional', label: 'Funcional', desc: 'Rehabilitación, terapias e independencia', icon: '💪' },
+  { id: 'educativo', label: 'Educativo', desc: 'Educación, formación y capacitación', icon: '📚' },
+  { id: 'laboral', label: 'Laboral', desc: 'Empleo y reinserción laboral', icon: '💼' },
+  { id: 'social', label: 'Social', desc: 'Arte, cultura, deporte y vida social', icon: '🤝' },
+]
+
 // ── COMUNIDADES A CONECTAR ────────────────────────────────────────
 const COMMUNITIES = [
   { id: 'pcd', label: 'Personas con discapacidad', desc: 'Conectar directamente con personas que buscan apoyo', icon: '♿' },
@@ -90,6 +98,9 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
   // Step 1: Subtipo institucional
   const [subtipo, setSubtipo] = useState('')
 
+  // Step 2: Categoría principal
+  const [categoria, setCategoria] = useState('')
+
   // Step 2: Info de la organización
   const [orgForm, setOrgForm] = useState({
     nombre: '',
@@ -99,15 +110,16 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
     contactEmail: '',
     phone: '',
     website: '',
+    curp: '',
   })
 
-  // Step 3: Servicios que ofrece
+  // Step 4: Servicios que ofrece
   const [selectedServices, setSelectedServices] = useState([])
 
-  // Step 4: Comunidad a conectar
+  // Step 5: Comunidad a conectar
   const [selectedCommunity, setSelectedCommunity] = useState('')
 
-  // Step 5: Cuenta y ubicación
+  // Step 6: Cuenta y ubicación
   const [accountForm, setAccountForm] = useState({
     email: '',
     password: '',
@@ -120,8 +132,8 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
     if (col) col.scrollTop = 0
   }
 
-  const TOTAL_STEPS = 5
-  const stepIndex = ['subtype', 'org', 'services', 'community', 'account'].indexOf(wizardStep)
+  const TOTAL_STEPS = 6
+  const stepIndex = ['subtype', 'org', 'category', 'services', 'community', 'account'].indexOf(wizardStep)
   const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
 
   // ── Toggle service ──────────────────────────────────────────────
@@ -146,6 +158,26 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
     setError('')
     if (!orgForm.nombre) {
       setError('Ingresa el nombre de la institución.')
+      return
+    }
+    const curp = (orgForm.curp || '').trim().toUpperCase()
+    if (!curp) {
+      setError('Ingresa la CURP del representante legal.')
+      return
+    }
+    if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(curp)) {
+      setError('La CURP del representante legal no es válida. Debe tener 18 caracteres alfanuméricos.')
+      return
+    }
+    setWizardStep('category')
+    scrollTop()
+  }
+
+  const handleCategorySubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    if (!categoria) {
+      setError('Selecciona la categoría principal de tu institución.')
       return
     }
     setWizardStep('services')
@@ -209,7 +241,9 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
         ciudad: accountForm.city,
         estado: accountForm.state,
         // Datos institucionales
+        categoria,
         tipoInstitucion: subtipo,
+        curp: (orgForm.curp || '').trim().toUpperCase(),
         descripcion: orgForm.descripcion,
         mision: orgForm.mision,
         nombreContacto: orgForm.contactName,
@@ -222,40 +256,74 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      if (authResult?.tokenAcceso) {
-        const token = authResult.tokenAcceso
+      // El backend registra instituciones SIN token ("solo registro"/requiereInicioSesion:
+      // la cuenta se crea pero hay que iniciar sesión por separado). Intentamos obtener
+      // sesión con las mismas credenciales para poder guardar el perfil autenticado.
+      let token = authResult?.tokenAcceso ?? null
+      let refreshToken = authResult?.tokenRefresco ?? null
+      let usuario = authResult?.usuario ?? null
+
+      if (!token) {
+        try {
+          const loginRes = await api.post('/autenticacion/inicio-sesion', {
+            email: accountForm.email,
+            password: accountForm.password,
+          })
+          const lr = loginRes.data
+          token = lr?.tokenAcceso ?? null
+          refreshToken = lr?.tokenRefresco ?? null
+          usuario = lr?.usuario ?? null
+        } catch (loginErr) {
+          console.warn('Auto login tras registro institucional sin token falló:', loginErr)
+        }
+      }
+
+      if (token) {
         const userObj = {
-          id: authResult.usuario?.id,
-          email: authResult.usuario?.email || accountForm.email,
+          id: usuario?.id,
+          email: usuario?.email || accountForm.email,
           role: 'institution',
           full_name: orgForm.nombre,
           institutionType: subtipo,
         }
+
+        // Persistir la sesión ANTES del PUT para que la petición salga autenticada
+        // (el interceptor lee el token del storage) y para que el perfil quede
+        // guardado antes de que el auto-login redirija al panel institucional.
         setRememberMe(true)
-        setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
+        saveToken(token, true)
         saveUser(userObj, true)
+
+        // 2. Guardar perfil institucional
+        try {
+          await api.put('/usuarios/perfil', {
+            perfilInstitucional: {
+              tipoInstitucion: subtipo,
+              categoria,
+              nombreInstitucion: orgForm.nombre,
+              descripcion: orgForm.descripcion,
+              mision: orgForm.mision,
+              nombreContacto: orgForm.contactName,
+              telefonoContacto: orgForm.phone,
+              sitioWeb: orgForm.website,
+              serviciosOfrecidos: selectedServices,
+              comunidadConectada: selectedCommunity,
+            },
+          })
+        } catch (profErr) {
+          console.warn('Profile save notice:', profErr)
+        }
+
+        // Login automático → AuthPage redirige al panel institucional
+        setAuth(token, userObj, refreshToken, true)
+        addToast('¡Institución registrada exitosamente!', 'success')
+        return
       }
 
-      // 2. Guardar perfil institucional
-      try {
-        await api.put('/usuarios/perfil', {
-          perfilInstitucional: {
-            tipoInstitucion: subtipo,
-            nombreInstitucion: orgForm.nombre,
-            descripcion: orgForm.descripcion,
-            mision: orgForm.mision,
-            nombreContacto: orgForm.contactName,
-            telefonoContacto: orgForm.phone,
-            sitioWeb: orgForm.website,
-            serviciosOfrecidos: selectedServices,
-            comunidadConectada: selectedCommunity,
-          },
-        })
-      } catch (profErr) {
-        console.warn('Profile save notice:', profErr)
-      }
-
-      addToast('¡Institución registrada exitosamente!', 'success')
+      // Sin sesión disponible (p. ej. cuenta pendiente de aprobación): los datos
+      // institucionales ya viajaron en el payload de registro; el usuario inicia
+      // sesión por separado cuando su cuenta esté activa.
+      addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
       setWizardStep('thanks')
       scrollTop()
     } catch (err) {
@@ -401,6 +469,16 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
           </div>
 
           <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>CURP del representante legal <span style={{ color: '#ef4444' }}>*</span></label>
+            <input type="text" className="auth-input" required placeholder="18 caracteres alfanuméricos"
+              value={orgForm.curp}
+              onChange={e => setOrgForm({ ...orgForm, curp: e.target.value.toUpperCase() })}
+              maxLength={18}
+              style={{ textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.04em' }} />
+            <div style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 4 }}>La CURP del representante legal es necesaria para verificar tu institución.</div>
+          </div>
+
+          <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Sitio web (opcional)</label>
             <input type="url" className="auth-input" placeholder="https://ejemplo.org"
               value={orgForm.website}
@@ -412,7 +490,46 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 3: SERVICIOS QUE OFRECE
+           STEP 3: CATEGORÍA PRINCIPAL
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'category' && (
+        <form onSubmit={handleCategorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              ¿Cuál es la categoría principal de tu institución?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Ayuda a que las personas encuentren tu institución según el tipo de apoyo que buscan.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {INSTITUTION_CATEGORIES.map(cat => {
+              const color = CATEGORY_COLORS[cat.id] ?? '#2F80ED'
+              const active = categoria === cat.id
+              return (
+                <button key={cat.id} type="button" onClick={() => setCategoria(cat.id)}
+                  style={{
+                    padding: '16px 14px', borderRadius: 12,
+                    border: `2px solid ${active ? color : '#E5DCD2'}`,
+                    background: active ? `${color}1a` : '#ffffff',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6,
+                    transition: 'all 0.2s ease',
+                  }}>
+                  <div style={{ fontSize: 24 }}>{cat.icon}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#073B4C' : 'var(--fg1)' }}>{cat.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--fg3)', lineHeight: 1.3 }}>{cat.desc}</div>
+                </button>
+              )
+            })}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('org'); scrollTop() }} submitLabel="Continuar a servicios" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: SERVICIOS QUE OFRECE
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'services' && (
         <form onSubmit={handleServicesSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -451,12 +568,12 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
             </div>
           ))}
 
-          <NavButtons onBack={() => { setWizardStep('org'); scrollTop() }} submitLabel="Continuar a comunidad" />
+          <NavButtons onBack={() => { setWizardStep('category'); scrollTop() }} submitLabel="Continuar a comunidad" />
         </form>
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 4: COMUNIDAD A CONECTAR
+           STEP 5: COMUNIDAD A CONECTAR
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'community' && (
         <form onSubmit={handleCommunitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -498,7 +615,7 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 5: CUENTA Y UBICACIÓN
+           STEP 6: CUENTA Y UBICACIÓN
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account' && (
         <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -526,11 +643,16 @@ export default function InstitutionRegistrationWizard({ onBackToRoles }) {
                 placeholder="Mínimo 8 caracteres"
                 value={accountForm.password}
                 onChange={e => setAccountForm({ ...accountForm, password: e.target.value })}
-                style={{ paddingRight: 44 }}
+                style={{ paddingRight: 48 }}
               />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)' }}>
-                {showPass ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="auth-pass-toggle"
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-pressed={showPass}
+              >
+                {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
               </button>
             </div>
             {accountForm.password && (

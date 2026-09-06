@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { useUpdateProfile } from '../hooks/useAuth'
+import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
+import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import PasswordRequirements from './PasswordRequirements'
 
 
 // ── LISTAS Y CATÁLOGOS ───────────────────────────────────────────
 const LIST_ACOMPANAMIENTO = [
-  { id: 'cuenta', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos y comunidades' },
-  { id: 'paso_a_paso', label: 'Me gustaría recibir recomendaciones paso a paso.', desc: 'Te guiaremos con rutas sugeridas a tu propio ritmo' },
-  { id: 'apoyo_necesario', label: 'Prefiero contar con apoyo cuando lo necesite.', desc: 'Acceso directo a acompañamiento y orientación' },
+  { id: 'explorar_solo', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos y comunidades' },
+  { id: 'recomendaciones_paso', label: 'Me gustaría recibir recomendaciones paso a paso.', desc: 'Te guiaremos con rutas sugeridas a tu propio ritmo' },
+  { id: 'apoyo_necesite', label: 'Prefiero contar con apoyo cuando lo necesite.', desc: 'Acceso directo a acompañamiento y orientación' },
 ]
 
 const CONDICIONES_PCD = [
@@ -56,11 +57,10 @@ const ESCALAS_OPCIONES = {
     { value: 1, label: 'Requiero acompañamiento constante' },
   ],
   comunicacion: [
-    { value: 5, label: 'Verbal fluida' },
-    { value: 4, label: 'Verbal limitada' },
-    { value: 3, label: 'No verbal con comunicación funcional (señas, dispositivos, apoyos visuales)' },
-    { value: 2, label: 'No verbal con apoyo constante' },
-    { value: 1, label: 'En desarrollo / exploración' },
+    { value: 4, label: 'Verbal fluida' },
+    { value: 3, label: 'Verbal con apoyos / limitada' },
+    { value: 2, label: 'No verbal (funcional / con apoyos)' },
+    { value: 1, label: 'En desarrollo o exploración' },
   ],
   comprension: [
     { value: 4, label: 'Independiente' },
@@ -143,6 +143,70 @@ const LIST_VIABILIDAD = [
   { id: 'bajo_costo', label: 'Bajo costo' },
   { id: 'moderada', label: 'Inversión moderada' },
   { id: 'sin_restricciones', label: 'Sin restricciones definidas' },
+]
+
+const LIST_NECESIDADES = [
+  'Transporte accesible',
+  'Accesibilidad en espacios públicos',
+  'Apoyo en la comunicación',
+  'Acompañamiento a actividades o citas',
+  'Apoyo con trámites y documentos',
+  'Apoyo económico / becas',
+  'Atención en salud y terapias',
+  'Apoyo emocional o psicológico',
+  'Ajustes razonables en escuela o trabajo',
+  'Tecnología de apoyo / asistiva',
+]
+
+const LIST_AREAS_APOYO = [
+  'Movilidad y traslados',
+  'Cuidado personal y autocuidado',
+  'Comunicación',
+  'Actividades de la vida diaria',
+  'Ámbito educativo / escolar',
+  'Ámbito laboral / empleo',
+  'Trámites y gestiones',
+  'Vida social y participación',
+  'Tareas del hogar',
+  'Tecnología y dispositivos',
+  'Salud y bienestar',
+]
+
+const MERIDA_ZONAS_SUGERIDAS = [
+  'Centro (97000)',
+  'Altabrisa (97130)',
+  'Francisco de Montejo (97203)',
+  'Ciudad Caucel (97314)',
+  'Las Américas (97302)',
+  'García Ginerés (97070)',
+  'Campestre (97120)',
+  'Chuburná (97205)',
+  'Montebello (97113)',
+  'Itzimná (97100)',
+  'Pensiones (97217)',
+  'Los Héroes (97306)',
+]
+
+const LIST_EDUCACION = [
+  'Escuela regular',
+  'Escuela con apoyos (inclusiva)',
+  'Escuela de educación especial (CAM)',
+  'Educación en casa (homeschool)',
+  'Educación para adultos (INEA)',
+  'Estudios técnicos o de oficio',
+  'Universidad',
+  'No he asistido a la escuela',
+]
+
+const LIST_TERAPIAS = [
+  'Física / rehabilitación',
+  'Ocupacional',
+  'De lenguaje / comunicación',
+  'Psicológica o emocional',
+  'Conductual (ABA)',
+  'Integración sensorial',
+  'Neuropsicología',
+  'Ninguna hasta ahora',
 ]
 
 // ── CURP VALIDATION ──────────────────────────────────────────────
@@ -279,6 +343,27 @@ function ScaleCard({ title, desc, options, value, onChange }) {
   )
 }
 
+// ── CHECK CHIP (multi-select compact helper) ─────────────────────
+function CheckChip({ label, selected, onToggle, accent = '#229B58' }) {
+  return (
+    <button type="button" onClick={onToggle}
+      style={{
+        padding: '9px 12px', borderRadius: 8,
+        border: `1.5px solid ${selected ? accent : '#E5DCD2'}`,
+        background: selected ? `color-mix(in oklch, ${accent} 8%, white)` : '#ffffff',
+        color: selected ? '#073B4C' : 'var(--fg1)',
+        fontWeight: selected ? 700 : 500, fontSize: 12.5,
+        cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
+        fontFamily: 'var(--font-body)', transition: 'all 0.15s ease',
+      }}>
+      <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${selected ? accent : '#9ca3af'}`, background: selected ? accent : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+        {selected && Icons.check({ s: 10 })}
+      </div>
+      <span>{label}</span>
+    </button>
+  )
+}
+
 // ── STEP ORDER ───────────────────────────────────────────────────
 const STEP_ORDER = [
   'identity',     // 1: Nombres, apellidos, fecha nacimiento
@@ -286,11 +371,13 @@ const STEP_ORDER = [
   'accommodation',// 3: Preferencia de acompañamiento
   'condition',    // 4: Condición PCD
   'origin',       // 5: Neurodivergencia, diagnóstico, temporalidad
-  'scales1',      // 6: Escalas A-D
-  'scales2',      // 7: Escalas E-H
-  'formats',      // 8: Formatos de información
-  'interests',    // 9: Intereses
-  'viability',    // 10: Viabilidad económica
+  'history',      // 6: Historial educativo y terapias
+  'support',      // 7: Zonas preferidas, necesidades y áreas de apoyo
+  'scales1',      // 8: Escalas A-D
+  'scales2',      // 9: Escalas E-H
+  'formats',      // 10: Formatos de información
+  'interests',    // 11: Intereses
+  'viability',    // 12: Viabilidad económica
 ]
 const TOTAL_STEPS = STEP_ORDER.length
 
@@ -314,6 +401,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   const updateProfile = useUpdateProfile()
+  const updateNeedsProfile = useUpdateNeedsProfile()
 
   const [wizardStep, setWizardStep] = useState('identity')
   const [sending, setSending] = useState(false)
@@ -341,7 +429,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   const [generalForm, setGeneralForm] = useState({
     nombres: '', apellidoPaterno: '', apellidoMaterno: '',
     birth_date: '', domicilio: '', email: '', password: '',
-    curp: '', acompanamiento: '',
+    curp: '', acompanamiento: '', estado: '', ciudad: '',
   })
 
   // Step 5–6: Condición y diagnóstico
@@ -364,6 +452,16 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   const [selectedInterests, setSelectedInterests] = useState([])
   const [otrosIntereses, setOtrosIntereses] = useState('')
   const [viabilidad, setViabilidad] = useState('')
+
+  // Step 6: Historial educativo y terapias
+  const [educacionHistory, setEducacionHistory] = useState([])
+  const [terapiaHistory, setTerapiaHistory] = useState([])
+
+  // Step 7: Zonas/colonias preferidas, necesidades y áreas de apoyo
+  const [preferredZones, setPreferredZones] = useState([])
+  const [zonaInput, setZonaInput] = useState('')
+  const [needsList, setNeedsList] = useState([])
+  const [supportAreas, setSupportAreas] = useState([])
 
   // AI summary
   const [aiNarrative, setAiNarrative] = useState(null)
@@ -409,6 +507,42 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
+  const toggleEducacionHistory = (item) => {
+    setEducacionHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  }
+
+  const toggleTerapiaHistory = (item) => {
+    setTerapiaHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  }
+
+  const toggleNeedsList = (item) => {
+    setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  }
+
+  const toggleSupportAreas = (item) => {
+    setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  }
+
+  // Zonas/colonias de preferencia (texto libre + chips)
+  const addPreferredZone = () => {
+    const z = zonaInput.trim()
+    if (!z) return
+    setPreferredZones(prev => prev.some(x => x.toLowerCase() === z.toLowerCase()) ? prev : [...prev, z])
+    setZonaInput('')
+  }
+
+  const removePreferredZone = (z) => {
+    setPreferredZones(prev => prev.filter(x => x !== z))
+  }
+
+  const toggleSuggestedZone = (z) => {
+    if (preferredZones.includes(z)) {
+      removePreferredZone(z)
+    } else {
+      setPreferredZones(prev => [...prev, z])
+    }
+  }
+
   // ── Navigation handlers ─────────────────────────────────────────
   // Step 1 → 2: Identity → Security
   const handleIdentitySubmit = (e) => {
@@ -420,6 +554,10 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     }
     if (!generalForm.birth_date) {
       setError('Por favor, ingresa tu fecha de nacimiento.')
+      return
+    }
+    if (!generalForm.estado || !generalForm.ciudad) {
+      setError('Por favor, selecciona tu estado y municipio.')
       return
     }
     setWizardStep('security')
@@ -471,7 +609,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     scrollTop()
   }
 
-  // Step 5 → 6: Origin → Scales1
+  // Step 5 → 6: Origin → History
   const handleOriginSubmit = (e) => {
     e.preventDefault()
     setError('')
@@ -487,6 +625,22 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       setError('Por favor, indica en qué momento comenzó esta condición.')
       return
     }
+    setWizardStep('history')
+    scrollTop()
+  }
+
+  // Step 6 → 7: History → Support
+  const handleHistorySubmit = (e) => {
+    e.preventDefault()
+    setError('')
+    setWizardStep('support')
+    scrollTop()
+  }
+
+  // Step 7 → 8: Support → Scales1
+  const handleSupportSubmit = (e) => {
+    e.preventDefault()
+    setError('')
     setWizardStep('scales1')
     scrollTop()
   }
@@ -573,33 +727,69 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     setSending(true)
 
     try {
+      const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
       const registerPayload = {
-        nombreCompleto: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
+        nombreCompleto,
         email: generalForm.email,
         password: generalForm.password,
         rol: 'pcd',
         ...(generalForm.curp ? { curp: generalForm.curp } : {}),
         fechaNacimiento: generalForm.birth_date,
+        ciudad: generalForm.ciudad,
+        estado: generalForm.estado,
       }
 
       let authResult = null
+      let regError = null
       try {
         const regRes = await api.post('/autenticacion/registro', registerPayload)
         authResult = regRes.data
-      } catch (regErr) { console.warn('Registro warning:', regErr) }
-
-      if (authResult?.tokenAcceso) {
-        const token = authResult.tokenAcceso
-        const userObj = {
-          id: authResult.usuario?.id,
-          email: authResult.usuario?.email || generalForm.email,
-          role: 'pcd',
-          full_name: (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim(),
-        }
-        setRememberMe(true)
-        setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
-        saveUser(userObj, true)
+      } catch (regErr) {
+        console.warn('Registro warning:', regErr)
+        regError = regErr
       }
+
+      // El backend puede devolver tokenAcceso (login automático) o indicar que la
+      // cuenta se creó pero el usuario debe iniciar sesión (requiereInicioSesion: true).
+      const requiereInicioSesion = authResult?.requiereInicioSesion === true
+
+      // Si el registro falló y no se creó la cuenta, abortamos: los llamados siguientes
+      // (perfil, perfil-necesidades, escalas…) requieren autenticación y fallarían
+      // con 401 "Token de autenticación requerido".
+      if (!authResult?.tokenAcceso && !requiereInicioSesion) {
+        const msg = regError?.response?.data?.message
+          ?? regError?.response?.data?.mensaje
+          ?? 'No se pudo completar el registro. Inténtalo de nuevo.'
+        setError(msg)
+        addToast(msg, 'error')
+        return
+      }
+
+      // Cuenta creada sin token: mostramos el resumen de bienvenida generado por IA
+      // y después el usuario inicia sesión para continuar.
+      if (requiereInicioSesion) {
+        localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
+        localStorage.setItem('raices_user_viability', viabilidad)
+        localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
+        const narrative = generateNarrative()
+        setAiNarrative(narrative)
+        localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+        addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
+        setWizardStep('thanks')
+        scrollTop()
+        return
+      }
+
+      const token = authResult.tokenAcceso
+      const userObj = {
+        id: authResult.usuario?.id,
+        email: authResult.usuario?.email || generalForm.email,
+        role: 'pcd',
+        full_name: nombreCompleto,
+      }
+      setRememberMe(true)
+      setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
+      saveUser(userObj, true)
 
       const scalesPayload = {
         nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
@@ -607,7 +797,6 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
         nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
         nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
         tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
-        diagnosticoEspecifico: conditionData.diagnosticoEspecifico,
         temporalidadOrigen: conditionData.temporalidad,
         preferenciaFormato: formatos[0] || 'texto',
         areasInteres: selectedInterests,
@@ -636,18 +825,22 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       try {
         await updateProfile.mutateAsync({
           full_name: registerPayload.nombreCompleto,
+          city: generalForm.ciudad,
+          state: generalForm.estado,
+        })
+        await updateNeedsProfile.mutateAsync({
           profiling: {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
             severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
             communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
             mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
             tech_access: formatos,
-            preferred_zones: [],
-            needs: [],
+            preferred_zones: preferredZones,
+            needs: needsList,
             goals: selectedInterests,
-            support_areas: [],
-            education_history: [],
-            therapy_history: [],
+            support_areas: supportAreas,
+            education_history: educacionHistory,
+            therapy_history: terapiaHistory,
             life_stage: calcLifeStage(generalForm.birth_date),
             current_concerns: conditionData.diagnosticoEspecifico || null,
             support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
@@ -771,6 +964,27 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
               onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
           </div>
 
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
+              <select className="auth-input auth-select" required
+                value={generalForm.estado}
+                onChange={e => setGeneralForm({ ...generalForm, estado: e.target.value, ciudad: '' })}>
+                <option value="" disabled>Selecciona un estado</option>
+                {STATES.map(st => <option key={st} value={st}>{st}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
+              <select className="auth-input auth-select" required disabled={!generalForm.estado}
+                value={generalForm.ciudad}
+                onChange={e => setGeneralForm({ ...generalForm, ciudad: e.target.value })}>
+                <option value="" disabled>{generalForm.estado ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
+                {generalForm.estado && getMunicipalities(generalForm.estado).map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button className="auth-btn-secondary" type="button" onClick={onBackToRoles} style={{ flex: 1 }}>
               {Icons.arrowLeft({ s: 16 })} Volver
@@ -811,11 +1025,16 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
                 placeholder="Mínimo 8 caracteres"
                 value={generalForm.password}
                 onChange={e => setGeneralForm({ ...generalForm, password: e.target.value })}
-                style={{ paddingRight: 44 }}
+                style={{ paddingRight: 48 }}
               />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)' }}>
-                {showPass ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="auth-pass-toggle"
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-pressed={showPass}
+              >
+                {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
               </button>
             </div>
             {generalForm.password && (
@@ -1009,6 +1228,214 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
+           STEP: HISTORIAL EDUCATIVO Y TERAPIAS
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'history' && (
+        <form onSubmit={handleHistorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Historial educativo y terapias
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Cuéntanos tu recorrido escolar y las terapias que has recibido. (Opcional)
+            </p>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🎓 Educación</h3>
+              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Qué tipo de escuela o estudios has cursado? (Puedes elegir varias.)</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
+                {LIST_EDUCACION.map(op => (
+                  <CheckChip key={op} label={op} selected={educacionHistory.includes(op)} onToggle={() => toggleEducacionHistory(op)} />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🩺 Terapias recibidas</h3>
+              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Con qué terapias cuentas o has contado? (Puedes elegir varias.)</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
+                {LIST_TERAPIAS.map(op => (
+                  <CheckChip key={op} label={op} selected={terapiaHistory.includes(op)} onToggle={() => toggleTerapiaHistory(op)} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP: ZONAS, NECESIDADES Y ÁREAS DE APOYO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'support' && (
+        <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Zonas y apoyos que te sirven
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Cuéntanos dónde prefieres encontrar opciones y en qué te gustaría recibir ayuda. (Opcional)
+            </p>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>📍 Colonias o zonas de preferencia</h3>
+              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                Selecciona las zonas en {generalForm.ciudad || 'Mérida'} donde te sea más fácil acudir a servicios o actividades.
+              </p>
+
+              {/* Sugerencias de colonias y C.P. en Mérida */}
+              {(!generalForm.ciudad || generalForm.ciudad.toLowerCase().includes('m') || generalForm.estado === 'Yucatán') && (
+                <div style={{ marginBottom: 12 }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>
+                    Sugerencias frecuentes en Mérida:
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 7 }}>
+                    {MERIDA_ZONAS_SUGERIDAS.map(sug => {
+                      const isSelected = preferredZones.includes(sug)
+                      return (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => toggleSuggestedZone(sug)}
+                          style={{
+                            padding: '9px 12px',
+                            borderRadius: 8,
+                            border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                            background: isSelected ? 'color-mix(in oklch, #229B58 8%, white)' : '#ffffff',
+                            color: isSelected ? '#073B4C' : 'var(--fg1)',
+                            fontSize: 12.5,
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 9,
+                            fontFamily: 'var(--font-body)',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{
+                            width: 16, height: 16, borderRadius: 4,
+                            border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`,
+                            background: isSelected ? '#229B58' : '#ffffff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', flexShrink: 0
+                          }}>
+                            {isSelected && Icons.check({ s: 10 })}
+                          </div>
+                          <span>{sug}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Campo para agregar otra colonia que no esté en la lista */}
+              <div style={{ borderTop: '1px solid #f1ece5', paddingTop: 10, marginTop: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--fg2)', marginBottom: 5 }}>
+                  ¿Tu colonia o zona no está en la lista? Escríbela aquí:
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text" className="auth-input"
+                    style={{ flex: 1, minWidth: 0, background: '#ffffff', borderRadius: 8, border: '1.5px solid #E5DCD2' }}
+                    placeholder="Ej. García Ginerés, 97070, Kanasín…"
+                    value={zonaInput}
+                    onChange={e => setZonaInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPreferredZone() } }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addPreferredZone}
+                    className="auth-btn-primary"
+                    style={{ width: 'auto', padding: '0 18px', flexShrink: 0, height: 48, fontSize: 13.5, borderRadius: 8 }}
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
+
+              {/* Zonas seleccionadas (chips activos) */}
+              {preferredZones.length > 0 && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1ece5' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#229B58', display: 'block', marginBottom: 6 }}>
+                    Zonas seleccionadas ({preferredZones.length}):
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {preferredZones.map(z => (
+                      <span
+                        key={z}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '5px 10px',
+                          borderRadius: 8,
+                          background: 'rgba(34,155,88,0.1)',
+                          border: '1.5px solid rgba(34,155,88,0.45)',
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          color: '#073B4C',
+                        }}
+                      >
+                        📍 {z}
+                        <button
+                          type="button"
+                          onClick={() => removePreferredZone(z)}
+                          aria-label={`Quitar ${z}`}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#073B4C',
+                            fontWeight: 800,
+                            padding: 0,
+                            fontSize: 14,
+                            lineHeight: 1,
+                            marginLeft: 2,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🧩 Necesidades generales</h3>
+              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Qué necesidades o barreras enfrentas en tu día a día?</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
+                {LIST_NECESIDADES.map(op => (
+                  <CheckChip key={op} label={op} selected={needsList.includes(op)} onToggle={() => toggleNeedsList(op)} />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🤝 Áreas donde requieres apoyo</h3>
+              <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿En cuáles áreas te gustaría contar con más ayuda?</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
+                {LIST_AREAS_APOYO.map(op => (
+                  <CheckChip key={op} label={op} selected={supportAreas.includes(op)} onToggle={() => toggleSupportAreas(op)} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('history'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
            STEP 7: ESCALAS A-D
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'scales1' && (
@@ -1029,7 +1456,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             <ScaleCard title="D. Comprensión" desc="¿Sigues instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar" />
+          <NavButtons onBack={() => { setWizardStep('support'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1135,14 +1562,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
                       return (
                         <button key={item} type="button" onClick={() => toggleInterest(item)}
                           style={{
-                            padding: '6px 13px', borderRadius: 18,
+                            padding: '7px 13px', borderRadius: 8,
                             border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
                             background: isSelected ? sec.color : '#ffffff',
                             color: isSelected ? '#ffffff' : 'var(--fg1)',
                             fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
-                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
-                            transform: isSelected ? 'scale(1.03)' : 'scale(1)',
-                            transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                            transition: 'all 0.15s ease',
                           }}>
                           <span>{item}</span>
                           {isSelected && Icons.check({ s: 11 })}

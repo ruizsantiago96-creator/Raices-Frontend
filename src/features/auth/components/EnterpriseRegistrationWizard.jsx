@@ -4,7 +4,7 @@ import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { Icons } from '@shared/components/shared'
-import { setRememberMe, saveUser } from '@shared/lib/storage'
+import { setRememberMe, saveToken, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import PasswordRequirements from './PasswordRequirements'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
@@ -195,40 +195,72 @@ export default function EnterpriseRegistrationWizard({ onBackToRoles }) {
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      if (authResult?.tokenAcceso) {
-        const token = authResult.tokenAcceso
+      // El backend registra empresas/ecosistemas SIN token ("solo registro"/requiereInicioSesion:
+      // la cuenta se crea pero hay que iniciar sesión por separado). Intentamos obtener
+      // sesión con las mismas credenciales para poder guardar el perfil autenticado.
+      let token = authResult?.tokenAcceso ?? null
+      let refreshToken = authResult?.tokenRefresco ?? null
+      let usuario = authResult?.usuario ?? null
+
+      if (!token) {
+        try {
+          const loginRes = await api.post('/autenticacion/inicio-sesion', {
+            email: accountForm.email,
+            password: accountForm.password,
+          })
+          const lr = loginRes.data
+          token = lr?.tokenAcceso ?? null
+          refreshToken = lr?.tokenRefresco ?? null
+          usuario = lr?.usuario ?? null
+        } catch (loginErr) {
+          console.warn('Auto login tras registro empresarial sin token falló:', loginErr)
+        }
+      }
+
+      if (token) {
         const userObj = {
-          id: authResult.usuario?.id,
-          email: authResult.usuario?.email || accountForm.email,
+          id: usuario?.id,
+          email: usuario?.email || accountForm.email,
           role: 'empresa',
           full_name: orgForm.nombre,
           enterpriseType: subtipo,
         }
+
+        // Persistir la sesión ANTES del PUT para que la petición salga autenticada
+        // (el interceptor lee el token del storage) y para que el perfil quede
+        // guardado antes de que el auto-login redirija al panel.
         setRememberMe(true)
-        setAuth(token, userObj, authResult.tokenRefresco ?? null, true)
+        saveToken(token, true)
         saveUser(userObj, true)
+
+        // Guardar perfil
+        try {
+          await api.put('/usuarios/perfil', {
+            perfilEcosistema: {
+              tipoEcosistema: subtipo,
+              nombreOrganizacion: orgForm.nombre,
+              descripcion: orgForm.descripcion,
+              especialidades: orgForm.especialidades,
+              nombreContacto: orgForm.contactName,
+              telefonoContacto: orgForm.phone,
+              sitioWeb: orgForm.website,
+              serviciosOfrecidos: selectedServices,
+              comunidadConectada: selectedCommunity,
+            },
+          })
+        } catch (profErr) {
+          console.warn('Profile save notice:', profErr)
+        }
+
+        // Login automático → AuthPage redirige al panel
+        setAuth(token, userObj, refreshToken, true)
+        addToast('¡Cuenta creada exitosamente!', 'success')
+        return
       }
 
-      // Guardar perfil
-      try {
-        await api.put('/usuarios/perfil', {
-          perfilEcosistema: {
-            tipoEcosistema: subtipo,
-            nombreOrganizacion: orgForm.nombre,
-            descripcion: orgForm.descripcion,
-            especialidades: orgForm.especialidades,
-            nombreContacto: orgForm.contactName,
-            telefonoContacto: orgForm.phone,
-            sitioWeb: orgForm.website,
-            serviciosOfrecidos: selectedServices,
-            comunidadConectada: selectedCommunity,
-          },
-        })
-      } catch (profErr) {
-        console.warn('Profile save notice:', profErr)
-      }
-
-      addToast('¡Cuenta creada exitosamente!', 'success')
+      // Sin sesión disponible (p. ej. cuenta pendiente de aprobación): los datos
+      // ya viajaron en el payload de registro; el usuario inicia sesión por separado.
+      addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
       setWizardStep('thanks')
       scrollTop()
     } catch (err) {
@@ -508,11 +540,16 @@ export default function EnterpriseRegistrationWizard({ onBackToRoles }) {
                 placeholder="Mínimo 8 caracteres"
                 value={accountForm.password}
                 onChange={e => setAccountForm({ ...accountForm, password: e.target.value })}
-                style={{ paddingRight: 44 }}
+                style={{ paddingRight: 48 }}
               />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)' }}>
-                {showPass ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="auth-pass-toggle"
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-pressed={showPass}
+              >
+                {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
               </button>
             </div>
             {accountForm.password && (

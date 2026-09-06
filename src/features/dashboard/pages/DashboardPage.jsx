@@ -461,11 +461,19 @@ export default function DashboardPage() {
   const { data: especialistasData, isLoading: especialistasLoading } = useRecomendacionesEspecialistas()
   const especialistas = especialistasData?.especialistas ?? []
   const { data: posts = [], isLoading: postsLoading } = usePosts({ limite: 20 })
-  const { data: foros = [], isLoading: forosLoading } = useForos()
-  const { data: favIds = [] } = useFavoriteIds()
+  const { data: forosData, isLoading: forosLoading } = useForos()
+  const foros = forosData?.foros ?? []
+  const { data: rawFavIds = [] } = useFavoriteIds()
+  const favIds = useMemo(() => {
+    const arr = Array.isArray(rawFavIds)
+      ? rawFavIds
+      : (rawFavIds instanceof Set ? Array.from(rawFavIds) : (Array.isArray(rawFavIds?.datos) ? rawFavIds.datos : []))
+    return arr.map(String)
+  }, [rawFavIds])
   const toggle = useToggleFavorite()
   const toggleLike = useToggleLike()
   const trackInteraccion = useRegistrarInteraccion()
+
   const [sortMode, setSortMode] = useState('relevantes')
   const { data: user } = useMe()
   const { data: identidadStatus } = useEstadoValidacion()
@@ -604,8 +612,9 @@ export default function DashboardPage() {
   // ── Track engagement when user saves
   const handleToggleFav = useCallback((inst) => {
     trackEngagement(inst.id, 'save', inst.category)
-    toggle.mutate(inst.id)
-  }, [toggle])
+    trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category })
+    toggle.mutate(inst)
+  }, [trackInteraccion, toggle])
 
   return (
     <main className="responsive-main" style={{ '--main-max-width': '800px' }}>
@@ -796,7 +805,7 @@ export default function DashboardPage() {
                   <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
                     <FeedCard
                       inst={inst}
-                      isFav={favIds.includes(inst.id)}
+                      isFav={favIds.includes(String(inst.id))}
                       onToggleFav={() => handleToggleFav(inst)}
                     />
                   </div>

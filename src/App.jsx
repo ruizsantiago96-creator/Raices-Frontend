@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
+import { MotionConfig } from 'motion/react'
 import { useSessionVerify } from '@features/auth'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { queryClient } from '@shared/lib/queryClient'
+import { useA11yStore } from '@features/a11y/store/a11yStore'
 import { ProtectedRoute } from '@features/auth'
 import FeatureGuard from '@features/auth/components/FeatureGuard'
 import ToastContainer from '@shared/components/Toast'
@@ -128,6 +130,9 @@ function SessionErrorScreen({ error }) {
 
 export default function App() {
   const { isChecking, error } = useSessionVerify()
+  // Respeta la preferencia "Reducir movimiento" del usuario (barra de accesibilidad)
+  // y, si no está activada, sigue la preferencia del sistema operativo.
+  const reducedMotion = useA11yStore(s => s.reducedMotion)
 
   const skipToMain = (e) => {
     e.preventDefault()
@@ -137,6 +142,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
       <BrowserRouter>
         {/* Pantalla de carga mientras se verifica la sesión */}
         {isChecking && <SessionLoadingScreen />}
@@ -188,6 +194,7 @@ export default function App() {
           </>
         )}
       </BrowserRouter>
+      </MotionConfig>
     </QueryClientProvider>
   )
 }

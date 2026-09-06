@@ -51,7 +51,13 @@ export default function FavoritesPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <CategoryTag label={inst.category} color={color} />
-                  <button onClick={() => toggle.mutate(inst.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4789A', padding: 0, display: 'flex' }}>
+                  <button
+                    onClick={() => toggle.mutate(inst)}
+                    title="Eliminar de guardados"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4789A', padding: 4, display: 'flex', transition: 'transform 0.15s ease' }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >
                     {Icons.heart({ s: 18, filled: true })}
                   </button>
                 </div>

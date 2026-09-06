@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
@@ -110,13 +110,18 @@ export default function ExplorePage() {
   }
 
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error, refetch } = useInstitutions(filters)
-  const { data: favIds = new Set() } = useFavoriteIds()
+  const { data: rawFavIds = [] } = useFavoriteIds()
   const toggle = useToggleFavorite()
   const trackInteraccion = useRegistrarInteraccion()
   const { data: recomendacionesData, isLoading: loadingRecomendaciones } = useRecomendaciones()
   const recomendaciones = recomendacionesData?.instituciones ?? []
 
-  const favSet = favIds instanceof Set ? favIds : new Set(Array.isArray(favIds) ? favIds : [])
+  const favSet = useMemo(() => {
+    const arr = Array.isArray(rawFavIds)
+      ? rawFavIds
+      : (rawFavIds instanceof Set ? Array.from(rawFavIds) : (Array.isArray(rawFavIds?.datos) ? rawFavIds.datos : []))
+    return new Set(arr.map(String))
+  }, [rawFavIds])
 
   // ── Tracking helpers ─────────────────────────────────────────────
   const trackClick = (inst) => {
@@ -209,7 +214,7 @@ export default function ExplorePage() {
                 key={inst.id}
                 inst={inst}
                 isFav={favSet.has(String(inst.id))}
-                onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }}
+                onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst) }}
                 onClick={() => trackClick(inst)}
               />
             ))}
@@ -280,12 +285,12 @@ export default function ExplorePage() {
       {showMap && <div style={{ marginBottom: 28 }}><MapView institutions={institutions} height="420px" /></div>}
       {loadingInstitutions ? <SkeletonGrid /> : error ? <ErrorState onRetry={() => refetch()} /> : institutions.length === 0 ? <EmptyState /> : view === 'grid' || showMap ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }} onClick={() => trackClick(inst)} /></div>)}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}><InstitutionCard inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst) }} onClick={() => trackClick(inst)} /></div>)}</div>
           {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst.id) }} onClick={() => trackClick(inst)} /></div>)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{visible.map((inst, i) => <div key={inst.id} className={`scroll-reveal scroll-reveal-delay-${Math.min(i + 1, 6)}`}><InstitutionRow inst={inst} isFav={favSet.has(String(inst.id))} onToggleFav={() => { trackGuardar(inst); toggle.mutate(inst) }} onClick={() => trackClick(inst)} /></div>)}</div>
           {remaining > 0 && <div style={{ textAlign: 'center', marginTop: 28 }}><button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary" style={{ fontSize: 15, padding: '12px 32px', minHeight: 48 }}>Ver más ({remaining} {remaining === 1 ? 'institución' : 'instituciones'})</button></div>}
         </>
       )}

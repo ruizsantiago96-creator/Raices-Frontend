@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
 import { useAdminReviews, useDeleteReview } from '../hooks/useAdminReviews'
@@ -25,8 +26,8 @@ function EmptyState({ icon, title, sub }) {
 }
 
 function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
-  return (
-    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000 }}>
+  return createPortal(
+    <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: danger ? 'color-mix(in oklch, var(--color-error) 14%, transparent)' : 'var(--primary-subtle)', color: danger ? 'var(--color-error)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -40,7 +41,8 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
           <button onClick={onConfirm} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: danger ? 'var(--color-error)' : 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{confirmLabel}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -59,7 +61,15 @@ export default function ReviewsTab() {
   const del = useDeleteReview()
   const [confirm, setConfirm] = useState(null)
 
-  const doDelete = () => del.mutate(confirm.id, { onSuccess: () => { addToast('Reseña eliminada', 'success'); setConfirm(null) } })
+  const doDelete = () => {
+    if (!confirm?.id) return
+    const idToDelete = confirm.id
+    setConfirm(null)
+    del.mutate(idToDelete, {
+      onSuccess: () => addToast('Reseña eliminada', 'success'),
+      onError: (err) => addToast(err?.response?.data?.mensaje ?? 'No se pudo eliminar la reseña', 'error'),
+    })
+  }
 
   return (
     <div>

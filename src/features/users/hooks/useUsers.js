@@ -65,7 +65,22 @@ export function useDeleteUser() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id) => api.delete(`/administracion/usuarios/${id}`).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['admin', 'users'] })
+      const previousUsers = qc.getQueryData(['admin', 'users'])
+      qc.setQueryData(['admin', 'users'], (old = []) =>
+        old.filter(u => String(u.id) !== String(id))
+      )
+      return { previousUsers }
+    },
+    onError: (err, id, context) => {
+      if (context?.previousUsers) {
+        qc.setQueryData(['admin', 'users'], context.previousUsers)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    },
   })
 }
 

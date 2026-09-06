@@ -36,6 +36,21 @@ export function useDeleteReview() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id) => api.delete(`/administracion/resenas/${id}`).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'reviews'] }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['admin', 'reviews'] })
+      const previousReviews = qc.getQueryData(['admin', 'reviews'])
+      qc.setQueryData(['admin', 'reviews'], (old = []) =>
+        old.filter(r => String(r.id) !== String(id))
+      )
+      return { previousReviews }
+    },
+    onError: (err, id, context) => {
+      if (context?.previousReviews) {
+        qc.setQueryData(['admin', 'reviews'], context.previousReviews)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] })
+    },
   })
 }

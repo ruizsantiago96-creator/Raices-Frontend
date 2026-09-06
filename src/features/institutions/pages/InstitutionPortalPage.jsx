@@ -6,11 +6,13 @@ import { useMiInstitucion } from '../hooks/useInstitutions'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import PostulacionesTab from '../components/PostulacionesTab'
 import CandidatosTab from '../components/CandidatosTab'
+import { ForosExplorer } from '@features/social/pages/ForosPage'
 import { PORTAL_UI } from '../constants/institutionPortalMessages'
 
 const TAB_TITLES = {
   postulaciones: PORTAL_UI.TAB_POSTULACIONES,
   candidatos: PORTAL_UI.TAB_CANDIDATOS,
+  foros: PORTAL_UI.TAB_FOROS,
 }
 
 export default function InstitutionPortalPage() {
@@ -155,7 +157,7 @@ export default function InstitutionPortalPage() {
           </h1>
 
           {/* Stats */}
-          <div className="animate-fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+          {tab !== 'foros' && <div className="animate-fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-artes) 14%, transparent)', color: 'var(--color-artes)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {Icons.briefcase({ s: 18 })}
@@ -192,11 +194,12 @@ export default function InstitutionPortalPage() {
                 <div style={{ fontSize: 12, color: 'var(--fg3)', fontWeight: 600 }}>{PORTAL_UI.STAT_ACCEPTED}</div>
               </div>
             </div>
-          </div>
+          </div>}
 
           <div key={`content-${tab}`} className="animate-tab-in">
             {tab === 'postulaciones' && <PostulacionesTab onViewCandidates={handleViewCandidates} />}
             {tab === 'candidatos' && <CandidatosTab />}
+            {tab === 'foros' && <ForosExplorer showHeader={false} />}
           </div>
         </>
       )}

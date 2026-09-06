@@ -394,7 +394,9 @@ export default function SocialPage() {
   const uploadMedia = useUploadMultimedia()
   const [mainTab, setMainTab] = useState('community')
   const [conectemosCategoria, setConectemosCategoria] = useState(null)
-  const { data: conectemosData } = useConectemos({ categoriaCreativa: conectemosCategoria, enabled: mainTab === 'conectemos' })
+  const [conectemosBuscarInput, setConectemosBuscarInput] = useState('')
+  const [conectemosBuscar, setConectemosBuscar] = useState('')
+  const { data: conectemosData } = useConectemos({ categoriaCreativa: conectemosCategoria, buscar: conectemosBuscar, enabled: mainTab === 'conectemos' })
   const conectemosPosts = conectemosData?.posts ?? []
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const { addToast } = useUiStore()
@@ -482,6 +484,33 @@ export default function SocialPage() {
           <AboutCommunity />
         ) : mainTab === 'conectemos' ? (
           <div>
+            {/* Búsqueda */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                setConectemosBuscar(conectemosBuscarInput.trim())
+              }}
+              style={{ display: 'flex', gap: 8, marginBottom: 14 }}
+            >
+              <input
+                value={conectemosBuscarInput}
+                onChange={e => setConectemosBuscarInput(e.target.value)}
+                placeholder="Buscar creaciones..."
+                style={{
+                  flex: 1, padding: '10px 14px', border: '1px solid var(--border-color)',
+                  borderRadius: 10, fontSize: 14, fontFamily: 'var(--font-body)',
+                  color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ padding: '10px 18px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                {Icons.search({ s: 14 })} Buscar
+              </button>
+            </form>
+
             {/* Category filter */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               {[null, 'arte', 'dibujo', 'historia', 'general'].map(cat => (

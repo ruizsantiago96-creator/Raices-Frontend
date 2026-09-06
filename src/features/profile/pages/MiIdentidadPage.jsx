@@ -349,8 +349,8 @@ export default function MiIdentidadPage() {
   const handleSaveAddress = async () => {
     try {
       await updateProfile.mutateAsync({
-        estado: addressForm.state,
-        ciudad: addressForm.city,
+        city: addressForm.city,
+        state: addressForm.state,
       })
       addToast('Dirección guardada correctamente', 'success')
       setIsEditingAddress(false)

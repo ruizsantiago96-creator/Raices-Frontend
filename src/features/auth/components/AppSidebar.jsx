@@ -73,6 +73,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     items = [
       { id: 'postulaciones', label: 'Mis Postulaciones', icon: Icons.briefcase, badge: stats?.activeJobs, badgeColor: 'var(--color-artes)' },
       { id: 'candidatos', label: 'Candidatos', icon: Icons.users, badge: stats?.pendingApplicants, badgeColor: 'var(--color-empleo)' },
+      { id: 'foros', label: 'Foros', icon: Icons.message },
       { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
     ]
   } else {
@@ -93,7 +94,6 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
       { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
-      { id: 'foros', label: 'Foros', icon: Icons.message, path: '/foros', hidden: !hasFeature('comunidad') },
     ].filter(item => !item.hidden)
     if (user?.role === 'pcd') {
       items.push({ id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas' })

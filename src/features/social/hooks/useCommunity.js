@@ -316,52 +316,71 @@ function mapForo(f) {
   }
 }
 
+function mapRespuesta(r, fallbackIndex) {
+  return {
+    id: r.id,
+    contenido: r.contenido ?? r.content ?? '',
+    preguntaIndex: r.preguntaIndex ?? fallbackIndex,
+    autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
+    autorId: r.autorId ?? r.autor_id ?? '',
+    autorAvatar: r.urlAvatar ?? r.autorAvatar ?? r.autor_avatar ?? null,
+    fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
+  }
+}
+
 function mapForoDetalle(f) {
   const foro = mapForo(f)
   // Backend: "preguntasConRespuestas" en vez de "respuestas"
-  const preguntasConRespuestas = f.preguntasConRespuestas ?? []
-  // Normalizamos a array de respuestas plano
-  const respuestas = []
-  if (Array.isArray(preguntasConRespuestas)) {
-    preguntasConRespuestas.forEach((pcr, idx) => {
-      if (pcr?.respuestas && Array.isArray(pcr.respuestas)) {
-        pcr.respuestas.forEach(r => {
-          respuestas.push({
-            id: r.id,
-            contenido: r.contenido ?? r.content ?? '',
-            preguntaIndex: r.preguntaIndex ?? idx,
-            autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
-            autorId: r.autorId ?? r.autor_id ?? '',
-            autorAvatar: r.urlAvatar ?? r.autorAvatar ?? r.autor_avatar ?? null,
-            fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
-          })
-        })
-      }
+  const preguntasDetonantes = foro.preguntasDetonantes
+  const preguntasCrudo = f.preguntasConRespuestas ?? []
+
+  // Normalizamos a [{ pregunta, respuestas: [...] }] alineado con preguntasDetonantes
+  const preguntasConRespuestas = preguntasDetonantes.map((pregunta, idx) => {
+    const bloque = Array.isArray(preguntasCrudo) ? (preguntasCrudo[idx] ?? {}) : {}
+    const respuestas = (Array.isArray(bloque.respuestas) ? bloque.respuestas : [])
+      .map(r => mapRespuesta(r, idx))
+    return { pregunta, respuestas }
+  })
+
+  // Fallback: si backend devuelve "respuestas" legacy, agruparlas bajo la primera pregunta
+  const respuestasLegacy = (Array.isArray(f.respuestas) ? f.respuestas : [])
+    .map(r => mapRespuesta(r, r.preguntaIndex ?? 0))
+  if (respuestasLegacy.length > 0 && preguntasConRespuestas.every(pcr => pcr.respuestas.length === 0)) {
+    respuestasLegacy.forEach(r => {
+      const idx = Math.min(r.preguntaIndex ?? 0, preguntasConRespuestas.length - 1)
+      preguntasConRespuestas[idx].respuestas.push(r)
     })
   }
-  // Fallback: si backend devuelve "respuestas" legacy
-  if (respuestas.length === 0 && Array.isArray(f.respuestas)) {
-    respuestas.push(...f.respuestas.map(r => ({
-      id: r.id,
-      contenido: r.contenido ?? r.content ?? '',
-      preguntaIndex: r.preguntaIndex ?? 0,
-      autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
-      autorId: r.autorId ?? r.autor_id ?? '',
-      autorAvatar: r.urlAvatar ?? r.autorAvatar ?? r.autor_avatar ?? null,
-      fechaCreacion: r.fechaCreacion ?? r.fecha_creacion ?? r.created_at ?? '',
-    })))
-  }
+
+  // Aplanado para UI legacy
+  const respuestas = preguntasConRespuestas.flatMap(pcr => pcr.respuestas)
+
   return { ...foro, respuestas, preguntasConRespuestas }
 }
 
-export function useForos() {
+export function useForos(opts = {}) {
+  const { pagina = 1, limite = 20, buscar, ordenarPor, direccion } = opts
   return useQuery({
-    queryKey: ['foros'],
-    queryFn: () => api.get('/comunidad/foros').then(r => {
-      const res = r.data
-      const arr = Array.isArray(res) ? res : (res?.datos ?? [])
-      return arr.map(mapForo)
-    }),
+    queryKey: ['foros', pagina, limite, buscar, ordenarPor, direccion],
+    queryFn: () => {
+      const params = {}
+      if (pagina > 1) params.pagina = pagina
+      if (limite !== 20) params.limite = limite
+      if (buscar?.trim()) params.buscar = buscar.trim()
+      if (ordenarPor) params.ordenarPor = ordenarPor
+      if (direccion) params.direccion = direccion
+      return api.get('/comunidad/foros', { params }).then(r => {
+        const res = r.data
+        const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+        return {
+          foros: arr.map(mapForo),
+          total: res?.total ?? arr.length,
+          pagina: res?.pagina ?? pagina,
+          limite: res?.limite ?? limite,
+          totalPaginas: res?.totalPaginas ?? 1,
+        }
+      })
+    },
   })
 }
 
@@ -402,12 +421,14 @@ export function useCreateForoRespuesta(foroId) {
    ═══════════════════════════════════════════════════════════ */
 
 export function useConectemos(opts = {}) {
-  const { categoriaCreativa, pagina = 1, limite = 20 } = opts
+  const { categoriaCreativa, buscar, pagina = 1, limite = 20, enabled = true } = opts
   return useQuery({
-    queryKey: ['conectemos', categoriaCreativa, pagina, limite],
+    queryKey: ['conectemos', categoriaCreativa, buscar, pagina, limite],
+    enabled,
     queryFn: () => {
       const params = {}
       if (categoriaCreativa) params.categoriaCreativa = categoriaCreativa
+      if (buscar?.trim()) params.buscar = buscar.trim()
       if (pagina > 1) params.pagina = pagina
       if (limite !== 20) params.limite = limite
       return api.get('/comunidad/conectemos/publicaciones', { params }).then(r => {

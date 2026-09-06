@@ -44,7 +44,7 @@ export default function InstitutionHeader({ institution, isFav }) {
           )}
         </div>
         <button
-          onClick={() => toggle.mutate(institution.id)}
+          onClick={() => toggle.mutate(institution)}
           disabled={toggle.isPending}
           style={{
             background: isFav

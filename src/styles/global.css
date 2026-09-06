@@ -26,6 +26,41 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   box-shadow: none !important;
 }
 
+/* Ocultar el botón nativo de revelar contraseña del navegador (Edge / IE) para evitar conflictos con el botón personalizado */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
+
+/* Botón accesible para mostrar / ocultar contraseña en inputs */
+.auth-pass-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg2);
+  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  z-index: 10;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  line-height: 1;
+}
+
+.auth-pass-toggle:hover {
+  color: var(--fg1);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+}
+
+.auth-pass-toggle:focus-visible {
+  outline: none;
+}
+
 /* ═══════════════════════════════════════════════════════════
    DESIGN TOKENS (CSS Custom Properties)
    ═══════════════════════════════════════════════════════════ */
@@ -126,7 +161,7 @@ main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-v
   --font-bold: 'Poppins', sans-serif;
 
   /* Focus */
-  --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
+  --focus-ring: none;
 
   /* Landing Page & Footer theme tokens */
   --landing-bg-topbar: rgba(255, 255, 255, 0.45);
@@ -239,18 +274,18 @@ body {
 }
 
 /* Focus States */
-:focus-visible {
+:focus, :focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring);
-  border-radius: var(--radius-sm);
-  position: relative;
-  z-index: 1;
 }
 
-button:focus-visible, a:focus-visible, input:focus-visible,
-select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+button:focus, button:focus-visible,
+a:focus, a:focus-visible,
+input:focus, input:focus-visible,
+select:focus, select:focus-visible,
+textarea:focus, textarea:focus-visible,
+[tabindex]:focus, [tabindex]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -470,6 +505,7 @@ html[data-theme="dark"] .btn-secondary:hover {
 .modal-overlay {
   position: fixed;
   inset: 0;
+  z-index: 9999;
   background: var(--modal-backdrop);
   backdrop-filter: blur(10px) saturate(140%);
   -webkit-backdrop-filter: blur(10px) saturate(140%);
@@ -488,7 +524,7 @@ html[data-theme="dark"] .btn-secondary:hover {
 }
 
 .card-hover:focus-within {
-  box-shadow: var(--focus-ring);
+  box-shadow: var(--shadow-md);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -557,7 +593,7 @@ html[data-theme="dark"] .btn-secondary:hover {
 /* Tab Content Fade-In */
 @keyframes tabFadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 .animate-tab-in {
   animation: tabFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -1828,7 +1864,7 @@ html[data-theme="dark"] {
   --color-success: #4ADE80;
   --color-warning: #FBBF24;
   --color-error: #F87171;
-  --focus-ring: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--primary);
+  --focus-ring: none;
 
   /* Landing Page & Footer theme tokens (Dark Mode) */
   --landing-bg-topbar: rgba(20, 32, 32, 0.65);
@@ -2018,6 +2054,49 @@ html[data-contrast="high"][data-theme="dark"] {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* Compact KPI variant for Overview — 6 cols on desktop */
+.admin-kpi-grid--compact {
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 10px !important;
+}
+.admin-kpi-grid--compact .admin-kpi-card {
+  padding: 14px 14px !important;
+  gap: 10px !important;
+}
+.admin-kpi-grid--compact .kpi-icon-container {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+}
+.admin-kpi-grid--compact .kpi-icon-container svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+.admin-kpi-grid--compact .kpi-value {
+  font-size: 20px !important;
+}
+.admin-kpi-grid--compact .kpi-label {
+  font-size: 11px !important;
+}
+.admin-kpi-grid--compact .kpi-sub {
+  font-size: 10px !important;
+  margin-top: 1px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1024px) {
+  .admin-kpi-grid--compact {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 768px) {
+  .admin-kpi-grid--compact {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 

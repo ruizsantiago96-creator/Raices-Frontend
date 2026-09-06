@@ -41,7 +41,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)', color: 'var(--fg1)', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
+    <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--font-body)', color: 'var(--fg1)', transition: 'background-color 0.3s ease, color 0.3s ease', animation: 'fadeInUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
       <style>{`
         @keyframes iconJumpBounce {
           0% { transform: translateY(0) scale(1); }

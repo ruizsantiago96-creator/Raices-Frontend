@@ -281,22 +281,9 @@ export default function AddDependienteModal({ onClose, onSubmit, saving = false,
                       onClick={() => setShowPassword(v => !v)}
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       aria-pressed={showPassword}
-                      style={{
-                        position: 'absolute',
-                        right: 12,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--fg2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 4,
-                      }}
+                      className="auth-pass-toggle"
                     >
-                      {showPassword ? Icons.eyeOff({ s: 18 }) : Icons.eye({ s: 18 })}
+                      {showPassword ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
                     </button>
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '6px 0 0' }}>

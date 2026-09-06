@@ -211,9 +211,9 @@ export default function ProfilePage() {
         ? `${form.first_name.trim()} ${form.last_name.trim()}`.trim()
         : form.full_name
       await update.mutateAsync({
-        nombreCompleto: mergedName,
-        ciudad: form.city,
-        estado: form.state,
+        full_name: mergedName,
+        city: form.city,
+        state: form.state,
       })
       addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
       setEditingMode(null)

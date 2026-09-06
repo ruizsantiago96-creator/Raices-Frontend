@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   useAdminVerificaciones,
   useAprobarVerificacion,
@@ -453,8 +454,8 @@ export default function IdentitiesTab() {
       )}
 
       {/* ── Rejection Reason Modal ── */}
-      {rejectOpen && (
-        <div onClick={() => setRejectOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050, padding: 20 }}>
+      {rejectOpen && createPortal(
+        <div onClick={() => setRejectOpen(false)} className="modal-overlay" style={{ zIndex: 9999 }}>
           <form onClick={e => e.stopPropagation()} onSubmit={handleRejectSubmit} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 480, width: '100%', position: 'relative', animation: 'fade-in 0.12s ease-out' }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
               {rejectMode === 'batch' ? 'Rechazar documentos' : 'Rechazar documento'}
@@ -504,7 +505,8 @@ export default function IdentitiesTab() {
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`

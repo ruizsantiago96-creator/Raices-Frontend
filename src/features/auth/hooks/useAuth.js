@@ -17,6 +17,9 @@ export function normalizeRole(rawRole) {
   if (!rawRole) return rawRole
   const lower = rawRole.toLowerCase()
   if (lower === 'institucion' || lower === 'institución') return 'institution'
+  // El backend registra a los tutores con rol 'padre_tutor' (ver ROLE_MAP en
+  // useRegister); el frontend los maneja como 'tutor' en toda la app.
+  if (lower === 'padre_tutor' || lower === 'padre-tutor') return 'tutor'
   // Para otros roles, devolver tal cual (ya están en inglés: pcd, tutor, admin)
   return rawRole
 }
@@ -130,15 +133,17 @@ export function useRegister() {
       const rememberMe = variables?._rememberMe ?? true
       const role = variables?.role
 
-      // Para instituciones/empresa, el backend puede no retornar token
-      if ((role === 'institution' || role === 'empresa') && !raw.tokenAcceso) {
-        console.log('[Auth] ' + role + ' registered — no token returned. Redirecting to login.')
+      // Si el backend no retorna token, la cuenta se creó pero el usuario debe
+      // iniciar sesión por separado (respuesta con requiereInicioSesion: true
+      // o sin tokenAcceso). Redirigimos al login con un mensaje de éxito.
+      if (!raw.tokenAcceso) {
+        console.log('[Auth] ' + (role ?? 'user') + ' registered — no token returned. Redirecting to login.')
         addToast(raw.mensaje ?? 'Registro exitoso. Inicia sesión para continuar.', 'success')
         nav('/auth')
         return
       }
 
-      // Para pcd/tutor: login automático con token
+      // Con token: login automático
       const token = raw.tokenAcceso
       const refresh = raw.tokenRefresco ?? null
       const user = raw.usuario ? {
@@ -341,7 +346,9 @@ export function useProfile() {
 /**
  * Hook para actualizar el perfil del usuario.
  * PUT /api/usuarios/perfil
- * Acepta datos del usuario y opcionalmente perfilNecesidades.
+ *
+ * Nota: el perfil de necesidades NO va embebido aquí; el backend lo espera
+ * por separado vía POST /usuarios/perfil-necesidades (ver useUpdateNeedsProfile).
  */
 export function useUpdateProfile() {
   const qc = useQueryClient()
@@ -353,19 +360,6 @@ export function useUpdateProfile() {
         nombreCompleto: data.full_name,
         ciudad: data.city,
         estado: data.state,
-      }
-      // Si se proporcionan datos de perfilNecesidades, incluirlos
-      if (data.profiling) {
-        body.perfilNecesidades = mapPerfilNecesidadesToBackend(data.profiling)
-        const userId = user?.id
-        if (userId) {
-          if (data.profiling.birth_date) {
-            localStorage.setItem(`raices_birth_date_${userId}`, data.profiling.birth_date)
-          }
-          if (data.profiling.age) {
-            localStorage.setItem(`raices_age_${userId}`, data.profiling.age)
-          }
-        }
       }
       return api.put('/usuarios/perfil', body).then(r => r.data)
     },
@@ -380,6 +374,38 @@ export function useUpdateProfile() {
       // Invalidar queries para refrescar datos
       qc.invalidateQueries({ queryKey: ['profile'] })
       qc.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}
+
+/**
+ * Hook para guardar el perfil de necesidades.
+ * POST /api/usuarios/perfil-necesidades
+ *
+ * El backend espera el perfil de necesidades aquí (no embebido en
+ * PUT /usuarios/perfil). Acepta el objeto `profiling` con campos en
+ * inglés y lo mapea al formato en español del backend.
+ */
+export function useUpdateNeedsProfile() {
+  const qc = useQueryClient()
+  const { user } = useAuthStore()
+  return useMutation({
+    mutationFn: (data) => {
+      const body = mapPerfilNecesidadesToBackend(data.profiling)
+      const userId = user?.id
+      if (userId) {
+        if (data.profiling?.birth_date) {
+          localStorage.setItem(`raices_birth_date_${userId}`, data.profiling.birth_date)
+        }
+        if (data.profiling?.age) {
+          localStorage.setItem(`raices_age_${userId}`, data.profiling.age)
+        }
+      }
+      return api.post('/usuarios/perfil-necesidades', body).then(r => r.data)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['perfil'] })
     },
   })
 }

@@ -23,11 +23,14 @@ export const AUTH_ENDPOINTS = {
     path: '/autenticacion/registro',
     body: { email: 'string', password: 'string', nombreCompleto: 'string', rol: 'pcd|tutor|institution', ciudad: 'string', estado: 'string' },
     response: {
-      // Para pcd/tutor: { tokenAcceso, tokenRefresco, usuario }
-      // Para institution: { uid, email, rol, mensaje } (sin token — solo registro)
+      // Con token: { tokenAcceso, tokenRefresco, usuario } → login automático
+      // Sin token: { usuario, requiereInicioSesion: true } → la cuenta se creó,
+      // el usuario debe iniciar sesión por separado
+      // Para institution/empresa: { uid, email, rol, mensaje } (sin token — solo registro)
       tokenAcceso: 'string|undefined',
       tokenRefresco: 'string|undefined',
       usuario: 'Usuario|undefined',
+      requiereInicioSesion: 'boolean|undefined',
       uid: 'string|undefined',
       mensaje: 'string|undefined',
     },
@@ -557,8 +560,8 @@ export const COMMUNITY_ENDPOINTS = {
   CREATE_FORO: {
     method: 'POST',
     path: '/comunidad/foros',
-    description: 'Crear foro institucional con pregunta detonante (solo institucion, admin)',
-    body: { titulo: 'string', descripcion: 'string?', preguntaDetonante: 'string' },
+    description: 'Crear foro institucional tipo Classroom con preguntas detonantes (solo institucion, admin)',
+    body: { titulo: 'string', descripcion: 'string?', preguntasDetonantes: 'string[]', exclusivoPadres: 'boolean' },
     response: 'Foro',
   },
   GET_FOROS: {
@@ -576,8 +579,8 @@ export const COMMUNITY_ENDPOINTS = {
   CREATE_FORO_RESPUESTA: {
     method: 'POST',
     path: '/comunidad/foros/:id/respuestas',
-    description: 'Responder pregunta detonante del foro',
-    body: { contenido: 'string' },
+    description: 'Responder pregunta detonante del foro (403 si el foro es exclusivo para padres/tutores)',
+    body: { preguntaIndex: 'number', contenido: 'string' },
     response: 'ForoRespuesta',
   },
   // ── Conectemos (galería pública) ──────────────────────

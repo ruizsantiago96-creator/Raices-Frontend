@@ -157,20 +157,20 @@ export default function OverviewTab({ onNavigate: _onNavigate }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      {/* KPIs */}
-      <div className="admin-kpi-grid">
+      {/* KPIs — compact row */}
+      <div className="admin-kpi-grid admin-kpi-grid--compact">
         {statCards.map((c, idx) => (
           <div key={c.label} className={`admin-kpi-card animate-fade-in-up delay-${idx + 1}`}
-            style={{ ...cardStyle, padding: '24px 22px', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}>
-            <div className="kpi-icon-container" style={{ width: 52, height: 52, borderRadius: '16px', background: `color-mix(in oklch, ${c.color} 8%, var(--bg-surface))`, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {c.icon({ s: 24 })}
+            style={{ ...cardStyle, padding: '14px 14px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', overflow: 'hidden', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}>
+            <div className="kpi-icon-container" style={{ width: 36, height: 36, borderRadius: '10px', background: `color-mix(in oklch, ${c.color} 8%, var(--bg-surface))`, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {c.icon({ s: 16 })}
             </div>
-            <div>
-              <div className="kpi-value" style={{ fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--fg1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-                {isLoading ? <Skeleton w={50} h={30} /> : <AnimatedCounter value={c.value} />}
+            <div style={{ minWidth: 0 }}>
+              <div className="kpi-value" style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--fg1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                {isLoading ? <Skeleton w={40} h={20} /> : <AnimatedCounter value={c.value} />}
               </div>
-              <div className="kpi-label" style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', marginTop: 4 }}>{c.label}</div>
-              <div className="kpi-sub" style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2, fontWeight: 500 }}>{c.sub}</div>
+              <div className="kpi-label" style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg2)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</div>
+              <div className="kpi-sub" style={{ fontSize: 10, color: 'var(--fg3)', marginTop: 1, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.sub}</div>
             </div>
           </div>
         ))}

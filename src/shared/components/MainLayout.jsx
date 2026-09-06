@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'motion/react'
+import { useOutlet, useLocation } from 'react-router-dom'
 import { useAuthStore, useMe, AppSidebar, TopNav } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants, useMiInstitucion } from '@features/institutions'
 import { useAdminAlerts } from '@features/admin'
+import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { DirectMessages } from '@features/social/pages/MessagesPage'
 
 export default function MainLayout() {
   const { logout } = useAuthStore()
   const { data: user } = useMe()
   const location = useLocation()
+  const outlet = useOutlet()
   
   // Tab and UI store subscriptions
   const adminTab = useUiStore(s => s.adminTab)
@@ -186,6 +189,20 @@ export default function MainLayout() {
     }
   }, [])
 
+  // Tras cada transición de página: sube el scroll, reinicia las animaciones
+  // de scroll-reveal y devuelve el foco al contenido (accesibilidad).
+  const handlePageEnterComplete = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0 })
+      initScrollReveal()
+      const main = document.querySelector('main')
+      if (main) {
+        main.setAttribute('tabindex', '-1')
+        main.focus({ preventScroll: true })
+      }
+    })
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
       {/* 1. Barra Lateral Global */}
@@ -202,8 +219,18 @@ export default function MainLayout() {
       {/* 2. Barra Superior Global */}
       <TopNav user={user} onLogout={logout} currentPage={currentPage} />
 
-      {/* 3. Contenido Principal */}
-      <Outlet />
+      {/* 3. Contenido Principal (con transición de página) */}
+      <AnimatePresence mode="wait" onExitComplete={handlePageEnterComplete}>
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {outlet}
+        </motion.div>
+      </AnimatePresence>
 
       {/* 4. Chat Flotante estilo Reddit */}
       {floatingChatOpen && (

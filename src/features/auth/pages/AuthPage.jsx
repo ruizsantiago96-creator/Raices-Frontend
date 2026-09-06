@@ -191,6 +191,7 @@ export default function AuthPage() {
           box-shadow: 0 20px 50px rgba(7, 59, 76, 0.08);
           position: relative;
           transition: all 0.3s ease;
+          animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         html[data-theme="dark"] .auth-card {
           box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
@@ -265,8 +266,8 @@ export default function AuthPage() {
           transition: background-color 5000s ease-in-out 0s;
         }
         .auth-input:focus {
-          border-color: var(--primary) !important;
-          box-shadow: 0 0 0 3px var(--primary-subtle) !important;
+          border-color: var(--fg2) !important;
+          box-shadow: none !important;
         }
         .auth-select {
           appearance: none;
@@ -333,12 +334,16 @@ export default function AuthPage() {
           align-items: center;
           justify-content: center;
           border-radius: 6px;
-          z-index: 2;
+          z-index: 10;
           transition: all 0.15s ease;
         }
         .auth-pass-toggle:hover {
           color: var(--fg1);
           background: color-mix(in oklch, var(--primary) 10%, transparent);
+        }
+        input::-ms-reveal,
+        input::-ms-clear {
+          display: none !important;
         }
         @media (max-height: 780px) {
           .auth-page-container { padding: 16px 20px; align-items: flex-start; }
@@ -375,7 +380,7 @@ export default function AuthPage() {
               {Icons.arrowLeft({ s: 15 })} Volver al inicio
             </button>
             
-            <main id="main">
+            <main id="main" key={`${mode}-${String(regStep)}`} className="animate-tab-in">
               {mode === 'login' && (
                 <>
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg2)', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bienvenido a tu nuevo camino</p>

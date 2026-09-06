@@ -29,6 +29,7 @@ export const PORTAL_UI = {
   // Tabs
   TAB_POSTULACIONES: 'Mis Vacantes',
   TAB_CANDIDATOS: 'Personas interesadas',
+  TAB_FOROS: 'Foros',
   
   // Botones
   CREATE_JOB: 'Publicar nueva oportunidad',
