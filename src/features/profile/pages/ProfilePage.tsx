@@ -1,20 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
-import { AppSidebar, TopNav } from '@features/auth'
 import { PROFILE_TOAST, PROFILE_UI, PROFILE_VALIDATION, ROLE_LABELS } from '../constants/profileMessages'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
-
-function normalizeText(text) {
-  if (!text) return ''
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-}
 
 function splitSpanishFullName(fullName = '') {
   const clean = (fullName || '').trim().replace(/\s+/g, ' ')
@@ -28,141 +18,62 @@ function splitSpanishFullName(fullName = '') {
     return { firstName: words[0], lastName: words[1] }
   }
   if (words.length === 3) {
-    // e.g. "Lourdes Ruiz Santiago" -> Nombre: "Lourdes", Apellido: "Ruiz Santiago"
     return { firstName: words[0], lastName: `${words[1]} ${words[2]}` }
   }
   if (words.length === 4) {
-    // 4 palabras en nombres hispanos (2 nombres de pila + 2 apellidos):
-    // ej: "Lourdes Josefina Ruiz Santiago"
-    // firstName: "Lourdes Josefina"
-    // lastName: "Ruiz Santiago"
     return { firstName: `${words[0]} ${words[1]}`, lastName: `${words[2]} ${words[3]}` }
   }
-  // 5 o más palabras: los dos últimos suelen ser los apellidos (Paterno y Materno)
   const lastName = words.slice(-2).join(' ')
   const firstName = words.slice(0, -2).join(' ')
   return { firstName, lastName }
 }
 
-function getNormalizedStateKey(stateName) {
-  if (!stateName) return ''
-  const normState = normalizeText(stateName)
-  return STATES.find(st => normalizeText(st) === normState) || stateName
+interface PersonalInfoForm {
+  first_name: string
+  last_name: string
+  full_name: string
+  city: string
+  state: string
+  avatar_url: string
 }
 
-function SearchableSelect({ label, value, onChange, options, placeholder, disabled }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [userSearch, setUserSearch] = useState('')
-  const containerRef = useRef(null)
+interface ProfilingForm {
+  disability_types: string[]
+  life_stage: string | null
+  communication_modes: string[]
+  mobility_needs: string[]
+  goals: string[]
+  current_concerns: string
+}
 
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleOutsideClick)
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [])
+interface LifeStageItem {
+  id: string
+  label: string
+}
 
-  // When closed, show the selected value; when open, show user's search
-  const displayValue = isOpen ? userSearch : (value || '')
-  const normSearch = normalizeText(displayValue)
-  const filteredOptions = options.filter(opt =>
-    normalizeText(opt).includes(normSearch)
-  )
-
-  return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-      <label style={labelStyle}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type="text"
-          style={{ ...inputStyle, paddingRight: 32 }}
-          value={displayValue}
-          onChange={e => {
-            setUserSearch(e.target.value)
-            setIsOpen(true)
-            if (!e.target.value) onChange('')
-          }}
-          onFocus={() => {
-            if (!disabled) {
-              setUserSearch(value || '')
-              setIsOpen(true)
-            }
-          }}
-          placeholder={placeholder}
-          disabled={disabled}
-        />
-        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--fg3)', display: 'flex', alignItems: 'center' }}>
-          {Icons.chevronDown ? Icons.chevronDown({ s: 15 }) : '▼'}
-        </div>
-      </div>
-
-      {isOpen && !disabled && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          marginTop: 4,
-          maxHeight: 180,
-          overflowY: 'auto',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 8,
-          boxShadow: 'var(--shadow-md)',
-          zIndex: 1010,
-        }}>
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map(opt => (
-              <div
-                key={opt}
-                onClick={() => {
-                  onChange(opt)
-                  setIsOpen(false)
-                }}
-                style={{
-                  padding: '10px 12px',
-                  fontSize: 13.5,
-                  color: 'var(--fg1)',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in oklch, var(--primary) 6%, var(--bg-surface))'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                {opt}
-              </div>
-            ))
-          ) : (
-            <div style={{ padding: '12px', fontSize: 13, color: 'var(--fg3)', textAlign: 'center' }}>
-              No se encontraron resultados
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
+interface DisabilityItem {
+  value?: string
+  label?: string
 }
 
 export default function ProfilePage() {
   const { data, isLoading, isError } = useProfile()
-  const { data: catalogos } = useCatalogos()
-  const LIFE_STAGES = catalogos?.etapasVida ?? []
-  const DISABILITY_TYPES = catalogos?.tiposDiscapacidad ?? []
+  const { data: rawCatalogos } = useCatalogos()
+  const catalogos = rawCatalogos as { etapasVida?: LifeStageItem[]; tiposDiscapacidad?: (DisabilityItem | string)[] } | undefined
+  const LIFE_STAGES: LifeStageItem[] = catalogos?.etapasVida ?? []
+  const DISABILITY_TYPES: (DisabilityItem | string)[] = catalogos?.tiposDiscapacidad ?? []
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
   const deleteAvatar = useEliminarAvatar()
   const { addToast } = useUiStore()
 
-  const [editingMode, setEditingMode] = useState(null) // 'profile' | 'address' | 'profiling' | null
-  const [form, setForm] = useState(null)
-  const [profilingForm, setProfilingForm] = useState(null)
-  const [avatarPreview, setAvatarPreview] = useState(null)
-  const fileInputRef = useRef(null)
+  const [editingMode, setEditingMode] = useState<'profile' | 'profiling' | null>(null)
+  const [form, setForm] = useState<PersonalInfoForm | null>(null)
+  const [profilingForm, setProfilingForm] = useState<ProfilingForm | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const startEdit = (mode) => {
+  const startEdit = (mode: 'profile') => {
     const fullNameVal = data?.full_name ?? ''
     const { firstName: fName, lastName: lName } = splitSpanishFullName(fullNameVal)
     setForm({
@@ -180,7 +91,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const allowedTypes = PROFILE_VALIDATION.ALLOWED_AVATAR_TYPES
@@ -193,19 +104,25 @@ export default function ProfilePage() {
       return
     }
     const reader = new FileReader()
-    reader.onload = (ev) => setAvatarPreview(ev.target.result)
+    reader.onload = (ev) => {
+      if (typeof ev.target?.result === 'string') {
+        setAvatarPreview(ev.target.result)
+      }
+    }
     reader.readAsDataURL(file)
     try {
       await uploadAvatar.mutateAsync(file)
       addToast(PROFILE_TOAST.AVATAR_UPDATED, 'success')
-    } catch (err) {
+    } catch (err: unknown) {
       setAvatarPreview(null)
-      addToast(err.response?.data?.mensaje ?? PROFILE_TOAST.AVATAR_UPDATE_ERROR, 'error')
+      const errorMsg = (err as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje ?? PROFILE_TOAST.AVATAR_UPDATE_ERROR
+      addToast(errorMsg, 'error')
     }
     e.target.value = ''
   }
 
   const handleSave = async () => {
+    if (!form) return
     try {
       const mergedName = form.first_name !== undefined 
         ? `${form.first_name.trim()} ${form.last_name.trim()}`.trim()
@@ -223,29 +140,31 @@ export default function ProfilePage() {
   }
 
   const startProfilingEdit = () => {
-    const p = data?.profiling ?? {}
+    const p = data?.profiling
     setProfilingForm({
-      disability_types: p.disability_types ?? [],
-      life_stage: p.life_stage ?? null,
-      communication_modes: p.communication_modes ?? [],
-      mobility_needs: p.mobility_needs ?? [],
-      goals: p.goals ?? [],
-      current_concerns: p.current_concerns ?? '',
+      disability_types: p?.disability_types ?? [],
+      life_stage: p?.life_stage ?? null,
+      communication_modes: p?.communication_modes ?? [],
+      mobility_needs: p?.mobility_needs ?? [],
+      goals: p?.goals ?? [],
+      current_concerns: p?.current_concerns ?? '',
     })
     setEditingMode('profiling')
   }
 
-  const toggleArrayItem = (field, value) => {
-    setProfilingForm(f => {
+  const toggleArrayItem = (field: 'disability_types' | 'communication_modes' | 'mobility_needs' | 'goals', value: string) => {
+    setProfilingForm((f) => {
+      if (!f) return f
       const arr = f[field]
       return {
         ...f,
-        [field]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value],
+        [field]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
       }
     })
   }
 
   const handleSaveProfiling = async () => {
+    if (!profilingForm) return
     try {
       await update.mutateAsync({ profiling: profilingForm })
       addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
@@ -255,31 +174,33 @@ export default function ProfilePage() {
     }
   }
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+  const setFormField = (k: keyof PersonalInfoForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((f) => (f ? { ...f, [k]: e.target.value } : null))
+  }
 
   const handleDeleteAvatar = async () => {
     if (!window.confirm(PROFILE_UI.CONFIRM_DELETE_AVATAR)) return
     try {
       const result = await deleteAvatar.mutateAsync()
       setAvatarPreview(null)
-      addToast(result.mensaje ?? PROFILE_TOAST.AVATAR_DELETED, 'success')
-    } catch (err) {
-      addToast(err.message ?? err.response?.data?.mensaje ?? PROFILE_TOAST.AVATAR_DELETE_ERROR, 'error')
+      addToast((result as { mensaje?: string })?.mensaje ?? PROFILE_TOAST.AVATAR_DELETED, 'success')
+    } catch (err: unknown) {
+      const errorMsg = (err as { message?: string; response?: { data?: { mensaje?: string } } })?.message ??
+        (err as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje ??
+        PROFILE_TOAST.AVATAR_DELETE_ERROR
+      addToast(errorMsg, 'error')
     }
   }
 
   const avatarColor = hashColor(data?.full_name ?? '')
-  const initials = (data?.full_name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const initials = (data?.full_name ?? '?').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
   const disabilities = data?.profiling?.disability_types ?? []
-  const stage = LIFE_STAGES.find(l => l.id === data?.profiling?.life_stage)
+  const stage = LIFE_STAGES.find((l) => l.id === data?.profiling?.life_stage)
 
   const s = {
-    page: { minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' },
     card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: 20 },
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    row: { display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 16 },
-    field: { flex: 1 },
-    chip: (color) => ({
+    chip: (color: string) => ({
       display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
       borderRadius: 20, fontSize: 13, fontWeight: 600,
       background: `color-mix(in oklch, ${color} 15%, transparent)`,
@@ -287,21 +208,18 @@ export default function ProfilePage() {
     }),
     roleBadge: {
       display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px',
-      borderRadius: 12, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+      borderRadius: 12, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' as const,
       background: 'var(--primary-subtle)', color: 'var(--primary)',
     },
-    stat: { flex: 1, padding: 20, background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' },
   }
 
-  const roleLabels = { pcd: 'Persona con discapacidad', tutor: 'Tutor o familiar', institution: 'Institución', admin: 'Administrador', user: 'Usuario' }
   const fullName = data?.full_name ?? '—'
   const { firstName, lastName } = splitSpanishFullName(fullName)
 
   return (
     <>
       <main className="responsive-main">
-      <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
-          
+        <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
           {/* Header */}
           <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Mi perfil</h1>
@@ -332,7 +250,12 @@ export default function ProfilePage() {
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                     Mi Perfil
                   </h3>
-                  <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={() => startEdit('profile')}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}
+                    onClick={() => startEdit('profile')}
+                  >
                     {Icons.edit({ s: 13 })} Editar
                   </button>
                 </div>
@@ -352,7 +275,7 @@ export default function ProfilePage() {
                       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                         {data?.full_name ?? '—'}
                       </h2>
-                      <span style={s.roleBadge}>{ROLE_LABELS[data?.role] ?? data?.role}</span>
+                      <span style={s.roleBadge}>{(ROLE_LABELS as Record<string, string>)[data?.role ?? ''] ?? data?.role}</span>
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--fg3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -391,7 +314,7 @@ export default function ProfilePage() {
 
               {/* Preferencias seleccionadas en registro */}
               {(() => {
-                let regInterests = []
+                let regInterests: string[] = []
                 try {
                   regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
                 } catch (_) {}
@@ -400,7 +323,12 @@ export default function ProfilePage() {
                   <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
                     <div style={s.sectionTitle}>
                       <span>Tus preferencias</span>
-                      <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }} onClick={startProfilingEdit}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}
+                        onClick={startProfilingEdit}
+                      >
                         {Icons.edit({ s: 13 })} Editar preferencias
                       </button>
                     </div>
@@ -409,7 +337,7 @@ export default function ProfilePage() {
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Intereses seleccionados</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {regInterests.map((interest, i) => (
-                            <span key={i} style={s.chip(CATEGORY_COLORS['social'] ?? 'var(--primary)')}>{interest}</span>
+                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['social'] ?? 'var(--primary)')}>{interest}</span>
                           ))}
                         </div>
                       </div>
@@ -430,27 +358,27 @@ export default function ProfilePage() {
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {disabilities.map((d, i) => (
-                            <span key={i} style={s.chip(CATEGORY_COLORS['Salud'] ?? 'var(--primary)')}>{d}</span>
+                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Salud'] ?? 'var(--primary)')}>{d}</span>
                           ))}
                         </div>
                       </div>
                     )}
-                    {data?.profiling?.communication_modes?.length > 0 && (
+                    {data?.profiling?.communication_modes && data.profiling.communication_modes.length > 0 && (
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {data?.profiling?.communication_modes?.map((m, i) => (
-                            <span key={i} style={s.chip(CATEGORY_COLORS['Educación'] ?? '#8B6BAE')}>{m}</span>
+                          {data.profiling.communication_modes.map((m, i) => (
+                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Educación'] ?? '#8B6BAE')}>{m}</span>
                           ))}
                         </div>
                       </div>
                     )}
-                    {data?.profiling?.mobility_needs?.length > 0 && (
+                    {data?.profiling?.mobility_needs && data.profiling.mobility_needs.length > 0 && (
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {data?.profiling?.mobility_needs?.map((m, i) => (
-                            <span key={i} style={s.chip(CATEGORY_COLORS['Empleo'] ?? '#D4944C')}>{m}</span>
+                          {data.profiling.mobility_needs.map((m, i) => (
+                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Empleo'] ?? '#D4944C')}>{m}</span>
                           ))}
                         </div>
                       </div>
@@ -470,13 +398,17 @@ export default function ProfilePage() {
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Tipos de discapacidad</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {DISABILITY_TYPES.map(d => {
-                        const val = d.value ?? d
-                        const label = d.label ?? d
+                      {DISABILITY_TYPES.map((d) => {
+                        const val = typeof d === 'object' && d !== null ? (d.value ?? d.label ?? '') : d
+                        const label = typeof d === 'object' && d !== null ? (d.label ?? d.value ?? '') : d
                         const active = profilingForm.disability_types.includes(val)
                         return (
-                          <button key={val} onClick={() => toggleArrayItem('disability_types', val)}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                          <button
+                            type="button"
+                            key={val}
+                            onClick={() => toggleArrayItem('disability_types', val)}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                          >
                             {label}
                           </button>
                         )
@@ -488,11 +420,15 @@ export default function ProfilePage() {
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Etapa de vida</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {LIFE_STAGES.map(ls => {
+                      {LIFE_STAGES.map((ls) => {
                         const active = profilingForm.life_stage === ls.id
                         return (
-                          <button key={ls.id} onClick={() => setProfilingForm(f => ({ ...f, life_stage: active ? null : ls.id }))}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                          <button
+                            type="button"
+                            key={ls.id}
+                            onClick={() => setProfilingForm((f) => (f ? { ...f, life_stage: active ? null : ls.id } : null))}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                          >
                             {ls.label}
                           </button>
                         )
@@ -504,11 +440,15 @@ export default function ProfilePage() {
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Necesidades de movilidad</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {['Silla de ruedas', 'Bastón', 'Andadera', 'Prótesis', 'Ninguna', 'Otra'].map(m => {
+                      {['Silla de ruedas', 'Bastón', 'Andadera', 'Prótesis', 'Ninguna', 'Otra'].map((m) => {
                         const active = profilingForm.mobility_needs.includes(m)
                         return (
-                          <button key={m} onClick={() => toggleArrayItem('mobility_needs', m)}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+                          <button
+                            type="button"
+                            key={m}
+                            onClick={() => toggleArrayItem('mobility_needs', m)}
+                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                          >
                             {m}
                           </button>
                         )
@@ -522,7 +462,7 @@ export default function ProfilePage() {
                     <textarea
                       rows={3}
                       value={profilingForm.current_concerns}
-                      onChange={e => setProfilingForm(f => ({ ...f, current_concerns: e.target.value }))}
+                      onChange={(e) => setProfilingForm((f) => (f ? { ...f, current_concerns: e.target.value } : null))}
                       placeholder="Ej: Busco apoyo para terapia de lenguaje, me interesa empleo inclusivo..."
                       style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 10, fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                     />
@@ -530,54 +470,68 @@ export default function ProfilePage() {
 
                   {/* Botones */}
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button onClick={() => setEditingMode(null)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditingMode(null)}
+                      style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}
+                    >
                       Cancelar
                     </button>
-                    <button onClick={handleSaveProfiling} disabled={update.isPending} className="btn-primary" style={{ padding: '8px 20px', fontSize: 13 }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveProfiling}
+                      disabled={update.isPending}
+                      className="btn-primary"
+                      style={{ padding: '8px 20px', fontSize: 13 }}
+                    >
                       {update.isPending ? 'Guardando...' : 'Guardar preferencias'}
                     </button>
                   </div>
                 </div>
               )}
-
-
-
-
-
             </>
           )}
         </div>
       </main>
 
       {/* Edit Personal Information Modal Overlay */}
-      {editingMode === 'profile' && (
+      {editingMode === 'profile' && form && (
         <div onClick={() => setEditingMode(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
-            
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
             {/* Close Button */}
-            <button onClick={() => setEditingMode(null)} style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-warm)'}>
+            <button
+              type="button"
+              onClick={() => setEditingMode(null)}
+              style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-color)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-warm)')}
+            >
               {Icons.x({ s: 16 })}
             </button>
 
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Editar información personal</h3>
             <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 24px' }}>Actualiza tus datos para mantener tu perfil al día.</p>
-            
+
             {/* Change Profile Picture Section */}
             <div style={{ marginBottom: 24 }}>
               <h4 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 14px' }}>Cambiar foto de perfil</h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <button onClick={handleAvatarClick} style={{ width: 72, height: 72, borderRadius: '50%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }}>
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    style={{ width: 72, height: 72, borderRadius: '50%', background: (avatarPreview || data?.avatar_url) ? 'transparent' : avatarColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, cursor: 'pointer', border: 'none', padding: 0, overflow: 'hidden' }}
+                  >
                     {(avatarPreview || data?.avatar_url) ? (
-                      <img src={avatarPreview || data?.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={avatarPreview || data?.avatar_url || ''} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : initials}
                   </button>
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg-surface)', pointerEvents: 'none' }}>
                     {uploadAvatar.isPending ? (
                       <span style={{ width: 10, height: 10, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                     ) : (
-                      Icons.camera({ s: 12 })
+                      Icons.camera ? Icons.camera({ s: 12 }) : '📷'
                     )}
                   </span>
                 </div>
@@ -586,11 +540,20 @@ export default function ProfilePage() {
                     Sube una imagen cuadrada (200x200 px) en formato JPEG o PNG.
                   </p>
                   <div style={{ display: 'flex', gap: 12 }}>
-                    <button onClick={handleAvatarClick} style={{ background: 'var(--primary-subtle)', border: 'none', color: 'var(--primary)', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      style={{ background: 'var(--primary-subtle)', border: 'none', color: 'var(--primary)', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
                       {Icons.upload({ s: 12 })} Subir foto
                     </button>
                     {(avatarPreview || data?.avatar_url) && (
-                      <button onClick={handleDeleteAvatar} disabled={deleteAvatar.isPending} style={{ background: 'transparent', border: '1px solid #DC3545', color: '#DC3545', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAvatar}
+                        disabled={deleteAvatar.isPending}
+                        style={{ background: 'transparent', border: '1px solid #DC3545', color: '#DC3545', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: deleteAvatar.isPending ? 0.6 : 1 }}
+                      >
                         {Icons.x({ s: 12 })} Eliminar
                       </button>
                     )}
@@ -608,11 +571,11 @@ export default function ProfilePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={labelStyle}>Nombre</label>
-                    <input style={inputStyle} value={form.first_name} onChange={set('first_name')} />
+                    <input style={inputStyle} value={form.first_name} onChange={setFormField('first_name')} />
                   </div>
                   <div>
                     <label style={labelStyle}>Apellido</label>
-                    <input style={inputStyle} value={form.last_name} onChange={set('last_name')} />
+                    <input style={inputStyle} value={form.last_name} onChange={setFormField('last_name')} />
                   </div>
                 </div>
                 <div>
@@ -624,16 +587,26 @@ export default function ProfilePage() {
 
             {/* Modal Footer */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-              <button className="btn-secondary" style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }} onClick={() => setEditingMode(null)}>Cerrar</button>
-              <button onClick={handleSave} style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }} disabled={update.isPending}>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }}
+                onClick={() => setEditingMode(null)}
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                disabled={update.isPending}
+              >
                 {update.isPending ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-
     </>
   )
 }

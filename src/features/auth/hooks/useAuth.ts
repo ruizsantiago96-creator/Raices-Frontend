@@ -370,22 +370,31 @@ export function useProfile(): UseQueryResult<UserProfileResponse, Error> {
 }
 
 export interface UpdateProfileVariables {
-  full_name: string
+  full_name?: string
   city?: string
   state?: string
+  profiling?: Partial<ProfilingFrontend>
 }
 
 export function useUpdateProfile(): UseMutationResult<BackendUser, Error, UpdateProfileVariables> {
   const qc = useQueryClient()
   const { user } = useAuthStore()
   return useMutation<BackendUser, Error, UpdateProfileVariables>({
-    mutationFn: (data: UpdateProfileVariables) => {
-      const body = {
-        nombreCompleto: data.full_name,
-        ciudad: data.city,
-        estado: data.state,
+    mutationFn: async (data: UpdateProfileVariables) => {
+      let resultUser: BackendUser = {} as BackendUser
+      const body: Record<string, unknown> = {}
+      if (data.full_name !== undefined) body.nombreCompleto = data.full_name
+      if (data.city !== undefined) body.ciudad = data.city
+      if (data.state !== undefined) body.estado = data.state
+      if (Object.keys(body).length > 0) {
+        const res = await api.put('/usuarios/perfil', body)
+        resultUser = res.data
       }
-      return api.put('/usuarios/perfil', body).then(r => r.data)
+      if (data.profiling) {
+        const needsBody = mapPerfilNecesidadesToBackend(data.profiling)
+        await api.put('/usuarios/perfil-necesidades', needsBody)
+      }
+      return resultUser
     },
     onSuccess: (raw: BackendUser) => {
       const updatedUser = mapUsuarioBackendToFrontend(raw)

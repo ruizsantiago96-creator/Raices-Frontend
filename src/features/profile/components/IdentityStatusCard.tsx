@@ -1,6 +1,19 @@
+import React from 'react'
 import { Icons } from '@shared/components/shared'
+import {
+  EstadoValidacionIdentidad,
+  DocumentoIdentidadEstado,
+} from '@/types/profile'
 
-const ESTADO_CONFIG = {
+export interface IdentityStatusConfig {
+  label: string
+  color: string
+  bg: string
+  description: string
+  icon: (props?: { s?: number; color?: string; filled?: boolean; style?: React.CSSProperties }) => React.JSX.Element
+}
+
+const ESTADO_CONFIG: Record<DocumentoIdentidadEstado, IdentityStatusConfig> = {
   sin_documentos: {
     label: 'Sin documentos',
     color: '#94a3b8',
@@ -31,14 +44,27 @@ const ESTADO_CONFIG = {
   },
 }
 
-export function useIdentityStatusConfig(estado = 'sin_documentos') {
-  return ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.sin_documentos
+export function useIdentityStatusConfig(
+  estado: DocumentoIdentidadEstado | string = 'sin_documentos'
+): IdentityStatusConfig {
+  return (
+    ESTADO_CONFIG[estado as DocumentoIdentidadEstado] ??
+    ESTADO_CONFIG.sin_documentos
+  )
 }
 
-export function IdentityStatusCard({ status, stateKey }) {
-  const cfg = useIdentityStatusConfig(stateKey ?? status?.estado ?? 'sin_documentos')
+export interface IdentityStatusCardProps {
+  status?: EstadoValidacionIdentidad | null
+  stateKey?: DocumentoIdentidadEstado
+}
+
+export const IdentityStatusCard: React.FC<IdentityStatusCardProps> = ({
+  status,
+  stateKey,
+}) => {
+  const resolvedState = (stateKey ?? status?.estado ?? 'sin_documentos') as DocumentoIdentidadEstado
+  const cfg = useIdentityStatusConfig(resolvedState)
   const StatusIcon = cfg.icon
-  const displayState = stateKey ?? status?.estado ?? 'sin_documentos'
 
   return (
     <div
@@ -91,21 +117,33 @@ export function IdentityStatusCard({ status, stateKey }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-        <IdentityDetail label="CURP" value={status?.tieneCurp ? '✓ Subido' : 'No subido'} color={status?.tieneCurp ? 'var(--fg1)' : 'var(--fg3)'} />
-        <IdentityDetail label="Identificación oficial" value={status?.tieneIdentificacion ? '✓ Subido' : 'No subido'} color={status?.tieneIdentificacion ? 'var(--fg1)' : 'var(--fg3)'} />
+        <IdentityDetail
+          label="CURP"
+          value={status?.tieneCurp ? '✓ Subido' : 'No subido'}
+          color={status?.tieneCurp ? 'var(--fg1)' : 'var(--fg3)'}
+        />
+        <IdentityDetail
+          label="Identificación oficial"
+          value={status?.tieneIdentificacion ? '✓ Subido' : 'No subido'}
+          color={status?.tieneIdentificacion ? 'var(--fg1)' : 'var(--fg3)'}
+        />
         {status?.numeroCurp && (
           <IdentityDetail label="CURP declarada" value={status.numeroCurp} color="var(--fg1)" mono />
         )}
         {status?.fechaSubida && (
           <IdentityDetail
             label="Última subida"
-            value={new Date(status.fechaSubida).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+            value={new Date(status.fechaSubida).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
             color="var(--fg1)"
           />
         )}
       </div>
 
-      {displayState === 'rechazado' && status?.motivoRechazo && (
+      {resolvedState === 'rechazado' && status?.motivoRechazo && (
         <div
           style={{
             marginTop: 16,
@@ -115,7 +153,16 @@ export function IdentityStatusCard({ status, stateKey }) {
             borderRadius: 10,
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#DC3545', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#DC3545',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 4,
+            }}
+          >
             Motivo de rechazo
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--fg1)', lineHeight: 1.5 }}>
@@ -126,14 +173,33 @@ export function IdentityStatusCard({ status, stateKey }) {
 
       {status?.fechaRevision && (
         <div style={{ marginTop: 12, fontSize: 12, color: 'var(--fg3)' }}>
-          Revisado el {new Date(status.fechaRevision).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          Revisado el{' '}
+          {new Date(status.fechaRevision).toLocaleDateString('es-MX', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </div>
       )}
     </div>
   )
 }
 
-function IdentityDetail({ label, value, color, mono }) {
+export interface IdentityDetailProps {
+  label: string
+  value: React.ReactNode
+  color?: string
+  mono?: boolean
+}
+
+export const IdentityDetail: React.FC<IdentityDetailProps> = ({
+  label,
+  value,
+  color,
+  mono,
+}) => {
   return (
     <div
       style={{
@@ -143,10 +209,27 @@ function IdentityDetail({ label, value, color, mono }) {
         fontSize: 13,
       }}
     >
-      <div style={{ color: 'var(--fg3)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+      <div
+        style={{
+          color: 'var(--fg3)',
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: 4,
+        }}
+      >
         {label}
       </div>
-      <div style={{ color, fontWeight: 600, ...(mono ? { fontFamily: 'monospace', fontSize: 12.5, wordBreak: 'break-all' } : {}) }}>
+      <div
+        style={{
+          color,
+          fontWeight: 600,
+          ...(mono
+            ? { fontFamily: 'monospace', fontSize: 12.5, wordBreak: 'break-all' }
+            : {}),
+        }}
+      >
         {value}
       </div>
     </div>

@@ -20,6 +20,9 @@
 
     /* Paths & Aliases */
     "paths": {
+      "@/*": ["./src/*"],
+      "@types/*": ["./src/types/*"],
+      "@types": ["./src/types"],
       "@features/*": ["./src/features/*"],
       "@features": ["./src/features"],
       "@shared/*": ["./src/shared/*"],
