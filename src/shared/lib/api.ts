@@ -1,6 +1,22 @@
 import axios from 'axios'
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { getToken, getRefreshToken, getRememberMe, clearAllAuth, saveToken, saveRefreshToken } from './storage'
 import { useAuthStore } from '@features/auth/store/authStore'
+
+interface CustomRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean
+}
+
+interface EtagCacheEntry {
+  etag: string
+  data: unknown
+  status: number
+}
+
+interface QueueItem {
+  resolve: (token: string) => void
+  reject: (reason?: unknown) => void
+}
 
 /* ─── Configuración ───────────────────────────────────────────────── */
 
@@ -8,13 +24,13 @@ const REFRESH_ENDPOINT = '/autenticacion/renovar-token'
 const PUBLIC_ROUTES = ['/auth']
 
 /** Rutas donde NUNCA redirigimos a /auth (evita loops en páginas públicas) */
-function isPublicRoute() {
+function isPublicRoute(): boolean {
   return PUBLIC_ROUTES.includes(window.location.pathname)
 }
 
 /* ─── Token forzado: limpiar y redirigir ───────────────────────────── */
 
-function forceLogout(message) {
+function forceLogout(_message?: string): void {
   clearAllAuth()
   useAuthStore.getState().logout()
   // NO usamos window.location.href porque eso hace push al historial
@@ -26,12 +42,12 @@ function forceLogout(message) {
 /* ─── ETag Cache ──────────────────────────────────────────────────── */
 // Almacena ETags de respuestas GET para enviar If-None-Match.
 // Key: URL completa (path + query string)
-// Value: { etag: string, data: any, status: number }
-const etagCache = new Map()
+// Value: { etag: string, data: unknown, status: number }
+const etagCache = new Map<string, EtagCacheEntry>()
 
-function getEtagKey(config) {
+function getEtagKey(config: InternalAxiosRequestConfig): string | null {
   // Solo para GETs, usar URL completa como key
-  if (config.method !== 'get') return null
+  if (config.method?.toLowerCase() !== 'get') return null
   const base = config.baseURL ?? ''
   const url = config.url ?? ''
   return `${config.method}:${base}${url}`
@@ -55,12 +71,11 @@ const refreshClient = axios.create({ baseURL: rawApiUrl ?? '/api' })
 /* ─── Cola de peticiones pendientes durante refresh ────────────────── */
 
 let isRefreshing = false
-let failedQueue = []
-
+let failedQueue: QueueItem[] = []
 
 /* ─── Interceptor de Request ──────────────────────────────────────── */
 
-api.interceptors.request.use(cfg => {
+api.interceptors.request.use((cfg: InternalAxiosRequestConfig) => {
   const storeToken = useAuthStore.getState().token
   const storageToken = getToken()
 
@@ -70,7 +85,9 @@ api.interceptors.request.use(cfg => {
     return Promise.reject(new Error('Storage cleared, session invalidated'))
   }
 
-  if (storageToken) cfg.headers.Authorization = `Bearer ${storageToken}`
+  if (storageToken) {
+    cfg.headers.Authorization = `Bearer ${storageToken}`
+  }
 
   // ─── ETag: enviar If-None-Match si tenemos un ETag previo ──────
   const etagKey = getEtagKey(cfg)
@@ -87,11 +104,11 @@ api.interceptors.request.use(cfg => {
 /* ─── Interceptor de Response (ETag) ─────────────────────────────── */
 
 api.interceptors.response.use(
-  response => {
+  (response: AxiosResponse) => {
     // ─── Capturar ETag de la respuesta (solo GETs con 200) ─────────
     const etagKey = getEtagKey(response.config)
     if (etagKey && response.status === 200) {
-      const etag = response.headers['etag']
+      const etag = response.headers['etag'] as string | undefined
       if (etag) {
         etagCache.set(etagKey, {
           etag,
@@ -103,20 +120,22 @@ api.interceptors.response.use(
     return response
   },
   // ─── Error handler: capturar 304 (axios lo lanza como error) ────
-  error => {
-    const { response, config } = error
-    // Solo procesar 304 en peticiones GET
-    if (response?.status === 304 && config?.method === 'get') {
-      const etagKey = getEtagKey(config)
-      const cached = etagKey ? etagCache.get(etagKey) : null
-      if (cached) {
-        // Devolver datos cacheados como si fuera 200
-        return {
-          data: cached.data,
-          status: 200,
-          statusText: 'OK (304 cached)',
-          headers: { ...response.headers, 'x-etag-cache': 'hit' },
-          config,
+  (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      const { response, config } = error
+      // Solo procesar 304 en peticiones GET
+      if (response?.status === 304 && config && config.method?.toLowerCase() === 'get') {
+        const etagKey = getEtagKey(config)
+        const cached = etagKey ? etagCache.get(etagKey) : null
+        if (cached) {
+          // Devolver datos cacheados como si fuera 200
+          return {
+            data: cached.data,
+            status: 200,
+            statusText: 'OK (304 cached)',
+            headers: { ...response.headers, 'x-etag-cache': 'hit' },
+            config,
+          } as AxiosResponse
         }
       }
     }
@@ -128,9 +147,13 @@ api.interceptors.response.use(
 /* ─── Interceptor de Response (Error + 401 refresh) ──────────────── */
 
 api.interceptors.response.use(
-  r => r,
-  async err => {
-    const originalRequest = err.config
+  (r: AxiosResponse) => r,
+  async (err: unknown) => {
+    if (!axios.isAxiosError(err) || !err.config) {
+      return Promise.reject(err)
+    }
+
+    const originalRequest = err.config as CustomRequestConfig
 
     // 1. Solo procesamos 401
     if (err.response?.status !== 401) {
@@ -149,7 +172,7 @@ api.interceptors.response.use(
 
     // 4. Ya hay un refresh en curso → encolar esta petición
     if (isRefreshing) {
-      return new Promise((resolve, reject) => {
+      return new Promise<string>((resolve, reject) => {
         failedQueue.push({ resolve, reject })
       }).then(token => {
         originalRequest.headers.Authorization = `Bearer ${token}`
@@ -176,7 +199,10 @@ api.interceptors.response.use(
 
     try {
       // 7. POST /autenticacion/renovar-token { tokenRefresco }
-      const { data } = await refreshClient.post(REFRESH_ENDPOINT, { tokenRefresco: refreshToken })
+      const { data } = await refreshClient.post<{ tokenAcceso: string; tokenRefresco?: string }>(
+        REFRESH_ENDPOINT,
+        { tokenRefresco: refreshToken }
+      )
 
       const newToken = data.tokenAcceso
       const newRefresh = data.tokenRefresco ?? refreshToken
@@ -204,7 +230,7 @@ api.interceptors.response.use(
       pendingQueue.forEach(({ resolve }) => resolve(newToken))
 
       return api(originalRequest)
-    } catch (refreshErr) {
+    } catch (refreshErr: unknown) {
       // Capturar cola antes de resetear flags
       const pendingQueue = [...failedQueue]
       failedQueue = []
@@ -216,7 +242,7 @@ api.interceptors.response.use(
       // Solo forzar logout si el refresh devolvió 401
       // (token inválido/expirado). Errores de red o 500 NO
       // deben expulsar al usuario.
-      if (refreshErr.response?.status === 401) {
+      if (axios.isAxiosError(refreshErr) && refreshErr.response?.status === 401) {
         forceLogout('session_expired')
       }
 

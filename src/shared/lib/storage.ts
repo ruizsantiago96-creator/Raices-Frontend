@@ -17,7 +17,7 @@ const REMEMBER_KEY = 'raices_remember'
 // ─── Preferencia "Recordarme" ───────────────────────────────────────
 
 /** Lee la preferencia Recordarme (siempre de localStorage). */
-export function getRememberMe() {
+export function getRememberMe(): boolean {
   try {
     return localStorage.getItem(REMEMBER_KEY) === 'true'
   } catch {
@@ -26,7 +26,7 @@ export function getRememberMe() {
 }
 
 /** Guarda la preferencia Recordarme (siempre en localStorage, true o false). */
-export function setRememberMe(value) {
+export function setRememberMe(value: boolean): void {
   try {
     localStorage.setItem(REMEMBER_KEY, String(!!value))
   } catch { /* ignore */ }
@@ -34,20 +34,20 @@ export function setRememberMe(value) {
 
 // ─── Storage selector ────────────────────────────────────────────────
 
-function getStorage(rememberMe) {
+function getStorage(rememberMe?: boolean): Storage {
   return rememberMe ? localStorage : sessionStorage
 }
 
 // ─── Guardar (escritura) ────────────────────────────────────────────
 
-export function saveToken(token, rememberMe) {
+export function saveToken(token: string, rememberMe?: boolean): void {
   const target = getStorage(rememberMe)
   const other = rememberMe ? sessionStorage : localStorage
   target.setItem(AUTH_TOKEN_KEY, token)
   try { other.removeItem(AUTH_TOKEN_KEY) } catch { /* ignore */ }
 }
 
-export function saveRefreshToken(refresh, rememberMe) {
+export function saveRefreshToken(refresh: string | null | undefined, rememberMe?: boolean): void {
   console.log('[Storage] saveRefreshToken called:', { refresh: !!refresh, rememberMe })
   if (!refresh) {
     console.warn('[Storage] saveRefreshToken: refresh is falsy, skipping')
@@ -61,7 +61,7 @@ export function saveRefreshToken(refresh, rememberMe) {
   console.log('[Storage] Verification - token stored:', !!target.getItem(AUTH_REFRESH_KEY))
 }
 
-export function saveUser(user, rememberMe) {
+export function saveUser(user: unknown, rememberMe?: boolean): void {
   if (!user) return
   const target = getStorage(rememberMe)
   const other = rememberMe ? sessionStorage : localStorage
@@ -74,18 +74,18 @@ export function saveUser(user, rememberMe) {
 // Al iniciar la app buscamos primero en localStorage (sesión persistente).
 // Si no está, buscamos en sessionStorage (sesión de pestaña).
 
-export function getToken() {
+export function getToken(): string | null {
   return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY)
 }
 
-export function getRefreshToken() {
+export function getRefreshToken(): string | null {
   return localStorage.getItem(AUTH_REFRESH_KEY) || sessionStorage.getItem(AUTH_REFRESH_KEY)
 }
 
-export function getUser() {
+export function getUser<T = unknown>(): T | null {
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY)
-    return raw ? JSON.parse(raw) : null
+    return raw ? (JSON.parse(raw) as T) : null
   } catch {
     return null
   }
@@ -96,7 +96,7 @@ export function getUser() {
 // NO toca raices_remember — la preferencia debe persistir para el
 // próximo login y restaurar el estado del checkbox.
 
-export function clearAllAuth() {
+export function clearAllAuth(): void {
   try {
     localStorage.removeItem(AUTH_TOKEN_KEY)
     localStorage.removeItem(AUTH_REFRESH_KEY)
@@ -109,5 +109,3 @@ export function clearAllAuth() {
     sessionStorage.removeItem(AUTH_USER_KEY)
   } catch { /* ignore */ }
 }
-
-

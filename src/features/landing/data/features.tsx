@@ -1,4 +1,13 @@
-export const FEATURES = [
+import type { ReactNode } from 'react'
+
+export interface LandingFeature {
+  title: string
+  desc: string
+  color: string
+  icon: ReactNode
+}
+
+export const FEATURES: LandingFeature[] = [
   {
     title: 'Caminos con opciones',
     desc: 'Rutas y alternativas que se ajustan a ti.',
@@ -175,5 +184,3 @@ export const FEATURES = [
     ),
   },
 ]
-
-

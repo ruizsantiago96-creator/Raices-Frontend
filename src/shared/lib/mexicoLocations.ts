@@ -4,7 +4,7 @@
  * Ordenados alfabéticamente para mejor UX en selects.
  */
 
-const MEXICO_DATA = {
+const MEXICO_DATA: Record<string, string[]> = {
   "Aguascalientes": [
     "Aguascalientes", "Asientos", "Calvillo", "Cosío", "El Llano",
     "Jesús María", "Pabellón de Arteaga", "Rincón de Romos",
@@ -883,15 +883,15 @@ const MEXICO_DATA = {
   ]
 }
 
-export const STATES = Object.keys(MEXICO_DATA).sort()
+export const STATES: string[] = Object.keys(MEXICO_DATA).sort()
 
-export const MUNICIPALITIES = MEXICO_DATA
+export const MUNICIPALITIES: Record<string, string[]> = MEXICO_DATA
 
 /**
  * Returns sorted municipalities for a given state.
  * @param {string} state
  * @returns {string[]}
  */
-export function getMunicipalities(state) {
+export function getMunicipalities(state: string): string[] {
   return (MEXICO_DATA[state] ?? []).sort()
 }

@@ -3,7 +3,7 @@
  * con clase .scroll-reveal, .scroll-reveal-left, .scroll-reveal-right,
  * .scroll-reveal-scale, .scroll-reveal-up
  */
-export function initScrollReveal() {
+export function initScrollReveal(): (() => void) | undefined {
   const SELECTORS = [
     '.scroll-reveal',
     '.scroll-reveal-left',

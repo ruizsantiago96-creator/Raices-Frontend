@@ -12,7 +12,7 @@ export const LOADING_MESSAGES = {
   DELETE: 'Procesando...',
   SEND: 'Enviando tu mensaje...',
   PROCESS: 'Trabajando en ello...',
-}
+} as const
 
 // ─── Mensajes de Éxito ────────────────────────────────────
 export const SUCCESS_MESSAGES = {
@@ -21,7 +21,7 @@ export const SUCCESS_MESSAGES = {
   DELETED: 'Eliminado con éxito',
   CREATED: '¡Creado con éxito!',
   SENT: '¡Tu mensaje fue enviado!',
-}
+} as const
 
 // ─── Mensajes de Error ────────────────────────────────────
 export const ERROR_MESSAGES = {
@@ -32,14 +32,14 @@ export const ERROR_MESSAGES = {
   VALIDATION: 'Revisa los datos que ingresaste, algo no coincide.',
   SERVER: 'Nuestro servicio está teniendo problemas. Intenta en unos minutos.',
   PERMISSION: 'No tienes acceso a esta sección.',
-}
+} as const
 
 // ─── Mensajes de Confirmación ─────────────────────────────
 export const CONFIRM_MESSAGES = {
   DELETE: '¿Estás segura/o de que quieres eliminar esto?',
   LEAVE: '¿Salir sin guardar tus cambios?',
   LOGOUT: '¿Cerrar sesión?',
-}
+} as const
 
 // ─── Textos de Botones Comunes ────────────────────────────
 export const BUTTON_TEXT = {
@@ -58,7 +58,7 @@ export const BUTTON_TEXT = {
   RETRY: 'Intentar de nuevo',
   LOAD_MORE: 'Ver más',
   SHOW_ALL: 'Ver todo',
-}
+} as const
 
 // ─── Placeholders de Input ────────────────────────────────
 export const INPUT_PLACEHOLDERS = {
@@ -69,11 +69,11 @@ export const INPUT_PLACEHOLDERS = {
   PHONE: 'Tu teléfono',
   MESSAGE: 'Escribe tu mensaje aquí...',
   COMMENT: 'Comparte tu opinión...',
-}
+} as const
 
 // ─── Estados de Página ────────────────────────────────────
 export const PAGE_STATES = {
   EMPTY: 'Aquí aparecerá contenido pronto',
   NO_DATA: 'No encontramos información por el momento',
   COMING_SOON: 'Esto estará disponible muy pronto',
-}
+} as const

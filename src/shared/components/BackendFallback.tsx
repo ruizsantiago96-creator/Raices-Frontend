@@ -8,7 +8,10 @@
  * o contrato requiere implementar el equipo de Backend.
  */
 
+import type { CSSProperties, MouseEvent } from 'react'
 import { Icons } from './shared'
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | string
 
 // ─── Estilos del fallback ─────────────────────────────────
 const styles = {
@@ -24,7 +27,7 @@ const styles = {
     borderRadius: 'var(--radius-md)',
     border: '1px solid var(--border-color)',
     boxShadow: 'var(--shadow-sm)',
-  },
+  } as CSSProperties,
   iconContainer: {
     width: 64,
     height: 64,
@@ -34,21 +37,21 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-  },
+  } as CSSProperties,
   title: {
     fontFamily: 'var(--font-display)',
     fontSize: 22,
     fontWeight: 700,
     color: 'var(--fg1)',
     margin: '0 0 12px',
-  },
+  } as CSSProperties,
   message: {
     fontSize: 15,
     color: 'var(--fg2)',
     margin: '0 0 24px',
     lineHeight: 1.6,
     maxWidth: 500,
-  },
+  } as CSSProperties,
   endpointBox: {
     background: 'var(--bg-cool)',
     border: '1px solid var(--border-color)',
@@ -57,7 +60,7 @@ const styles = {
     maxWidth: '100%',
     width: 'fit-content',
     marginBottom: 24,
-  },
+  } as CSSProperties,
   endpointLabel: {
     fontSize: 12,
     fontWeight: 700,
@@ -65,8 +68,8 @@ const styles = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     marginBottom: 8,
-  },
-  methodBadge: (method) => ({
+  } as CSSProperties,
+  methodBadge: (method: HttpMethod): CSSProperties => ({
     display: 'inline-block',
     padding: '4px 10px',
     borderRadius: 4,
@@ -94,7 +97,7 @@ const styles = {
     fontSize: 14,
     fontWeight: 600,
     color: 'var(--fg1)',
-  },
+  } as CSSProperties,
   contractBox: {
     background: 'var(--bg-warm)',
     border: '1px solid var(--border-color)',
@@ -104,7 +107,7 @@ const styles = {
     width: 'fit-content',
     textAlign: 'left',
     marginBottom: 24,
-  },
+  } as CSSProperties,
   contractLabel: {
     fontSize: 12,
     fontWeight: 700,
@@ -112,14 +115,14 @@ const styles = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     marginBottom: 8,
-  },
+  } as CSSProperties,
   contractCode: {
     fontFamily: 'monospace',
     fontSize: 13,
     color: 'var(--fg2)',
     lineHeight: 1.6,
     whiteSpace: 'pre-wrap',
-  },
+  } as CSSProperties,
   retryButton: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -135,19 +138,19 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     minHeight: 44,
-  },
+  } as CSSProperties,
 }
 
-/**
- * @param {Object} props
- * @param {string} props.method - Método HTTP (GET, POST, PUT, PATCH, DELETE)
- * @param {string} props.endpoint - Ruta del endpoint (ej: /api/usuarios)
- * @param {string} [props.title] - Título personalizado del fallback
- * @param {string} [props.message] - Mensaje personalizado
- * @param {string} [props.contract] - Descripción del contrato esperado
- * @param {Function} [props.onRetry] - Callback para reintentar
- * @param {string} [props.retryLabel] - Texto del botón de reintento
- */
+export interface BackendFallbackProps {
+  method?: HttpMethod
+  endpoint?: string
+  title?: string
+  message?: string
+  contract?: string
+  onRetry?: () => void
+  retryLabel?: string
+}
+
 export default function BackendFallback({
   method = 'GET',
   endpoint = '/api/endpoint',
@@ -156,7 +159,7 @@ export default function BackendFallback({
   contract,
   onRetry,
   retryLabel = 'Reintentar',
-}) {
+}: BackendFallbackProps) {
   return (
     <div style={styles.container} role="alert" aria-live="polite">
       {/* Icono de advertencia */}
@@ -192,13 +195,13 @@ export default function BackendFallback({
         <button
           onClick={onRetry}
           style={styles.retryButton}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'var(--primary-dark)'
-            e.target.style.transform = 'translateY(-1px)'
+          onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.background = 'var(--primary-dark)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
           }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'var(--primary)'
-            e.target.style.transform = 'translateY(0)'
+          onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.background = 'var(--primary)'
+            e.currentTarget.style.transform = 'translateY(0)'
           }}
         >
           {retryLabel}
@@ -208,10 +211,16 @@ export default function BackendFallback({
   )
 }
 
+export interface BackendFallbackInlineProps {
+  method?: HttpMethod
+  endpoint?: string
+  compact?: boolean
+}
+
 /**
  * Componente inline para mostrar fallback en-loading states
  */
-export function BackendFallbackInline({ method, endpoint, compact = false }) {
+export function BackendFallbackInline({ method = 'GET', endpoint = '', compact = false }: BackendFallbackInlineProps) {
   if (compact) {
     return (
       <div style={{

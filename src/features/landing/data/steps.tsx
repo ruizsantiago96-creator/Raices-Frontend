@@ -1,4 +1,14 @@
-export const STEPS = [
+import type { ReactNode } from 'react'
+
+export interface LandingStep {
+  num: number
+  title: string
+  desc: string
+  numBg: string
+  icon: ReactNode
+}
+
+export const STEPS: LandingStep[] = [
   {
     num: 1,
     title: 'Conocer quién eres',
@@ -201,4 +211,3 @@ export const STEPS = [
     ),
   },
 ]
-

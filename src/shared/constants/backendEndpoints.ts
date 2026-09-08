@@ -2,15 +2,15 @@
  * Inventario completo de endpoints del backend.
  * 
  * Este archivo documenta TODOS los endpoints que el frontend espera,
- * incluyendo método HTTP, ruta, y contrato de respuesta esperado.
+ * incluyendo mÃ©todo HTTP, ruta, y contrato de respuesta esperado.
  * 
- * Si un endpoint no está implementado, se debe usar BackendFallback.jsx
+ * Si un endpoint no estÃ¡ implementado, se debe usar BackendFallback.jsx
  * para mostrar un mensaje informativo al usuario.
  */
 
-// ═══════════════════════════════════════════════════════════
-// AUTENTICACIÓN
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// AUTENTICACIÃ“N
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const AUTH_ENDPOINTS = {
   LOGIN: {
     method: 'POST',
@@ -23,10 +23,10 @@ export const AUTH_ENDPOINTS = {
     path: '/autenticacion/registro',
     body: { email: 'string', password: 'string', nombreCompleto: 'string', rol: 'pcd|tutor|institution', ciudad: 'string', estado: 'string' },
     response: {
-      // Con token: { tokenAcceso, tokenRefresco, usuario } → login automático
-      // Sin token: { usuario, requiereInicioSesion: true } → la cuenta se creó,
-      // el usuario debe iniciar sesión por separado
-      // Para institution/empresa: { uid, email, rol, mensaje } (sin token — solo registro)
+      // Con token: { tokenAcceso, tokenRefresco, usuario } â†’ login automÃ¡tico
+      // Sin token: { usuario, requiereInicioSesion: true } â†’ la cuenta se creÃ³,
+      // el usuario debe iniciar sesiÃ³n por separado
+      // Para institution/empresa: { uid, email, rol, mensaje } (sin token â€” solo registro)
       tokenAcceso: 'string|undefined',
       tokenRefresco: 'string|undefined',
       usuario: 'Usuario|undefined',
@@ -49,14 +49,14 @@ export const AUTH_ENDPOINTS = {
   CERRAR_SESION: {
     method: 'POST',
     path: '/autenticacion/cerrar-sesion',
-    description: 'Eliminar cookies httpOnly (logout server-side). Llamar además de limpiar tokens del cliente.',
+    description: 'Eliminar cookies httpOnly (logout server-side). Llamar ademÃ¡s de limpiar tokens del cliente.',
     response: null, // 204 No Content
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // USUARIOS / PERFIL
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const USER_ENDPOINTS = {
   GET_PROFILE: {
     method: 'GET',
@@ -97,7 +97,7 @@ export const USER_ENDPOINTS = {
   UPLOAD_DOCUMENTO_IDENTIDAD: {
     method: 'POST',
     path: '/usuarios/documento-identidad',
-    description: 'Subir documento de identidad (CURP o identificación oficial)',
+    description: 'Subir documento de identidad (CURP o identificaciÃ³n oficial)',
     body: 'FormData (tipo, numeroCurp?, documento)',
     response: {
       tipo: 'string',
@@ -109,7 +109,7 @@ export const USER_ENDPOINTS = {
   GET_ESTADO_VALIDACION: {
     method: 'GET',
     path: '/usuarios/estado-validacion-identidad',
-    description: 'Estado de validación de identidad del usuario',
+    description: 'Estado de validaciÃ³n de identidad del usuario',
     response: {
       estado: 'string',
       tieneCurp: 'boolean',
@@ -143,20 +143,20 @@ export const USER_ENDPOINTS = {
   GET_ONBOARDING: {
     method: 'GET',
     path: '/usuarios/onboarding',
-    description: 'Estado de completitud del onboarding — retorna campos faltantes y porcentaje',
+    description: 'Estado de completitud del onboarding â€” retorna campos faltantes y porcentaje',
     response: { porcentaje: 'number', camposFaltantes: 'string[]' },
   },
   GET_ESPECIALISTAS: {
     method: 'GET',
     path: '/usuarios/especialistas',
-    description: 'Especialistas recomendados por matching (edad, discapacidad, ubicación)',
+    description: 'Especialistas recomendados por matching (edad, discapacidad, ubicaciÃ³n)',
     response: { datos: 'Especialista[]', total: 'number' },
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DEPENDIENTES (TUTOR)
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const DEPENDENT_ENDPOINTS = {
   LIST: {
     method: 'GET',
@@ -267,9 +267,9 @@ export const DEPENDENT_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INSTITUCIONES
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const INSTITUTION_ENDPOINTS = {
   LIST: {
     method: 'GET',
@@ -285,7 +285,7 @@ export const INSTITUTION_ENDPOINTS = {
   GET_DETAIL: {
     method: 'GET',
     path: '/instituciones/:id/detalle',
-    description: 'Detalle completo (admin o propietario) — incluye instituciones pendientes/inactivas',
+    description: 'Detalle completo (admin o propietario) â€” incluye instituciones pendientes/inactivas',
     response: 'Institucion',
   },
   CREATE: {
@@ -308,7 +308,7 @@ export const INSTITUTION_ENDPOINTS = {
   GET_MY_INSTITUTION: {
     method: 'GET',
     path: '/instituciones/mi-institucion',
-    description: 'Retorna la información de la institución asociada al usuario autenticado',
+    description: 'Retorna la informaciÃ³n de la instituciÃ³n asociada al usuario autenticado',
     params: null,
     response: {
       id: 'string',
@@ -345,7 +345,7 @@ export const INSTITUTION_ENDPOINTS = {
     },
     errors: {
       401: 'No autenticado',
-      404: 'El usuario no tiene institución registrada',
+      404: 'El usuario no tiene instituciÃ³n registrada',
     },
   },
   UPDATE_MY_INSTITUTION: {
@@ -357,21 +357,21 @@ export const INSTITUTION_ENDPOINTS = {
   DELETE_MY_INSTITUTION: {
     method: 'DELETE',
     path: '/instituciones/mi-institucion',
-    description: 'Eliminar mi institución (soft-delete)',
+    description: 'Eliminar mi instituciÃ³n (soft-delete)',
     response: null, // 204 No Content
   },
   VALIDATE_CSF_QR: {
     method: 'POST',
     path: '/instituciones/validar-csf-qr',
-    description: 'Validar código QR de Constancia de Situación Fiscal (multipart: PDF o imagen)',
+    description: 'Validar cÃ³digo QR de Constancia de SituaciÃ³n Fiscal (multipart: PDF o imagen)',
     body: 'FormData (archivo)',
     response: { valido: 'boolean', datos: 'object | null' },
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DESCUBRIMIENTO
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const DISCOVERY_ENDPOINTS = {
   SEARCH: {
     method: 'GET',
@@ -381,21 +381,21 @@ export const DISCOVERY_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INTERACCIONES Y RECOMENDACIONES
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const INTERACTION_ENDPOINTS = {
   CREATE: {
     method: 'POST',
     path: '/usuarios/interacciones',
-    description: 'Registrar una interacción del usuario con una institución',
+    description: 'Registrar una interacciÃ³n del usuario con una instituciÃ³n',
     body: { institucionId: 'string', tipo: 'guardar | ver_detalle | click_card', categoria: 'string?' },
     response: { id: 'string', tipo: 'string', createdAt: 'string (ISO)' },
   },
   GET_PESOS: {
     method: 'GET',
     path: '/usuarios/interacciones/pesos',
-    description: 'Acumulado de puntos de los últimos 30 días (guardar: 10, ver_detalle: 5, click_card: 2)',
+    description: 'Acumulado de puntos de los Ãºltimos 30 dÃ­as (guardar: 10, ver_detalle: 5, click_card: 2)',
     response: { totalPuntos: 'number', desglose: { guardar: 'number', ver_detalle: 'number', click_card: 'number' } },
   },
 }
@@ -404,20 +404,20 @@ export const RECOMMENDATION_ENDPOINTS = {
   GET: {
     method: 'GET',
     path: '/usuarios/recomendaciones',
-    description: 'Instituciones recomendadas (60% coincidencias de perfil + 40% histórico de comportamiento)',
+    description: 'Instituciones recomendadas (60% coincidencias de perfil + 40% histÃ³rico de comportamiento)',
     response: { datos: 'Institucion[]', total: 'number' },
   },
   GET_PESOS: {
     method: 'GET',
     path: '/usuarios/interacciones/pesos',
-    description: 'Pesos de comportamiento por categoría (últimos 30 días)',
+    description: 'Pesos de comportamiento por categorÃ­a (Ãºltimos 30 dÃ­as)',
     response: { totalPuntos: 'number', desglose: { guardar: 'number', ver_detalle: 'number', click_card: 'number' } },
   },
 }
 
-// ═══════════════════════════════════════════════════════════
-// RESEÑAS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// RESEÃ‘AS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const REVIEW_ENDPOINTS = {
   GET_BY_INSTITUTION: {
     method: 'GET',
@@ -449,9 +449,9 @@ export const REVIEW_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FAVORITOS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const FAVORITE_ENDPOINTS = {
   LIST: {
     method: 'GET',
@@ -470,9 +470,9 @@ export const FAVORITE_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COMUNIDAD
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const COMMUNITY_ENDPOINTS = {
   GET_GROUPS: {
     method: 'GET',
@@ -556,7 +556,7 @@ export const COMMUNITY_ENDPOINTS = {
     params: { limite: 'number?' },
     response: { miembros: 'UsuarioComunidad[]' },
   },
-  // ── Foros institucionales (tipo Classroom) ──────────────
+  // â”€â”€ Foros institucionales (tipo Classroom) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   CREATE_FORO: {
     method: 'POST',
     path: '/comunidad/foros',
@@ -567,7 +567,7 @@ export const COMMUNITY_ENDPOINTS = {
   GET_FOROS: {
     method: 'GET',
     path: '/comunidad/foros',
-    description: 'Listar foros activos (público)',
+    description: 'Listar foros activos (pÃºblico)',
     response: { datos: 'Foro[]', total: 'number' },
   },
   GET_FORO_DETAIL: {
@@ -583,19 +583,19 @@ export const COMMUNITY_ENDPOINTS = {
     body: { preguntaIndex: 'number', contenido: 'string' },
     response: 'ForoRespuesta',
   },
-  // ── Conectemos (galería pública) ──────────────────────
+  // â”€â”€ Conectemos (galerÃ­a pÃºblica) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   GET_CONECTEMOS: {
     method: 'GET',
     path: '/comunidad/conectemos/publicaciones',
-    description: 'Galería pública de creaciones de usuarios PCD (Conectemos)',
+    description: 'GalerÃ­a pÃºblica de creaciones de usuarios PCD (Conectemos)',
     params: { categoriaCreativa: 'string?', pagina: 'number?', limite: 'number?' },
     response: { datos: 'Publicacion[]', total: 'number' },
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MENSAJES
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const MESSAGE_ENDPOINTS = {
   GET_CONVERSATIONS: {
     method: 'GET',
@@ -625,22 +625,22 @@ export const MESSAGE_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EMPLEO
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const JOB_ENDPOINTS = {
   LIST: {
     method: 'GET',
     path: '/empleo',
-    description: 'Listar vacantes activas de instituciones activas con paginación',
+    description: 'Listar vacantes activas de instituciones activas con paginaciÃ³n',
     params: {
       pagina: 'number (default: 1)',
       limite: 'number (default: 20)',
       ordenarPor: 'string (default: fechaCreacion)',
       direccion: 'string (asc|desc, default: desc)',
-      buscar: 'string? (búsqueda por texto en título, nombre, contenido)',
+      buscar: 'string? (bÃºsqueda por texto en tÃ­tulo, nombre, contenido)',
       ciudad: 'string? (filtrar por ciudad)',
-      modalidad: 'string? (presencial|remoto|híbrido)',
+      modalidad: 'string? (presencial|remoto|hÃ­brido)',
     },
     response: {
       datos: [{
@@ -658,7 +658,7 @@ export const JOB_ENDPOINTS = {
         tiposDiscapacidad: 'string[]',
         activa: 'boolean',
         fechaCreacion: 'string (ISO)',
-        // Datos de la institución embebidos:
+        // Datos de la instituciÃ³n embebidos:
         nombreInstitucion: 'string',
         ciudadInstitucion: 'string',
         descripcionInstitucion: 'string',
@@ -677,12 +677,12 @@ export const JOB_ENDPOINTS = {
   CREATE: {
     method: 'POST',
     path: '/empleo',
-    description: 'Crear vacante (rol institución o admin)',
+    description: 'Crear vacante (rol instituciÃ³n o admin)',
     body: {
       titulo: 'string (required)',
       descripcion: 'string?',
       requisitos: 'string?',
-      modalidad: 'string? (presencial|remoto|híbrido)',
+      modalidad: 'string? (presencial|remoto|hÃ­brido)',
       horario: 'string?',
       rangoSalario: 'string?',
       ciudad: 'string?',
@@ -697,13 +697,13 @@ export const JOB_ENDPOINTS = {
       titulo: 'string',
       activa: 'boolean',
       fechaCreacion: 'string (ISO)',
-      // + campos de institución embebidos
+      // + campos de instituciÃ³n embebidos
     },
   },
   GET: {
     method: 'GET',
     path: '/empleo/:id',
-    description: 'Detalle de vacante con información de institución',
+    description: 'Detalle de vacante con informaciÃ³n de instituciÃ³n',
     response: {
       id: 'string',
       institucionId: 'string',
@@ -732,12 +732,12 @@ export const JOB_ENDPOINTS = {
   UPDATE: {
     method: 'PUT',
     path: '/empleo/:id',
-    description: 'Actualizar vacante (debe pertenecer a la institución del usuario)',
+    description: 'Actualizar vacante (debe pertenecer a la instituciÃ³n del usuario)',
     body: {
       titulo: 'string?',
       descripcion: 'string?',
       requisitos: 'string?',
-      modalidad: 'string? (presencial|remoto|híbrido)',
+      modalidad: 'string? (presencial|remoto|hÃ­brido)',
       horario: 'string?',
       rangoSalario: 'string?',
       ciudad: 'string?',
@@ -746,7 +746,7 @@ export const JOB_ENDPOINTS = {
       tiposDiscapacidad: 'string[]?',
       activa: 'boolean?',
     },
-    response: 'Vacante (con datos de institución)',
+    response: 'Vacante (con datos de instituciÃ³n)',
   },
   DELETE: {
     method: 'DELETE',
@@ -763,13 +763,13 @@ export const JOB_ENDPOINTS = {
   GET_MY_APPLICATIONS: {
     method: 'GET',
     path: '/empleo/mis-postulaciones',
-    description: 'Postulaciones del usuario con paginación',
+    description: 'Postulaciones del usuario con paginaciÃ³n',
     params: {
       pagina: 'number (default: 1)',
       limite: 'number (default: 20)',
       ordenarPor: 'string (default: fechaCreacion)',
       direccion: 'string (asc|desc, default: desc)',
-      buscar: 'string? (búsqueda por texto)',
+      buscar: 'string? (bÃºsqueda por texto)',
     },
     response: {
       datos: [{
@@ -798,11 +798,11 @@ export const JOB_ENDPOINTS = {
     body: { cartaPresentacion: 'string?' },
     response: { id: 'string', estado: 'string (pendiente)' },
   },
-  // ── Endpoints de postulaciones ──────────────────────
+  // â”€â”€ Endpoints de postulaciones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   GET_POSTULANTES_VACANTE: {
     method: 'GET',
     path: '/empleo/postulantes-vacante',
-    description: 'Postulantes de una vacante específica (rol institucion o admin)',
+    description: 'Postulantes de una vacante especÃ­fica (rol institucion o admin)',
     params: { vacanteId: 'string (requerido)' },
     response: {
       datos: [{
@@ -819,7 +819,7 @@ export const JOB_ENDPOINTS = {
   GET_POSTULACIONES: {
     method: 'GET',
     path: '/empleo/postulantes-institucion',
-    description: 'Obtener postulantes de mi institución. Filtrar por vacanteId para ver las de una vacante específica.',
+    description: 'Obtener postulantes de mi instituciÃ³n. Filtrar por vacanteId para ver las de una vacante especÃ­fica.',
     params: { vacanteId: 'string? (opcional, filtrar por vacante)' },
     response: {
       datos: [{
@@ -844,9 +844,9 @@ export const JOB_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // NOTIFICACIONES
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const NOTIFICATION_ENDPOINTS = {
   GET_ALL: {
     method: 'GET',
@@ -878,13 +878,13 @@ export const NOTIFICATION_ENDPOINTS = {
   STREAM: {
     method: 'GET',
     path: '/notificaciones/flujo',
-    description: 'SSE — notificaciones en tiempo real (EventSource)',
+    description: 'SSE â€” notificaciones en tiempo real (EventSource)',
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // IA
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const AI_ENDPOINTS = {
   CHAT: {
     method: 'POST',
@@ -901,7 +901,7 @@ export const AI_ENDPOINTS = {
   GET_RESUMEN: {
     method: 'POST',
     path: '/ia/resumen',
-    description: 'Genera resumen narrativo IA (1 párrafo + 3 párrafos)',
+    description: 'Genera resumen narrativo IA (1 pÃ¡rrafo + 3 pÃ¡rrafos)',
     body: null, // usa el usuario autenticado
     response: {
       resumenUnParrafo: 'string',
@@ -915,9 +915,9 @@ export const AI_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
-// CATÁLOGOS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// CATÃLOGOS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const CATALOG_ENDPOINTS = {
   GET_ALL: {
     method: 'GET',
@@ -982,7 +982,7 @@ export const CATALOG_ENDPOINTS = {
   GET_SUBCATEGORIAS_COMUNIDAD: {
     method: 'GET',
     path: '/catalogos/subcategorias-comunidad',
-    description: 'Subcategorías de grupos de comunidad',
+    description: 'SubcategorÃ­as de grupos de comunidad',
     response: '{ id: string, label: string }[]',
   },
   GET_TONO_CONTEXTUAL: {
@@ -993,9 +993,9 @@ export const CATALOG_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
-// ADMINISTRACIÓN
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ADMINISTRACIÃ“N
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const ADMIN_ENDPOINTS = {
   GET_STATS: {
     method: 'GET',
@@ -1005,7 +1005,7 @@ export const ADMIN_ENDPOINTS = {
   GET_DOCUMENTOS_PENDIENTES: {
     method: 'GET',
     path: '/administracion/documentos-identidad/pendientes',
-    description: 'Lista de documentos de identidad pendientes de revisión',
+    description: 'Lista de documentos de identidad pendientes de revisiÃ³n',
     params: { estado: 'string?' },
     response: {
       datos: [{
@@ -1123,32 +1123,32 @@ export const ADMIN_ENDPOINTS = {
       ultimaActualizacion: 'string (ISO)',
     },
   },
-  // ── Auditoría ──────────────────────
+  // â”€â”€ AuditorÃ­a â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   GET_AUDITORIA: {
     method: 'GET',
     path: '/administracion/auditoria',
-    description: 'Logs de auditoría (paginado, con filtros por usuarioId, accion, recurso, fechas)',
+    description: 'Logs de auditorÃ­a (paginado, con filtros por usuarioId, accion, recurso, fechas)',
     params: { pagina: 'number?', limite: 'number?', usuarioId: 'string?', accion: 'string?', recurso: 'string?', fechaDesde: 'string?', fechaHasta: 'string?' },
     response: { datos: 'AuditoriaLog[]', total: 'number', pagina: 'number', limite: 'number', totalPaginas: 'number' },
   },
   GET_AUDITORIA_ESTADISTICAS: {
     method: 'GET',
     path: '/administracion/auditoria/estadisticas',
-    description: 'Resumen de auditoría (contadores por acción, usuarios más activos, etc.)',
+    description: 'Resumen de auditorÃ­a (contadores por acciÃ³n, usuarios mÃ¡s activos, etc.)',
     response: 'AuditoriaEstadisticas',
   },
-  // ── Verificación identidad institución ──────────────
+  // â”€â”€ VerificaciÃ³n identidad instituciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   GET_INSTITUTION_VERIFICATION: {
     method: 'GET',
     path: '/administracion/instituciones/:id/verificacion-identidad',
-    description: 'Estado de verificación de identidad de la institución (CURP + ID del representante legal)',
+    description: 'Estado de verificaciÃ³n de identidad de la instituciÃ³n (CURP + ID del representante legal)',
     response: { estado: 'string', tieneCurp: 'boolean', tieneIdentificacion: 'boolean', verificada: 'boolean' },
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MULTIMEDIA / STORAGE
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const MULTIMEDIA_ENDPOINTS = {
   UPLOAD: {
     method: 'POST',
@@ -1159,9 +1159,9 @@ export const MULTIMEDIA_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RUTAS DE DESARROLLO
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const RUTAS_ENDPOINTS = {
   LIST: {
     method: 'GET',
@@ -1229,9 +1229,9 @@ export const RUTAS_ENDPOINTS = {
   },
 }
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RESUMEN: TODOS LOS ENDPOINTS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export const ALL_ENDPOINTS = {
   ...AUTH_ENDPOINTS,
   ...USER_ENDPOINTS,
@@ -1254,10 +1254,11 @@ export const ALL_ENDPOINTS = {
 }
 
 /**
- * Verifica si un endpoint está disponible (para usar en fallbacks).
+ * Verifica si un endpoint estÃ¡ disponible (para usar en fallbacks).
  * @param {string} endpointKey - Clave del endpoint en ALL_ENDPOINTS
  * @returns {Object|null} - Objeto del endpoint o null si no existe
  */
-export function getEndpointInfo(endpointKey) {
-  return ALL_ENDPOINTS[endpointKey] ?? null
+export function getEndpointInfo(endpointKey: string) {
+  return (ALL_ENDPOINTS as Record<string, unknown>)[endpointKey] ?? null
 }
+

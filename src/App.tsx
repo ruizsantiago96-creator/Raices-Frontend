@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import { MotionConfig } from 'motion/react'
 import { useSessionVerify } from '@features/auth'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
@@ -82,11 +83,15 @@ function SessionLoadingScreen() {
   )
 }
 
+interface SessionErrorScreenProps {
+  error: string
+}
+
 /**
  * Pantalla mostrada cuando la verificación de sesión falla.
  * Ofrece un botón para ir al login.
  */
-function SessionErrorScreen({ error }) {
+function SessionErrorScreen({ error }: SessionErrorScreenProps) {
   return (
     <div style={{
       display: 'flex',
@@ -134,7 +139,7 @@ export default function App() {
   // y, si no está activada, sigue la preferencia del sistema operativo.
   const reducedMotion = useA11yStore(s => s.reducedMotion)
 
-  const skipToMain = (e) => {
+  const skipToMain = (e: ReactMouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
     const main = document.querySelector('main')
     if (main) { main.setAttribute('tabindex', '-1'); main.focus() }

@@ -1,13 +1,46 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { Icons } from '@shared/components/shared'
 import { TUTOR_UI } from '../constants/tutorMessages'
 
-export default function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, saving }) {
+export interface FeatureItem {
+  id: string
+  label: string
+  description?: string
+}
+
+export interface FeaturesConfigModalProps {
+  dependent: {
+    id: string | number
+    pcdUserId?: string | number
+    nombreCompleto?: string
+    nombre?: string
+    features?: Record<string, boolean | undefined>
+    isLinked?: boolean
+  }
+  features?: FeatureItem[]
+  onSave: (data: { id: string | number; features: Record<string, boolean>; isLinked: boolean }) => void
+  onCancel: () => void
+  saving?: boolean
+}
+
+export default function FeaturesConfigModal({ dependent, features = [], onSave, onCancel, saving }: FeaturesConfigModalProps) {
   const nombre = dependent?.nombreCompleto || dependent?.nombre || 'esta persona'
   const depFeatures = dependent?.features || {}
-  const [form, setForm] = useState(() => { const initial = {}; features.forEach(f => { initial[f.id] = depFeatures[f.id] ?? true }); return initial })
-  const toggleFeature = (id) => setForm(f => ({ ...f, [id]: !f[id] }))
-  const submit = (e) => { e.preventDefault(); onSave({ id: dependent.isLinked ? (dependent.pcdUserId || dependent.id) : dependent.id, features: form, isLinked: !!dependent.isLinked }) }
+  const [form, setForm] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    features.forEach(f => { initial[f.id] = depFeatures[f.id] ?? true })
+    return initial
+  })
+  const toggleFeature = (id: string) => setForm(f => ({ ...f, [id]: !f[id] }))
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    onSave({
+      id: dependent.isLinked ? (dependent.pcdUserId || dependent.id) : dependent.id,
+      features: form,
+      isLinked: !!dependent.isLinked
+    })
+  }
 
   return (
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000, padding: 16, overflowY: 'auto' }}>

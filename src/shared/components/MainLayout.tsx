@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import type { MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useOutlet, useLocation } from 'react-router-dom'
 import { useAuthStore, useMe, AppSidebar, TopNav } from '@features/auth'
@@ -7,6 +8,31 @@ import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants, useMiIns
 import { useAdminAlerts } from '@features/admin'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { DirectMessages } from '@features/social/pages/MessagesPage'
+
+interface Position {
+  right: number
+  bottom: number
+}
+
+interface Dimensions {
+  width: number
+  height: number
+}
+
+interface DragStartData {
+  startX: number
+  startY: number
+  startRight: number
+  startBottom: number
+}
+
+interface ResizeStartData {
+  startX: number
+  startY: number
+  startWidth: number
+  startHeight: number
+  direction: 'n' | 'w' | 'nw'
+}
 
 export default function MainLayout() {
   const { logout } = useAuthStore()
@@ -23,7 +49,7 @@ export default function MainLayout() {
   // Determinar el modo según la ruta
   const isAdmin = location.pathname.startsWith('/admin')
   const isInstPortal = location.pathname.startsWith('/institution-portal')
-  const sidebarMode = isAdmin ? 'admin' : isInstPortal ? 'institution' : 'app'
+  const sidebarMode: 'admin' | 'institution' | 'app' = isAdmin ? 'admin' : isInstPortal ? 'institution' : 'app'
 
   // Consultas de React Query para los contadores de la barra lateral (seguras según el modo)
   const { data: pendingInsts = [] } = usePendingInstitutions({ enabled: isAdmin })
@@ -67,19 +93,20 @@ export default function MainLayout() {
   const floatingChatMaximized = useUiStore(s => s.floatingChatMaximized)
 
   // Draggable and Resizable Chat Logic
-  const [position, setPosition] = useState({ right: 24, bottom: 0 })
-  const [dimensions, setDimensions] = useState({ width: 640, height: 480 })
+  const [position, setPosition] = useState<Position>({ right: 24, bottom: 0 })
+  const [dimensions, setDimensions] = useState<Dimensions>({ width: 640, height: 480 })
   const [isDragging, setIsDragging] = useState(false)
   
-  const dragStartRef = useRef({ startX: 0, startY: 0, startRight: 24, startBottom: 0 })
-  const resizeStartRef = useRef({ startX: 0, startY: 0, startWidth: 640, startHeight: 480, direction: 'n' })
+  const dragStartRef = useRef<DragStartData>({ startX: 0, startY: 0, startRight: 24, startBottom: 0 })
+  const resizeStartRef = useRef<ResizeStartData>({ startX: 0, startY: 0, startWidth: 640, startHeight: 480, direction: 'n' })
 
-  const handleDragStart = (e) => {
+  const handleDragStart = (e: ReactMouseEvent<HTMLDivElement> | ReactTouchEvent<HTMLDivElement>) => {
     if (floatingChatMaximized) return
-    if (e.target.closest('button, input, select, textarea, a')) return
+    const target = e.target as HTMLElement | null
+    if (target?.closest('button, input, select, textarea, a')) return
 
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
     setIsDragging(true)
     dragStartRef.current = {
@@ -89,21 +116,27 @@ export default function MainLayout() {
       startBottom: position.bottom
     }
 
-    if (e.touches) {
-      document.addEventListener('touchmove', handleDragMove, { passive: false })
-      document.addEventListener('touchend', handleDragEnd)
+    if ('touches' in e) {
+      document.addEventListener('touchmove', handleNativeTouchDragMove, { passive: false })
+      document.addEventListener('touchend', handleNativeDragEnd)
     } else {
-      document.addEventListener('mousemove', handleDragMove)
-      document.addEventListener('mouseup', handleDragEnd)
+      document.addEventListener('mousemove', handleNativeMouseDragMove)
+      document.addEventListener('mouseup', handleNativeDragEnd)
     }
   }
 
-  const handleDragMove = (e) => {
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  const handleNativeMouseDragMove = (e: MouseEvent) => {
+    updateDrag(e.clientX, e.clientY)
+  }
 
+  const handleNativeTouchDragMove = (e: TouchEvent) => {
+    if (e.touches.length > 0) {
+      updateDrag(e.touches[0].clientX, e.touches[0].clientY)
+    }
+  }
+
+  const updateDrag = (clientX: number, clientY: number) => {
     const { startX, startY, startRight, startBottom } = dragStartRef.current
-
     const dx = clientX - startX
     const dy = clientY - startY
 
@@ -113,21 +146,21 @@ export default function MainLayout() {
     setPosition({ right: newRight, bottom: newBottom })
   }
 
-  const handleDragEnd = () => {
+  const handleNativeDragEnd = () => {
     setIsDragging(false)
-    document.removeEventListener('mousemove', handleDragMove)
-    document.removeEventListener('mouseup', handleDragEnd)
-    document.removeEventListener('touchmove', handleDragMove)
-    document.removeEventListener('touchend', handleDragEnd)
+    document.removeEventListener('mousemove', handleNativeMouseDragMove)
+    document.removeEventListener('mouseup', handleNativeDragEnd)
+    document.removeEventListener('touchmove', handleNativeTouchDragMove)
+    document.removeEventListener('touchend', handleNativeDragEnd)
   }
 
-  const handleResizeStart = (e, direction) => {
+  const handleResizeStart = (e: ReactMouseEvent<HTMLDivElement> | ReactTouchEvent<HTMLDivElement>, direction: 'n' | 'w' | 'nw') => {
     if (floatingChatMaximized) return
     e.preventDefault()
     e.stopPropagation()
 
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
     resizeStartRef.current = {
       startX: clientX,
@@ -137,21 +170,27 @@ export default function MainLayout() {
       direction
     }
 
-    if (e.touches) {
-      document.addEventListener('touchmove', handleResizeMove, { passive: false })
-      document.addEventListener('touchend', handleResizeEnd)
+    if ('touches' in e) {
+      document.addEventListener('touchmove', handleNativeTouchResizeMove, { passive: false })
+      document.addEventListener('touchend', handleNativeResizeEnd)
     } else {
-      document.addEventListener('mousemove', handleResizeMove)
-      document.addEventListener('mouseup', handleResizeEnd)
+      document.addEventListener('mousemove', handleNativeMouseResizeMove)
+      document.addEventListener('mouseup', handleNativeResizeEnd)
     }
   }
 
-  const handleResizeMove = (e) => {
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  const handleNativeMouseResizeMove = (e: MouseEvent) => {
+    updateResize(e.clientX, e.clientY)
+  }
 
+  const handleNativeTouchResizeMove = (e: TouchEvent) => {
+    if (e.touches.length > 0) {
+      updateResize(e.touches[0].clientX, e.touches[0].clientY)
+    }
+  }
+
+  const updateResize = (clientX: number, clientY: number) => {
     const { startX, startY, startWidth, startHeight, direction } = resizeStartRef.current
-
     const dx = clientX - startX
     const dy = clientY - startY
 
@@ -169,23 +208,23 @@ export default function MainLayout() {
     setDimensions({ width: newWidth, height: newHeight })
   }
 
-  const handleResizeEnd = () => {
-    document.removeEventListener('mousemove', handleResizeMove)
-    document.removeEventListener('mouseup', handleResizeEnd)
-    document.removeEventListener('touchmove', handleResizeMove)
-    document.removeEventListener('touchend', handleResizeEnd)
+  const handleNativeResizeEnd = () => {
+    document.removeEventListener('mousemove', handleNativeMouseResizeMove)
+    document.removeEventListener('mouseup', handleNativeResizeEnd)
+    document.removeEventListener('touchmove', handleNativeTouchResizeMove)
+    document.removeEventListener('touchend', handleNativeResizeEnd)
   }
 
   useEffect(() => {
     return () => {
-      document.removeEventListener('mousemove', handleDragMove)
-      document.removeEventListener('mouseup', handleDragEnd)
-      document.removeEventListener('touchmove', handleDragMove)
-      document.removeEventListener('touchend', handleDragEnd)
-      document.removeEventListener('mousemove', handleResizeMove)
-      document.removeEventListener('mouseup', handleResizeEnd)
-      document.removeEventListener('touchmove', handleResizeMove)
-      document.removeEventListener('touchend', handleResizeEnd)
+      document.removeEventListener('mousemove', handleNativeMouseDragMove)
+      document.removeEventListener('mouseup', handleNativeDragEnd)
+      document.removeEventListener('touchmove', handleNativeTouchDragMove)
+      document.removeEventListener('touchend', handleNativeDragEnd)
+      document.removeEventListener('mousemove', handleNativeMouseResizeMove)
+      document.removeEventListener('mouseup', handleNativeResizeEnd)
+      document.removeEventListener('touchmove', handleNativeTouchResizeMove)
+      document.removeEventListener('touchend', handleNativeResizeEnd)
     }
   }, [])
 
@@ -249,12 +288,12 @@ export default function MainLayout() {
               transition: 'transform 0.2s, background-color 0.2s',
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.backgroundColor = '#1E293B';
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.backgroundColor = '#1E293B'
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.backgroundColor = '#0F172A';
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.backgroundColor = '#0F172A'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

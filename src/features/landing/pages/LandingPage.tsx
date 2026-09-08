@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
+import type { MouseEvent } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { AppFooter } from '@shared/components/shared'
 import { useAuthStore } from '@features/auth'
 import { STEPS } from '../data/steps'
 import { FEATURES } from '../data/features'
 
-const NAV_LINKS = [
+interface NavLink {
+  label: string
+  id: string
+}
+
+const NAV_LINKS: NavLink[] = [
   { label: 'Cómo funciona', id: 'como-funciona' },
   { label: 'Conócerte', id: 'conocerte' },
   { label: 'Comunidad', id: 'comunidad' },
@@ -15,9 +21,9 @@ export default function LandingPage() {
   const nav = useNavigate()
   const token = useAuthStore(state => state.token)
   const user = useAuthStore(state => state.user)
-  const [activeNav, setActiveNav] = useState('como-funciona')
+  const [activeNav, setActiveNav] = useState<string>('como-funciona')
 
-  const scrollToSection = (id) => {
+  const scrollToSection = (id: string) => {
     const el = document.getElementById(id)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -183,8 +189,8 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-body)',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#FF3352'; e.currentTarget.style.transform = 'scale(1.03)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#FF4D68'; e.currentTarget.style.transform = 'scale(1)' }}
+              onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.background = '#FF3352'; e.currentTarget.style.transform = 'scale(1.03)' }}
+              onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.background = '#FF4D68'; e.currentTarget.style.transform = 'scale(1)' }}
             >
               Entrar
             </button>

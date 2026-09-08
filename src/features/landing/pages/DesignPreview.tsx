@@ -2,6 +2,7 @@
  * Design Preview — New Color Scheme Demo
  * Primary: #01ADFF (Blue) | Secondary: #F1FA3F (Yellow/Lime)
  */
+import type { CSSProperties } from 'react'
 import { BrandMark } from '@shared/components/shared'
 
 const COLORS = {
@@ -48,14 +49,14 @@ export default function DesignPreview() {
           <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Paleta de Colores</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
             {[
-              { name: 'Primary', color: COLORS.primary, text: '#FFF' },
-              { name: 'Primary Dark', color: COLORS.primaryDark, text: '#FFF' },
-              { name: 'Secondary', color: COLORS.secondary, text: COLORS.fg1 },
-              { name: 'Secondary Dark', color: COLORS.secondaryDark, text: COLORS.fg1 },
+              { name: 'Primary', color: COLORS.primary, text: '#FFF', border: false },
+              { name: 'Primary Dark', color: COLORS.primaryDark, text: '#FFF', border: false },
+              { name: 'Secondary', color: COLORS.secondary, text: COLORS.fg1, border: false },
+              { name: 'Secondary Dark', color: COLORS.secondaryDark, text: COLORS.fg1, border: false },
               { name: 'Background', color: COLORS.bg, text: COLORS.fg1, border: true },
               { name: 'Surface', color: COLORS.surface, text: COLORS.fg1, border: true },
-              { name: 'Text Primary', color: COLORS.fg1, text: '#FFF' },
-              { name: 'Text Secondary', color: COLORS.fg2, text: '#FFF' },
+              { name: 'Text Primary', color: COLORS.fg1, text: '#FFF', border: false },
+              { name: 'Text Secondary', color: COLORS.fg2, text: '#FFF', border: false },
             ].map(c => (
               <div key={c.name} style={{ borderRadius: 12, overflow: 'hidden', border: c.border ? `1px solid ${COLORS.border}` : 'none' }}>
                 <div style={{ height: 80, background: c.color }} />
@@ -195,7 +196,7 @@ export default function DesignPreview() {
 
 // ── Button Styles ──────────────────────────────────────────────────
 
-const btnBase = {
+const btnBase: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -212,12 +213,13 @@ const btnBase = {
   transition: 'all 0.15s ease',
 }
 
-const btnPrimary = {
+const btnPrimary: CSSProperties = {
   ...btnBase,
   background: COLORS.primary,
   color: '#FFFFFF',
 }
-const btnPrimarySmall = {
+
+const btnPrimarySmall: CSSProperties = {
   ...btnBase,
   fontSize: 13,
   padding: '8px 14px',
@@ -226,14 +228,14 @@ const btnPrimarySmall = {
   color: '#FFFFFF',
 }
 
-const btnSecondary = {
+const btnSecondary: CSSProperties = {
   ...btnBase,
   background: '#F1F5F9',
   color: COLORS.fg1,
   border: '1px solid #E2E8F0',
 }
 
-const btnSecondarySmall = {
+const btnSecondarySmall: CSSProperties = {
   ...btnBase,
   fontSize: 13,
   padding: '8px 14px',
@@ -242,27 +244,27 @@ const btnSecondarySmall = {
   color: COLORS.fg1,
 }
 
-const btnOutline = {
+const btnOutline: CSSProperties = {
   ...btnBase,
   background: 'transparent',
   color: COLORS.fg1,
   border: `1px solid ${COLORS.border}`,
 }
 
-const btnGhost = {
+const btnGhost: CSSProperties = {
   ...btnBase,
   background: 'transparent',
   color: COLORS.fg2,
 }
 
-const btnPill = {
+const btnPill: CSSProperties = {
   ...btnBase,
   background: COLORS.primary,
   color: '#FFFFFF',
   borderRadius: 9999,
 }
 
-const btnPillSecondary = {
+const btnPillSecondary: CSSProperties = {
   ...btnBase,
   background: COLORS.secondary,
   color: COLORS.fg1,
@@ -271,7 +273,7 @@ const btnPillSecondary = {
 
 // ── Card Style ─────────────────────────────────────────────────────
 
-const cardStyle = {
+const cardStyle: CSSProperties = {
   background: '#FFFFFF',
   borderRadius: 12,
   padding: 24,
@@ -279,7 +281,7 @@ const cardStyle = {
 
 // ── Form Styles ────────────────────────────────────────────────────
 
-const labelStyle = {
+const labelStyle: CSSProperties = {
   display: 'block',
   fontSize: 14,
   fontWeight: 600,
@@ -287,7 +289,7 @@ const labelStyle = {
   marginBottom: 6,
 }
 
-const inputStyle = {
+const inputStyle: CSSProperties = {
   width: '100%',
   height: 44,
   padding: '0 14px',
@@ -303,16 +305,16 @@ const inputStyle = {
 
 // ── Badge Styles ───────────────────────────────────────────────────
 
-const badgeBase = {
+const badgeBase: CSSProperties = {
   padding: '4px 10px',
   borderRadius: 6,
   fontSize: 12,
   fontWeight: 600,
 }
 
-const badgePrimary = { ...badgeBase, background: COLORS.primarySubtle, color: COLORS.primary }
-const badgeSecondary = { ...badgeBase, background: COLORS.secondarySubtle, color: '#8B7A00' }
-const badgeOutline = { ...badgeBase, background: 'transparent', color: COLORS.fg2, border: `1px solid ${COLORS.border}` }
-const badgeSuccess = { ...badgeBase, background: 'rgba(34,197,94,0.12)', color: '#16A34A' }
-const badgeWarning = { ...badgeBase, background: 'rgba(234,179,8,0.12)', color: '#CA8A04' }
-const badgeError = { ...badgeBase, background: 'rgba(239,68,68,0.12)', color: '#DC2626' }
+const badgePrimary: CSSProperties = { ...badgeBase, background: COLORS.primarySubtle, color: COLORS.primary }
+const badgeSecondary: CSSProperties = { ...badgeBase, background: COLORS.secondarySubtle, color: '#8B7A00' }
+const badgeOutline: CSSProperties = { ...badgeBase, background: 'transparent', color: COLORS.fg2, border: `1px solid ${COLORS.border}` }
+const badgeSuccess: CSSProperties = { ...badgeBase, background: 'rgba(34,197,94,0.12)', color: '#16A34A' }
+const badgeWarning: CSSProperties = { ...badgeBase, background: 'rgba(234,179,8,0.12)', color: '#CA8A04' }
+const badgeError: CSSProperties = { ...badgeBase, background: 'rgba(239,68,68,0.12)', color: '#DC2626' }
