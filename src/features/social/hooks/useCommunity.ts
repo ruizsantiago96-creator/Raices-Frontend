@@ -1,28 +1,111 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import type {
+  CommunityGroup,
+  CommunityPost,
+  CommunityComment,
+  CreatePostPayload,
+  CreateCommentPayload,
+  FeaturedMember,
+  CommunityStats,
+  ForoItem,
+  ForoRespuesta,
+  ForoDetalle,
+  PreguntaConRespuestas,
+} from '@/types/social'
 
-function mapGroup(g) {
+interface RawGroup {
+  id?: string | number
+  nombre?: string
+  name?: string
+  descripcion?: string
+  description?: string
+  esPublico?: boolean
+  is_public?: boolean
+  esMiembro?: boolean
+  es_miembro?: boolean
+  isMember?: boolean
+  is_member?: boolean
+  cantidadMiembros?: number
+  member_count?: number
+  [key: string]: unknown
+}
+
+interface RawPost {
+  id?: string | number
+  titulo?: string
+  title?: string
+  contenido?: string
+  content?: string
+  author_id?: string | number
+  autorId?: string | number
+  autor_id?: string | number
+  nombreCompleto?: string
+  author_name?: string
+  nombreAutor?: string
+  autorNombre?: string
+  autor?: { nombre?: string; avatar?: string }
+  urlAvatar?: string | null
+  author_avatar?: string | null
+  avatarAutor?: string | null
+  autorAvatar?: string | null
+  cantidadMeGustas?: number
+  likesCount?: number
+  like_count?: number
+  usuarioMeGusta?: boolean
+  likedByMe?: boolean
+  liked_by_me?: boolean
+  fechaCreacion?: string
+  created_at?: string
+  group_name?: string
+  nombreGrupo?: string
+  grupoId?: string | number
+  cantidadComentarios?: number
+  comment_count?: number
+  [key: string]: unknown
+}
+
+interface RawComment {
+  id?: string | number
+  contenido?: string
+  content?: string
+  author_id?: string | number
+  autorId?: string | number
+  autor_id?: string | number
+  nombreCompleto?: string
+  author_name?: string
+  nombreAutor?: string
+  autorNombre?: string
+  urlAvatar?: string | null
+  autorAvatar?: string | null
+  autor_avatar?: string | null
+  fechaCreacion?: string
+  created_at?: string
+  _isOptimistic?: boolean
+  [key: string]: unknown
+}
+
+function mapGroup(g: RawGroup): CommunityGroup {
   return {
     ...g,
+    id: g.id ?? '',
     name: g.nombre ?? g.name ?? 'Sin nombre',
     description: g.descripcion ?? g.description,
     is_public: g.esPublico ?? g.is_public,
-    // Backend NO devuelve esMiembro en el listado; usamos false por defecto
-    // y actualizamos optimísticamente al unirse/salir
     is_member: g.esMiembro ?? g.es_miembro ?? g.isMember ?? g.is_member ?? false,
     member_count: g.cantidadMiembros ?? g.member_count ?? 0,
   }
 }
 
-function mapPost(p) {
+function mapPost(p: RawPost): CommunityPost {
   return {
     ...p,
-    content: p.content ?? p.contenido,
+    id: p.id ?? '',
+    content: p.content ?? p.contenido ?? '',
     author_id: p.author_id ?? p.autorId ?? p.autor_id,
-    // Backend plano: nombreCompleto y urlAvatar están en raíz
     author_name: p.author_name ?? p.nombreCompleto ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
     author_avatar: p.author_avatar ?? p.urlAvatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
-    created_at: p.created_at ?? p.fechaCreacion,
+    created_at: p.created_at ?? p.fechaCreacion ?? new Date().toISOString(),
     group_name: p.group_name ?? p.nombreGrupo,
     like_count: p.like_count ?? p.cantidadMeGustas ?? p.likesCount ?? 0,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
@@ -30,102 +113,83 @@ function mapPost(p) {
   }
 }
 
-function mapComment(c) {
+function mapComment(c: RawComment): CommunityComment {
   return {
     ...c,
-    content: c.content ?? c.contenido,
+    id: c.id ?? '',
+    content: c.content ?? c.contenido ?? '',
     author_id: c.author_id ?? c.autorId ?? c.autor_id,
-    // Backend: nombreCompleto está en raíz del comentario
     author_name: c.author_name ?? c.nombreCompleto ?? c.nombreAutor ?? c.autorNombre ?? 'Anónimo',
     author_avatar: c.urlAvatar ?? c.autorAvatar ?? c.autor_avatar ?? null,
-    created_at: c.created_at ?? c.fechaCreacion,
+    created_at: c.created_at ?? c.fechaCreacion ?? new Date().toISOString(),
   }
 }
 
 export function useGroups() {
-  return useQuery({
+  return useQuery<CommunityGroup[]>({
     queryKey: ['groups'],
     queryFn: () => api.get('/comunidad/grupos').then(r => {
       const res = r.data
-      const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+      const arr: RawGroup[] = Array.isArray(res) ? res : (res?.datos ?? [])
       return arr.map(mapGroup)
     }),
   })
 }
 
-/**
- * Normaliza un post del backend.
- *
- * Backend plano: { id, autorId, contenido, grupoId, cantidadMeGustas,
- *   fechaCreacion, nombreCompleto, urlAvatar, usuarioMeGusta, ... }
- * Frontend: { id, content, author_id, author_name, author_avatar,
- *   like_count, liked_by_me, created_at, title }
- */
-function mapPostFromBackend(p) {
+function mapPostFromBackend(p: RawPost): CommunityPost {
   return {
     ...p,
+    id: p.id ?? '',
     title: p.titulo ?? p.title ?? '',
     content: p.contenido ?? p.content ?? '',
     author_id: p.author_id ?? p.autorId ?? p.autor_id,
-    // Backend plano: nombreCompleto está en raíz, NO anidado en "autor"
     author_name: p.nombreCompleto ?? p.author_name ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
     author_avatar: p.urlAvatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
     like_count: p.cantidadMeGustas ?? p.likesCount ?? p.like_count ?? 0,
     liked_by_me: p.usuarioMeGusta ?? p.likedByMe ?? p.liked_by_me ?? false,
-    created_at: p.fechaCreacion ?? p.created_at,
+    created_at: p.fechaCreacion ?? p.created_at ?? new Date().toISOString(),
     group_name: p.group_name ?? p.nombreGrupo,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
   }
 }
 
-/**
- * Hook: consulta publicaciones de la comunidad con paginación y búsqueda.
- *
- * GET /api/comunidad/publicaciones
- * Params: { grupoId?, pagina?, limite?, buscar? }
- * Response: { datos: Publicacion[], total, pagina, limite, totalPaginas }
- *
- * @param {Object} options
- * @param {string} [options.grupoId] - Filtrar por grupo
- * @param {number} [options.pagina=1] - Página actual
- * @param {number} [options.limite=10] - Elementos por página
- * @param {string} [options.buscar] - Término de búsqueda
- */
-export function usePosts(groupIdOrOptions) {
-  // Soporte backward-compatible: si se pasa un string, es grupoId
-  const opts = typeof groupIdOrOptions === 'string'
+export interface UsePostsOptions {
+  grupoId?: string | number
+  pagina?: number
+  limite?: number
+  buscar?: string
+}
+
+export function usePosts(groupIdOrOptions?: string | UsePostsOptions) {
+  const opts: UsePostsOptions = typeof groupIdOrOptions === 'string'
     ? { grupoId: groupIdOrOptions }
     : (groupIdOrOptions ?? {})
 
   const { grupoId, pagina = 1, limite = 10, buscar } = opts
 
-  return useQuery({
+  return useQuery<CommunityPost[]>({
     queryKey: ['posts', grupoId, pagina, limite, buscar],
     queryFn: () => {
-      const params = {}
+      const params: Record<string, unknown> = {}
       if (grupoId) params.grupoId = grupoId
       if (pagina > 1) params.pagina = pagina
       if (limite !== 10) params.limite = limite
       if (buscar?.trim()) params.buscar = buscar.trim()
       return api.get('/comunidad/publicaciones', { params }).then(r => {
         const res = r.data
-        const arr = Array.isArray(res) ? res.map(mapPostFromBackend) : (res?.datos ?? []).map(mapPostFromBackend)
-        return arr
+        const arr: RawPost[] = Array.isArray(res) ? res : (res?.datos ?? [])
+        return arr.map(mapPostFromBackend)
       })
     },
   })
 }
 
-/**
- * Hook: consulta publicaciones de la comunidad (legacy, sin paginación).
- * Mantiene compatibilidad con componentes que esperan un array simple.
- */
-export function usePostsLegacy(groupId) {
-  return useQuery({
+export function usePostsLegacy(groupId?: string | number) {
+  return useQuery<CommunityPost[]>({
     queryKey: ['posts', groupId],
     queryFn: () => api.get('/comunidad/publicaciones', { params: groupId ? { grupoId: groupId } : {} }).then(r => {
       const res = r.data
-      const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+      const arr: RawPost[] = Array.isArray(res) ? res : (res?.datos ?? [])
       return arr.map(mapPost)
     }),
   })
@@ -133,7 +197,7 @@ export function usePostsLegacy(groupId) {
 
 export function useCreatePost() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, CreatePostPayload>({
     mutationFn: (data) => {
       const payload = {
         contenido: data.content ?? data.contenido,
@@ -147,9 +211,8 @@ export function useCreatePost() {
 
 export function useToggleLike() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string | number>({
     mutationFn: (postId) => api.post(`/comunidad/publicaciones/${postId}/me-gusta`).then(r => r.data),
-    // Refrescar datos reales del backend después de cada like
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['conectemos'] })
@@ -157,31 +220,30 @@ export function useToggleLike() {
   })
 }
 
-export function useComments(postId) {
-  return useQuery({
+export function useComments(postId: string | number | null | undefined) {
+  return useQuery<CommunityComment[]>({
     queryKey: ['comments', postId],
     queryFn: () => api.get(`/comunidad/publicaciones/${postId}/comentarios`).then(r => {
       const res = r.data
-      const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+      const arr: RawComment[] = Array.isArray(res) ? res : (res?.datos ?? [])
       return arr.map(mapComment)
     }),
     enabled: !!postId,
   })
 }
 
-export function useCreateComment(postId) {
+export function useCreateComment(postId: string | number) {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, CreateCommentPayload, { previous?: CommunityComment[] }>({
     mutationFn: (data) => {
       const payload = {
         contenido: data.content ?? data.contenido,
       }
       return api.post(`/comunidad/publicaciones/${postId}/comentarios`, payload).then(r => r.data)
     },
-    // Optimistic: agregar comentario al instante en la UI
     onMutate: (data) => {
-      const content = data.content ?? data.contenido
-      const newComment = {
+      const content = data.content ?? data.contenido ?? ''
+      const newComment: CommunityComment = {
         id: `temp-${Date.now()}`,
         content,
         author_name: data.authorName ?? 'Tú',
@@ -189,8 +251,8 @@ export function useCreateComment(postId) {
         created_at: new Date().toISOString(),
         _isOptimistic: true,
       }
-      const previous = qc.getQueryData(['comments', postId])
-      qc.setQueryData(['comments', postId], (old) => {
+      const previous = qc.getQueryData<CommunityComment[]>(['comments', postId])
+      qc.setQueryData<CommunityComment[]>(['comments', postId], (old) => {
         if (!old) return [newComment]
         return [...old, newComment]
       })
@@ -209,7 +271,7 @@ export function useCreateComment(postId) {
 
 export function useCreateGroup() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, Partial<CommunityGroup>>({
     mutationFn: (data) => api.post('/comunidad/grupos', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['groups'] }),
   })
@@ -217,10 +279,10 @@ export function useCreateGroup() {
 
 export function useJoinGroup() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string | number>({
     mutationFn: (groupId) => api.post(`/comunidad/grupos/${groupId}/unirse`).then(r => r.data),
     onSuccess: (_, groupId) => {
-      qc.setQueryData(['groups'], (old) => {
+      qc.setQueryData<CommunityGroup[]>(['groups'], (old) => {
         if (!Array.isArray(old)) return old
         return old.map(g => g.id === groupId ? { ...g, is_member: true, member_count: g.member_count + 1 } : g)
       })
@@ -231,10 +293,10 @@ export function useJoinGroup() {
 
 export function useLeaveGroup() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string | number>({
     mutationFn: (groupId) => api.post(`/comunidad/grupos/${groupId}/salir`).then(r => r.data),
     onSuccess: (_, groupId) => {
-      qc.setQueryData(['groups'], (old) => {
+      qc.setQueryData<CommunityGroup[]>(['groups'], (old) => {
         if (!Array.isArray(old)) return old
         return old.map(g => g.id === groupId ? { ...g, is_member: false, member_count: Math.max(0, g.member_count - 1) } : g)
       })
@@ -243,9 +305,9 @@ export function useLeaveGroup() {
   })
 }
 
-export function useUpdatePost(postId) {
+export function useUpdatePost(postId: string | number) {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { content?: string; contenido?: string }>({
     mutationFn: (data) => {
       const payload = {
         contenido: data.content ?? data.contenido,
@@ -256,30 +318,45 @@ export function useUpdatePost(postId) {
   })
 }
 
-export function useDeletePost(postId) {
+export function useDeletePost(postId: string | number) {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, void>({
     mutationFn: () => api.delete(`/comunidad/publicaciones/${postId}`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['posts'] }),
   })
 }
 
 export function useCommunityStats() {
-  return useQuery({
+  return useQuery<CommunityStats>({
     queryKey: ['communityStats'],
     queryFn: () => api.get('/comunidad/estadisticas').then(r => r.data),
   })
 }
 
 export function useMiembrosDestacados(limite = 6) {
-  return useQuery({
+  return useQuery<FeaturedMember[]>({
     queryKey: ['miembrosDestacados', limite],
     queryFn: () => api.get('/comunidad/miembros', { params: { limite } }).then(r => {
       const res = r.data
-      // Backend devuelve { datos: [...], total, ... } o { miembros: [...] }
-      const arr = res?.datos ?? res?.miembros ?? (Array.isArray(res) ? res : [])
+      const arr: Array<{
+        id?: string | number
+        nombreCompleto?: string
+        nombre_completo?: string
+        full_name?: string
+        rol?: string
+        role?: string
+        ciudad?: string
+        city?: string
+        estado?: string
+        state?: string
+        urlAvatar?: string | null
+        url_avatar?: string | null
+        avatar_url?: string | null
+        bio?: string
+        biografia?: string
+      }> = res?.datos ?? res?.miembros ?? (Array.isArray(res) ? res : [])
       return arr.map(m => ({
-        id: m.id,
+        id: m.id ?? '',
         nombreCompleto: m.nombreCompleto ?? m.nombre_completo ?? m.full_name ?? 'Sin nombre',
         rol: m.rol ?? m.role ?? '',
         ciudad: m.ciudad ?? m.city ?? '',
@@ -295,18 +372,62 @@ export function useMiembrosDestacados(limite = 6) {
    FOROS INSTITUCIONALES
    ═══════════════════════════════════════════════════════════ */
 
-function mapForo(f) {
-  // Backend: preguntasDetonantes es un ARRAY, nombreInstitucion en vez de autorNombre
+interface RawForo {
+  id?: string | number
+  titulo?: string
+  title?: string
+  descripcion?: string
+  description?: string
+  preguntasDetonantes?: string[] | string
+  preguntaDetonante?: string[] | string
+  nombreInstitucion?: string
+  autorNombre?: string
+  autor_nombre?: string
+  creadoPorNombre?: string
+  creadorId?: string | number
+  autorId?: string | number
+  autor_id?: string | number
+  creadoPor?: string | number
+  respuestasCount?: number
+  respuestas_count?: number
+  fechaCreacion?: string
+  fecha_creacion?: string
+  created_at?: string
+  exclusivoPadres?: boolean
+  activo?: boolean
+  preguntasConRespuestas?: Array<{ respuestas?: RawRespuesta[] }>
+  respuestas?: RawRespuesta[]
+  [key: string]: unknown
+}
+
+interface RawRespuesta {
+  id?: string | number
+  contenido?: string
+  content?: string
+  preguntaIndex?: number
+  nombreCompleto?: string
+  autorNombre?: string
+  autor_nombre?: string
+  autorId?: string | number
+  autor_id?: string | number
+  urlAvatar?: string | null
+  autorAvatar?: string | null
+  autor_avatar?: string | null
+  fechaCreacion?: string
+  fecha_creacion?: string
+  created_at?: string
+  [key: string]: unknown
+}
+
+function mapForo(f: RawForo): ForoItem {
   const preguntas = f.preguntasDetonantes ?? f.preguntaDetonante ?? []
   const preguntaDetonante = Array.isArray(preguntas) ? preguntas[0] ?? '' : preguntas
   return {
-    id: f.id,
+    id: f.id ?? '',
     titulo: f.titulo ?? f.title ?? '',
     descripcion: f.descripcion ?? f.description ?? '',
-    // Backend devuelve array "preguntasDetonantes"; normalizamos a string para UI legacy
     preguntaDetonante,
     preguntasDetonantes: Array.isArray(preguntas) ? preguntas : [preguntas],
-    // Backend: nombreInstitucion en vez de autorNombre
     autorNombre: f.nombreInstitucion ?? f.autorNombre ?? f.autor_nombre ?? f.creadoPorNombre ?? '',
     autorId: f.creadorId ?? f.autorId ?? f.autor_id ?? f.creadoPor ?? '',
     respuestasCount: f.respuestasCount ?? f.respuestas_count ?? 0,
@@ -316,9 +437,9 @@ function mapForo(f) {
   }
 }
 
-function mapRespuesta(r, fallbackIndex) {
+function mapRespuesta(r: RawRespuesta, fallbackIndex: number): ForoRespuesta {
   return {
-    id: r.id,
+    id: r.id ?? '',
     contenido: r.contenido ?? r.content ?? '',
     preguntaIndex: r.preguntaIndex ?? fallbackIndex,
     autorNombre: r.nombreCompleto ?? r.autorNombre ?? r.autor_nombre ?? 'Anónimo',
@@ -328,42 +449,46 @@ function mapRespuesta(r, fallbackIndex) {
   }
 }
 
-function mapForoDetalle(f) {
+function mapForoDetalle(f: RawForo): ForoDetalle {
   const foro = mapForo(f)
-  // Backend: "preguntasConRespuestas" en vez de "respuestas"
   const preguntasDetonantes = foro.preguntasDetonantes
   const preguntasCrudo = f.preguntasConRespuestas ?? []
 
-  // Normalizamos a [{ pregunta, respuestas: [...] }] alineado con preguntasDetonantes
-  const preguntasConRespuestas = preguntasDetonantes.map((pregunta, idx) => {
+  const preguntasConRespuestas: PreguntaConRespuestas[] = preguntasDetonantes.map((pregunta, idx) => {
     const bloque = Array.isArray(preguntasCrudo) ? (preguntasCrudo[idx] ?? {}) : {}
     const respuestas = (Array.isArray(bloque.respuestas) ? bloque.respuestas : [])
-      .map(r => mapRespuesta(r, idx))
+      .map((r: RawRespuesta) => mapRespuesta(r, idx))
     return { pregunta, respuestas }
   })
 
-  // Fallback: si backend devuelve "respuestas" legacy, agruparlas bajo la primera pregunta
   const respuestasLegacy = (Array.isArray(f.respuestas) ? f.respuestas : [])
-    .map(r => mapRespuesta(r, r.preguntaIndex ?? 0))
+    .map((r: RawRespuesta) => mapRespuesta(r, r.preguntaIndex ?? 0))
   if (respuestasLegacy.length > 0 && preguntasConRespuestas.every(pcr => pcr.respuestas.length === 0)) {
     respuestasLegacy.forEach(r => {
       const idx = Math.min(r.preguntaIndex ?? 0, preguntasConRespuestas.length - 1)
-      preguntasConRespuestas[idx].respuestas.push(r)
+      preguntasConRespuestas[idx]?.respuestas.push(r)
     })
   }
 
-  // Aplanado para UI legacy
   const respuestas = preguntasConRespuestas.flatMap(pcr => pcr.respuestas)
 
   return { ...foro, respuestas, preguntasConRespuestas }
 }
 
-export function useForos(opts = {}) {
+export interface ForosResult {
+  foros: ForoItem[]
+  total: number
+  pagina: number
+  limite: number
+  totalPaginas: number
+}
+
+export function useForos(opts: { pagina?: number; limite?: number; buscar?: string; ordenarPor?: string; direccion?: string } = {}) {
   const { pagina = 1, limite = 20, buscar, ordenarPor, direccion } = opts
-  return useQuery({
+  return useQuery<ForosResult>({
     queryKey: ['foros', pagina, limite, buscar, ordenarPor, direccion],
     queryFn: () => {
-      const params = {}
+      const params: Record<string, unknown> = {}
       if (pagina > 1) params.pagina = pagina
       if (limite !== 20) params.limite = limite
       if (buscar?.trim()) params.buscar = buscar.trim()
@@ -371,7 +496,7 @@ export function useForos(opts = {}) {
       if (direccion) params.direccion = direccion
       return api.get('/comunidad/foros', { params }).then(r => {
         const res = r.data
-        const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+        const arr: RawForo[] = Array.isArray(res) ? res : (res?.datos ?? [])
         return {
           foros: arr.map(mapForo),
           total: res?.total ?? arr.length,
@@ -384,8 +509,8 @@ export function useForos(opts = {}) {
   })
 }
 
-export function useForoDetail(foroId) {
-  return useQuery({
+export function useForoDetail(foroId: string | number | null | undefined) {
+  return useQuery<ForoDetalle>({
     queryKey: ['foro', foroId],
     queryFn: () => api.get(`/comunidad/foros/${foroId}`).then(r => mapForoDetalle(r.data)),
     enabled: !!foroId,
@@ -394,7 +519,7 @@ export function useForoDetail(foroId) {
 
 export function useCreateForo() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { titulo: string; descripcion: string; preguntasDetonantes?: string[]; preguntaDetonante?: string; exclusivoPadres?: boolean }>({
     mutationFn: (data) => api.post('/comunidad/foros', {
       titulo: data.titulo,
       descripcion: data.descripcion,
@@ -405,9 +530,9 @@ export function useCreateForo() {
   })
 }
 
-export function useCreateForoRespuesta(foroId) {
+export function useCreateForoRespuesta(foroId: string | number) {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { preguntaIndex?: number; contenido: string }>({
     mutationFn: (data) => api.post(`/comunidad/foros/${foroId}/respuestas`, {
       preguntaIndex: data.preguntaIndex ?? 0,
       contenido: data.contenido,
@@ -420,20 +545,25 @@ export function useCreateForoRespuesta(foroId) {
    CONECTEMOS (Galería pública)
    ═══════════════════════════════════════════════════════════ */
 
-export function useConectemos(opts = {}) {
+export interface ConectemosResult {
+  posts: CommunityPost[]
+  total: number
+}
+
+export function useConectemos(opts: { categoriaCreativa?: string; buscar?: string; pagina?: number; limite?: number; enabled?: boolean } = {}) {
   const { categoriaCreativa, buscar, pagina = 1, limite = 20, enabled = true } = opts
-  return useQuery({
+  return useQuery<ConectemosResult>({
     queryKey: ['conectemos', categoriaCreativa, buscar, pagina, limite],
     enabled,
     queryFn: () => {
-      const params = {}
+      const params: Record<string, unknown> = {}
       if (categoriaCreativa) params.categoriaCreativa = categoriaCreativa
       if (buscar?.trim()) params.buscar = buscar.trim()
       if (pagina > 1) params.pagina = pagina
       if (limite !== 20) params.limite = limite
       return api.get('/comunidad/conectemos/publicaciones', { params }).then(r => {
         const res = r.data
-        const arr = Array.isArray(res) ? res : (res?.datos ?? [])
+        const arr: RawPost[] = Array.isArray(res) ? res : (res?.datos ?? [])
         return { posts: arr.map(mapPostFromBackend), total: res?.total ?? arr.length }
       })
     },

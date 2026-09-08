@@ -2,11 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
-import { setActiveEventSource, closeNotificationStream, isStreamSuspended } from '../lib/notificationStream'
+import { closeNotificationStream, isStreamSuspended } from '../lib/notificationStream'
+import type {
+  NotificationItem,
+  RawBackendNotification,
+  MarkReadResponse,
+} from '@/types/notifications'
 
-function detectNotificationUrl(n) {
+interface StatsData {
+  aprobacionPendiente?: number
+  totalInstituciones?: number
+  institucionesVerificadas?: number
+}
+
+function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationItem>): string {
   // 1. Si el backend ya mandó una URL explícita, usarla
-  const explicitUrl = n.url ?? n.redirect_url ?? n.redirectUrl ?? n.ruta ?? n.path ?? n.enlace ?? n.link ?? n.redireccion
+  const explicitUrl = (n.url ?? n.redirect_url ?? n.redirectUrl ?? n.ruta ?? n.path ?? n.enlace ?? n.link ?? n.redireccion) as string | undefined
   if (explicitUrl) return explicitUrl
 
   // 2. Si no, deducir según las palabras clave en título o mensaje (body)
@@ -36,20 +47,20 @@ export function useNotifications() {
   const { token, user } = useAuthStore()
   const userRole = user?.role
 
-  return useQuery({
+  return useQuery<NotificationItem[]>({
     queryKey: ['notifications', userRole],
     queryFn: async () => {
       const r = await api.get('/notificaciones')
       const res = r.data
-      const rawList = Array.isArray(res) ? res : (res?.datos ?? [])
-      const mapped = rawList.map(n => {
-        const normalized = {
-          id: n.id,
-          title: n.title ?? n.titulo ?? 'Notificación',
-          body: n.body ?? n.mensaje ?? n.contenido ?? '',
+      const rawList: RawBackendNotification[] = Array.isArray(res) ? res : (res?.datos ?? [])
+      const mapped: NotificationItem[] = rawList.map(n => {
+        const normalized: NotificationItem = {
+          id: n.id ?? '',
+          title: (n.title ?? n.titulo ?? 'Notificación') as string,
+          body: (n.body ?? n.mensaje ?? n.contenido ?? '') as string,
           is_read: !!(n.is_read ?? n.leido ?? n.es_leido ?? n.leida ?? n.es_leida ?? false),
-          type: n.type ?? n.tipo ?? 'info',
-          created_at: n.created_at ?? n.creado_at ?? n.fecha ?? new Date().toISOString(),
+          type: (n.type ?? n.tipo ?? 'info') as string,
+          created_at: (n.created_at ?? n.creado_at ?? n.fecha ?? new Date().toISOString()) as string,
         }
         normalized.url = detectNotificationUrl({ ...n, ...normalized })
         return normalized
@@ -66,7 +77,7 @@ export function useNotifications() {
       // Si el usuario es administrador, inyectar dinámicamente avisos de tareas pendientes
       if (userRole === 'admin') {
         try {
-          const statsRes = await api.get('/administracion/estadisticas').catch(() => null)
+          const statsRes = await api.get<StatsData>('/administracion/estadisticas').catch(() => null)
           if (statsRes?.data) {
             const pendingApproval = statsRes.data.aprobacionPendiente ?? 0
             // Excluir las que ya se contaron como pendientes de aprobación (no activas)
@@ -101,77 +112,45 @@ export function useNotifications() {
 
       return filtered
     },
-    // 🔒 No ejecutar la petición si no hay token activo.
-    //    Esto evita errores 500 del servidor durante el logout,
-    //    cuando el token ya fue eliminado del store pero React
-    //    aún está procesando el desmontaje de componentes.
     enabled: !!token,
-    // Si el token desaparece (logout), no reintentar la query fallida
     retry: false,
   })
 }
 
 export function useMarkRead() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id) => api.patch(`/notificaciones/${id}/leer`).then(r => r.data),
+  return useMutation<MarkReadResponse, Error, string | number>({
+    mutationFn: (id) => api.patch<MarkReadResponse>(`/notificaciones/${id}/leer`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 }
 
 export function useMarkAllRead() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => api.patch('/notificaciones/leer-todas').then(r => r.data),
+  return useMutation<MarkReadResponse, Error, void>({
+    mutationFn: () => api.patch<MarkReadResponse>('/notificaciones/leer-todas').then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 }
 
-export function useNotificationStream(onNotification) {
+export function useNotificationStream(onNotification?: (data: unknown) => void) {
   const { token } = useAuthStore()
-  const esRef = useRef(null)
+  const esRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
-    // 🔒 FRENO DE MANO: Si el stream está suspendido (logout en curso),
-    //    NO crear ningún EventSource. Esto previene la reconexión
-    //    huérfana durante la ventana de desmontaje de React.
     if (isStreamSuspended()) {
       closeNotificationStream()
       esRef.current = null
       return
     }
 
-    // Si no hay token, cerrar cualquier conexión existente y salir
     if (!token) {
       closeNotificationStream()
       esRef.current = null
       return
     }
 
-    // Cerrar conexión previa si existiera (evita duplicados)
     closeNotificationStream()
-
-    // ⚠️ SSE temporalmente deshabilitado.
-    //    El endpoint /notificaciones/flujo devuelve 401 en el backend actual.
-    //    El polling de useNotifications() ya funciona correctamente.
-    //    Para reactivar: descomentar el bloque de abajo.
-    //
-    // const baseUrl = import.meta.env.VITE_API_URL ?? '/api'
-    // const es = new EventSource(`${baseUrl}/notificaciones/flujo?token=${token}`)
-    // esRef.current = es
-    // setActiveEventSource(es)
-    //
-    // es.onmessage = (e) => {
-    //   try {
-    //     const data = JSON.parse(e.data)
-    //     onNotification?.(data)
-    //   } catch { /* ignore malformed data */ }
-    // }
-    //
-    // es.onerror = () => {
-    //   closeNotificationStream()
-    //   esRef.current = null
-    // }
 
     return () => {
       closeNotificationStream()

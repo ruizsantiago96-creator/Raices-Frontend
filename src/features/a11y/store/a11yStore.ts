@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { A11yStore, A11yState } from '@/types/a11y'
 
 /**
  * Preferencias de accesibilidad. Se aplican como atributos data-* en <html>
  * (ver applyA11yAttributes) para que el CSS global reaccione, y persisten
  * en localStorage entre sesiones.
  */
-export const useA11yStore = create(
+export const useA11yStore = create<A11yStore>()(
   persist(
     (set) => ({
       textScale: 'base',       // 'base' | 'lg' | 'xl'
@@ -37,14 +38,27 @@ export const useA11yStore = create(
       toggleMotorSpacing: () => set((s) => ({ motorSpacing: !s.motorSpacing })),
       toggleVisualAlerts: () => set((s) => ({ visualAlerts: !s.visualAlerts })),
       setColorblindMode: (colorblindMode) => set({ colorblindMode }),
-      reset: () => set({ textScale: 'base', highContrast: false, easyRead: false, reducedMotion: false, ttsEnabled: false, colorblindMode: 'none', darkMode: false, largeCursor: false, readingGuide: false, highlightLinks: false, motorSpacing: false, visualAlerts: false }),
+      reset: () => set({
+        textScale: 'base',
+        highContrast: false,
+        easyRead: false,
+        reducedMotion: false,
+        ttsEnabled: false,
+        colorblindMode: 'none',
+        darkMode: false,
+        largeCursor: false,
+        readingGuide: false,
+        highlightLinks: false,
+        motorSpacing: false,
+        visualAlerts: false,
+      }),
     }),
     { name: 'raices_a11y' }
   )
 )
 
 /** Aplica las preferencias al elemento <html> como atributos data-*. */
-export function applyA11yAttributes(state) {
+export function applyA11yAttributes(state: A11yState) {
   const el = document.documentElement
   el.setAttribute('data-text-scale', state.textScale)
   el.setAttribute('data-contrast', state.highContrast ? 'high' : 'normal')

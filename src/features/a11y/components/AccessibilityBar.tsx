@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, type ReactNode, type CSSProperties, type MouseEvent, type TouchEvent } from 'react'
 import FocusTrap from 'focus-trap-react'
 import EasySpeech from 'easy-speech'
 import '@fontsource/atkinson-hyperlegible'
 import '@fontsource/atkinson-hyperlegible/700.css'
 import { useA11yStore, applyA11yAttributes } from '../store/a11yStore'
+import type { TextScale, ColorblindMode } from '@/types/a11y'
 
 /* ── Iconos locales (trazo consistente, decorativos → aria-hidden) ── */
 /* Filtros SVG para daltonismo — referenciados por CSS cuando data-colorblind está activo */
@@ -48,32 +49,31 @@ const I = {
 function useSpeech() {
   const [supported, setSupported] = useState(false)
   const [ready, setReady] = useState(false)
-  const voiceRef = useRef(null)
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    EasySpeech.init({ verbose: false })
+    EasySpeech.init({ maxTimeout: 5000, interval: 250, quiet: true })
       .then(() => {
         setSupported(true)
         setReady(true)
         // Seleccionar voz en español
-        const voices = EasySpeech.voices()
+        const voices = EasySpeech.voices() as SpeechSynthesisVoice[]
         const esVoice = voices.find(v => /es(-|_)?(MX|ES|419)?/i.test(v.lang))
         voiceRef.current = esVoice || null
       })
       .catch(() => setSupported(false))
   }, [])
 
-  const speak = useCallback((text) => {
+  const speak = useCallback((text: string) => {
     if (!ready || !text?.trim()) return
     EasySpeech.cancel()
     EasySpeech.speak({
       text: text.trim().slice(0, 4000),
-      lang: 'es-MX',
       rate: 0.96,
       pitch: 1,
       volume: 1,
-      voice: voiceRef.current,
+      voice: voiceRef.current ?? undefined,
     })
   }, [ready])
 
@@ -113,20 +113,21 @@ export default function AccessibilityBar() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const btnRef = useRef(null)
-  const readingGuideRef = useRef(null)
-  const flashRef = useRef(null)
-  const panelRef = useRef(null)
-  const triggerRef = useRef(null)
+  const btnRef = useRef<HTMLButtonElement | null>(null)
+  const readingGuideRef = useRef<HTMLDivElement | null>(null)
+  const flashRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLDivElement | null>(null)
 
   /* Cerrar panel al hacer click o tap fuera de él */
   useEffect(() => {
     if (!open) return
 
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+      const target = event.target as Node | null
       if (
-        panelRef.current && !panelRef.current.contains(event.target) &&
-        triggerRef.current && !triggerRef.current.contains(event.target)
+        panelRef.current && target && !panelRef.current.contains(target) &&
+        triggerRef.current && !triggerRef.current.contains(target)
       ) {
         setOpen(false)
       }
@@ -161,7 +162,7 @@ export default function AccessibilityBar() {
     const guide = readingGuideRef.current
     if (!guide) return
 
-    const onMouseMove = (e) => {
+    const onMouseMove = (e: globalThis.MouseEvent) => {
       guide.style.top = `${e.clientY - 15}px`
       guide.style.opacity = '1'
     }
@@ -180,7 +181,7 @@ export default function AccessibilityBar() {
   /* Cerrar con Escape (focus-trap maneja el foco automáticamente) */
   useEffect(() => {
     if (!open) return
-    const onKey = (e) => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus() } }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus() } }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
@@ -205,9 +206,9 @@ export default function AccessibilityBar() {
   useEffect(() => {
     if (!a11y.ttsEnabled || !ttsSupported) return
 
-    let hoverTimer = null
+    let hoverTimer: ReturnType<typeof setTimeout> | null = null
 
-    const getReadableText = (el) => {
+    const getReadableText = (el: Element) => {
       // Prioridad: aria-label → title → alt → texto visible
       const label = el.getAttribute('aria-label')
       if (label) return label
@@ -221,27 +222,30 @@ export default function AccessibilityBar() {
         const placeholder = el.getAttribute('placeholder') ?? ''
         return [labelText, placeholder].filter(Boolean).join(': ') || (el.getAttribute('name') ?? '')
       }
-      const text = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ')
-      return text.slice(0, 200)
+      const text = (el as HTMLElement).innerText || el.textContent || ''
+      return text.trim().replace(/\s+/g, ' ').slice(0, 200)
     }
 
     const TARGETS = 'button, a, [role="button"], [role="link"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"], input, select, textarea, h1, h2, h3, h4, label, [aria-label]'
 
-    const onEnter = (e) => {
-      const el = e.target.closest(TARGETS)
+    const onEnter = (e: Event) => {
+      const target = e.target as Element | null
+      const el = target?.closest(TARGETS)
       if (!el) return
       const text = getReadableText(el)
       if (!text?.trim()) return
-      clearTimeout(hoverTimer)
+      if (hoverTimer) clearTimeout(hoverTimer)
       hoverTimer = setTimeout(() => speak(text), 400)
     }
 
-    const onLeave = () => clearTimeout(hoverTimer)
+    const onLeave = () => {
+      if (hoverTimer) clearTimeout(hoverTimer)
+    }
 
     document.addEventListener('mouseover', onEnter)
     document.addEventListener('mouseout', onLeave)
     return () => {
-      clearTimeout(hoverTimer)
+      if (hoverTimer) clearTimeout(hoverTimer)
       document.removeEventListener('mouseover', onEnter)
       document.removeEventListener('mouseout', onLeave)
     }
@@ -249,12 +253,12 @@ export default function AccessibilityBar() {
 
   const readPage = () => {
     const main = document.querySelector('main') || document.getElementById('a11y-root')
-    if (main) speak(main.innerText)
+    if (main) speak((main as HTMLElement).innerText || main.textContent || '')
   }
 
-  const handleDragStart = (e) => {
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  const handleDragStart = (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
     isDraggingRef.current = true
     wasDraggingRef.current = false
@@ -267,7 +271,7 @@ export default function AccessibilityBar() {
       startBottom: position.bottom
     }
 
-    if (e.touches) {
+    if ('touches' in e) {
       document.addEventListener('touchmove', handleDragMove, { passive: false })
       document.addEventListener('touchend', handleDragEnd)
     } else {
@@ -276,11 +280,11 @@ export default function AccessibilityBar() {
     }
   }
 
-  const handleDragMove = (e) => {
+  const handleDragMove = (e: globalThis.MouseEvent | globalThis.TouchEvent) => {
     if (!isDraggingRef.current) return
 
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
     const { startX, startY, startRight, startBottom } = dragStartRef.current
 
@@ -329,11 +333,11 @@ export default function AccessibilityBar() {
     }
   }, [])
 
-  const getPanelStyle = () => {
+  const getPanelStyle = (): CSSProperties => {
     const isTopHalf = position.bottom > window.innerHeight / 2
     const isLeftHalf = position.right > window.innerWidth / 2
 
-    const panelStyle = {
+    const panelStyle: CSSProperties = {
       position: 'fixed',
       zIndex: 1500,
       width: 320,
@@ -361,7 +365,7 @@ export default function AccessibilityBar() {
     return panelStyle
   }
 
-  const scaleLabels = { base: 'A', lg: 'A+', xl: 'A++' }
+  const scaleLabels: Record<TextScale, string> = { base: 'A', lg: 'A+', xl: 'A++' }
 
   return (
     <>
@@ -471,7 +475,7 @@ export default function AccessibilityBar() {
 
           <Group label="Tamaño de texto">
             <div role="group" aria-label="Tamaño de texto" style={{ display: 'flex', gap: 8 }}>
-              {['base', 'lg', 'xl'].map(sz => {
+              {(['base', 'lg', 'xl'] as TextScale[]).map(sz => {
                 const active = a11y.textScale === sz
                 return (
                   <button key={sz} onClick={() => a11y.setTextScale(sz)} aria-pressed={active}
@@ -492,12 +496,12 @@ export default function AccessibilityBar() {
 
           <Group label="Modo daltónico">
             <div role="group" aria-label="Modo daltónico" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {[
+              {([
                 { value: 'none', label: 'Ninguno' },
                 { value: 'deuteranopia', label: 'Deuteranopía' },
                 { value: 'protanopia', label: 'Protanopía' },
                 { value: 'tritanopia', label: 'Tritanopía' },
-              ].map(m => {
+              ] as Array<{ value: ColorblindMode; label: string }>).map(m => {
                 const active = (a11y.colorblindMode ?? 'none') === m.value
                 return (
                   <button key={m.value} onClick={() => a11y.setColorblindMode(m.value)} aria-pressed={active}
@@ -773,7 +777,13 @@ export default function AccessibilityBar() {
   )
 }
 
-function SectionHeader({ icon, label, color = 'var(--primary)' }) {
+interface SectionHeaderProps {
+  icon: ReactNode
+  label: string
+  color?: string
+}
+
+function SectionHeader({ icon, label, color = 'var(--primary)' }: SectionHeaderProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0 12px', paddingBottom: 6, borderBottom: `2px solid ${color}` }}>
       <span style={{ color, display: 'flex' }}>{icon}</span>
@@ -782,7 +792,12 @@ function SectionHeader({ icon, label, color = 'var(--primary)' }) {
   )
 }
 
-function Group({ label, children }) {
+interface GroupProps {
+  label: string
+  children: ReactNode
+}
+
+function Group({ label, children }: GroupProps) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
@@ -791,7 +806,15 @@ function Group({ label, children }) {
   )
 }
 
-function Toggle({ icon, label, on, onToggle, hint }) {
+interface ToggleProps {
+  icon: ReactNode
+  label: string
+  on: boolean
+  onToggle: () => void
+  hint?: string
+}
+
+function Toggle({ icon, label, on, onToggle, hint }: ToggleProps) {
   const OFF_COLOR = '#556678'
   return (
     <div style={{ marginBottom: 12 }}>

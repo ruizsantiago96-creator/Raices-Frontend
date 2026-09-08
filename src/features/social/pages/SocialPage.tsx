@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import { useUiStore } from '@shared/stores/uiStore'
 import {
   useGroups,
@@ -20,18 +20,18 @@ import {
 import { useAuthStore } from '@features/auth'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { Icons } from '@shared/components/shared'
-import { AppSidebar, TopNav } from '@features/auth'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import type { CommunityPost } from '@/types/social'
 
-const relativeDate = (d) => {
-  const diff = Date.now() - new Date(d)
+const relativeDate = (d: string | number | Date) => {
+  const diff = Date.now() - new Date(d).getTime()
   const h = Math.floor(diff / 3600000)
   return h < 1 ? SOCIAL_UI.TIME_NOW : h < 24 ? `${SOCIAL_UI.TIME_PREFIX} ${h}h` : `${SOCIAL_UI.TIME_PREFIX} ${Math.floor(h / 24)}d`
 }
 
-const avatarStyle = (extra = {}) => ({
+const avatarStyle = (extra: CSSProperties = {}): CSSProperties => ({
   width: 40,
   height: 40,
   borderRadius: '50% 50% 50% 14%',
@@ -48,11 +48,16 @@ const avatarStyle = (extra = {}) => ({
   ...extra,
 })
 
-function Avatar({ name, src }) {
+interface AvatarProps {
+  name?: string | null
+  src?: string | null
+}
+
+function Avatar({ name, src }: AvatarProps) {
   if (src) {
     return (
       <div style={avatarStyle()}>
-        <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={src} alt={name ?? 'Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
     )
   }
@@ -84,16 +89,26 @@ function SkeletonCard() {
   )
 }
 
-function CommentSection({ postId, currentUser }) {
+interface CurrentUserContext {
+  id?: string | number
+  name?: string
+}
+
+interface CommentSectionProps {
+  postId: string | number
+  currentUser: CurrentUserContext
+}
+
+function CommentSection({ postId, currentUser }: CommentSectionProps) {
   const { data: comments = [], isLoading } = useComments(postId)
   const createComment = useCreateComment(postId)
   const [text, setText] = useState('')
 
-  const submit = (e) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault()
     if (!text.trim() || createComment.isPending) return
     createComment.mutate(
-      { content: text, authorName: currentUser?.name ?? currentUser?.full_name ?? 'Tú', authorId: currentUser?.id },
+      { content: text, authorName: currentUser?.name ?? 'Tú', authorId: currentUser?.id },
       { onSuccess: () => setText('') }
     )
   }
@@ -143,7 +158,14 @@ function CommentSection({ postId, currentUser }) {
   )
 }
 
-function PostCard({ post, onLike, currentUserId, currentUserName }) {
+interface PostCardProps {
+  post: CommunityPost
+  onLike: () => void
+  currentUserId?: string | number
+  currentUserName?: string
+}
+
+function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(post.content)
@@ -158,7 +180,6 @@ function PostCard({ post, onLike, currentUserId, currentUserName }) {
     const newLiked = !liked
     setLiked(newLiked)
     setLikeCount(prev => prev + (newLiked ? 1 : -1))
-    // Llamar al backend en background, sin bloquear la UI
     onLike()
   }
 
@@ -237,14 +258,18 @@ function PostCard({ post, onLike, currentUserId, currentUserName }) {
 }
 
 /* ─── Create Group Modal ────────────────────────────────── */
-function CreateGroupModal({ onClose }) {
+interface CreateGroupModalProps {
+  onClose: () => void
+}
+
+function CreateGroupModal({ onClose }: CreateGroupModalProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isPublic, setIsPublic] = useState(true)
   const createGroup = useCreateGroup()
   const { addToast } = useUiStore()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
     createGroup.mutate({ nombre: name, descripcion: description, esPublico: isPublic }, {
@@ -253,7 +278,18 @@ function CreateGroupModal({ onClose }) {
     })
   }
 
-  const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }
+  const inputStyle: CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    border: '1px solid var(--border-color)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: 14,
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-body)',
+    color: 'var(--fg1)',
+    background: 'var(--bg-warm)',
+    outline: 'none',
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -278,8 +314,6 @@ function CreateGroupModal({ onClose }) {
   )
 }
 
-
-
 function hashColor(str = '') {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffffff
@@ -287,12 +321,16 @@ function hashColor(str = '') {
   return colors[Math.abs(h) % colors.length]
 }
 
-const ROLE_LABELS = { pcd: 'Persona con discapacidad', tutor: 'Tutor / familiar', institution: 'Institución' }
+const ROLE_LABELS: Record<string, string> = {
+  pcd: 'Persona con discapacidad',
+  tutor: 'Tutor / familiar',
+  institution: 'Institución',
+}
 
 function AboutCommunity() {
   const { data: stats, isLoading: statsLoading, isError: statsError } = useCommunityStats()
   const { data: miembros = [], isLoading: miembrosLoading, isError: miembrosError } = useMiembrosDestacados(6)
-  const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)' }
+  const card: CSSProperties = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -362,7 +400,7 @@ function AboutCommunity() {
                   )}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{m.nombreCompleto}</div>
-                    <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>{ROLE_LABELS[m.rol] ?? m.rol}</div>
+                    <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>{(m.rol && ROLE_LABELS[m.rol]) ?? m.rol}</div>
                   </div>
                 </div>
                 {m.biografia && <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>{m.biografia}</p>}
@@ -380,36 +418,40 @@ function AboutCommunity() {
   )
 }
 
-
-
 /* ═══════════════════════════════════════════════════════════ */
 /* ═══ SocialPage (main) ════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function SocialPage() {
-  const [activeGroupId, setActiveGroupId] = useState(null)
+  const [activeGroupId, setActiveGroupId] = useState<string | number | null>(null)
   const [newPost, setNewPost] = useState('')
-  const [pendingFile, setPendingFile] = useState(null)
-  const [previewUrl, setPreviewUrl] = useState(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const uploadMedia = useUploadMultimedia()
-  const [mainTab, setMainTab] = useState('community')
-  const [conectemosCategoria, setConectemosCategoria] = useState(null)
+  const [mainTab, setMainTab] = useState<'community' | 'conectemos' | 'about'>('community')
+  const [conectemosCategoria, setConectemosCategoria] = useState<string | null>(null)
   const [conectemosBuscarInput, setConectemosBuscarInput] = useState('')
   const [conectemosBuscar, setConectemosBuscar] = useState('')
-  const { data: conectemosData } = useConectemos({ categoriaCreativa: conectemosCategoria, buscar: conectemosBuscar, enabled: mainTab === 'conectemos' })
+  const { data: conectemosData } = useConectemos({
+    categoriaCreativa: conectemosCategoria ?? undefined,
+    buscar: conectemosBuscar,
+    enabled: mainTab === 'conectemos',
+  })
   const conectemosPosts = conectemosData?.posts ?? []
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const { addToast } = useUiStore()
 
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   const { data: groups = [], isError: groupsError, refetch: refetchGroups } = useGroups()
-  const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts(activeGroupId)
+  const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts(
+    activeGroupId !== null && activeGroupId !== undefined ? String(activeGroupId) : undefined
+  )
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
   const joinGroup = useJoinGroup()
   const leaveGroup = useLeaveGroup()
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
@@ -420,7 +462,7 @@ export default function SocialPage() {
     setPreviewUrl(URL.createObjectURL(file))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!newPost.trim() && !pendingFile) return
     if (createPost.isPending || uploadMedia.isPending) return
@@ -458,7 +500,7 @@ export default function SocialPage() {
 
   return (
     <>
-      <main className="responsive-main" style={{ '--main-max-width': '1060px' }}>
+      <main className="responsive-main" style={{ '--main-max-width': '1060px' } as CSSProperties}>
 
         {/* Header */}
         <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
@@ -469,9 +511,9 @@ export default function SocialPage() {
         {/* iOS-style Segmented Control */}
         <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24 }}>
           {[
-            { key: 'community', label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
-            { key: 'conectemos', label: 'Conectemos', icon: Icons.sparkles },
-            { key: 'about', label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
+            { key: 'community' as const, label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
+            { key: 'conectemos' as const, label: 'Conectemos', icon: Icons.sparkles },
+            { key: 'about' as const, label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: mainTab === t.key ? 'var(--bg-surface)' : 'transparent', boxShadow: mainTab === t.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: mainTab === t.key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: mainTab === t.key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease' }}>
@@ -544,7 +586,7 @@ export default function SocialPage() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                 {conectemosPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} currentUserName={user?.name} />
+                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} currentUserName={user?.full_name} />
                 ))}
               </div>
             )}
@@ -611,7 +653,7 @@ export default function SocialPage() {
             <div>
               <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <Avatar name={user?.name} src={user?.avatar_url} />
+                  <Avatar name={user?.full_name} src={user?.avatar_url} />
                   <form onSubmit={handleSubmit} style={{ flex: 1 }}>
                     <textarea rows={3} value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder={SOCIAL_UI.POST_PLACEHOLDER}
                       style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
@@ -669,7 +711,7 @@ export default function SocialPage() {
               ) : (
                 <div className="stagger-children">
                 {posts.map((post) => (
-                  <div key={post.id} className="animate-fade-in-up"><PostCard post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} /></div>
+                  <div key={post.id} className="animate-fade-in-up"><PostCard post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} currentUserName={user?.full_name} /></div>
                 ))}
               </div>
               )}

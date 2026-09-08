@@ -7,15 +7,18 @@ const ALLOWED_TYPES = [
   'video/mp4', 'video/webm', 'video/quicktime',
 ]
 
+export interface UploadMultimediaResponse {
+  url: string
+  [key: string]: unknown
+}
+
 /**
  * Hook to upload multimedia (images/videos) via multipart/form-data.
  * POST /api/multimedia
- *
- * @returns {{ url: string }}
  */
 export function useUploadMultimedia() {
-  return useMutation({
-    mutationFn: async (file) => {
+  return useMutation<UploadMultimediaResponse, Error, File>({
+    mutationFn: async (file: File) => {
       if (!file) throw new Error('No file provided')
       if (file.size > MAX_SIZE_BYTES) {
         throw new Error(`El archivo excede el límite de ${MAX_SIZE_BYTES / (1024 * 1024)} MB`)
@@ -25,10 +28,10 @@ export function useUploadMultimedia() {
       }
       const formData = new FormData()
       formData.append('archivo', file)
-      const { data } = await api.post('/multimedia', formData, {
+      const { data } = await api.post<UploadMultimediaResponse>('/multimedia', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      return data // { url: string }
+      return data
     },
   })
 }
