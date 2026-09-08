@@ -52,10 +52,11 @@ describe('shared/constants/backendEndpoints', () => {
 
       it('every endpoint has method and path', () => {
         Object.values(obj).forEach((ep) => {
-          expect(ep.method).toBeDefined()
-          expect(ep.path).toBeDefined()
-          expect(typeof ep.method).toBe('string')
-          expect(typeof ep.path).toBe('string')
+          const item = ep as { method: string; path: string }
+          expect(item.method).toBeDefined()
+          expect(item.path).toBeDefined()
+          expect(typeof item.method).toBe('string')
+          expect(typeof item.path).toBe('string')
         })
       })
     })
@@ -72,13 +73,13 @@ describe('shared/constants/backendEndpoints', () => {
 
     it('contains all keys from AUTH_ENDPOINTS', () => {
       Object.keys(AUTH_ENDPOINTS).forEach((key) => {
-        expect(ALL_ENDPOINTS[key]).toBeDefined()
+        expect((ALL_ENDPOINTS as Record<string, unknown>)[key]).toBeDefined()
       })
     })
 
     it('contains all keys from ADMIN_ENDPOINTS', () => {
       Object.keys(ADMIN_ENDPOINTS).forEach((key) => {
-        expect(ALL_ENDPOINTS[key]).toBeDefined()
+        expect((ALL_ENDPOINTS as Record<string, unknown>)[key]).toBeDefined()
       })
     })
 
@@ -94,8 +95,8 @@ describe('shared/constants/backendEndpoints', () => {
     it('returns endpoint object for valid key', () => {
       const ep = getEndpointInfo('LOGIN')
       expect(ep).toBeDefined()
-      expect(ep.method).toBe('POST')
-      expect(ep.path).toBe('/autenticacion/inicio-sesion')
+      expect(ep?.method).toBe('POST')
+      expect(ep?.path).toBe('/autenticacion/inicio-sesion')
     })
 
     it('returns null for non-existent key', () => {
@@ -124,7 +125,7 @@ describe('shared/constants/backendEndpoints', () => {
     })
 
     it('JOB_ENDPOINTS.APPLY has body with cartaPresentacion', () => {
-      expect(JOB_ENDPOINTS.APPLY.body.cartaPresentacion).toBe('string?')
+      expect((JOB_ENDPOINTS.APPLY.body as Record<string, unknown>).cartaPresentacion).toBe('string?')
     })
 
     it('NOTIFICATION_ENDPOINTS.MARK_READ uses PATCH method', () => {

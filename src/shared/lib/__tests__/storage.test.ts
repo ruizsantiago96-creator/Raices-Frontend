@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   getRememberMe,
   setRememberMe,
@@ -49,18 +49,18 @@ describe('shared/lib/storage', () => {
     })
 
     it('handles falsy values (null, undefined, 0) by storing "false"', () => {
-      setRememberMe(null)
+      setRememberMe(null as unknown as boolean)
       expect(getRememberMe()).toBe(false)
-      setRememberMe(undefined)
+      setRememberMe(undefined as unknown as boolean)
       expect(getRememberMe()).toBe(false)
-      setRememberMe(0)
+      setRememberMe(0 as unknown as boolean)
       expect(getRememberMe()).toBe(false)
     })
 
     it('treats any truthy value as true', () => {
-      setRememberMe('yes')
+      setRememberMe('yes' as unknown as boolean)
       expect(getRememberMe()).toBe(true)
-      setRememberMe(1)
+      setRememberMe(1 as unknown as boolean)
       expect(getRememberMe()).toBe(true)
     })
   })
@@ -147,23 +147,23 @@ describe('shared/lib/storage', () => {
 
     it('saves user as JSON to localStorage when rememberMe=true', () => {
       saveUser(mockUser, true)
-      const stored = JSON.parse(localStorage.getItem('raices_user'))
+      const stored = JSON.parse(localStorage.getItem('raices_user') ?? '{}')
       expect(stored).toEqual(mockUser)
     })
 
     it('saves user as JSON to sessionStorage when rememberMe=false', () => {
       saveUser(mockUser, false)
-      const stored = JSON.parse(sessionStorage.getItem('raices_user'))
+      const stored = JSON.parse(sessionStorage.getItem('raices_user') ?? '{}')
       expect(stored).toEqual(mockUser)
     })
 
     it('does not save when user is null', () => {
-      saveUser(null, true)
+      saveUser(null as unknown as Record<string, unknown>, true)
       expect(localStorage.getItem('raices_user')).toBeNull()
     })
 
     it('does not save when user is undefined', () => {
-      saveUser(undefined, true)
+      saveUser(undefined as unknown as Record<string, unknown>, true)
       expect(localStorage.getItem('raices_user')).toBeNull()
     })
 

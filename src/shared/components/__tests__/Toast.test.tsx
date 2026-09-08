@@ -123,10 +123,11 @@ describe('shared/components/Toast', () => {
     it('container is fixed position at bottom-left', () => {
       act(() => { useUiStore.getState().addToast('Styled') })
       render(<ToastContainer />)
-      const container = screen.getByText('Styled').closest('[aria-live]')
-      expect(container.style.position).toBe('fixed')
-      expect(container.style.bottom).toBe('24px')
-      expect(container.style.left).toBe('24px')
+      const container = screen.getByText('Styled').closest('[aria-live]') as HTMLElement | null
+      expect(container).not.toBeNull()
+      expect(container?.style.position).toBe('fixed')
+      expect(container?.style.bottom).toBe('24px')
+      expect(container?.style.left).toBe('24px')
     })
   })
 })

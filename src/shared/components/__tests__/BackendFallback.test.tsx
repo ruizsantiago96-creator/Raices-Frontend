@@ -136,7 +136,7 @@ describe('shared/components/BackendFallbackInline', () => {
   })
 
   it('renders non-compact as full fallback', () => {
-    const { container } = render(<BackendFallbackInline method="POST" endpoint="/api/test" />)
+    render(<BackendFallbackInline method="POST" endpoint="/api/test" />)
     // Non-compact renders the full BackendFallback
     expect(screen.getByRole('alert')).toBeInTheDocument()
   })

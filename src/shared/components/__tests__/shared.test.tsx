@@ -15,7 +15,9 @@ import {
   AppFooter,
 } from '../shared'
 
-function withRouter(ui) {
+import React from 'react'
+
+function withRouter(ui: React.ReactElement) {
   return <HashRouter>{ui}</HashRouter>
 }
 
@@ -32,26 +34,30 @@ describe('LeafIcon', () => {
   it('uses default size 16', () => {
     const { container } = render(withRouter(<LeafIcon />))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('width')).toBe('16')
-    expect(svg.getAttribute('height')).toBe('16')
+    expect(svg).not.toBeNull()
+    expect(svg?.getAttribute('width')).toBe('16')
+    expect(svg?.getAttribute('height')).toBe('16')
   })
 
   it('accepts custom size', () => {
     const { container } = render(withRouter(<LeafIcon size={24} />))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('width')).toBe('24')
+    expect(svg).not.toBeNull()
+    expect(svg?.getAttribute('width')).toBe('24')
   })
 
   it('accepts custom color', () => {
     const { container } = render(withRouter(<LeafIcon color="red" />))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('fill')).toBe('red')
+    expect(svg).not.toBeNull()
+    expect(svg?.getAttribute('fill')).toBe('red')
   })
 
   it('accepts custom style', () => {
     const { container } = render(withRouter(<LeafIcon style={{ opacity: 0.5 }} />))
-    const svg = container.querySelector('svg')
-    expect(svg.style.opacity).toBe('0.5')
+    const svg = container.querySelector('svg') as HTMLElement | null
+    expect(svg).not.toBeNull()
+    expect(svg?.style.opacity).toBe('0.5')
   })
 })
 
@@ -72,30 +78,31 @@ describe('Icons', () => {
 
   iconNames.forEach((name) => {
     it(`Icons.${name} renders an SVG`, () => {
-      const { container } = render(withRouter(Icons[name]()))
+      const iconFn = Icons[name as keyof typeof Icons] as (props?: { s?: number; filled?: boolean }) => React.ReactElement
+      const { container } = render(withRouter(iconFn()))
       const svg = container.querySelector('svg')
       expect(svg).toBeInTheDocument()
-      expect(svg.getAttribute('aria-hidden')).toBe('true')
+      expect(svg?.getAttribute('aria-hidden')).toBe('true')
     })
   })
 
   it('Icons.heart renders with filled prop', () => {
     const { container } = render(withRouter(Icons.heart({ filled: true })))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('fill')).toBe('currentColor')
+    expect(svg?.getAttribute('fill')).toBe('currentColor')
   })
 
   it('Icons.heart renders without filled prop', () => {
     const { container } = render(withRouter(Icons.heart({ filled: false })))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('fill')).toBe('none')
+    expect(svg?.getAttribute('fill')).toBe('none')
   })
 
   it('Icons accept custom size via s prop', () => {
     const { container } = render(withRouter(Icons.home({ s: 32 })))
     const svg = container.querySelector('svg')
-    expect(svg.getAttribute('width')).toBe('32')
-    expect(svg.getAttribute('height')).toBe('32')
+    expect(svg?.getAttribute('width')).toBe('32')
+    expect(svg?.getAttribute('height')).toBe('32')
   })
 })
 

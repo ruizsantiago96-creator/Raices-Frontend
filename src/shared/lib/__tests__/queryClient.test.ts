@@ -9,11 +9,11 @@ describe('shared/lib/queryClient', () => {
 
   it('has correct default query options', () => {
     const opts = queryClient.getDefaultOptions()
-    expect(opts.queries.staleTime).toBe(0)
-    expect(opts.queries.refetchOnMount).toBe(true)
-    expect(opts.queries.refetchOnWindowFocus).toBe(true)
-    expect(opts.queries.refetchOnReconnect).toBe(true)
-    expect(opts.queries.retry).toBe(1)
+    expect(opts.queries?.staleTime).toBe(0)
+    expect(opts.queries?.refetchOnMount).toBe(true)
+    expect(opts.queries?.refetchOnWindowFocus).toBe(true)
+    expect(opts.queries?.refetchOnReconnect).toBe(true)
+    expect(opts.queries?.retry).toBe(1)
   })
 
   it('is a singleton (same reference on re-import)', async () => {

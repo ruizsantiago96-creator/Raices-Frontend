@@ -1253,12 +1253,18 @@ export const ALL_ENDPOINTS = {
   ...RUTAS_ENDPOINTS,
 }
 
+export interface EndpointInfo {
+  method: string
+  path: string
+  [key: string]: unknown
+}
+
 /**
- * Verifica si un endpoint estÃ¡ disponible (para usar en fallbacks).
+ * Verifica si un endpoint está disponible (para usar en fallbacks).
  * @param {string} endpointKey - Clave del endpoint en ALL_ENDPOINTS
- * @returns {Object|null} - Objeto del endpoint o null si no existe
+ * @returns {EndpointInfo|null} - Objeto del endpoint o null si no existe
  */
-export function getEndpointInfo(endpointKey: string) {
-  return (ALL_ENDPOINTS as Record<string, unknown>)[endpointKey] ?? null
+export function getEndpointInfo(endpointKey: string): EndpointInfo | null {
+  return ((ALL_ENDPOINTS as Record<string, unknown>)[endpointKey] as EndpointInfo) ?? null
 }
 

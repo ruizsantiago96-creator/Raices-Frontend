@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { initScrollReveal } from '../scrollReveal'
 
 describe('shared/lib/scrollReveal', () => {
-  let observeSpy
-  let disconnectSpy
-  let observerCallback
+  let observeSpy: ReturnType<typeof vi.fn>
+  let disconnectSpy: ReturnType<typeof vi.fn>
+  let observerCallback: (entries: Array<{ isIntersecting: boolean; target: Element | null }>) => void
 
   beforeEach(() => {
     // Spy on IntersectionObserver constructor
@@ -12,8 +12,16 @@ describe('shared/lib/scrollReveal', () => {
     disconnectSpy = vi.fn()
 
     vi.spyOn(window, 'IntersectionObserver').mockImplementation((cb) => {
-      observerCallback = cb
-      return { observe: observeSpy, disconnect: disconnectSpy, unobserve: vi.fn() }
+      observerCallback = cb as unknown as (entries: Array<{ isIntersecting: boolean; target: Element | null }>) => void
+      return {
+        observe: observeSpy,
+        disconnect: disconnectSpy,
+        unobserve: vi.fn(),
+        root: null,
+        rootMargin: '',
+        thresholds: [],
+        takeRecords: () => [],
+      } as unknown as IntersectionObserver
     })
   })
 
@@ -26,7 +34,7 @@ describe('shared/lib/scrollReveal', () => {
     document.body.innerHTML = '<div class="scroll-reveal"></div>'
     const cleanup = initScrollReveal()
     expect(typeof cleanup).toBe('function')
-    cleanup()
+    cleanup?.()
   })
 
   it('returns undefined when no matching elements exist', () => {
@@ -67,7 +75,7 @@ describe('shared/lib/scrollReveal', () => {
   it('disconnects observer on cleanup', () => {
     document.body.innerHTML = '<div class="scroll-reveal"></div>'
     const cleanup = initScrollReveal()
-    cleanup()
+    cleanup?.()
     expect(disconnectSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -76,9 +84,11 @@ describe('shared/lib/scrollReveal', () => {
     initScrollReveal()
 
     const el = document.querySelector('.scroll-reveal')
-    observerCallback([{ isIntersecting: true, target: el }])
-
-    expect(el.classList.contains('revealed')).toBe(true)
+    expect(el).not.toBeNull()
+    if (el) {
+      observerCallback([{ isIntersecting: true, target: el }])
+      expect(el.classList.contains('revealed')).toBe(true)
+    }
   })
 
   it('removes "revealed" class when element is not intersecting', () => {
@@ -86,9 +96,11 @@ describe('shared/lib/scrollReveal', () => {
     initScrollReveal()
 
     const el = document.querySelector('.scroll-reveal')
-    observerCallback([{ isIntersecting: false, target: el }])
-
-    expect(el.classList.contains('revealed')).toBe(false)
+    expect(el).not.toBeNull()
+    if (el) {
+      observerCallback([{ isIntersecting: false, target: el }])
+      expect(el.classList.contains('revealed')).toBe(false)
+    }
   })
 
   it('handles multiple entries in a single callback', () => {
@@ -99,6 +111,7 @@ describe('shared/lib/scrollReveal', () => {
     initScrollReveal()
 
     const els = document.querySelectorAll('.scroll-reveal')
+    expect(els.length).toBe(2)
     observerCallback([
       { isIntersecting: true, target: els[0] },
       { isIntersecting: false, target: els[1] },
