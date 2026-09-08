@@ -16,6 +16,9 @@ const EllipsisHorizontalIcon = ({ s = 20 }) => (
   </svg>
 )
 
+/**
+ * @param {{ dep: any, lifeStages?: any[], isLinked?: boolean, onEdit?: () => void, onDelete?: () => void, onUnlink?: () => void, onConfigureFeatures?: () => void, onPermissions?: (data: any) => void, activeMenuId?: any, setActiveMenuId?: (id: any) => void }} props
+ */
 export default function DependentCard({ dep, lifeStages = [], isLinked = false, onEdit, onDelete, onUnlink, onConfigureFeatures, onPermissions, activeMenuId, setActiveMenuId }) {
   const nombre = dep?.nombreCompleto || dep?.nombre || TUTOR_UI.NO_NAME
   const color = hashColor(nombre)

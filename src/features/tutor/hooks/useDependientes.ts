@@ -10,6 +10,16 @@ import {
   updatePCDLinkedFeaturesPatch,
   unlinkPCD,
 } from '../fetchers/dependientes'
+import type {
+  Dependiente,
+  RawBackendDependiente,
+  CrearDependientePayload,
+  UpdateDependentPayload,
+  DependentFeatures,
+  MisPersonasParams,
+  MisPersonasResponse,
+  DependientesCountResponse,
+} from '@/types/tutor'
 
 /**
  * Mapea un dependiente del backend al formato que el frontend espera.
@@ -17,13 +27,15 @@ import {
  * Backend devuelve: { id, tutorId, nombreCompleto, parentesco, etapaVida, necesidades[], rol, fechaCreacion }
  * Frontend espera:  { id, nombreCompleto, parentesco, etapaVida, tiposDiscapacidad[], notas }
  */
-function mapDependiente(dep) {
-  if (!dep) return dep
+function mapDependiente(dep: RawBackendDependiente): Dependiente {
+  if (!dep) return dep as unknown as Dependiente
   return {
-    ...dep,
-    // El backend puede devolver "necesidades" o "tiposDiscapacidad"
+    ...(dep as Record<string, unknown>),
+    id: dep.id ?? dep._id ?? '',
+    nombreCompleto: dep.nombreCompleto ?? dep.nombre ?? '',
+    parentesco: dep.parentesco ?? '',
     tiposDiscapacidad: dep.necesidades ?? dep.tiposDiscapacidad ?? [],
-  }
+  } as Dependiente
 }
 
 /**
@@ -33,17 +45,17 @@ function mapDependiente(dep) {
  * - staleTime: 5 minutos (evita llamadas innecesarias)
  * - retry: 1 (un reintento en caso de fallo de red esporádico)
  * - Solo se ejecuta si existe token de autenticación
- *
- * @returns {{ data: Array, isLoading: boolean, isError: boolean, error: Error|null }}
  */
 export function useDependientes() {
   const { token } = useAuthStore()
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery<Dependiente[]>({
     queryKey: ['dependientes'],
     queryFn: async () => {
       const raw = await getDependientes()
-      const arr = Array.isArray(raw) ? raw : (raw?.datos ?? [])
+      const arr: RawBackendDependiente[] = Array.isArray(raw)
+        ? raw
+        : ((raw as { datos?: RawBackendDependiente[] })?.datos ?? [])
       return arr.map(mapDependiente)
     },
     enabled: !!token,
@@ -56,6 +68,7 @@ export function useDependientes() {
     isLoading,
     isError,
     error,
+    refetch,
   }
 }
 
@@ -64,17 +77,11 @@ export function useDependientes() {
  *
  * - Cache key: ['mis-personas']
  * - Soporta paginación, búsqueda y ordenamiento
- *
- * @param {Object} params
- * @param {number} [params.pagina=1]
- * @param {number} [params.limite=20]
- * @param {string} [params.buscar]
- * @returns {{ data, isLoading, isError, error }}
  */
-export function useMisPersonas(params = {}) {
+export function useMisPersonas(params: MisPersonasParams = {}) {
   const { token } = useAuthStore()
 
-  return useQuery({
+  return useQuery<MisPersonasResponse>({
     queryKey: ['mis-personas', params],
     queryFn: () => getMisPersonas(params),
     enabled: !!token,
@@ -93,7 +100,7 @@ export function useMisPersonas(params = {}) {
 export function useDependientesCount() {
   const { token } = useAuthStore()
 
-  return useQuery({
+  return useQuery<DependientesCountResponse>({
     queryKey: ['dependientes-count'],
     queryFn: getDependientesCount,
     enabled: !!token,
@@ -107,13 +114,11 @@ export function useDependientesCount() {
  *
  * Al tener éxito, invalida la caché de ['dependientes'] para que la
  * lista se recargue automáticamente.
- *
- * @returns {UseMutationResult} { mutate, mutateAsync, isPending, isError, error, data, reset }
  */
 export function useAddDependiente() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: createDependiente,
+  return useMutation<Dependiente, Error, CrearDependientePayload>({
+    mutationFn: async (payload) => (await createDependiente(payload)) as Dependiente,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
@@ -122,9 +127,9 @@ export function useAddDependiente() {
   })
 }
 
-export function useDependiente(id) {
+export function useDependiente(id: string | number) {
   const { token } = useAuthStore()
-  return useQuery({
+  return useQuery<Dependiente>({
     queryKey: ['dependiente', id],
     queryFn: () => api.get(`/usuarios/dependientes/${id}`).then(r => r.data),
     enabled: !!token && !!id,
@@ -133,7 +138,7 @@ export function useDependiente(id) {
 
 export function useUpdateDependent() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<Dependiente, Error, UpdateDependentPayload>({
     mutationFn: ({ id, ...data }) => api.put(`/usuarios/dependientes/${id}`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
@@ -144,7 +149,7 @@ export function useUpdateDependent() {
 
 export function useDeleteDependent() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<{ exito?: boolean }, Error, string | number>({
     mutationFn: (id) => api.delete(`/usuarios/dependientes/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
@@ -163,7 +168,7 @@ export function useDeleteDependent() {
  */
 export function useVincularPCD() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string>({
     mutationFn: (email) => api.post('/usuarios/vincular-pcd', { email }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
@@ -179,8 +184,8 @@ export function useVincularPCD() {
  */
 export function useUnlinkPCD() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: unlinkPCD,
+  return useMutation<{ desvinculado: boolean; pcdUserId: string; tutorId: string }, Error, string | number>({
+    mutationFn: (pcdUserId) => unlinkPCD(String(pcdUserId)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
@@ -195,8 +200,9 @@ export function useUnlinkPCD() {
  */
 export function useUpdateDependentFeaturesPatch() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, features }) => updateDependentFeaturesPatch(id, features),
+  return useMutation<{ id: string | number; features: DependentFeatures }, Error, { id: string | number; features: DependentFeatures }>({
+    mutationFn: async ({ id, features }) =>
+      (await updateDependentFeaturesPatch(String(id), features)) as { id: string | number; features: DependentFeatures },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
@@ -210,8 +216,9 @@ export function useUpdateDependentFeaturesPatch() {
  */
 export function useUpdatePCDLinkedFeaturesPatch() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ pcdId, features }) => updatePCDLinkedFeaturesPatch(pcdId, features),
+  return useMutation<{ id: string | number; features: DependentFeatures }, Error, { pcdId: string | number; features: DependentFeatures }>({
+    mutationFn: async ({ pcdId, features }) =>
+      (await updatePCDLinkedFeaturesPatch(String(pcdId), features)) as { id: string | number; features: DependentFeatures },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
@@ -226,7 +233,7 @@ export function useUpdatePCDLinkedFeaturesPatch() {
  */
 export function useUpdateDependentFeatures() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string | number; features: DependentFeatures }>({
     mutationFn: ({ id, features }) => api.put(`/usuarios/dependientes/${id}/features`, features).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })

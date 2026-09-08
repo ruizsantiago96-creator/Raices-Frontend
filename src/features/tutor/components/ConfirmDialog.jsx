@@ -2,6 +2,9 @@ import { createPortal } from 'react-dom'
 import { Icons } from '@shared/components/shared'
 import { TUTOR_UI } from '../constants/tutorMessages'
 
+/**
+ * @param {{ title: string, message: string, onConfirm: () => void, onCancel: () => void, confirmLabel?: string }} props
+ */
 export default function ConfirmDialog({ title, message, onConfirm, onCancel, confirmLabel }) {
   return createPortal(
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>

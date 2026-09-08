@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { useMe } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import {
@@ -24,14 +24,39 @@ import FeaturesConfigModal from '../components/FeaturesConfigModal'
 import { TUTOR_TOAST, TUTOR_UI } from '../constants/tutorMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { DEPENDENT_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import type {
+  Dependiente,
+  CrearDependientePayload,
+  UpdateDependentPayload,
+  DependentFeatures,
+} from '@/types/tutor'
 
-const minimalBadge = {
-  display: 'inline-flex', alignItems: 'center', padding: '4px 10px',
-  borderRadius: 6, fontSize: 12, fontWeight: 500,
-  background: 'var(--bg-cool)', color: 'var(--fg2)',
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      mensaje?: string
+      message?: string
+    }
+  }
+  message?: string
 }
-const minimalSectionTitle = {
-  fontSize: 13, fontWeight: 600, color: 'var(--fg3)', margin: '0 0 12px 4px',
+
+const minimalBadge: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '4px 10px',
+  borderRadius: 6,
+  fontSize: 12,
+  fontWeight: 500,
+  background: 'var(--bg-cool)',
+  color: 'var(--fg2)',
+}
+
+const minimalSectionTitle: CSSProperties = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: 'var(--fg3)',
+  margin: '0 0 12px 4px',
 }
 
 export default function TutorPage() {
@@ -46,22 +71,22 @@ export default function TutorPage() {
   const del = useDeleteDependent()
 
   const RELATIONSHIPS = catalogos?.parentescos ?? []
-  const DISABILITIES = catalogos?.tiposDiscapacidad?.map(d => d.label ?? d) ?? []
+  const DISABILITIES = catalogos?.tiposDiscapacidad?.map((d: { label?: string } | string) => (typeof d === 'string' ? d : d.label ?? '')) ?? []
   const LIFE_STAGES = catalogos?.etapasVida ?? []
   const AVAILABLE_FEATURES = catalogos?.features ?? []
 
   const [showCreate, setShowCreate] = useState(false)
-  const [editing, setEditing] = useState(null)
-  const [confirm, setConfirm] = useState(null)
-  const [confirmUnlink, setConfirmUnlink] = useState(null)
-  const [configuringFeatures, setConfiguringFeatures] = useState(null)
+  const [editing, setEditing] = useState<Dependiente | null>(null)
+  const [confirm, setConfirm] = useState<Dependiente | null>(null)
+  const [confirmUnlink, setConfirmUnlink] = useState<Dependiente | null>(null)
+  const [configuringFeatures, setConfiguringFeatures] = useState<(Dependiente & { isLinked?: boolean }) | null>(null)
   const updateFeatures = useUpdateDependentFeaturesPatch()
   const updatePCDFeatures = useUpdatePCDLinkedFeaturesPatch()
   const vincularPCD = useVincularPCD()
   const unlinkPCD = useUnlinkPCD()
   const [showVincular, setShowVincular] = useState(false)
-  const [permissionsFor, setPermissionsFor] = useState(null)
-  const [activeMenuId, setActiveMenuId] = useState(null)
+  const [permissionsFor, setPermissionsFor] = useState<{ id: string | number; nombreCompleto?: string } | null>(null)
+  const [activeMenuId, setActiveMenuId] = useState<string | number | null>(null)
 
   useEffect(() => {
     const handleCloseMenu = () => setActiveMenuId(null)
@@ -75,17 +100,17 @@ export default function TutorPage() {
   const countLimit = countData?.limite ?? null
   const limitReached = countLimit !== null && totalDeps >= countLimit
 
-  const handleCreate = (payload) => {
+  const handleCreate = (payload: CrearDependientePayload) => {
     if (payload.crearCuenta && payload.email && payload.password) {
       add.mutate(payload, {
         onSuccess: (newDep) => {
           if (payload.birth_date && newDep?.id) localStorage.setItem(`raices_dep_birth_date_${newDep.id}`, payload.birth_date)
           register.mutate({ email: payload.email, password: payload.password, dependienteId: newDep?.id }, {
             onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_CREATED, 'success'); setShowCreate(false) },
-            onError: (e) => addToast(TUTOR_TOAST.DEPENDENT_CREATED_WITH_ACCOUNT_WARNING + (e?.message ?? 'Error'), 'warning'),
+            onError: (e: Error) => addToast(TUTOR_TOAST.DEPENDENT_CREATED_WITH_ACCOUNT_WARNING + (e?.message ?? 'Error'), 'warning'),
           })
         },
-        onError: (e) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
+        onError: (e: Error) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
       })
     } else {
       add.mutate(payload, {
@@ -93,31 +118,39 @@ export default function TutorPage() {
           if (payload.birth_date && newDep?.id) localStorage.setItem(`raices_dep_birth_date_${newDep.id}`, payload.birth_date)
           addToast(TUTOR_TOAST.DEPENDENT_ADDED, 'success'); setShowCreate(false)
         },
-        onError: (e) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
+        onError: (e: Error) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
       })
     }
   }
 
-  const handleUpdate = (form) => {
+  const handleUpdate = (form: UpdateDependentPayload) => {
     if (form.birth_date && form.id) localStorage.setItem(`raices_dep_birth_date_${form.id}`, form.birth_date)
     update.mutate(form, {
       onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_UPDATED, 'success'); setEditing(null) },
-      onError: (e) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
+      onError: (e: Error) => addToast(e?.message ?? TUTOR_TOAST.SAVE_ERROR, 'error'),
     })
   }
 
-  const doDelete = () => del.mutate(confirm.id, {
-    onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_DELETED, 'success'); setConfirm(null) },
-    onError: () => addToast(TUTOR_TOAST.DELETE_ERROR, 'error'),
-  })
-
-  const handleFeaturesSave = ({ id, features, isLinked }) => {
-    const mutation = isLinked ? updatePCDFeatures : updateFeatures
-    const params = isLinked ? { pcdId: id, features } : { id, features }
-    mutation.mutate(params, {
-      onSuccess: () => { addToast(TUTOR_TOAST.FEATURES_UPDATED, 'success'); setConfiguringFeatures(null) },
-      onError: (e) => addToast(e?.message ?? TUTOR_TOAST.PERMISSIONS_ERROR, 'error'),
+  const doDelete = () => {
+    if (!confirm) return
+    del.mutate(confirm.id, {
+      onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_DELETED, 'success'); setConfirm(null) },
+      onError: () => addToast(TUTOR_TOAST.DELETE_ERROR, 'error'),
     })
+  }
+
+  const handleFeaturesSave = ({ id, features, isLinked }: { id: string | number; features: DependentFeatures; isLinked?: boolean }) => {
+    if (isLinked) {
+      updatePCDFeatures.mutate({ pcdId: id, features }, {
+        onSuccess: () => { addToast(TUTOR_TOAST.FEATURES_UPDATED, 'success'); setConfiguringFeatures(null) },
+        onError: (e: Error) => addToast(e?.message ?? TUTOR_TOAST.PERMISSIONS_ERROR, 'error'),
+      })
+    } else {
+      updateFeatures.mutate({ id, features }, {
+        onSuccess: () => { addToast(TUTOR_TOAST.FEATURES_UPDATED, 'success'); setConfiguringFeatures(null) },
+        onError: (e: Error) => addToast(e?.message ?? TUTOR_TOAST.PERMISSIONS_ERROR, 'error'),
+      })
+    }
   }
 
   const doUnlink = () => {
@@ -125,13 +158,16 @@ export default function TutorPage() {
     if (!pcdUserId) return
     unlinkPCD.mutate(pcdUserId, {
       onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_UNLINKED, 'success'); setConfirmUnlink(null) },
-      onError: (e) => addToast(e?.response?.data?.mensaje ?? e?.message ?? TUTOR_TOAST.UNLINK_ERROR, 'error'),
+      onError: (e: unknown) => {
+        const err = e as ApiErrorResponse
+        addToast(err?.response?.data?.mensaje ?? err?.message ?? TUTOR_TOAST.UNLINK_ERROR, 'error')
+      },
     })
   }
 
   return (
     <>
-      <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' }}>
+      <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' } as CSSProperties}>
         <style>{`
           .tutor-dropdown-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: var(--fg1); font-size: 13.5px; font-weight: 500; cursor: pointer; text-align: left; font-family: var(--font-body); transition: all 0.15s ease; }
           .tutor-dropdown-item:hover { background: var(--bg-warm) !important; }
@@ -169,7 +205,7 @@ export default function TutorPage() {
                 <div style={{ marginBottom: linkedDeps.length > 0 ? 28 : 0 }}>
                   <h2 style={{ ...minimalSectionTitle, display: 'flex', alignItems: 'center', gap: 6 }}>{TUTOR_UI.MANAGED_SECTION_TITLE}<span style={{ ...minimalBadge, fontSize: 11, padding: '2px 6px' }}>{managedDeps.length}</span></h2>
                   <div className="tutor-cards-grid stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
-                    {managedDeps.map(dep => <div key={dep?.id} className="animate-scale-in" style={{ position: 'relative', zIndex: activeMenuId === dep.id ? 10 : 1 }}><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data) => setPermissionsFor(data)} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} /></div>)}
+                    {managedDeps.map(dep => <div key={dep?.id} className="animate-scale-in" style={{ position: 'relative', zIndex: activeMenuId === dep.id ? 10 : 1 }}><DependentCard dep={dep} lifeStages={LIFE_STAGES} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onConfigureFeatures={() => setConfiguringFeatures(dep)} onPermissions={(data: { id: string | number; nombreCompleto?: string }) => setPermissionsFor(data)} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} /></div>)}
                   </div>
                 </div>
               )}
@@ -177,7 +213,7 @@ export default function TutorPage() {
                 <div>
                   <h2 style={{ ...minimalSectionTitle, display: 'flex', alignItems: 'center', gap: 6 }}>{TUTOR_UI.LINKED_SECTION_TITLE}<span style={{ ...minimalBadge, fontSize: 11, padding: '2px 6px' }}>{linkedDeps.length}</span></h2>
                   <div className="tutor-cards-grid stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
-                    {linkedDeps.map(dep => <div key={dep?.id || dep?.pcdUserId} className="animate-scale-in" style={{ position: 'relative', zIndex: activeMenuId === dep.id ? 10 : 1 }}><DependentCard dep={dep} lifeStages={LIFE_STAGES} isLinked={true} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onUnlink={() => setConfirmUnlink(dep)} onConfigureFeatures={() => setConfiguringFeatures({ ...dep, isLinked: true })} onPermissions={(data) => setPermissionsFor(data)} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} /></div>)}
+                    {linkedDeps.map(dep => <div key={dep?.id || dep?.pcdUserId} className="animate-scale-in" style={{ position: 'relative', zIndex: activeMenuId === dep.id ? 10 : 1 }}><DependentCard dep={dep} lifeStages={LIFE_STAGES} isLinked={true} onEdit={() => setEditing(dep)} onDelete={() => setConfirm(dep)} onUnlink={() => setConfirmUnlink(dep)} onConfigureFeatures={() => setConfiguringFeatures({ ...dep, isLinked: true })} onPermissions={(data: { id: string | number; nombreCompleto?: string }) => setPermissionsFor(data)} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} /></div>)}
                   </div>
                 </div>
               )}
@@ -191,8 +227,8 @@ export default function TutorPage() {
       {confirm && <ConfirmDialog title={TUTOR_UI.CONFIRM_DELETE_TITLE} message={`¿Seguro que quieres eliminar a "${confirm?.nombreCompleto || 'esta persona'}"? Se borrarán sus datos guardados.`} onConfirm={doDelete} onCancel={() => setConfirm(null)} />}
       {confirmUnlink && <ConfirmDialog title={TUTOR_UI.CONFIRM_UNLINK_TITLE} message={TUTOR_UI.CONFIRM_UNLINK_MESSAGE(confirmUnlink?.nombreCompleto || 'esta persona')} onConfirm={doUnlink} onCancel={() => setConfirmUnlink(null)} confirmLabel={TUTOR_UI.UNLINK_BUTTON} />}
       {configuringFeatures && <FeaturesConfigModal dependent={configuringFeatures} features={AVAILABLE_FEATURES} onSave={handleFeaturesSave} onCancel={() => setConfiguringFeatures(null)} saving={updateFeatures.isPending || updatePCDFeatures.isPending} />}
-      {showVincular && <VincularPCDModal onVincular={(email) => { vincularPCD.mutate(email, { onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) }, onError: (e) => addToast(e?.response?.data?.mensaje ?? e?.message ?? TUTOR_TOAST.LINK_ERROR, 'error') }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />}
-      {permissionsFor && <PermissionsModal dependienteId={permissionsFor.id} dependienteName={permissionsFor.nombreCompleto || 'esta persona'} onClose={() => setPermissionsFor(null)} />}
+      {showVincular && <VincularPCDModal onVincular={(email: string) => { vincularPCD.mutate(email, { onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_LINKED, 'success'); setShowVincular(false) }, onError: (e: unknown) => { const err = e as ApiErrorResponse; addToast(err?.response?.data?.mensaje ?? err?.message ?? TUTOR_TOAST.LINK_ERROR, 'error') } }) }} onCancel={() => setShowVincular(false)} saving={vincularPCD.isPending} />}
+      {permissionsFor && <PermissionsModal dependienteId={String(permissionsFor.id)} dependienteName={permissionsFor.nombreCompleto || 'esta persona'} onClose={() => setPermissionsFor(null)} />}
     </>
   )
 }

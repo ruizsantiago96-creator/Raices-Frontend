@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import {
   useRutas,
   useRutasSummary,
@@ -12,26 +12,38 @@ import {
 } from '../hooks/useRutas'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { Icons, labelStyle } from '@shared/components/shared'
+import type {
+  CreateRutaPayload,
+  PasoRuta,
+  RutaDesarrollo,
+  RutaPrioridad,
+  RutaEstado,
+} from '@/types/rutas'
 
-const PRIORITY_COLORS = {
+const PRIORITY_COLORS: Record<string, { bg: string; fg: string }> = {
   baja: { bg: 'rgba(75, 163, 163, 0.15)', fg: '#4BA3A3' },
   media: { bg: 'rgba(212, 148, 76, 0.15)', fg: '#D4944C' },
   alta: { bg: 'rgba(220, 53, 69, 0.15)', fg: '#DC3545' },
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   activa: 'Activa',
   completada: 'Completada',
   pausada: 'Pausada',
   cancelada: 'Cancelada',
 }
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
   activa: '#01ADFF',
   completada: '#10B981',
   pausada: '#D4944C',
   cancelada: '#94A3B8',
+}
+
+interface AreaItem {
+  id: string
+  label: string
 }
 
 export default function RutasPage() {
@@ -39,16 +51,19 @@ export default function RutasPage() {
   const { data: catalogos } = useCatalogos()
 
   // State filters
-  const [filterEstado, setFilterEstado] = useState('')
-  const [filterArea, setFilterArea] = useState('')
+  const [filterEstado, setFilterEstado] = useState<string>('')
+  const [filterArea, setFilterArea] = useState<string>('')
 
   // Queries
-  const { data: routes = [], isLoading: loadingRoutes } = useRutas({ estado: filterEstado || undefined, areaInteres: filterArea || undefined })
+  const { data: routes = [], isLoading: loadingRoutes } = useRutas({
+    estado: filterEstado || undefined,
+    areaInteres: filterArea || undefined,
+  })
   const { data: summary } = useRutasSummary()
 
   // Modals state
   const [createOpen, setCreateOpen] = useState(false)
-  const [selectedRouteId, setSelectedRouteId] = useState(null)
+  const [selectedRouteId, setSelectedRouteId] = useState<string | number | null>(null)
 
   // Hooks CRUD
   const createRuta = useCreateRuta()
@@ -56,7 +71,7 @@ export default function RutasPage() {
   const deleteRuta = useDeleteRuta(selectedRouteId)
 
   // Creation form state
-  const [newForm, setNewForm] = useState({
+  const [newForm, setNewForm] = useState<CreateRutaPayload>({
     nombre: '',
     descripcion: '',
     metaFinal: '',
@@ -66,7 +81,7 @@ export default function RutasPage() {
   })
 
   // Handle route creation
-  const handleCreate = async (e) => {
+  const handleCreate = async (e: FormEvent) => {
     e.preventDefault()
     if (!newForm.nombre || !newForm.areaInteres) {
       addToast('Nombre y Área de interés son requeridos', 'error')
@@ -95,7 +110,7 @@ export default function RutasPage() {
   }
 
   // Interest areas list
-  const listAreas = catalogos?.areasInteres ?? [
+  const listAreas: AreaItem[] = catalogos?.areasInteres ?? [
     { id: 'salud', label: 'Salud y Terapia' },
     { id: 'educacion', label: 'Educación' },
     { id: 'empleo', label: 'Empleo' },
@@ -103,7 +118,7 @@ export default function RutasPage() {
   ]
 
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '1100px' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '1100px' } as CSSProperties}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 20px 48px' }}>
         
         {/* Header */}
@@ -209,8 +224,8 @@ export default function RutasPage() {
                   <div>
                     {/* Tags */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: STATUS_COLORS[ruta.estado], background: 'rgba(255,255,255,0.8)' }}>
-                        ● {STATUS_LABELS[ruta.estado]}
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: STATUS_COLORS[ruta.estado] || '#01ADFF', background: 'rgba(255,255,255,0.8)' }}>
+                        ● {STATUS_LABELS[ruta.estado] || ruta.estado}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: prio.bg, color: prio.fg }}>
                         {ruta.prioridad}
@@ -275,7 +290,7 @@ export default function RutasPage() {
                 <div style={{ display: 'flex', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Prioridad</label>
-                    <select className="onboarding-input auth-select" value={newForm.prioridad} onChange={e => setNewForm(f => ({ ...f, prioridad: e.target.value }))} style={{ marginTop: 6 }}>
+                    <select className="onboarding-input auth-select" value={newForm.prioridad} onChange={e => setNewForm(f => ({ ...f, prioridad: e.target.value as RutaPrioridad }))} style={{ marginTop: 6 }}>
                       <option value="baja">Baja</option>
                       <option value="media">Media</option>
                       <option value="alta">Alta</option>
@@ -300,7 +315,13 @@ export default function RutasPage() {
 
         {/* ── ROUTE DETAIL MODAL ── */}
         {selectedRouteId && (
-          <RouteDetailModal routeId={selectedRouteId} onClose={() => setSelectedRouteId(null)} onDelete={handleDelete} listAreas={listAreas} updateRuta={updateRuta} />
+          <RouteDetailModal
+            routeId={selectedRouteId}
+            onClose={() => setSelectedRouteId(null)}
+            onDelete={handleDelete}
+            listAreas={listAreas}
+            updateRuta={updateRuta}
+          />
         )}
 
       </div>
@@ -308,7 +329,15 @@ export default function RutasPage() {
   )
 }
 
-function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta }) {
+interface RouteDetailModalProps {
+  routeId: string | number
+  onClose: () => void
+  onDelete: () => void
+  listAreas: AreaItem[]
+  updateRuta: ReturnType<typeof useUpdateRuta>
+}
+
+function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta }: RouteDetailModalProps) {
   const { addToast } = useUiStore()
   const { data: ruta, isLoading } = useRutaDetail(routeId)
   const addPaso = useAddPaso(routeId)
@@ -317,25 +346,25 @@ function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta })
 
   const [newStepTitle, setNewStepTitle] = useState('')
 
-  const handleStatusChange = async (e) => {
+  const handleStatusChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     try {
-      await updateRuta.mutateAsync({ estado: e.target.value })
+      await updateRuta.mutateAsync({ estado: e.target.value as RutaEstado })
       addToast('Estado actualizado', 'success')
     } catch {
       addToast('Error al actualizar el estado', 'error')
     }
   }
 
-  const handlePriorityChange = async (e) => {
+  const handlePriorityChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     try {
-      await updateRuta.mutateAsync({ prioridad: e.target.value })
+      await updateRuta.mutateAsync({ prioridad: e.target.value as RutaPrioridad })
       addToast('Prioridad actualizada', 'success')
     } catch {
       addToast('Error al actualizar la prioridad', 'error')
     }
   }
 
-  const handleAddStep = async (e) => {
+  const handleAddStep = async (e: FormEvent) => {
     e.preventDefault()
     if (!newStepTitle.trim()) return
     try {
@@ -347,7 +376,7 @@ function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta })
     }
   }
 
-  const handleTogglePaso = async (paso) => {
+  const handleTogglePaso = async (paso: PasoRuta) => {
     try {
       if (paso.completado) {
         await descompletarPaso.mutateAsync(paso.id)
@@ -386,7 +415,7 @@ function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta })
         <div style={{ background: 'var(--bg-warm)', borderRadius: 12, padding: 18, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 8 }}>
             <span>Progreso</span>
-            <span>{Math.round(ruta.porcentajeProgreso ?? 0)}% ({ruta.pasosCompletados} de {ruta.totalPasos} pasos)</span>
+            <span>{Math.round(ruta.porcentajeProgreso ?? 0)}% ({ruta.pasosCompletados ?? 0} de {ruta.totalPasos ?? 0} pasos)</span>
           </div>
           <div style={{ height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${ruta.porcentajeProgreso ?? 0}%`, background: STATUS_COLORS[ruta.estado] || 'var(--primary)', borderRadius: 4, transition: 'width 0.4s ease' }} />
@@ -425,7 +454,7 @@ function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta })
           {ruta.pasos?.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--fg3)', fontStyle: 'italic', margin: '8px 0' }}>No hay hitos creados aún. Agrega uno abajo.</p>
           ) : (
-            ruta.pasos?.map((paso, idx) => (
+            ruta.pasos?.map((paso: PasoRuta, idx: number) => (
               <label
                 key={paso.id}
                 style={{

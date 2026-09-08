@@ -3,9 +3,27 @@ import { useNavigate } from 'react-router-dom'
 import { useSaveEscalasVida } from '@features/profile/hooks/useProfile'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { Icons, labelStyle } from '@shared/components/shared'
+import type {
+  EscalaVidaItem,
+  EscalasVidaValues,
+} from '@/types/rutas'
 
-const SCALES = [
+interface CatalogOption {
+  id: string
+  label: string
+  description?: string
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string
+    }
+  }
+}
+
+const SCALES: EscalaVidaItem[] = [
   {
     key: 'nivelAutonomia',
     label: 'Autonomía',
@@ -104,7 +122,7 @@ const SCALES = [
   }
 ]
 
-const LEVEL_LABELS = {
+const LEVEL_LABELS: Record<number, { title: string; desc: string }> = {
   1: { title: 'Nivel 1: Apoyo total', desc: 'Requiere asistencia constante y directa en esta área.' },
   2: { title: 'Nivel 2: Apoyo sustancial', desc: 'Realiza actividades con supervisión o asistencia parcial frecuente.' },
   3: { title: 'Nivel 3: Apoyo moderado', desc: 'Es mayormente autónomo, requiere apoyos puntuales o recordatorios.' },
@@ -117,7 +135,7 @@ export default function EscalasVidaPage() {
   const saveEscalas = useSaveEscalasVida()
   const { data: catalogos } = useCatalogos()
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<EscalasVidaValues>({
     nivelAutonomia: 3,
     nivelIndependencia: 3,
     nivelComunicacion: 3,
@@ -135,18 +153,21 @@ export default function EscalasVidaPage() {
 
   const [activeStep, setActiveStep] = useState(1) // 1: Scales, 2: Metadata
 
-  const handleToggleArea = (id) => {
-    setForm(f => ({
-      ...f,
-      areasInteres: f.areasInteres.includes(id)
-        ? f.areasInteres.filter(a => a !== id)
-        : [...f.areasInteres, id]
-    }))
+  const handleToggleArea = (id: string) => {
+    setForm(f => {
+      const currentAreas = f.areasInteres ?? []
+      return {
+        ...f,
+        areasInteres: currentAreas.includes(id)
+          ? currentAreas.filter(a => a !== id)
+          : [...currentAreas, id]
+      }
+    })
   }
 
   const handleSave = async () => {
     try {
-      const payload = {
+      const payload: EscalasVidaValues = {
         ...form,
         nivelAutonomia: Number(form.nivelAutonomia),
         nivelIndependencia: Number(form.nivelIndependencia),
@@ -160,13 +181,14 @@ export default function EscalasVidaPage() {
       await saveEscalas.mutateAsync(payload)
       addToast('¡Evaluación guardada con éxito!', 'success')
       navigate('/dashboard')
-    } catch (err) {
-      addToast(err.response?.data?.message || 'No se pudo guardar la evaluación. Intenta de nuevo.', 'error')
+    } catch (err: unknown) {
+      const apiErr = err as ApiError
+      addToast(apiErr?.response?.data?.message || 'No se pudo guardar la evaluación. Intenta de nuevo.', 'error')
     }
   }
 
   // Get catalogs options
-  const listTemporalidad = catalogos?.temporalidadOrigen ?? [
+  const listTemporalidad: CatalogOption[] = catalogos?.temporalidadOrigen ?? [
     { id: 'nacimiento', label: 'Desde nacimiento' },
     { id: 'infancia', label: 'Infancia' },
     { id: 'adolescencia', label: 'Adolescencia' },
@@ -174,20 +196,20 @@ export default function EscalasVidaPage() {
     { id: 'progresiva', label: 'Progresiva' },
     { id: 'en_evaluacion', label: 'En evaluación' },
   ]
-  const listFormatos = catalogos?.preferenciaFormato ?? [
+  const listFormatos: CatalogOption[] = catalogos?.preferenciaFormato ?? [
     { id: 'texto', label: 'Texto', description: 'Artículos, guías y documentos' },
     { id: 'imagenes', label: 'Imágenes', description: 'Infografías y fotos' },
     { id: 'audio', label: 'Audio', description: 'Podcasts y audiolibros' },
     { id: 'video', label: 'Video', description: 'Tutoriales y videos' },
     { id: 'presencial', label: 'Presencial', description: 'Actividades en persona' },
   ]
-  const listViabilidad = catalogos?.viabilidadEconomica ?? [
+  const listViabilidad: CatalogOption[] = catalogos?.viabilidadEconomica ?? [
     { id: 'gratuita_becas', label: 'Gratuita o con becas' },
     { id: 'bajo_costo', label: 'Bajo costo' },
     { id: 'moderada', label: 'Costo moderado' },
     { id: 'sin_restricciones', label: 'Sin restricciones' },
   ]
-  const listAreas = catalogos?.areasInteres ?? [
+  const listAreas: CatalogOption[] = catalogos?.areasInteres ?? [
     { id: 'salud', label: 'Salud y Terapia' },
     { id: 'educacion', label: 'Educación' },
     { id: 'empleo', label: 'Empleo' },
@@ -220,7 +242,7 @@ export default function EscalasVidaPage() {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', marginBottom: 20 }}>1. Evalúa tus escalas de vida (Niveles del 1 al 4)</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {SCALES.map((scale) => {
-              const currentLevel = form[scale.key]
+              const currentLevel = Number(form[scale.key] ?? 3)
               return (
                 <div key={scale.key} style={{
                   background: 'var(--bg-surface)',
@@ -298,10 +320,10 @@ export default function EscalasVidaPage() {
                     fontSize: 13,
                   }}>
                     <strong style={{ color: 'var(--fg1)', display: 'block', marginBottom: 2 }}>
-                      {LEVEL_LABELS[currentLevel].title}
+                      {LEVEL_LABELS[currentLevel]?.title}
                     </strong>
                     <span style={{ color: 'var(--fg2)' }}>
-                      {LEVEL_LABELS[currentLevel].desc}
+                      {LEVEL_LABELS[currentLevel]?.desc}
                     </span>
                   </div>
                 </div>
@@ -400,7 +422,7 @@ export default function EscalasVidaPage() {
               <label style={{ ...labelStyle, display: 'block', marginBottom: 12 }}>Áreas de interés principales</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                 {listAreas.map(area => {
-                  const isChecked = form.areasInteres.includes(area.id)
+                  const isChecked = form.areasInteres?.includes(area.id)
                   return (
                     <button key={area.id} type="button" onClick={() => handleToggleArea(area.id)} style={{
                       padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-color)'}`,

@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { TUTOR_UI } from '../constants/tutorMessages'
 
+/**
+ * @param {{ initial?: any, onCancel: () => void, onSave: (data: any) => void, saving?: boolean, relationships?: string[], lifeStages?: any[], disabilities?: string[] }} props
+ */
 export default function DependentForm({ initial, onCancel, onSave, saving, relationships = [], disabilities = [] }) {
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
