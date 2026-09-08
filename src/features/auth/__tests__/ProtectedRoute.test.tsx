@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import React from 'react'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from '../components/ProtectedRoute'
@@ -8,7 +9,7 @@ beforeEach(() => {
   useAuthStore.setState({ token: null, user: null, refreshToken: null })
 })
 
-function renderWithRouter(ui, { route = '/' } = {}) {
+function renderWithRouter(ui: React.ReactElement, { route = '/' } = {}) {
   return render(
     <MemoryRouter initialEntries={[route]}>
       <Routes>
@@ -48,7 +49,7 @@ describe('features/auth/components/ProtectedRoute', () => {
     beforeEach(() => {
       useAuthStore.setState({
         token: 'valid-token',
-        user: { id: '1', role: 'pcd', full_name: 'Test User' },
+        user: { id: '1', email: 'test@example.com', role: 'pcd', full_name: 'Test User' },
       })
     })
 
@@ -77,7 +78,7 @@ describe('features/auth/components/ProtectedRoute', () => {
     beforeEach(() => {
       useAuthStore.setState({
         token: 'valid-token',
-        user: { id: '1', role: 'pcd', full_name: 'Test User' },
+        user: { id: '1', email: 'test@example.com', role: 'pcd', full_name: 'Test User' },
       })
     })
 
@@ -104,7 +105,7 @@ describe('features/auth/components/ProtectedRoute', () => {
 
     it('redirects to /dashboard for tutor role when expecting pcd', () => {
       useAuthStore.setState({
-        user: { id: '2', role: 'tutor', full_name: 'Tutor User' },
+        user: { id: '2', email: 'tutor@example.com', role: 'tutor', full_name: 'Tutor User' },
       })
       renderWithRouter(
         <ProtectedRoute role="pcd">
@@ -127,7 +128,7 @@ describe('features/auth/components/ProtectedRoute', () => {
 
     it('allows admin role to access admin route', () => {
       useAuthStore.setState({
-        user: { id: '3', role: 'admin', full_name: 'Admin User' },
+        user: { id: '3', email: 'admin@example.com', role: 'admin', full_name: 'Admin User' },
       })
       renderWithRouter(
         <ProtectedRoute role="admin">
@@ -140,7 +141,7 @@ describe('features/auth/components/ProtectedRoute', () => {
 
     it('allows institution role to access institution route', () => {
       useAuthStore.setState({
-        user: { id: '4', role: 'institution', full_name: 'Institution User' },
+        user: { id: '4', email: 'inst@example.com', role: 'institution', full_name: 'Institution User' },
       })
       renderWithRouter(
         <ProtectedRoute role="institution">

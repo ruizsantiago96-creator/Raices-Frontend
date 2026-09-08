@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { useA11yStore, applyA11yAttributes } from '../store/a11yStore'
+import type { A11yState } from '@/types/a11y'
 
 beforeEach(() => {
   // Reset store to defaults
@@ -100,7 +101,7 @@ describe('features/a11y/store/a11yStore', () => {
       ['toggleHighlightLinks', 'highlightLinks'],
       ['toggleMotorSpacing', 'motorSpacing'],
       ['toggleVisualAlerts', 'visualAlerts'],
-    ]
+    ] as const
 
     toggleMap.forEach(([method, key]) => {
       it(`${method} toggles from false to true`, () => {
@@ -190,10 +191,10 @@ describe('features/a11y/store/a11yStore', () => {
 // applyA11yAttributes
 // ═══════════════════════════════════════════════════════════════
 describe('applyA11yAttributes', () => {
-  const defaultState = {
+  const defaultState: A11yState = {
     textScale: 'base', highContrast: false, easyRead: false, reducedMotion: false,
     colorblindMode: 'none', darkMode: false, largeCursor: false, readingGuide: false,
-    highlightLinks: false, motorSpacing: false, visualAlerts: false,
+    highlightLinks: false, motorSpacing: false, visualAlerts: false, ttsEnabled: false,
   }
 
   it('applies text-scale attribute', () => {

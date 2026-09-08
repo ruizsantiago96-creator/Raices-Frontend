@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@test/renderWithProviders'
 import { useProfile, useUpdateProfile } from '../hooks/useProfile'
 import userEvent from '@testing-library/user-event'
@@ -18,7 +18,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({
     token: 'test-token',
-    user: { id: '1', role: 'pcd', full_name: 'Test User' },
+    user: { id: '1', email: 'test@example.com', role: 'pcd', full_name: 'Test User' },
   })
 })
 

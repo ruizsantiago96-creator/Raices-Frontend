@@ -84,20 +84,26 @@ const TUTOR_LOGIN_RESPONSE = {
    los pasos no bloqueen; las llamadas que importan se verifican
    explícitamente en cada test. */
 
-function stubApi(responses) {
-  const byMethod = { post: {}, put: {}, get: {}, delete: {} }
+type HttpMethod = 'post' | 'put' | 'get' | 'delete'
+
+function stubApi(responses: Record<string, unknown>) {
+  const byMethod: Record<HttpMethod, Record<string, unknown>> = { post: {}, put: {}, get: {}, delete: {} }
   Object.entries(responses).forEach(([key, data]) => {
-    const [method, url] = key.split(' ')
-    byMethod[method][url] = data
+    const [method, url] = key.split(' ') as [HttpMethod, string]
+    if (byMethod[method]) {
+      byMethod[method][url] = data
+    }
   })
-  mockApi.post.mockImplementation((url) => Promise.resolve({ data: byMethod.post[url] ?? {} }))
-  mockApi.put.mockImplementation((url) => Promise.resolve({ data: byMethod.put[url] ?? {} }))
-  mockApi.get.mockImplementation((url) => Promise.resolve({ data: byMethod.get[url] ?? {} }))
-  mockApi.delete.mockImplementation((url) => Promise.resolve({ data: byMethod.delete[url] ?? {} }))
+  mockApi.post.mockImplementation((url: string) => Promise.resolve({ data: byMethod.post[url] ?? {} }))
+  mockApi.put.mockImplementation((url: string) => Promise.resolve({ data: byMethod.put[url] ?? {} }))
+  mockApi.get.mockImplementation((url: string) => Promise.resolve({ data: byMethod.get[url] ?? {} }))
+  mockApi.delete.mockImplementation((url: string) => Promise.resolve({ data: byMethod.delete[url] ?? {} }))
 }
 
-const callsFor = (method, url) => mockApi[method].mock.calls.filter(([u]) => u === url)
-const lastCallFor = (method, url) => callsFor(method, url).at(-1)?.[1]
+const callsFor = (method: HttpMethod, url: string) =>
+  (mockApi[method] as ReturnType<typeof vi.fn>).mock.calls.filter((args: unknown[]) => args[0] === url)
+const lastCallFor = (method: HttpMethod, url: string) =>
+  callsFor(method, url).at(-1)?.[1]
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -111,7 +117,7 @@ beforeEach(() => {
    campos reales. Los `await screen.findBy…` esperan a que el paso
    siguiente esté renderizado antes de interactuar. */
 
-const clickButton = (name) => fireEvent.click(screen.getByRole('button', { name }))
+const clickButton = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 
 function fillStateCity() {
   const selects = screen.getAllByRole('combobox')
@@ -119,11 +125,12 @@ function fillStateCity() {
   fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: MUNICIPIO } })
 }
 
-async function fillIdentityStep(nombrePlaceholder) {
+async function fillIdentityStep(nombrePlaceholder: string) {
   fireEvent.change(screen.getByPlaceholderText(nombrePlaceholder), { target: { value: 'Ana' } })
   fireEvent.change(screen.getByPlaceholderText('Ej. García'), { target: { value: 'Pérez' } })
   fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
-  fireEvent.change(document.querySelector('input[type="date"]'), { target: { value: BIRTH_DATE } })
+  const dateInput = document.querySelector('input[type="date"]')
+  if (dateInput) fireEvent.change(dateInput, { target: { value: BIRTH_DATE } })
   fillStateCity()
   clickButton(/^continuar$/i)
 }
@@ -251,7 +258,8 @@ async function completeTutorWizard() {
 
   await screen.findByText(/para quién es el perfil/i)
   fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
-  fireEvent.change(document.querySelector('input[type="date"]'), { target: { value: DEP_BIRTH_DATE } })
+  const depDateInput = document.querySelector('input[type="date"]')
+  if (depDateInput) fireEvent.change(depDateInput, { target: { value: DEP_BIRTH_DATE } })
   clickButton(/^continuar$/i)
 
   await screen.findByText(/preferencia de acompañamiento/i)
@@ -335,10 +343,10 @@ describe('Contrato de registro — PCD', () => {
     // Persistencia de sesión (setAuth) + onboarding
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tk-123')
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_REFRESH)).toBe('rt-123')
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH_USER))).toMatchObject({ full_name: NOMBRE_COMPLETO })
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH_USER) ?? '{}')).toMatchObject({ full_name: NOMBRE_COMPLETO })
     expect(localStorage.getItem(STORAGE_KEYS.USER_INTERESTS)).toBe(JSON.stringify(['Música']))
     expect(localStorage.getItem(STORAGE_KEYS.USER_VIABILITY)).toBe('gratuita_becas')
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE))).toHaveProperty('quienEres')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
 
     // Llega a la pantalla de agradecimiento
     expect(await screen.findByText(/muchas gracias por tu confianza/i)).toBeInTheDocument()
@@ -363,7 +371,7 @@ describe('Contrato de registro — PCD', () => {
     // Sin sesión persistida, pero con onboarding local (narrativa)
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBeNull()
     expect(localStorage.getItem(STORAGE_KEYS.USER_INTERESTS)).toBe(JSON.stringify(['Música']))
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE))).toHaveProperty('quienEres')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
 
     expect(await screen.findByText(/muchas gracias por tu confianza/i)).toBeInTheDocument()
   }, 20000)
@@ -476,7 +484,7 @@ describe('Contrato de registro — Tutor', () => {
 
     // Sesión persistida con el token del auto-login
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tt-1')
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE))).toHaveProperty('quienEres')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
 
     expect(await screen.findByText(/gracias por ser el apoyo de/i)).toBeInTheDocument()
   }, 20000)

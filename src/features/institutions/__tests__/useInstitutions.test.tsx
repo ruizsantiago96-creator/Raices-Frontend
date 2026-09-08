@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@test/renderWithProviders'
 import { useInstitutions } from '../hooks/useInstitutions'
 import api from '@shared/lib/api'
+import type { FiltrosInstituciones } from '@/types/institutions'
 
 vi.mock('@shared/lib/api', () => ({
   default: {
@@ -17,7 +18,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function InstitutionsTestComponent({ filters = {} }) {
+function InstitutionsTestComponent({ filters = {} }: { filters?: FiltrosInstituciones }) {
   const { data, isLoading, isError } = useInstitutions(filters)
   if (isLoading) return <div data-testid="loading">Loading...</div>
   if (isError) return <div data-testid="error">Error</div>

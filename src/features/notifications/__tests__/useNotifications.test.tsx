@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@test/renderWithProviders'
 import { useNotifications, useMarkRead, useMarkAllRead } from '../hooks/useNotifications'
@@ -26,7 +26,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({
     token: 'test-token',
-    user: { id: '1', role: 'pcd', full_name: 'Test User' },
+    user: { id: '1', email: 'test@example.com', role: 'pcd', full_name: 'Test User' },
   })
 })
 

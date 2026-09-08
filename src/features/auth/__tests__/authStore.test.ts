@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useAuthStore } from '../store/authStore'
+import type { User } from '@/types/auth'
 
 // Mock notification stream dependencies
 const mockSuspendStream = vi.fn()
@@ -7,9 +8,9 @@ const mockCloseNotificationStream = vi.fn()
 const mockResumeStream = vi.fn()
 
 vi.mock('@features/notifications', () => ({
-  closeNotificationStream: (...args) => mockCloseNotificationStream(...args),
-  suspendStream: (...args) => mockSuspendStream(...args),
-  resumeStream: (...args) => mockResumeStream(...args),
+  closeNotificationStream: (...args: unknown[]) => mockCloseNotificationStream(...args),
+  suspendStream: (...args: unknown[]) => mockSuspendStream(...args),
+  resumeStream: (...args: unknown[]) => mockResumeStream(...args),
 }))
 
 beforeEach(() => {
@@ -24,6 +25,8 @@ beforeEach(() => {
 })
 
 describe('features/auth/store/authStore', () => {
+  const mockUser: User = { id: '1', email: 'test@test.com', role: 'pcd', full_name: 'Test User' }
+
   // ═══════════════════════════════════════════════════════════════
   // Initial State
   // ═══════════════════════════════════════════════════════════════
@@ -45,7 +48,6 @@ describe('features/auth/store/authStore', () => {
   // setAuth
   // ═══════════════════════════════════════════════════════════════
   describe('setAuth', () => {
-    const mockUser = { id: '1', email: 'test@test.com', role: 'pcd', full_name: 'Test User' }
 
     it('sets token, user, and refreshToken', () => {
       useAuthStore.getState().setAuth('token-123', mockUser, 'refresh-456', true)
@@ -77,7 +79,7 @@ describe('features/auth/store/authStore', () => {
 
     it('saves user data', () => {
       useAuthStore.getState().setAuth('token', mockUser, 'refresh', true)
-      const stored = JSON.parse(localStorage.getItem('raices_user'))
+      const stored = JSON.parse(localStorage.getItem('raices_user') ?? '{}')
       expect(stored).toEqual(mockUser)
     })
 
@@ -97,7 +99,7 @@ describe('features/auth/store/authStore', () => {
   // ═══════════════════════════════════════════════════════════════
   describe('logout', () => {
     it('clears token, user, and refreshToken', () => {
-      useAuthStore.getState().setAuth('token', { id: '1' }, 'refresh', true)
+      useAuthStore.getState().setAuth('token', mockUser, 'refresh', true)
       useAuthStore.getState().logout()
 
       const s = useAuthStore.getState()
@@ -161,7 +163,7 @@ describe('features/auth/store/authStore', () => {
   // ═══════════════════════════════════════════════════════════════
   describe('state transitions', () => {
     it('full login -> logout cycle', () => {
-      const user = { id: '1', email: 'test@test.com', role: 'pcd' }
+      const user: User = { id: '1', email: 'test@test.com', role: 'pcd', full_name: 'Test User' }
 
       // Login
       useAuthStore.getState().setAuth('token-abc', user, 'refresh-xyz', true)
@@ -176,8 +178,8 @@ describe('features/auth/store/authStore', () => {
     })
 
     it('setAuth overwrites previous auth data', () => {
-      const user1 = { id: '1', role: 'pcd' }
-      const user2 = { id: '2', role: 'admin' }
+      const user1: User = { id: '1', email: 'user1@test.com', role: 'pcd', full_name: 'User One' }
+      const user2: User = { id: '2', email: 'user2@test.com', role: 'admin', full_name: 'User Two' }
 
       useAuthStore.getState().setAuth('token1', user1, 'refresh1', true)
       useAuthStore.getState().setAuth('token2', user2, 'refresh2', true)

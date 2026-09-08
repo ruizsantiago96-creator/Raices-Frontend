@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@test/renderWithProviders'
 import { useJobs, useApplyJob } from '../hooks/useJobs'
 import userEvent from '@testing-library/user-event'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
+import type { JobFilters } from '@/types/jobs'
 
 vi.mock('@shared/lib/api', () => ({
   default: {
@@ -17,11 +18,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({
     token: 'test-token',
-    user: { id: '1', role: 'pcd', full_name: 'Test User' },
+    user: { id: '1', email: 'test@example.com', role: 'pcd', full_name: 'Test User' },
   })
 })
 
-function JobsTestComponent({ filters = {} }) {
+function JobsTestComponent({ filters = {} }: { filters?: JobFilters }) {
   const { data, isLoading, isError } = useJobs(filters)
   if (isLoading) return <div data-testid="loading">Loading...</div>
   if (isError) return <div data-testid="error">Error</div>
