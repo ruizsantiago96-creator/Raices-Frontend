@@ -12,6 +12,7 @@ import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
 import ProfileCompletionModal from '../components/ProfileCompletionModal'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
+import type { CommunityPost } from '@/types/social'
 
 /* ═══════════════════════════════════════════════════════════
    Contracts & Interfaces
@@ -890,7 +891,7 @@ export default function FeedPage() {
               if (item._type === 'post') {
                 return (
                   <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
-                    <CommunityPostCard post={item._raw} />
+                    <CommunityPostCard post={item._raw as CommunityPost} />
                   </div>
                 )
               }
@@ -898,7 +899,7 @@ export default function FeedPage() {
               if (item._type === 'forum') {
                 return (
                   <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
-                    <ForumFeedCard forum={item._raw} />
+                    <ForumFeedCard forum={item._raw as ForoItem} />
                   </div>
                 )
               }

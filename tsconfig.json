@@ -15,7 +15,7 @@
 
     /* Linting / Incremental Migration */
     "strict": true,
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
     "noImplicitReturns": true,
     "noUnusedLocals": true,

@@ -56,7 +56,7 @@ export default function AdminPage() {
         {tab === 'reviews' && <ReviewsTab />}
         {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
         {tab === 'settings' && <SettingsTab />}
-        {tab === 'audit' && <AuditTab />}
+        {tab === 'audit' && <AuditTab onNavigate={onTab} />}
       </div>
     </main>
   )

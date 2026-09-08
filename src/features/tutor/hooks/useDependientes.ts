@@ -184,7 +184,7 @@ export function useVincularPCD() {
  */
 export function useUnlinkPCD() {
   const qc = useQueryClient()
-  return useMutation<{ desvinculado: boolean; pcdUserId: string; tutorId: string }, Error, string | number>({
+  return useMutation<{ desvinculado: boolean; pcdUserId: string | number; tutorId: string | number }, Error, string | number>({
     mutationFn: (pcdUserId) => unlinkPCD(String(pcdUserId)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dependientes'] })

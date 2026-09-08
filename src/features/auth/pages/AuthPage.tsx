@@ -390,16 +390,19 @@ export default function AuthPage() {
                       {error && <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">{Icons.shieldAlert({ s: 18 })} {error}</div>}
                       <fieldset style={{ border: 'none', padding: 0, margin: '0 0 20px' }}>
                         <legend className="sr-only">Selecciona tu tipo de cuenta</legend>
-                        {ROLES.map(r => (
-                          <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))} aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
-                            <span style={s.avatar(form.role === r.id)}>{r.icon({ active: false })}</span>
-                            <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 14, width: 'calc(100% - 100px)' }}>
-                              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
-                              <span style={{ display: 'block', fontSize: 12, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
-                            </span>
-                            {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)', marginLeft: 'auto' }}>{Icons.check({ s: 20 })}</span>}
-                          </button>
-                        ))}
+                        {ROLES.map(r => {
+                          const RoleIcon = r.icon
+                          return (
+                            <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))} aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
+                              <span style={s.avatar(form.role === r.id)}><RoleIcon active={false} /></span>
+                              <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 14, width: 'calc(100% - 100px)' }}>
+                                <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
+                                <span style={{ display: 'block', fontSize: 12, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
+                              </span>
+                              {form.role === r.id && <span style={{ display: 'inline-block', verticalAlign: 'middle', color: 'var(--primary)', marginLeft: 'auto' }}>{Icons.check({ s: 20 })}</span>}
+                            </button>
+                          )
+                        })}
                       </fieldset>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}><button className="auth-btn-primary" type="button" onClick={() => setRegStep('consent')}>Continuar {Icons.arrowRight({ s: 18 })}</button></div>
                     </>

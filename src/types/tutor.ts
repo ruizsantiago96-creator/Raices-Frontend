@@ -12,6 +12,8 @@ export interface DependentFeatures {
   [key: string]: boolean | undefined
 }
 
+export type { EtapaVidaOption } from '@shared/hooks/useCatalogos'
+
 // ─── Entidad Dependiente / Persona Vinculada ─────────────────────
 export interface Dependiente {
   id: string | number

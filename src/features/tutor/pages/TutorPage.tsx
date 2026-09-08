@@ -29,6 +29,7 @@ import type {
   CrearDependientePayload,
   UpdateDependentPayload,
   DependentFeatures,
+  EtapaVidaOption,
 } from '@/types/tutor'
 
 interface ApiErrorResponse {
@@ -70,10 +71,10 @@ export default function TutorPage() {
   const update = useUpdateDependent()
   const del = useDeleteDependent()
 
-  const RELATIONSHIPS = catalogos?.parentescos ?? []
-  const DISABILITIES = catalogos?.tiposDiscapacidad?.map((d: { label?: string } | string) => (typeof d === 'string' ? d : d.label ?? '')) ?? []
-  const LIFE_STAGES = catalogos?.etapasVida ?? []
-  const AVAILABLE_FEATURES = catalogos?.features ?? []
+  const RELATIONSHIPS = catalogos?.parentescos ?? ([] as string[])
+  const DISABILITIES = catalogos?.tiposDiscapacidad?.map((d: { label?: string } | string) => (typeof d === 'string' ? d : d.label ?? '')) ?? ([] as string[])
+  const LIFE_STAGES = catalogos?.etapasVida ?? ([] as EtapaVidaOption[])
+  const AVAILABLE_FEATURES = catalogos?.features ?? ([] as string[])
 
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<Dependiente | null>(null)
@@ -100,12 +101,13 @@ export default function TutorPage() {
   const countLimit = countData?.limite ?? null
   const limitReached = countLimit !== null && totalDeps >= countLimit
 
-  const handleCreate = (payload: CrearDependientePayload) => {
+  const handleCreate = (data: CrearDependientePayload | UpdateDependentPayload) => {
+    const payload = data as CrearDependientePayload
     if (payload.crearCuenta && payload.email && payload.password) {
       add.mutate(payload, {
         onSuccess: (newDep) => {
           if (payload.birth_date && newDep?.id) localStorage.setItem(`raices_dep_birth_date_${newDep.id}`, payload.birth_date)
-          register.mutate({ email: payload.email, password: payload.password, dependienteId: newDep?.id }, {
+          register.mutate({ email: payload.email, password: payload.password, dependienteId: newDep?.id } as Parameters<typeof register.mutate>[0], {
             onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_CREATED, 'success'); setShowCreate(false) },
             onError: (e: Error) => addToast(TUTOR_TOAST.DEPENDENT_CREATED_WITH_ACCOUNT_WARNING + (e?.message ?? 'Error'), 'warning'),
           })
@@ -123,7 +125,8 @@ export default function TutorPage() {
     }
   }
 
-  const handleUpdate = (form: UpdateDependentPayload) => {
+  const handleUpdate = (data: CrearDependientePayload | UpdateDependentPayload) => {
+    const form = data as UpdateDependentPayload
     if (form.birth_date && form.id) localStorage.setItem(`raices_dep_birth_date_${form.id}`, form.birth_date)
     update.mutate(form, {
       onSuccess: () => { addToast(TUTOR_TOAST.DEPENDENT_UPDATED, 'success'); setEditing(null) },
