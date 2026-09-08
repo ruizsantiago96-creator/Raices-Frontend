@@ -2,7 +2,6 @@
  * Design Preview — New Color Scheme Demo
  * Primary: #01ADFF (Blue) | Secondary: #F1FA3F (Yellow/Lime)
  */
-import type { CSSProperties } from 'react'
 import { BrandMark } from '@shared/components/shared'
 
 const COLORS = {
@@ -196,7 +195,7 @@ export default function DesignPreview() {
 
 // ── Button Styles ──────────────────────────────────────────────────
 
-const btnBase: CSSProperties = {
+const btnBase = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -213,13 +212,13 @@ const btnBase: CSSProperties = {
   transition: 'all 0.15s ease',
 }
 
-const btnPrimary: CSSProperties = {
+const btnPrimary = {
   ...btnBase,
   background: COLORS.primary,
   color: '#FFFFFF',
 }
 
-const btnPrimarySmall: CSSProperties = {
+const btnPrimarySmall = {
   ...btnBase,
   fontSize: 13,
   padding: '8px 14px',
@@ -228,14 +227,14 @@ const btnPrimarySmall: CSSProperties = {
   color: '#FFFFFF',
 }
 
-const btnSecondary: CSSProperties = {
+const btnSecondary = {
   ...btnBase,
   background: '#F1F5F9',
   color: COLORS.fg1,
   border: '1px solid #E2E8F0',
 }
 
-const btnSecondarySmall: CSSProperties = {
+const btnSecondarySmall = {
   ...btnBase,
   fontSize: 13,
   padding: '8px 14px',
@@ -244,27 +243,27 @@ const btnSecondarySmall: CSSProperties = {
   color: COLORS.fg1,
 }
 
-const btnOutline: CSSProperties = {
+const btnOutline = {
   ...btnBase,
   background: 'transparent',
   color: COLORS.fg1,
   border: `1px solid ${COLORS.border}`,
 }
 
-const btnGhost: CSSProperties = {
+const btnGhost = {
   ...btnBase,
   background: 'transparent',
   color: COLORS.fg2,
 }
 
-const btnPill: CSSProperties = {
+const btnPill = {
   ...btnBase,
   background: COLORS.primary,
   color: '#FFFFFF',
   borderRadius: 9999,
 }
 
-const btnPillSecondary: CSSProperties = {
+const btnPillSecondary = {
   ...btnBase,
   background: COLORS.secondary,
   color: COLORS.fg1,
@@ -273,7 +272,7 @@ const btnPillSecondary: CSSProperties = {
 
 // ── Card Style ─────────────────────────────────────────────────────
 
-const cardStyle: CSSProperties = {
+const cardStyle = {
   background: '#FFFFFF',
   borderRadius: 12,
   padding: 24,
@@ -281,7 +280,7 @@ const cardStyle: CSSProperties = {
 
 // ── Form Styles ────────────────────────────────────────────────────
 
-const labelStyle: CSSProperties = {
+const labelStyle = {
   display: 'block',
   fontSize: 14,
   fontWeight: 600,
@@ -289,7 +288,7 @@ const labelStyle: CSSProperties = {
   marginBottom: 6,
 }
 
-const inputStyle: CSSProperties = {
+const inputStyle = {
   width: '100%',
   height: 44,
   padding: '0 14px',
@@ -299,22 +298,22 @@ const inputStyle: CSSProperties = {
   border: `1px solid ${COLORS.border}`,
   borderRadius: 8,
   outline: 'none',
-  boxSizing: 'border-box',
+  boxSizing: 'border-box' as const,
   transition: 'border-color 0.15s ease',
 }
 
 // ── Badge Styles ───────────────────────────────────────────────────
 
-const badgeBase: CSSProperties = {
+const badgeBase = {
   padding: '4px 10px',
   borderRadius: 6,
   fontSize: 12,
   fontWeight: 600,
 }
 
-const badgePrimary: CSSProperties = { ...badgeBase, background: COLORS.primarySubtle, color: COLORS.primary }
-const badgeSecondary: CSSProperties = { ...badgeBase, background: COLORS.secondarySubtle, color: '#8B7A00' }
-const badgeOutline: CSSProperties = { ...badgeBase, background: 'transparent', color: COLORS.fg2, border: `1px solid ${COLORS.border}` }
-const badgeSuccess: CSSProperties = { ...badgeBase, background: 'rgba(34,197,94,0.12)', color: '#16A34A' }
-const badgeWarning: CSSProperties = { ...badgeBase, background: 'rgba(234,179,8,0.12)', color: '#CA8A04' }
-const badgeError: CSSProperties = { ...badgeBase, background: 'rgba(239,68,68,0.12)', color: '#DC2626' }
+const badgePrimary = { ...badgeBase, background: COLORS.primarySubtle, color: COLORS.primary }
+const badgeSecondary = { ...badgeBase, background: COLORS.secondarySubtle, color: '#8B7A00' }
+const badgeOutline = { ...badgeBase, background: 'transparent', color: COLORS.fg2, border: `1px solid ${COLORS.border}` }
+const badgeSuccess = { ...badgeBase, background: 'rgba(34,197,94,0.12)', color: '#16A34A' }
+const badgeWarning = { ...badgeBase, background: 'rgba(234,179,8,0.12)', color: '#CA8A04' }
+const badgeError = { ...badgeBase, background: 'rgba(239,68,68,0.12)', color: '#DC2626' }

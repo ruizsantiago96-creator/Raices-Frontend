@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                 let regInterests: string[] = []
                 try {
                   regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
-                } catch (_) {}
+                } catch {}
                 if (regInterests.length === 0 && !data?.profiling) return null
                 return (
                   <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
