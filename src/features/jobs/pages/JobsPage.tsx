@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useJobs, useAppliedJobIds, useMyApplications } from '../hooks/useJobs'
 import { useMiInstitucion } from '@features/institutions/hooks/useInstitutions'
@@ -13,19 +13,30 @@ import ApplicationModal from '../components/ApplicationModal'
 import MessageModal from '../components/MessageModal'
 import JobCard from '../components/JobCard'
 import ApplicationCard from '../components/ApplicationCard'
+import type { Job, JobApplication } from '@/types/jobs'
+
+interface InstitutionData {
+  id?: string | number
+  nombre?: string
+  verificada?: boolean
+}
 
 export default function JobsPage() {
-
   const { data: user } = useMe()
   const navigate = useNavigate()
-  const { data: institution } = useMiInstitucion()
-  const [modality, setModality] = useState('Todos')
-  const [tab, setTab] = useState('board')
-  const [applyTarget, setApplyTarget] = useState(null)
+  const { data: institution } = useMiInstitucion() as { data?: InstitutionData }
+  const [modality, setModality] = useState<string>('Todos')
+  const [tab, setTab] = useState<'board' | 'applications'>('board')
+  const [applyTarget, setApplyTarget] = useState<Job | null>(null)
   const [showCreateJob, setShowCreateJob] = useState(false)
-  const [messageTarget, setMessageTarget] = useState(null)
+  const [messageTarget, setMessageTarget] = useState<Job | JobApplication | null>(null)
   const isInstitution = user?.role === 'institution' || user?.role === 'admin'
-  const { data: catalogos } = useCatalogos()
+  const { data: catalogos } = useCatalogos() as {
+    data?: {
+      modalidadesEmpleo?: string[]
+      [key: string]: unknown
+    }
+  }
 
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -55,7 +66,7 @@ export default function JobsPage() {
   const filteredApps = useMemo(() => {
     return applications.filter(app => {
       const s = searchTerm.toLowerCase()
-      const job = app.job || {}
+      const job = app.job || ({} as Job)
       return !searchTerm ||
         (job.title ?? '').toLowerCase().includes(s) ||
         (job.description ?? '').toLowerCase().includes(s) ||
@@ -82,7 +93,7 @@ export default function JobsPage() {
 
   return (
     <>
-      <main className="responsive-main" style={{ '--main-max-width': '900px' }}>
+      <main className="responsive-main" style={{ '--main-max-width': '900px' } as Record<string, string>}>
         {/* Header */}
         <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
           <div>
@@ -99,8 +110,8 @@ export default function JobsPage() {
         {/* Segmented Control */}
         <div className="animate-fade-in-up delay-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
           <div style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2 }}>
-            {[['board', JOBS_UI.TAB_BOARD, boardCount], ['applications', JOBS_UI.TAB_APPLICATIONS, appsCount]].map(([key, label, count]) => (
-              <button key={key} onClick={() => setTab(key)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: tab === key ? 'var(--bg-surface)' : 'transparent', boxShadow: tab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: tab === key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: tab === key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {([['board', JOBS_UI.TAB_BOARD, boardCount], ['applications', JOBS_UI.TAB_APPLICATIONS, appsCount]] as const).map(([key, label, count]) => (
+              <button key={key} onClick={() => setTab(key as 'board' | 'applications')} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: tab === key ? 'var(--bg-surface)' : 'transparent', boxShadow: tab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: tab === key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: tab === key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: 6 }}>
                 {label}
                 <span style={{ fontSize: 11, fontWeight: 600, color: tab === key ? 'var(--primary)' : 'var(--fg3)', background: tab === key ? 'var(--primary-subtle)' : 'transparent', padding: '1px 7px', borderRadius: 6 }}>{count}</span>
               </button>
@@ -150,9 +161,9 @@ export default function JobsPage() {
             ) : (
               <>
                 <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {paginatedItems.map(job => (
+                  {(paginatedItems as Job[]).map(job => (
                     <div key={job.id} className="animate-fade-in-up">
-                      <JobCard job={job} applied={appliedIds.includes(job.id)} onApply={() => setApplyTarget(job)} onMessage={setMessageTarget} userRole={user?.role} institutionId={institution?.id} onNavigateToPortal={(t) => navigate(t ? `/institution-portal?tab=${t}` : '/institution-portal')} onEditJob={(j) => navigate(`/institution-portal/editar?jobId=${j.id}`)} />
+                      <JobCard job={job} applied={appliedIds.map(String).includes(String(job.id))} onApply={() => setApplyTarget(job)} onMessage={setMessageTarget} userRole={user?.role} institutionId={institution?.id} onNavigateToPortal={(t) => navigate(t ? `/institution-portal?tab=${t}` : '/institution-portal')} onEditJob={(j) => navigate(`/institution-portal/editar?jobId=${j.id}`)} />
                     </div>
                   ))}
                 </div>
@@ -175,7 +186,7 @@ export default function JobsPage() {
             ) : (
               <>
                 <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {paginatedItems.map(app => (
+                  {(paginatedItems as JobApplication[]).map(app => (
                     <div key={app.id} className="animate-fade-in-up">
                       <ApplicationCard app={app} onMessage={setMessageTarget} />
                     </div>
@@ -197,8 +208,14 @@ export default function JobsPage() {
   )
 }
 
+interface PaginationProps {
+  currentPage: number
+  totalPages: number
+  setCurrentPage: Dispatch<SetStateAction<number>>
+}
+
 /* ─── Pagination (duplicated block extracted) ──────────────── */
-function Pagination({ currentPage, totalPages, setCurrentPage }) {
+function Pagination({ currentPage, totalPages, setCurrentPage }: PaginationProps) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12 }}>
       <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}

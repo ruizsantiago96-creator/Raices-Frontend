@@ -1,31 +1,58 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { Icons } from '@shared/components/shared'
 import { JOBS_UI } from '../constants/jobsMessages'
+import type { Job } from '@/types/jobs'
+
+export interface JobCardProps {
+  job: Job
+  applied: boolean
+  onApply: () => void
+  onMessage: (job: Job) => void
+  userRole?: string
+  institutionId?: string | number
+  onNavigateToPortal?: (tab?: string) => void
+  onEditJob?: (job: Job) => void
+}
 
 /* ─── JobCard (Apple-style minimal) ─────────────────────── */
-export default function JobCard({ job, applied, onApply, onMessage, userRole, institutionId, onNavigateToPortal, onEditJob }) {
+export default function JobCard({
+  job,
+  applied,
+  onApply,
+  onMessage,
+  userRole,
+  institutionId,
+  onNavigateToPortal,
+  onEditJob,
+}: JobCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   // Build single-line info string
-  const infoParts = []
+  const infoParts: string[] = []
   if (job.city) infoParts.push(`${job.city}${job.state ? `, ${job.state}` : ''}`)
   if (job.modality) infoParts.push(job.modality)
   if (job.schedule) infoParts.push(job.schedule)
 
   return (
-    <div 
+    <div
       onClick={() => setExpanded(v => !v)}
-      style={{ 
-        background: 'var(--bg-surface)', 
-        border: '1px solid var(--border-color)', 
-        borderRadius: 14, 
-        padding: '20px 24px', 
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 14,
+        padding: '20px 24px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         cursor: 'pointer',
         transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--primary)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'
+        e.currentTarget.style.borderColor = 'var(--primary)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+        e.currentTarget.style.borderColor = 'var(--border-color)'
+      }}
     >
       {/* Top row: Title + Salary */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
@@ -72,7 +99,7 @@ export default function JobCard({ job, applied, onApply, onMessage, userRole, in
             (job.institution_id && String(job.institution_id) === String(institutionId)) ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onEditJob?.(job) }}
+                  onClick={(e: MouseEvent) => { e.stopPropagation(); onEditJob?.(job) }}
                   style={{
                     padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                     background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
@@ -86,7 +113,7 @@ export default function JobCard({ job, applied, onApply, onMessage, userRole, in
                   {Icons.edit({ s: 13 })} Editar vacante
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onNavigateToPortal?.('candidatos') }}
+                  onClick={(e: MouseEvent) => { e.stopPropagation(); onNavigateToPortal?.('candidatos') }}
                   style={{
                     padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                     background: 'color-mix(in oklch, #D4944C 10%, transparent)',
@@ -114,7 +141,7 @@ export default function JobCard({ job, applied, onApply, onMessage, userRole, in
             ) : (
               <button 
                 className="btn-primary" 
-                onClick={(e) => { e.stopPropagation(); onApply() }} 
+                onClick={(e: MouseEvent) => { e.stopPropagation(); onApply() }} 
                 style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 8, whiteSpace: 'nowrap' }}
               >
                 {JOBS_UI.POSTULATE_BUTTON}
@@ -125,7 +152,7 @@ export default function JobCard({ job, applied, onApply, onMessage, userRole, in
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {job.institution_owner_id && (
             <button 
-              onClick={(e) => { e.stopPropagation(); onMessage(job) }}
+              onClick={(e: MouseEvent) => { e.stopPropagation(); onMessage(job) }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--fg3)'}
@@ -155,7 +182,7 @@ export default function JobCard({ job, applied, onApply, onMessage, userRole, in
               <p style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.6, margin: 0 }}>{job.requirements}</p>
             </div>
           )}
-          {job.disability_types?.length > 0 && (
+          {job.disability_types && job.disability_types.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>{JOBS_UI.DISABILITY_WELCOME_LABEL}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

@@ -1,5 +1,23 @@
+import type { ReactNode } from 'react'
+
+export interface CandidateOptionProps {
+  label: string
+  description: string
+  icon: ReactNode
+  selected: boolean
+  onClick: () => void
+  disabled?: boolean
+}
+
 /* ─── CandidateOption (tarjeta de selección de candidato) ─── */
-export default function CandidateOption({ label, description, icon, selected, onClick, disabled }) {
+export default function CandidateOption({
+  label,
+  description,
+  icon,
+  selected,
+  onClick,
+  disabled = false,
+}: CandidateOptionProps) {
   return (
     <button
       type="button"
@@ -21,7 +39,19 @@ export default function CandidateOption({ label, description, icon, selected, on
         textAlign: 'center',
       }}
     >
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: selected ? 'var(--primary)' : 'var(--primary-subtle)', color: selected ? '#fff' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}>
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          background: selected ? 'var(--primary)' : 'var(--primary-subtle)',
+          color: selected ? '#fff' : 'var(--primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease',
+        }}
+      >
         {icon}
       </div>
       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>{label}</span>

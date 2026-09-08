@@ -1,21 +1,41 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useMessages, useSendMessage } from '@features/social/hooks/useMessages'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
 import { JOBS_UI } from '../constants/jobsMessages'
+import type { Job, JobApplication } from '@/types/jobs'
+
+export interface MessageModalProps {
+  job: Job | JobApplication
+  onClose: () => void
+}
+
+interface SocialMessage {
+  id: string | number
+  from_id?: string | number
+  to_id?: string | number
+  content: string
+  created_at: string
+}
 
 /* ─── MessageModal (chat en tiempo real) ────────────────────── */
-export default function MessageModal({ job, onClose }) {
+export default function MessageModal({ job, onClose }: MessageModalProps) {
   const [text, setText] = useState('')
-  const chatEndRef = useRef(null)
-  const chatInputRef = useRef(null)
-  const sendMessage = useSendMessage()
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatInputRef = useRef<HTMLInputElement>(null)
+  const sendMessage = useSendMessage() as unknown as {
+    mutateAsync: (variables: { toId: string | number; content: string }) => Promise<unknown>
+    isPending: boolean
+  }
   const { user } = useAuthStore()
   const { addToast } = useUiStore()
 
   const ownerUserId = job.institution_owner_id
-  const { data: messages = [], isLoading: msgsLoading } = useMessages(ownerUserId)
+  const { data: messages = [], isLoading: msgsLoading } = useMessages(ownerUserId) as {
+    data?: SocialMessage[]
+    isLoading: boolean
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -25,7 +45,7 @@ export default function MessageModal({ job, onClose }) {
     chatInputRef.current?.focus()
   }, [])
 
-  const handleSend = async (e) => {
+  const handleSend = async (e: FormEvent) => {
     e.preventDefault()
     if (!text.trim() || sendMessage.isPending || !ownerUserId) return
     const msg = text.trim()
@@ -74,7 +94,7 @@ export default function MessageModal({ job, onClose }) {
         {/* Job context card */}
         <div style={{ padding: '10px 20px', background: 'color-mix(in oklch, var(--primary) 5%, var(--bg-warm))', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>💼 {job.title}</div>
-          {job.salary_range && <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{job.salary_range}</div>}
+          {('salary_range' in job && typeof job.salary_range === 'string') && <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{job.salary_range}</div>}
         </div>
 
         {/* Messages area */}
@@ -94,7 +114,7 @@ export default function MessageModal({ job, onClose }) {
             </div>
           ) : (
             messages.map(msg => {
-              const mine = msg.from_id === user?.id
+              const mine = String(msg.from_id) === String(user?.id)
               return (
                 <div key={msg.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                   <span style={{

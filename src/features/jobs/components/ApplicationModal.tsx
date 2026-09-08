@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import { useAuthStore, useMe, useUpdateProfile } from '@features/auth'
 import { useDependientes } from '@features/tutor'
 import { useApplyJob } from '../hooks/useJobs'
@@ -8,19 +8,51 @@ import { JOBS_TOAST, JOBS_UI } from '../constants/jobsMessages'
 import CandidateOption from './CandidateOption'
 import CvDocumentPreview from './CvDocumentPreview'
 import { flagIcon, filePdfIcon } from './jobsIcons'
+import type { Job, CvFileData } from '@/types/jobs'
+import type { Dependiente } from '@/types/profile'
 
-const inputStyle = {
-  width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)',
-  borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box',
-  fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)',
-  outline: 'none', transition: 'border-color 0.15s ease',
+export interface ApplicationModalProps {
+  job: Job
+  onClose: () => void
 }
 
-const labelStyle = {
-  fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 8,
+interface ContactInfo {
+  nombreCompleto: string
+  email: string
+  telefono: string
+  ciudadEstado: string
 }
 
-const renderProgress = (percent) => (
+interface LocationInfo {
+  pais: string
+  codigoPostal: string
+  ciudadEstado: string
+  direccion: string
+}
+
+const inputStyle: CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  border: '1px solid var(--border-color)',
+  borderRadius: 'var(--radius-md)',
+  fontSize: 14,
+  boxSizing: 'border-box',
+  fontFamily: 'var(--font-body)',
+  color: 'var(--fg1)',
+  background: 'var(--bg-warm)',
+  outline: 'none',
+  transition: 'border-color 0.15s ease',
+}
+
+const labelStyle: CSSProperties = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: 'var(--fg2)',
+  display: 'block',
+  marginBottom: 8,
+}
+
+const renderProgress = (percent: number) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, width: '100%' }}>
     <div style={{ flex: 1, height: 4, background: 'var(--border-color)', borderRadius: 2 }}>
       <div style={{ height: '100%', width: `${percent}%`, background: 'var(--primary)', borderRadius: 2, transition: 'width 0.3s ease' }} />
@@ -29,10 +61,13 @@ const renderProgress = (percent) => (
   </div>
 )
 
-export default function ApplicationModal({ job, onClose }) {
+export default function ApplicationModal({ job, onClose }: ApplicationModalProps) {
   const { user: authUser } = useAuthStore()
   const { data: meData } = useMe()
-  const { data: dependents = [], isLoading: loadingDependents } = useDependientes()
+  const { data: dependents = [], isLoading: loadingDependents } = useDependientes() as {
+    data?: Dependiente[]
+    isLoading: boolean
+  }
   const updateProfile = useUpdateProfile()
   const apply = useApplyJob()
   const { addToast } = useUiStore()
@@ -40,26 +75,26 @@ export default function ApplicationModal({ job, onClose }) {
   const isTutor = authUser?.role === 'tutor'
 
   // Pasos: 0 (Candidato - solo tutor), 1 (Ubicación), 2 (CV), 3 (Revisión)
-  const [step, setStep] = useState(isTutor ? 0 : 1)
+  const [step, setStep] = useState<number>(isTutor ? 0 : 1)
 
   // Tipo de candidato (tutor)
-  const [candidateType, setCandidateType] = useState('me')
-  const [selectedCandidateId, setSelectedCandidateId] = useState(null)
+  const [candidateType, setCandidateType] = useState<'me' | 'managed' | 'linked'>('me')
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | number | null>(null)
 
   // Información de contacto del candidato
-  const [contactInfo, setContactInfo] = useState({ nombreCompleto: '', email: '', telefono: '', ciudadEstado: '' })
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({ nombreCompleto: '', email: '', telefono: '', ciudadEstado: '' })
   const [editingContact, setEditingContact] = useState(false)
-  const [tempContactInfo, setTempContactInfo] = useState({ nombreCompleto: '', email: '', telefono: '', ciudadEstado: '' })
+  const [tempContactInfo, setTempContactInfo] = useState<ContactInfo>({ nombreCompleto: '', email: '', telefono: '', ciudadEstado: '' })
 
   // Ubicación
-  const [location, setLocation] = useState({ pais: 'México', codigoPostal: '', ciudadEstado: '', direccion: '' })
+  const [location, setLocation] = useState<LocationInfo>({ pais: 'México', codigoPostal: '', ciudadEstado: '', direccion: '' })
   const [isEditingCountry, setIsEditingCountry] = useState(false)
 
   // Archivo CV
-  const [cvFile, setCvFile] = useState(null)
-  const [cvFileUrl, setCvFileUrl] = useState(null)
+  const [cvFile, setCvFile] = useState<CvFileData | null>(null)
+  const [cvFileUrl, setCvFileUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const fileInputRef = useRef(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     return () => { if (cvFileUrl) URL.revokeObjectURL(cvFileUrl) }
@@ -71,8 +106,8 @@ export default function ApplicationModal({ job, onClose }) {
   // Clasificar dependientes
   const { managedProfiles, linkedAccounts } = useMemo(() => {
     if (!isTutor) return { managedProfiles: [], linkedAccounts: [] }
-    const managed = []
-    const linked = []
+    const managed: Dependiente[] = []
+    const linked: Dependiente[] = []
     dependents.forEach(dep => {
       if (dep.esCuentaVinculada) linked.push(dep)
       else managed.push(dep)
@@ -80,13 +115,16 @@ export default function ApplicationModal({ job, onClose }) {
     return { managedProfiles: managed, linkedAccounts: linked }
   }, [dependents, isTutor])
 
-  const getCandidateId = () => {
+  const getCandidateId = (): string | number | undefined => {
     if (!isTutor || candidateType === 'me') return undefined
-    return selectedCandidateId
+    return selectedCandidateId ?? undefined
   }
 
   const initializeCandidateData = () => {
-    let name = '', email = '', phone = '', cityState = ''
+    let name = ''
+    let email = ''
+    let phone = ''
+    let cityState = ''
     const currentCandidateId = getCandidateId()
 
     if (!isTutor || candidateType === 'me') {
@@ -97,88 +135,117 @@ export default function ApplicationModal({ job, onClose }) {
       const s = meData?.state || authUser?.state || ''
       cityState = c && s ? `${c}, ${s}` : c || s || ''
     } else {
-      const dep = dependents.find(d => d.id === selectedCandidateId)
-      name = dep?.nombreCompleto || ''
-      email = dep?.email || meData?.email || authUser?.email || ''
-      phone = localStorage.getItem('raices_user_phone_' + selectedCandidateId) || ''
+      const dep = dependents.find(d => String(d.id) === String(selectedCandidateId))
+      name = (dep?.nombreCompleto as string) || (dep?.nombre as string) || ''
+      email = (dep?.email as string) || meData?.email || authUser?.email || ''
+      phone = localStorage.getItem('raices_user_phone_' + String(selectedCandidateId)) || ''
       const c = meData?.city || authUser?.city || ''
       const s = meData?.state || authUser?.state || ''
       cityState = c && s ? `${c}, ${s}` : c || s || ''
     }
 
-    const info = { nombreCompleto: name, email, telefono: phone, ciudadEstado: cityState }
+    const info: ContactInfo = { nombreCompleto: name, email, telefono: phone, ciudadEstado: cityState }
     setContactInfo(info)
     setTempContactInfo(info)
     setLocation({
       pais: 'México',
-      codigoPostal: localStorage.getItem('raices_user_cp_' + (currentCandidateId || 'me')) || '',
+      codigoPostal: localStorage.getItem('raices_user_cp_' + String(currentCandidateId || 'me')) || '',
       ciudadEstado: cityState,
-      direccion: localStorage.getItem('raices_user_address_' + (currentCandidateId || 'me')) || ''
+      direccion: localStorage.getItem('raices_user_address_' + String(currentCandidateId || 'me')) || '',
     })
 
-    const savedCv = localStorage.getItem('raices_user_cv_' + (currentCandidateId || 'me'))
-    if (savedCv) { try { setCvFile(JSON.parse(savedCv)) } catch { setCvFile(null) } }
-    else { setCvFile(null) }
+    const savedCv = localStorage.getItem('raices_user_cv_' + String(currentCandidateId || 'me'))
+    if (savedCv) {
+      try {
+        setCvFile(JSON.parse(savedCv) as CvFileData)
+      } catch {
+        setCvFile(null)
+      }
+    } else {
+      setCvFile(null)
+    }
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { if (!isTutor && meData) initializeCandidateData() }, [meData, isTutor])
 
-  const handleCandidateTypeChange = (type) => { setCandidateType(type); setSelectedCandidateId(null) }
+  const handleCandidateTypeChange = (type: 'me' | 'managed' | 'linked') => {
+    setCandidateType(type)
+    setSelectedCandidateId(null)
+  }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.type !== 'application/pdf') { addToast('El formato del archivo debe ser PDF', 'error'); return }
-    if (file.size > 10 * 1024 * 1024) { addToast('El archivo supera el límite de 10MB', 'error'); return }
+    if (file.type !== 'application/pdf') {
+      addToast('El formato del archivo debe ser PDF', 'error')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('El archivo supera el límite de 10MB', 'error')
+      return
+    }
     setIsUploading(true)
     setTimeout(() => {
-      const fileData = {
+      const fileData: CvFileData = {
         name: file.name,
         size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        uploadDate: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+        uploadDate: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }),
       }
       setCvFile(fileData)
       if (cvFileUrl) URL.revokeObjectURL(cvFileUrl)
       setCvFileUrl(URL.createObjectURL(file))
       setIsUploading(false)
       const cid = getCandidateId()
-      localStorage.setItem('raices_user_cv_' + (cid || 'me'), JSON.stringify(fileData))
+      localStorage.setItem('raices_user_cv_' + String(cid || 'me'), JSON.stringify(fileData))
       addToast('CV cargado con éxito', 'success')
     }, 1000)
   }
 
   const handleLocationSubmit = async () => {
     if (!location.codigoPostal.trim() || !location.ciudadEstado.trim()) {
-      addToast('Por favor completa los campos requeridos (*)', 'error'); return
+      addToast('Por favor completa los campos requeridos (*)', 'error')
+      return
     }
     const cid = getCandidateId()
-    localStorage.setItem('raices_user_cp_' + (cid || 'me'), location.codigoPostal)
-    localStorage.setItem('raices_user_address_' + (cid || 'me'), location.direccion)
+    localStorage.setItem('raices_user_cp_' + String(cid || 'me'), location.codigoPostal)
+    localStorage.setItem('raices_user_address_' + String(cid || 'me'), location.direccion)
     setContactInfo(prev => ({ ...prev, ciudadEstado: location.ciudadEstado }))
     setTempContactInfo(prev => ({ ...prev, ciudadEstado: location.ciudadEstado }))
     if (!isTutor || candidateType === 'me') {
       const parts = location.ciudadEstado.split(',')
       const city = parts[0]?.trim() || ''
       const state = parts[1]?.trim() || ''
-      try { await updateProfile.mutateAsync({ full_name: contactInfo.nombreCompleto || meData?.full_name || authUser?.full_name, city, state }) }
-      catch { /* silent */ }
+      try {
+        await updateProfile.mutateAsync({
+          full_name: contactInfo.nombreCompleto || meData?.full_name || authUser?.full_name || '',
+          city,
+          state,
+        })
+      } catch {
+        /* silent */
+      }
     }
     setStep(2)
   }
 
-  const saveEditedContact = () => { setContactInfo(tempContactInfo); setEditingContact(false); addToast('Información de contacto guardada', 'success') }
+  const saveEditedContact = () => {
+    setContactInfo(tempContactInfo)
+    setEditingContact(false)
+    addToast('Información de contacto guardada', 'success')
+  }
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     const cid = getCandidateId()
-    localStorage.setItem('raices_user_phone_' + (cid || 'me'), contactInfo.telefono)
+    localStorage.setItem('raices_user_phone_' + String(cid || 'me'), contactInfo.telefono)
     try {
       await apply.mutateAsync({ jobId: job.id, cover_letter: letter, candidateId: cid })
       addToast(JOBS_TOAST.APPLICATION_SENT, 'success')
       onClose()
-    } catch (err) {
-      addToast(err?.response?.data?.message ?? JOBS_TOAST.APPLICATION_FAILED, 'error')
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { data?: { message?: string } } }
+      addToast(errorResponse?.response?.data?.message ?? JOBS_TOAST.APPLICATION_FAILED, 'error')
     }
   }
 
@@ -220,12 +287,12 @@ export default function ApplicationModal({ job, onClose }) {
                 {loadingDependents ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', color: 'var(--fg3)', fontSize: 14 }}>{Icons.loader({ s: 14 })} {JOBS_UI.CANDIDATE_LOADING}</div>
                 ) : (
-                  <select value={selectedCandidateId || ''} onChange={(e) => setSelectedCandidateId(e.target.value || null)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <select value={selectedCandidateId ? String(selectedCandidateId) : ''} onChange={(e) => setSelectedCandidateId(e.target.value || null)} style={{ ...inputStyle, cursor: 'pointer' }}>
                     <option value="">Selecciona un dependiente...</option>
                     {candidateType === 'managed' ? (
-                      managedProfiles.length > 0 ? managedProfiles.map(dep => <option key={dep.id} value={dep.id}>{dep.nombreCompleto} ({dep.parentesco})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_MANAGED}</option>
+                      managedProfiles.length > 0 ? managedProfiles.map(dep => <option key={dep.id} value={dep.id}>{String(dep.nombreCompleto || dep.nombre || '')} ({String(dep.parentesco || '')})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_MANAGED}</option>
                     ) : (
-                      linkedAccounts.length > 0 ? linkedAccounts.map(dep => <option key={dep.id} value={dep.id}>{dep.nombreCompleto} ({dep.parentesco})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_LINKED}</option>
+                      linkedAccounts.length > 0 ? linkedAccounts.map(dep => <option key={dep.id} value={dep.id}>{String(dep.nombreCompleto || dep.nombre || '')} ({String(dep.parentesco || '')})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_LINKED}</option>
                     )}
                   </select>
                 )}
@@ -291,7 +358,7 @@ export default function ApplicationModal({ job, onClose }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'green', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.check({ s: 12 })}</div>
-                    <button type="button" onClick={() => { setCvFile(null); if (cvFileUrl) { URL.revokeObjectURL(cvFileUrl); setCvFileUrl(null) }; const cid = getCandidateId(); localStorage.removeItem('raices_user_cv_' + (cid || 'me')) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: 4 }} title="Eliminar archivo">{Icons.trash({ s: 16 })}</button>
+                    <button type="button" onClick={() => { setCvFile(null); if (cvFileUrl) { URL.revokeObjectURL(cvFileUrl); setCvFileUrl(null) }; const cid = getCandidateId(); localStorage.removeItem('raices_user_cv_' + String(cid || 'me')) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: 4 }} title="Eliminar archivo">{Icons.trash({ s: 16 })}</button>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

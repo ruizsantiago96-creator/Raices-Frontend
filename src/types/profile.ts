@@ -113,7 +113,9 @@ export interface EscalasVidaPayload {
  */
 export interface Dependiente {
   id: string | number
-  nombre: string
+  nombre?: string
+  nombreCompleto?: string
+  esCuentaVinculada?: boolean
   fechaNacimiento?: string
   edad?: number
   parentesco?: string

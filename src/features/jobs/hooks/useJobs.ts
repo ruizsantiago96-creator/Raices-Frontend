@@ -1,12 +1,24 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import type {
+  Job,
+  RawBackendJob,
+  JobApplication,
+  RawBackendPostulacion,
+  JobFilters,
+  PaginatedResponse,
+  CreateJobPayload,
+  UpdateJobPayload,
+  ApplyJobPayload,
+  JobApplicationStatus,
+} from '@/types/jobs'
 
 /* ─── Normalización de datos ─────────────────────────────────────── */
 
-function mapJob(job) {
-  if (!job) return job
+function mapJob(job: RawBackendJob): Job {
+  if (!job) return job as unknown as Job
 
-  let status = job.status ?? job.estadoPostulacion ?? job.estado ?? 'pending'
+  let status: JobApplicationStatus | string = job.status ?? job.estadoPostulacion ?? job.estado ?? 'pending'
   if (status === 'pendiente') status = 'pending'
   if (status === 'en revisión' || status === 'en_revision' || status === 'revision') status = 'reviewed'
   if (status === 'aceptada' || status === 'aceptado') status = 'accepted'
@@ -14,8 +26,9 @@ function mapJob(job) {
 
   return {
     ...job,
+    id: job.id ?? '',
     // Normalizar campos vacante → inglés
-    title: job.title ?? job.titulo,
+    title: job.title ?? job.titulo ?? '',
     description: job.description ?? job.descripcion,
     requirements: job.requirements ?? job.requisitos,
     modality: job.modality ?? job.modalidad,
@@ -44,21 +57,32 @@ function mapJob(job) {
   }
 }
 
-function mapPostulacion(post) {
-  if (!post) return post
+function mapPostulacion(post: RawBackendPostulacion): JobApplication {
+  if (!post) return post as unknown as JobApplication
 
   return {
     ...post,
+    id: post.id ?? '',
     title: post.title ?? post.titulo,
     modality: post.modality ?? post.modalidad,
     institution_name: post.institution_name ?? post.nombreInstitucion,
-    status: post.status ?? post.estado ?? 'pendiente',
+    status: post.status ?? post.estado ?? 'pending',
     cover_letter: post.cover_letter ?? post.cartaPresentacion ?? post.carta_presentacion,
     created_at: post.created_at ?? post.fechaCreacion,
+    job: post.job ? mapJob(post.job) : undefined,
   }
 }
 
 /* ─── Respuesta paginada ─────────────────────────────────────────── */
+
+interface RawBackendPaginatedResponse<T> {
+  datos?: T[]
+  total?: number
+  pagina?: number
+  limite?: number
+  totalPaginas?: number
+  paginas?: number
+}
 
 /**
  * Extrae datos paginados de la respuesta del backend.
@@ -66,7 +90,7 @@ function mapPostulacion(post) {
  *  - { datos: [...], total, pagina, limite, totalPaginas }
  *  - un array plano [...]
  */
-function extractPaginatedData(res) {
+function extractPaginatedData<T>(res: RawBackendPaginatedResponse<T> | T[] | undefined): PaginatedResponse<T> {
   if (Array.isArray(res)) {
     return { datos: res, total: res.length, pagina: 1, limite: res.length, totalPaginas: 1 }
   }
@@ -75,21 +99,23 @@ function extractPaginatedData(res) {
     total: res?.total ?? 0,
     pagina: res?.pagina ?? 1,
     limite: res?.limite ?? 20,
-    totalPaginas: res?.totalPaginas ?? 1,
+    totalPaginas: res?.totalPaginas ?? res?.paginas ?? 1,
   }
 }
 
 /* ─── Hooks de Vacantes ──────────────────────────────────────────── */
 
-const DEFAULT_PAGE_PARAMS = { pagina: 1, limite: 20, ordenarPor: 'fechaCreacion', direccion: 'desc' }
+const DEFAULT_PAGE_PARAMS: Required<Pick<JobFilters, 'pagina' | 'limite' | 'ordenarPor' | 'direccion'>> = {
+  pagina: 1,
+  limite: 20,
+  ordenarPor: 'fechaCreacion',
+  direccion: 'desc',
+}
 
 /**
  * Listar vacantes con filtros y paginación.
- *
- * @param {Object} filters - { buscar?, ciudad?, modalidad?, pagina?, limite?, ordenarPor?, direccion? }
- * @returns {UseQueryResult<{ datos: Vacante[], total, pagina, limite, totalPaginas }>}
  */
-export function useJobs(filters = {}) {
+export function useJobs(filters: JobFilters = {}): UseQueryResult<PaginatedResponse<Job>> {
   const params = { ...DEFAULT_PAGE_PARAMS, ...filters }
 
   const query = new URLSearchParams()
@@ -103,9 +129,9 @@ export function useJobs(filters = {}) {
 
   return useQuery({
     queryKey: ['jobs', params],
-    queryFn: async () => {
-      const { data } = await api.get(`/empleo?${query}`)
-      const result = extractPaginatedData(data)
+    queryFn: async (): Promise<PaginatedResponse<Job>> => {
+      const { data } = await api.get(`/empleo?${query.toString()}`)
+      const result = extractPaginatedData<RawBackendJob>(data)
       return { ...result, datos: result.datos.map(mapJob) }
     },
     staleTime: 1000 * 60 * 2,
@@ -115,13 +141,13 @@ export function useJobs(filters = {}) {
 /**
  * Detalle de una vacante por ID.
  */
-export function useJob(id) {
+export function useJob(id?: string | number): UseQueryResult<Job> {
   return useQuery({
     queryKey: ['job', id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Job> => {
       const { data } = await api.get(`/empleo/${id}`)
       // El backend puede devolver directamente el objeto o { datos: {...} }
-      const raw = data?.datos ?? data
+      const raw = (data?.datos ?? data) as RawBackendJob
       return mapJob(raw)
     },
     enabled: !!id,
@@ -131,10 +157,10 @@ export function useJob(id) {
 /**
  * IDs de vacantes postuladas por el usuario (para marcar "Ya te postulaste").
  */
-export function useAppliedJobIds() {
+export function useAppliedJobIds(): UseQueryResult<(string | number)[]> {
   return useQuery({
     queryKey: ['jobs', 'applied'],
-    queryFn: async () => {
+    queryFn: async (): Promise<(string | number)[]> => {
       const { data } = await api.get('/empleo/postuladas')
       return Array.isArray(data) ? data : (data?.datos ?? [])
     },
@@ -144,11 +170,8 @@ export function useAppliedJobIds() {
 
 /**
  * Mis postulaciones con paginación.
- *
- * @param {Object} filters - { buscar?, pagina?, limite?, ordenarPor?, direccion? }
- * @returns {UseQueryResult<{ datos: Postulacion[], total, pagina, limite, totalPaginas }>}
  */
-export function useMyApplications(filters = {}) {
+export function useMyApplications(filters: JobFilters = {}): UseQueryResult<PaginatedResponse<JobApplication>> {
   const params = { ...DEFAULT_PAGE_PARAMS, ...filters }
 
   const query = new URLSearchParams()
@@ -160,9 +183,9 @@ export function useMyApplications(filters = {}) {
 
   return useQuery({
     queryKey: ['jobs', 'my-applications', params],
-    queryFn: async () => {
-      const { data } = await api.get(`/empleo/mis-postulaciones?${query}`)
-      const result = extractPaginatedData(data)
+    queryFn: async (): Promise<PaginatedResponse<JobApplication>> => {
+      const { data } = await api.get(`/empleo/mis-postulaciones?${query.toString()}`)
+      const result = extractPaginatedData<RawBackendPostulacion>(data)
       return { ...result, datos: result.datos.map(mapPostulacion) }
     },
   })
@@ -173,10 +196,10 @@ export function useMyApplications(filters = {}) {
 /**
  * Crear una nueva vacante.
  */
-export function useCreateJob() {
+export function useCreateJob(): UseMutationResult<unknown, Error, CreateJobPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.post('/empleo', data).then(r => r.data),
+    mutationFn: (data: CreateJobPayload) => api.post('/empleo', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
     },
@@ -186,10 +209,10 @@ export function useCreateJob() {
 /**
  * Editar una vacante existente.
  */
-export function useUpdateJob() {
+export function useUpdateJob(): UseMutationResult<unknown, Error, UpdateJobPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }) => api.put(`/empleo/${id}`, data).then(r => r.data),
+    mutationFn: ({ id, ...data }: UpdateJobPayload) => api.put(`/empleo/${id}`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
     },
@@ -199,10 +222,10 @@ export function useUpdateJob() {
 /**
  * Desactivar (eliminar) una vacante.
  */
-export function useDeleteJob() {
+export function useDeleteJob(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/empleo/${id}`),
+    mutationFn: (id: string | number) => api.delete(`/empleo/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
     },
@@ -212,11 +235,11 @@ export function useDeleteJob() {
 /**
  * Postularse a una vacante.
  */
-export function useApplyJob() {
+export function useApplyJob(): UseMutationResult<unknown, Error, ApplyJobPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ jobId, cover_letter, candidateId }) => {
-      const payload = { cartaPresentacion: cover_letter }
+    mutationFn: ({ jobId, cover_letter, candidateId }: ApplyJobPayload) => {
+      const payload: { cartaPresentacion?: string; candidateId?: string | number } = { cartaPresentacion: cover_letter }
       if (candidateId) payload.candidateId = candidateId
       return api.post(`/empleo/${jobId}/postularse`, payload).then(r => r.data)
     },

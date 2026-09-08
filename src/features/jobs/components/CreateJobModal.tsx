@@ -1,26 +1,62 @@
-import { useState } from 'react'
+import { useState, type FormEvent, type CSSProperties } from 'react'
 import { useCreateJob } from '../hooks/useJobs'
 import { useUiStore } from '@shared/stores/uiStore'
 import { JOBS_TOAST, JOBS_UI } from '../constants/jobsMessages'
+import type { CreateJobPayload } from '@/types/jobs'
 
-const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }
-const labelStyle = { fontSize: 14, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }
+export interface CreateJobModalProps {
+  onClose: () => void
+}
 
-export default function CreateJobModal({ onClose }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', requisitos: '', modalidad: 'presencial', horario: '', rangoSalario: '', ciudad: '', estado: '', inclusivaDiscapacidad: true })
+const inputStyle: CSSProperties = {
+  width: '100%',
+  padding: '10px 14px',
+  border: '1px solid var(--border-color)',
+  borderRadius: 'var(--radius-md)',
+  fontSize: 14,
+  boxSizing: 'border-box',
+  fontFamily: 'var(--font-body)',
+  color: 'var(--fg1)',
+  background: 'var(--bg-warm)',
+  outline: 'none',
+}
+
+const labelStyle: CSSProperties = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: 'var(--fg2)',
+  display: 'block',
+  marginBottom: 6,
+}
+
+export default function CreateJobModal({ onClose }: CreateJobModalProps) {
+  const [form, setForm] = useState<CreateJobPayload>({
+    titulo: '',
+    descripcion: '',
+    requisitos: '',
+    modalidad: 'presencial',
+    horario: '',
+    rangoSalario: '',
+    ciudad: '',
+    estado: '',
+    inclusivaDiscapacidad: true,
+  })
   const createJob = useCreateJob()
   const { addToast } = useUiStore()
 
-  const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const update = <K extends keyof CreateJobPayload>(key: K, val: CreateJobPayload[K]) => {
+    setForm(f => ({ ...f, [key]: val }))
+  }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       await createJob.mutateAsync(form)
       addToast(JOBS_TOAST.JOB_CREATED, 'success')
       onClose()
-    } catch (err) {
-      addToast(err?.response?.data?.message ?? JOBS_TOAST.JOB_CREATE_FAILED, 'error')
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { data?: { message?: string } } }
+      addToast(errorResponse?.response?.data?.message ?? JOBS_TOAST.JOB_CREATE_FAILED, 'error')
     }
   }
 
