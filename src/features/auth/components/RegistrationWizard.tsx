@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -6,279 +6,95 @@ import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
-import PasswordRequirements from './PasswordRequirements'
+import { LIST_ACOMPANAMIENTO, CONDICIONES_PCD, NEURODIVERGENCIAS_LIST, LIST_TEMPORALIDAD, ESCALAS_OPCIONES, LIST_FORMATOS, INTEREST_SECTIONS, LIST_VIABILIDAD, LIST_NECESIDADES, LIST_AREAS_APOYO, MERIDA_ZONAS_SUGERIDAS, LIST_EDUCACION, LIST_TERAPIAS } from '../constants/registrationCatalogos'
+import { WizardNavButtons, ScaleCard, CheckChip, WizardProgress, WizardErrorBanner, PasswordField, StateCitySelects } from './WizardUI'
+import { CURP_REGEX, validateCurpMatch } from '../lib/validators'
+import { calcEdad365, calcEtapaVida365 } from '../lib/age'
+import { saveOnboardingData } from '../lib/onboardingStorage'
+import type { User } from '../../../types/auth'
 
-
-// ── LISTAS Y CATÁLOGOS ───────────────────────────────────────────
-const LIST_ACOMPANAMIENTO = [
-  { id: 'explorar_solo', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos y comunidades' },
-  { id: 'recomendaciones_paso', label: 'Me gustaría recibir recomendaciones paso a paso.', desc: 'Te guiaremos con rutas sugeridas a tu propio ritmo' },
-  { id: 'apoyo_necesite', label: 'Prefiero contar con apoyo cuando lo necesite.', desc: 'Acceso directo a acompañamiento y orientación' },
-]
-
-const CONDICIONES_PCD = [
-  'Intelectual o cognitiva',
-  'Motriz o de movilidad física',
-  'Visual',
-  'Auditiva',
-  'Del habla y la comunicación',
-  'Neurodivergencia (especificar)',
-  'Psicosocial',
-  'Prefiero no responder',
-]
-
-const NEURODIVERGENCIAS_LIST = [
-  'Autismo', 'TDAH', 'Dislexia', 'Dispraxia',
-  'Síndrome de Tourette', 'Altas capacidades/superdotación', 'Otro',
-]
-
-const LIST_TEMPORALIDAD = [
-  { id: 'nacimiento', label: 'Desde el nacimiento' },
-  { id: 'infancia', label: 'Se presentó durante la infancia' },
-  { id: 'adolescencia', label: 'Se presentó durante la adolescencia' },
-  { id: 'vida_adulta', label: 'Se presentó en la vida adulta' },
-  { id: 'progresiva', label: 'Ha ido apareciendo o cambiando con el tiempo' },
-  { id: 'en_evaluacion', label: 'Actualmente está en proceso de evaluación' },
-]
-
-const ESCALAS_OPCIONES = {
-  autonomia: [
-    { value: 4, label: 'Tomo decisiones con autonomía' },
-    { value: 3, label: 'Participo con apoyo ocasional' },
-    { value: 2, label: 'Requiero guía frecuente' },
-    { value: 1, label: 'Requiero representación o apoyo constante' },
-  ],
-  independencia: [
-    { value: 4, label: 'Me desenvuelvo con autonomía' },
-    { value: 3, label: 'Requiero apoyo en algunas actividades' },
-    { value: 2, label: 'Requiero apoyo frecuente' },
-    { value: 1, label: 'Requiero acompañamiento constante' },
-  ],
-  comunicacion: [
-    { value: 4, label: 'Verbal fluida' },
-    { value: 3, label: 'Verbal con apoyos / limitada' },
-    { value: 2, label: 'No verbal (funcional / con apoyos)' },
-    { value: 1, label: 'En desarrollo o exploración' },
-  ],
-  comprension: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  energia: [
-    { value: 4, label: 'Alta → Participo activamente en la mayoría de actividades' },
-    { value: 3, label: 'Media → Participo bien con pausas o equilibrio' },
-    { value: 2, label: 'Variable → Depende del día, entorno o condición' },
-    { value: 1, label: 'Baja → Requiero actividades de baja demanda o periodos cortos' },
-  ],
-  movilidad: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  social: [
-    { value: 4, label: 'Participo con facilidad' },
-    { value: 3, label: 'Participo con algunas barreras' },
-    { value: 2, label: 'Requiero apoyo frecuente' },
-    { value: 1, label: 'Requiero acompañamiento constante' },
-  ],
-  emocional: [
-    { value: 4, label: 'Poco o nada' },
-    { value: 3, label: 'Algunas veces' },
-    { value: 2, label: 'Frecuentemente' },
-    { value: 1, label: 'Requiero apoyo constante' },
-  ],
+interface CurpIndicatorProps {
+  curp: string
+  nombres: string
+  apPat: string
+  apMat: string
+  birthDate: string
 }
 
-const LIST_FORMATOS = [
-  { id: 'texto', label: 'Leyendo textos', icon: '📖' },
-  { id: 'imagenes', label: 'Con imágenes', icon: '🖼️' },
-  { id: 'audio', label: 'Con audio', icon: '🎧' },
-  { id: 'video', label: 'Con videos', icon: '🎬' },
-  { id: 'persona', label: 'Con apoyo de otra persona', icon: '🤝' },
-]
-
-
-const INTEREST_SECTIONS = [
-  {
-    title: 'DEPORTE / MOVIMIENTO', color: '#229B58',
-    items: ['Actividad física general', 'Deporte recreativo', 'Deporte adaptado', 'Competencia', 'Rehabilitación funcional', 'Movimiento / coordinación', 'Actividades al aire libre'],
-  },
-  {
-    title: 'BIENESTAR / ATENCIÓN ESPECIALIZADA', color: '#073B4C',
-    items: ['Terapias', 'Salud mental / emocional', 'Atención médica especializada', 'Odontología especializada', 'Rehabilitación', 'Regulación sensorial', 'Estética / cuidado personal especializado'],
-  },
-  {
-    title: 'EMPLEO', color: '#FF4D68',
-    items: ['Primer empleo', 'Reintegración laboral', 'Capacitación laboral', 'Empleo adaptado', 'Empleo profesional', 'Trabajo flexible'],
-  },
-  {
-    title: 'AUTOEMPLEO', color: '#D4944C',
-    items: ['Emprendimiento', 'Negocio propio', 'Venta de productos', 'Servicios', 'Marca personal', 'Economía digital'],
-  },
-  {
-    title: 'ARTE / CULTURA / MÚSICA', color: '#9B51E0',
-    items: ['Música', 'Danza', 'Pintura / dibujo', 'Teatro', 'Literatura', 'Manualidades', 'Cultura / eventos'],
-  },
-  {
-    title: 'INDEPENDENCIA', color: '#2F80ED',
-    items: ['Vida cotidiana', 'Movilidad', 'Comunicación', 'Finanzas personales', 'Organización diaria', 'Vida independiente'],
-  },
-  {
-    title: 'VIDA SOCIAL', color: '#E14E87',
-    items: ['Amistades', 'Eventos', 'Relaciones', 'Actividades grupales', 'Socialización guiada', 'Citas / vínculos', 'Espacios recreativos'],
-  },
-  {
-    title: 'EXPLORAR POSIBILIDADES', color: '#138A8A',
-    items: ['Descubrir intereses', 'Nuevas experiencias', 'Inspiración', 'Orientación', 'Comunidad', 'Futuro'],
-  },
-]
-
-const LIST_VIABILIDAD = [
-  { id: 'gratuita_becas', label: 'Gratuitas, con becas o apoyos' },
-  { id: 'bajo_costo', label: 'Bajo costo' },
-  { id: 'moderada', label: 'Inversión moderada' },
-  { id: 'sin_restricciones', label: 'Sin restricciones definidas' },
-]
-
-const LIST_NECESIDADES = [
-  'Transporte accesible',
-  'Accesibilidad en espacios públicos',
-  'Apoyo en la comunicación',
-  'Acompañamiento a actividades o citas',
-  'Apoyo con trámites y documentos',
-  'Apoyo económico / becas',
-  'Atención en salud y terapias',
-  'Apoyo emocional o psicológico',
-  'Ajustes razonables en escuela o trabajo',
-  'Tecnología de apoyo / asistiva',
-]
-
-const LIST_AREAS_APOYO = [
-  'Movilidad y traslados',
-  'Cuidado personal y autocuidado',
-  'Comunicación',
-  'Actividades de la vida diaria',
-  'Ámbito educativo / escolar',
-  'Ámbito laboral / empleo',
-  'Trámites y gestiones',
-  'Vida social y participación',
-  'Tareas del hogar',
-  'Tecnología y dispositivos',
-  'Salud y bienestar',
-]
-
-const MERIDA_ZONAS_SUGERIDAS = [
-  'Centro (97000)',
-  'Altabrisa (97130)',
-  'Francisco de Montejo (97203)',
-  'Ciudad Caucel (97314)',
-  'Las Américas (97302)',
-  'García Ginerés (97070)',
-  'Campestre (97120)',
-  'Chuburná (97205)',
-  'Montebello (97113)',
-  'Itzimná (97100)',
-  'Pensiones (97217)',
-  'Los Héroes (97306)',
-]
-
-const LIST_EDUCACION = [
-  'Escuela regular',
-  'Escuela con apoyos (inclusiva)',
-  'Escuela de educación especial (CAM)',
-  'Educación en casa (homeschool)',
-  'Educación para adultos (INEA)',
-  'Estudios técnicos o de oficio',
-  'Universidad',
-  'No he asistido a la escuela',
-]
-
-const LIST_TERAPIAS = [
-  'Física / rehabilitación',
-  'Ocupacional',
-  'De lenguaje / comunicación',
-  'Psicológica o emocional',
-  'Conductual (ABA)',
-  'Integración sensorial',
-  'Neuropsicología',
-  'Ninguna hasta ahora',
-]
-
-// ── CURP VALIDATION ──────────────────────────────────────────────
-const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i
-const VOWELS = 'AEIOU'
-const CONSONANTS = 'BCDFGHJKLMNPQRSTVWXYZ'
-
-function getFirstInternalVowel(str) {
-  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase()
-  for (let i = 1; i < normalized.length; i++) {
-    if (VOWELS.includes(normalized[i])) return normalized[i]
-  }
-  return 'X'
+export interface RegistrationWizardProps {
+  onBackToRoles?: () => void
+  onGoToLogin?: (email?: string) => void
 }
 
-function getFirstInternalConsonant(str) {
-  if (!str) return 'X'
-  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase()
-  for (let i = 1; i < normalized.length; i++) {
-    if (CONSONANTS.includes(normalized[i])) return normalized[i]
-  }
-  return 'X'
+export type PcdWizardStep =
+  | 'identity'
+  | 'security'
+  | 'accommodation'
+  | 'condition'
+  | 'origin'
+  | 'history'
+  | 'support'
+  | 'scales1'
+  | 'scales2'
+  | 'formats'
+  | 'interests'
+  | 'viability'
+  | 'summary'
+  | 'thanks'
+
+interface GeneralFormData {
+  nombres: string
+  apellidoPaterno: string
+  apellidoMaterno: string
+  birth_date: string
+  domicilio: string
+  email: string
+  password: string
+  curp: string
+  acompanamiento: string
+  estado: string
+  ciudad: string
 }
 
-function getCurpName(fullName) {
-  if (!fullName) return ''
-  const parts = fullName.trim().toUpperCase().split(/\s+/)
-  if (parts.length > 1) {
-    const first = parts[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    if (['MARIA', 'MA', 'MA.', 'JOSE', 'J', 'J.'].includes(first)) return parts[1]
-  }
-  return parts[0]
+interface ConditionData {
+  conditions: string[]
+  neurodivergencias: string[]
+  neuroOtro: string
+  tieneDiagnostico: string
+  diagnosticoEspecifico: string
+  redFlagDiagnostico: boolean
+  temporalidad: string
 }
 
-function validateCurpMatch(curp, nombres, apPat, apMat, birthDate) {
-  if (!curp || curp.length !== 18 || !CURP_REGEX.test(curp)) return { valid: true, errors: [], nameIsComplete: false }
-  if (!birthDate) return { valid: true, errors: [], nameIsComplete: false }
-  const errors = []
-  const c = curp.toUpperCase()
-  const yy = parseInt(c.substring(4, 6), 10)
-  const mm = parseInt(c.substring(6, 8), 10)
-  const dd = parseInt(c.substring(8, 10), 10)
-  const century = /[A-Z]/.test(c[16]) ? 20 : 19
-  const curpYear = century * 100 + yy
-  const [iY, iM, iD] = birthDate.split('-').map(Number)
-  if (curpYear !== iY || mm !== iM || dd !== iD) {
-    errors.push('La fecha de nacimiento no coincide con la CURP. En la CURP aparece ' + String(dd).padStart(2, '0') + '/' + String(mm).padStart(2, '0') + '/' + curpYear + '.')
-  }
-  const p = apPat?.trim().toUpperCase()
-  const m = apMat?.trim().toUpperCase()
-  const n = nombres?.trim().toUpperCase()
-
-  if (p) {
-    if (c[0] !== p[0]) errors.push('La CURP no coincide con el apellido paterno.')
-    if (c[1] !== getFirstInternalVowel(p)) errors.push('La CURP no coincide con las iniciales del apellido paterno.')
-    if (c[13] !== getFirstInternalConsonant(p)) errors.push('La CURP no coincide con las consonantes del apellido paterno.')
-  }
-  if (m) {
-    if (c[2] !== m[0]) errors.push('La CURP no coincide con el apellido materno.')
-    if (c[14] !== getFirstInternalConsonant(m)) errors.push('La CURP no coincide con las consonantes del apellido materno.')
-  }
-  if (n) {
-    const nombre = getCurpName(n)
-    if (c[3] !== nombre[0]) errors.push('La CURP no coincide con el nombre.')
-    if (c[15] !== getFirstInternalConsonant(nombre)) errors.push('La CURP no coincide con las consonantes del nombre.')
-  }
-
-  const nameIsComplete = !!(p && m && n)
-  return { valid: errors.length === 0, errors, nameIsComplete }
+interface ScalesState {
+  autonomia: number | null
+  independencia: number | null
+  comunicacion: number | null
+  comprension: number | null
+  energia: number | null
+  movilidad: number | null
+  social: number | null
+  emocional: number | null
 }
 
-function CurpIndicator(props) {
+interface AiNarrativeData {
+  quienEres: string
+  contexto: string
+  loQueTeGusta: string
+}
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      message?: string
+      mensaje?: string
+    }
+  }
+}
+
+// ── CURP INDICATOR (usuario: valida la CURP del PCD en tiempo real) ──
+function CurpIndicator(props: CurpIndicatorProps) {
   const { curp, nombres, apPat, apMat, birthDate } = props
   if (!curp || curp.length === 0) {
     return <p style={{ fontSize: 11, margin: '4px 0 0', color: 'var(--fg3)' }}>18 caracteres alfanuméricos (ej. GARC850101HDFRL09)</p>
@@ -298,74 +114,8 @@ function CurpIndicator(props) {
   return <p style={{ fontSize: 12, margin: '4px 0 0', color: col }}>{ico} {txt}</p>
 }
 
-// ── SCALE CARD (compact helper) ──────────────────────────────────
-function ScaleCard({ title, desc, options, value, onChange }) {
-  return (
-    <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
-      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {options.map(opt => {
-          const isSelected = value === opt.value
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange(opt.value)}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 8,
-                border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-body)',
-                color: isSelected ? '#073B4C' : 'var(--fg1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>{opt.label}</span>
-              {isSelected && (
-                <span style={{ color: '#229B58', fontWeight: 800, fontSize: 13, flexShrink: 0, marginLeft: 6 }}>
-                  ✓
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ── CHECK CHIP (multi-select compact helper) ─────────────────────
-function CheckChip({ label, selected, onToggle, accent = '#229B58' }) {
-  return (
-    <button type="button" onClick={onToggle}
-      style={{
-        padding: '9px 12px', borderRadius: 8,
-        border: `1.5px solid ${selected ? accent : '#E5DCD2'}`,
-        background: selected ? `color-mix(in oklch, ${accent} 8%, white)` : '#ffffff',
-        color: selected ? '#073B4C' : 'var(--fg1)',
-        fontWeight: selected ? 700 : 500, fontSize: 12.5,
-        cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
-        fontFamily: 'var(--font-body)', transition: 'all 0.15s ease',
-      }}>
-      <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${selected ? accent : '#9ca3af'}`, background: selected ? accent : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-        {selected && Icons.check({ s: 10 })}
-      </div>
-      <span>{label}</span>
-    </button>
-  )
-}
-
 // ── STEP ORDER ───────────────────────────────────────────────────
-const STEP_ORDER = [
+const STEP_ORDER: PcdWizardStep[] = [
   'identity',     // 1: Nombres, apellidos, fecha nacimiento
   'security',     // 2: Email, contraseña
   'accommodation',// 3: Preferencia de acompañamiento
@@ -381,32 +131,18 @@ const STEP_ORDER = [
 ]
 const TOTAL_STEPS = STEP_ORDER.length
 
-// ── NAV BUTTONS (outside render to avoid re-creation) ───────────
-function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
-  return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 14, flexShrink: 0 }}>
-      <button className="auth-btn-secondary" type="button" onClick={onBack} style={{ flex: 1 }}>
-        {Icons.arrowLeft({ s: 16 })} Volver
-      </button>
-      <button className="auth-btn-primary" type="submit" disabled={submitDisabled} style={{ flex: 2 }}>
-        {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
-      </button>
-    </div>
-  )
-}
-
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
+export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: RegistrationWizardProps) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
 
-  const [wizardStep, setWizardStep] = useState('identity')
+  const [wizardStep, setWizardStep] = useState<PcdWizardStep>('identity')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const [docFile, setDocFile] = useState(null)
+  const [docFile, setDocFile] = useState<File | null>(null)
   const [showPass, setShowPass] = useState(false)
 
   const handleFinishToLogin = () => {
@@ -426,45 +162,45 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 1–3: Datos personales, identificación, cuenta
-  const [generalForm, setGeneralForm] = useState({
+  const [generalForm, setGeneralForm] = useState<GeneralFormData>({
     nombres: '', apellidoPaterno: '', apellidoMaterno: '',
     birth_date: '', domicilio: '', email: '', password: '',
     curp: '', acompanamiento: '', estado: '', ciudad: '',
   })
 
   // Step 5–6: Condición y diagnóstico
-  const [conditionData, setConditionData] = useState({
+  const [conditionData, setConditionData] = useState<ConditionData>({
     conditions: [], neurodivergencias: [], neuroOtro: '',
     tieneDiagnostico: '', diagnosticoEspecifico: '',
     redFlagDiagnostico: false, temporalidad: '',
   })
 
   // Step 7–8: Escalas de vida
-  const [scales, setScales] = useState({
+  const [scales, setScales] = useState<ScalesState>({
     autonomia: null, independencia: null, comunicacion: null, comprension: null,
     energia: null, movilidad: null, social: null, emocional: null,
   })
 
   // Step 9: Formatos
-  const [formatos, setFormatos] = useState([])
+  const [formatos, setFormatos] = useState<string[]>([])
 
   // Step 10–11: Intereses y viabilidad
-  const [selectedInterests, setSelectedInterests] = useState([])
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [otrosIntereses, setOtrosIntereses] = useState('')
   const [viabilidad, setViabilidad] = useState('')
 
   // Step 6: Historial educativo y terapias
-  const [educacionHistory, setEducacionHistory] = useState([])
-  const [terapiaHistory, setTerapiaHistory] = useState([])
+  const [educacionHistory, setEducacionHistory] = useState<string[]>([])
+  const [terapiaHistory, setTerapiaHistory] = useState<string[]>([])
 
   // Step 7: Zonas/colonias preferidas, necesidades y áreas de apoyo
-  const [preferredZones, setPreferredZones] = useState([])
+  const [preferredZones, setPreferredZones] = useState<string[]>([])
   const [zonaInput, setZonaInput] = useState('')
-  const [needsList, setNeedsList] = useState([])
-  const [supportAreas, setSupportAreas] = useState([])
+  const [needsList, setNeedsList] = useState<string[]>([])
+  const [supportAreas, setSupportAreas] = useState<string[]>([])
 
   // AI summary
-  const [aiNarrative, setAiNarrative] = useState(null)
+  const [aiNarrative, setAiNarrative] = useState<AiNarrativeData | null>(null)
 
   // ── Helpers ─────────────────────────────────────────────────────
   const scrollTop = () => {
@@ -473,10 +209,9 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   const stepIndex = STEP_ORDER.indexOf(wizardStep)
-  const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
 
   // ── Toggle handlers ─────────────────────────────────────────────
-  const toggleCondition = (cond) => {
+  const toggleCondition = (cond: string) => {
     setConditionData(prev => {
       let next = [...prev.conditions]
       if (cond === 'Prefiero no responder') {
@@ -489,7 +224,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     })
   }
 
-  const toggleNeuro = (item) => {
+  const toggleNeuro = (item: string) => {
     setConditionData(prev => ({
       ...prev,
       neurodivergencias: prev.neurodivergencias.includes(item)
@@ -498,28 +233,28 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     }))
   }
 
-  const toggleFormato = (id) => {
+  const toggleFormato = (id: string) => {
     setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  const toggleInterest = (item) => {
+  const toggleInterest = (item: string) => {
     setError('')
     setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleEducacionHistory = (item) => {
+  const toggleEducacionHistory = (item: string) => {
     setEducacionHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleTerapiaHistory = (item) => {
+  const toggleTerapiaHistory = (item: string) => {
     setTerapiaHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleNeedsList = (item) => {
+  const toggleNeedsList = (item: string) => {
     setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleSupportAreas = (item) => {
+  const toggleSupportAreas = (item: string) => {
     setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
@@ -531,11 +266,11 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     setZonaInput('')
   }
 
-  const removePreferredZone = (z) => {
+  const removePreferredZone = (z: string) => {
     setPreferredZones(prev => prev.filter(x => x !== z))
   }
 
-  const toggleSuggestedZone = (z) => {
+  const toggleSuggestedZone = (z: string) => {
     if (preferredZones.includes(z)) {
       removePreferredZone(z)
     } else {
@@ -545,7 +280,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
 
   // ── Navigation handlers ─────────────────────────────────────────
   // Step 1 → 2: Identity → Security
-  const handleIdentitySubmit = (e) => {
+  const handleIdentitySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.nombres || !generalForm.apellidoPaterno || !generalForm.apellidoMaterno) {
@@ -565,7 +300,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 3 → 4: Security → Accommodation
-  const handleSecuritySubmit = (e) => {
+  const handleSecuritySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.email) {
@@ -586,7 +321,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 3 → 4: Accommodation → Condition
-  const handleAccommodationSubmit = (e) => {
+  const handleAccommodationSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.acompanamiento) {
@@ -598,7 +333,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 5 → 6: Condition → Origin
-  const handleConditionSubmit = (e) => {
+  const handleConditionSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (conditionData.conditions.length === 0) {
@@ -610,7 +345,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 5 → 6: Origin → History
-  const handleOriginSubmit = (e) => {
+  const handleOriginSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (conditionData.conditions.includes('Neurodivergencia (especificar)') && conditionData.neurodivergencias.length === 0) {
@@ -630,7 +365,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 6 → 7: History → Support
-  const handleHistorySubmit = (e) => {
+  const handleHistorySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setWizardStep('support')
@@ -638,7 +373,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 7 → 8: Support → Scales1
-  const handleSupportSubmit = (e) => {
+  const handleSupportSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setWizardStep('scales1')
@@ -646,7 +381,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 7 → 8: Scales1 → Scales2
-  const handleScales1Submit = (e) => {
+  const handleScales1Submit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (scales.autonomia === null || scales.independencia === null || scales.comunicacion === null || scales.comprension === null) {
@@ -658,7 +393,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 8 → 9: Scales2 → Formats
-  const handleScales2Submit = (e) => {
+  const handleScales2Submit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (scales.energia === null || scales.movilidad === null || scales.social === null || scales.emocional === null) {
@@ -670,7 +405,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 9 → 10: Formats → Interests
-  const handleFormatsSubmit = (e) => {
+  const handleFormatsSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (formatos.length === 0) {
       setError('Selecciona al menos un formato en el que prefieres recibir información.')
@@ -681,7 +416,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
   }
 
   // Step 10 → 11: Interests → Viability
-  const handleInterestsSubmit = (e) => {
+  const handleInterestsSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault()
     setError('')
     if (selectedInterests.length === 0) {
@@ -701,7 +436,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     const neuroList = conditionData.neurodivergencias.length > 0 ? ` con rasgos de ${conditionData.neurodivergencias.join(', ')}` : ''
     const quienEres = `${name}, eres una persona única, guiada por tu autenticidad y tu deseo de construir tu propio camino. Reconocemos tu valor integral (${condList}${neuroList}), valorando tus talentos individuales y tu perspectiva invaluable dentro de nuestra comunidad.`
 
-    const tempoMap = {
+    const tempoMap: Record<string, string> = {
       nacimiento: 'desde tu nacimiento', infancia: 'durante tu infancia',
       adolescencia: 'durante tu adolescencia', vida_adulta: 'en tu vida adulta',
       progresiva: 'de forma evolutiva a lo largo del tiempo',
@@ -721,7 +456,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     return { quienEres, contexto, loQueTeGusta }
   }
 
-  const handleFinalSubmit = async (e) => {
+  const handleFinalSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSending(true)
@@ -739,8 +474,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
         estado: generalForm.estado,
       }
 
-      let authResult = null
-      let regError = null
+      let authResult: { tokenAcceso?: string; tokenRefresco?: string | null; requiereInicioSesion?: boolean; usuario?: { id: number | string; email: string } } | null = null
+      let regError: unknown = null
       try {
         const regRes = await api.post('/autenticacion/registro', registerPayload)
         authResult = regRes.data
@@ -757,8 +492,9 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       // (perfil, perfil-necesidades, escalas…) requieren autenticación y fallarían
       // con 401 "Token de autenticación requerido".
       if (!authResult?.tokenAcceso && !requiereInicioSesion) {
-        const msg = regError?.response?.data?.message
-          ?? regError?.response?.data?.mensaje
+        const typedRegErr = regError as ApiErrorResponse | null
+        const msg = typedRegErr?.response?.data?.message
+          ?? typedRegErr?.response?.data?.mensaje
           ?? 'No se pudo completar el registro. Inténtalo de nuevo.'
         setError(msg)
         addToast(msg, 'error')
@@ -768,21 +504,19 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       // Cuenta creada sin token: mostramos el resumen de bienvenida generado por IA
       // y después el usuario inicia sesión para continuar.
       if (requiereInicioSesion) {
-        localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
-        localStorage.setItem('raices_user_viability', viabilidad)
-        localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
         const narrative = generateNarrative()
         setAiNarrative(narrative)
-        localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+        saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos, narrative })
         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
         setWizardStep('thanks')
         scrollTop()
         return
       }
 
+      if (!authResult || !authResult.tokenAcceso) return
       const token = authResult.tokenAcceso
-      const userObj = {
-        id: authResult.usuario?.id,
+      const userObj: User = {
+        id: String(authResult.usuario?.id ?? ''),
         email: authResult.usuario?.email || generalForm.email,
         role: 'pcd',
         full_name: nombreCompleto,
@@ -805,21 +539,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
       try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
 
       // Guardar perfil de necesidades (reemplaza el flujo del onboarding)
-      // Calcular etapa de vida desde fecha de nacimiento
-      const calcLifeStage = (birthDate) => {
-        if (!birthDate) return null
-        const age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-        if (age <= 5) return 'infancia_temprana'
-        if (age <= 12) return 'infancia'
-        if (age <= 17) return 'adolescencia'
-        if (age <= 29) return 'juventud'
-        if (age <= 59) return 'adultez'
-        return 'adulto_mayor'
-      }
-      const calcAge = (birthDate) => {
-        if (!birthDate) return null
-        return Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      }
+      // Etapa de vida y edad: fórmulas legacy de 365.25 días (ver lib/age.js)
       const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
       const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
       try {
@@ -833,7 +553,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
             severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
             communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
-            mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
+            mobility_needs: (scales.movilidad ?? 3) >= 4 ? [] : ['Movilidad reducida'],
             tech_access: formatos,
             preferred_zones: preferredZones,
             needs: needsList,
@@ -841,11 +561,11 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             support_areas: supportAreas,
             education_history: educacionHistory,
             therapy_history: terapiaHistory,
-            life_stage: calcLifeStage(generalForm.birth_date),
+            life_stage: calcEtapaVida365(generalForm.birth_date),
             current_concerns: conditionData.diagnosticoEspecifico || null,
-            support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
+            support_level: (scales.comunicacion ?? 3) >= 4 ? 'independiente' : (scales.comunicacion ?? 3) >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
             birth_date: generalForm.birth_date,
-            age: calcAge(generalForm.birth_date),
+            age: calcEdad365(generalForm.birth_date),
           },
         })
       } catch (profErr) { console.warn('Profiling save notice:', profErr) }
@@ -859,13 +579,9 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
         } catch (docErr) { console.warn('Doc upload notice:', docErr) }
       }
 
-      localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
-      localStorage.setItem('raices_user_viability', viabilidad)
-      localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
-
       const narrative = generateNarrative()
       setAiNarrative(narrative)
-      localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+      saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos, narrative })
 
       addToast('¡Registro y perfilado completados exitosamente!', 'success')
       setWizardStep('thanks')
@@ -889,37 +605,10 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
     <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
       {/* ── Progress bar ── */}
-      <div style={{ marginBottom: 20, flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#229B58', textTransform: 'uppercase' }}>
-            Registro de Persona con Discapacidad
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)' }}>
-            {stepIndex >= 0 ? `Paso ${stepIndex + 1} de ${TOTAL_STEPS}` : 'Completado ✓'}
-          </span>
-        </div>
-        <div style={{ height: 5, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
-            borderRadius: 3,
-            transition: 'width 0.4s ease',
-            width: `${progressPct}%`,
-          }} />
-        </div>
-      </div>
+      <WizardProgress accent="#229B58" title="Registro de Persona con Discapacidad" stepIndex={stepIndex} totalSteps={TOTAL_STEPS} />
 
       {/* ── Error ── */}
-      {error && (
-        <div style={{
-          background: 'rgba(239,68,68,0.1)', border: '1.5px solid rgba(239,68,68,0.4)',
-          color: '#ef4444', padding: '10px 14px', borderRadius: 10, fontSize: 13,
-          fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
-          flexShrink: 0,
-        }}>
-          {Icons.shieldAlert({ s: 16 })} {error}
-        </div>
-      )}
+      <WizardErrorBanner error={error} />
 
       {/* ═══════════════════════════════════════════════════════════
            STEP 1: IDENTIDAD (Nombres, apellidos, fecha nacimiento)
@@ -964,26 +653,12 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
               onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
-              <select className="auth-input auth-select" required
-                value={generalForm.estado}
-                onChange={e => setGeneralForm({ ...generalForm, estado: e.target.value, ciudad: '' })}>
-                <option value="" disabled>Selecciona un estado</option>
-                {STATES.map(st => <option key={st} value={st}>{st}</option>)}
-              </select>
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
-              <select className="auth-input auth-select" required disabled={!generalForm.estado}
-                value={generalForm.ciudad}
-                onChange={e => setGeneralForm({ ...generalForm, ciudad: e.target.value })}>
-                <option value="" disabled>{generalForm.estado ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
-                {generalForm.estado && getMunicipalities(generalForm.estado).map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-          </div>
+          <StateCitySelects
+            state={generalForm.estado}
+            city={generalForm.ciudad}
+            onStateChange={st => setGeneralForm({ ...generalForm, estado: st, ciudad: '' })}
+            onCityChange={c => setGeneralForm({ ...generalForm, ciudad: c })}
+          />
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button className="auth-btn-secondary" type="button" onClick={onBackToRoles} style={{ flex: 1 }}>
@@ -1019,38 +694,16 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
 
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPass ? 'text' : 'password'} className="auth-input" required
-                placeholder="Mínimo 8 caracteres"
-                value={generalForm.password}
-                onChange={e => setGeneralForm({ ...generalForm, password: e.target.value })}
-                style={{ paddingRight: 48 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="auth-pass-toggle"
-                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                aria-pressed={showPass}
-              >
-                {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
-              </button>
-            </div>
-            {generalForm.password && (
-              <div style={{ marginTop: 5 }}>
-                <div style={{ height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: passStrength.width, background: passStrength.color, transition: 'all 0.3s' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: passStrength.color, fontWeight: 600 }}>{passStrength.label}</span>
-                </div>
-                <PasswordRequirements password={generalForm.password} />
-              </div>
-            )}
+            <PasswordField
+              value={generalForm.password}
+              onChange={v => setGeneralForm({ ...generalForm, password: v })}
+              showPass={showPass}
+              onToggleShow={() => setShowPass(!showPass)}
+              strength={passStrength}
+            />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1092,7 +745,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             })}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('security'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('security'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1133,7 +786,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             })}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('accommodation'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('accommodation'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1223,7 +876,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             </div>
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1263,7 +916,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             </div>
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('origin'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1431,7 +1084,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             </div>
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('history'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('history'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1450,13 +1103,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participas en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: v })} />
-            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesitas?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: v })} />
-            <ScaleCard title="C. Comunicación" desc="¿Cómo expresas necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: v })} />
-            <ScaleCard title="D. Comprensión" desc="¿Sigues instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
+            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participas en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: Number(v) })} />
+            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesitas?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: Number(v) })} />
+            <ScaleCard title="C. Comunicación" desc="¿Cómo expresas necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: Number(v) })} />
+            <ScaleCard title="D. Comprensión" desc="¿Sigues instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: Number(v) })} />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('support'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('support'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1475,13 +1128,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan tu energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: v })} />
-            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúas físicamente con tu entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: v })} />
-            <ScaleCard title="G. Social" desc="¿Cómo participas con personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: v })} />
-            <ScaleCard title="H. Emocional" desc="¿Cómo impacta tu bienestar emocional?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: v })} />
+            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan tu energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: Number(v) })} />
+            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúas físicamente con tu entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: Number(v) })} />
+            <ScaleCard title="G. Social" desc="¿Cómo participas con personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: Number(v) })} />
+            <ScaleCard title="H. Emocional" desc="¿Cómo impacta tu bienestar emocional?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: Number(v) })} />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -1521,7 +1174,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }) {
             })}
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-
 /* ════════════════════ Componentes UI base ════════════════════ */
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
 

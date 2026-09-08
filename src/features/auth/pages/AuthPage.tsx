@@ -1,31 +1,39 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
-import axios from 'axios';
-import { useLogin, useRegister } from '../hooks/useAuth'
+import axios from 'axios'
+import { useLogin, getHomePathByRole } from '../hooks/useAuth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { Icons, BrandMark } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
-import { AUTH_MESSAGES, AUTH_UI, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
+import { AUTH_MESSAGES, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
 import RegistrationWizard from '../components/RegistrationWizard'
 import TutorRegistrationWizard from '../components/TutorRegistrationWizard'
 import InstitutionRegistrationWizard from '../components/InstitutionRegistrationWizard'
 import EnterpriseRegistrationWizard from '../components/EnterpriseRegistrationWizard'
 import { ROLES } from '../constants/roles'
-import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
-import PasswordRequirements from '../components/PasswordRequirements'
 import { mapErrorMessage } from '../lib/mapErrorMessage'
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export type AuthMode = 'login' | 'register' | 'forgot'
+export type AuthRegStep = number | 'consent' | 'pcd_wizard' | 'tutor_wizard' | 'institution_wizard' | 'empresa_wizard'
+
+interface AuthFormData {
+  email: string
+  password: string
+  role: string
+  full_name?: string
+  [key: string]: string | undefined
+}
 
 export default function AuthPage() {
   const [params] = useSearchParams()
   const nav = useNavigate()
-  const [mode, setMode] = useState(params.get('mode') === 'register' ? 'register' : 'login')
-  const [regStep, setRegStep] = useState(1)
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'pcd', city: '', state: '' })
+  const [mode, setMode] = useState<AuthMode>(params.get('mode') === 'register' ? 'register' : 'login')
+  const [regStep, setRegStep] = useState<AuthRegStep>(1)
+  const [form, setForm] = useState<AuthFormData>({ email: '', password: '', role: 'pcd' })
   const [showPass, setShowPass] = useState(false)
   const [rememberMe, setRememberMe] = useState(getRememberMe)
   const [error, setError] = useState('')
@@ -33,7 +41,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(true)
   const [consentChecked, setConsentChecked] = useState(false)
   const login = useLogin()
-  const register = useRegister()
   const { addToast } = useUiStore()
   const { token, user } = useAuthStore()
 
@@ -66,12 +73,10 @@ export default function AuthPage() {
   useEffect(() => { return () => { didLoginRef.current = false } }, [])
 
   if (token && !login.isPending && !didLoginRef.current) {
-    if (user?.role === 'admin') return <Navigate to="/admin" replace />
-    if (user?.role === 'institution') return <Navigate to="/institution-portal" replace />
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={getHomePathByRole(user?.role)} replace />
   }
 
-  const set = k => e => {
+  const set = (k: string) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     let val = e.target.value
     if (k === 'full_name' && form.role !== 'institution') {
       val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '')
@@ -97,40 +102,20 @@ export default function AuthPage() {
       const result = await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
       addToast(AUTH_MESSAGES.LOGIN_SUCCESS, 'success')
       const role = result?.data?.user?.role
-      if (role === 'admin') nav('/admin', { replace: true })
-      else if (role === 'institution') nav('/institution-portal', { replace: true })
-      else nav('/dashboard', { replace: true })
-    } catch (err) {
+      nav(getHomePathByRole(role), { replace: true })
+    } catch (err: unknown) {
       didLoginRef.current = false
-      const msg = err.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
+      const apiErr = err as { response?: { data?: { message?: string } } }
+      const msg = apiErr.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
       const translatedMsg = mapErrorMessage(msg)
       setError(translatedMsg)
       addToast(translatedMsg, 'error')
     }
   }
 
-  const handleLogin = async e => { e.preventDefault(); await doLogin() }
+  const handleLogin = async (e: FormEvent) => { e.preventDefault(); await doLogin() }
 
-  const handleRegister = async e => {
-    e.preventDefault()
-    setError('')
-    if (!EMAIL_REGEX.test(form.email)) {
-      setError('Por favor, ingresa un correo electrónico válido.')
-      addToast('Por favor, ingresa un correo electrónico válido.', 'error')
-      return
-    }
-    try {
-      await register.mutateAsync({ ...form, _rememberMe: rememberMe })
-      addToast(AUTH_MESSAGES.REGISTER_SUCCESS, 'success')
-    } catch (err) {
-      const msg = err.response?.data?.message ?? AUTH_MESSAGES.REGISTER_FAILED
-      const translatedMsg = mapErrorMessage(msg)
-      setError(translatedMsg)
-      addToast(translatedMsg, 'error')
-    }
-  }
-
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault(); setError('');
     if (!form.email) { setError(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED); addToast(AUTH_MESSAGES.FORGOT_EMAIL_REQUIRED, 'error'); return; }
     if (!EMAIL_REGEX.test(form.email)) { setError('Por favor, ingresa un correo electrónico válido.'); addToast('Por favor, ingresa un correo electrónico válido.', 'error'); return; }
@@ -144,24 +129,13 @@ export default function AuthPage() {
     finally { setSending(false); }
   };
 
-  const strength = getPasswordStrength(form.password);
-  const { isValid: isPasswordValid } = checkPasswordCriteria(form.password);
-
   const s = {
-    page: { minHeight: '100vh', background: 'var(--bg-warm)', display: 'block', fontFamily: 'var(--font-body)' },
-    inner: { maxWidth: 540, width: '100%', margin: '0 auto', padding: '40px 24px 64px' },
-    title: { fontFamily: 'var(--font-display)', fontSize: 34, fontWeight: 700, color: 'var(--fg1)', margin: 0, textAlign: 'center' },
-    sub: { fontSize: 17, color: 'var(--fg2)', marginTop: 10, textAlign: 'center', lineHeight: 1.5 },
-    card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 28, boxShadow: 'var(--shadow-sm)', marginTop: 28 },
-    inputWrap: { marginBottom: 22 },
-    roleBtn: (active) => ({ display: 'block', padding: 18, width: '100%', textAlign: 'left', border: active ? '3px solid var(--primary)' : '1.5px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', minHeight: 44, background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)', transition: 'all 0.2s ease', marginBottom: 12, fontFamily: 'var(--font-body)' }),
-    avatar: (active) => ({ width: 52, height: 52, borderRadius: '50%', background: 'var(--bg-cool)', border: active ? '3px solid var(--primary)' : '1.5px solid var(--border-color)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', verticalAlign: 'middle', transition: 'all 0.2s ease', position: 'relative', overflow: 'hidden' }),
+    roleBtn: (active: boolean) => ({ display: 'block', padding: 18, width: '100%', textAlign: 'left' as const, border: active ? '3px solid var(--primary)' : '1.5px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', minHeight: 44, background: active ? 'var(--primary-subtle)' : 'var(--bg-surface)', transition: 'all 0.2s ease', marginBottom: 12, fontFamily: 'var(--font-body)' }),
+    avatar: (active: boolean) => ({ width: 52, height: 52, borderRadius: '50%', background: 'var(--bg-cool)', border: active ? '3px solid var(--primary)' : '1.5px solid var(--border-color)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', verticalAlign: 'middle', transition: 'all 0.2s ease', position: 'relative' as const, overflow: 'hidden' }),
     progress: { height: 6, background: 'var(--border-color)', borderRadius: 3, marginBottom: 28, overflow: 'hidden' },
-    progressBar: (pct) => ({ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }),
-    link: { background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', textDecoration: 'underline', textUnderlineOffset: 3, minHeight: 44, padding: '0 8px' },
-    actions: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 },
+    progressBar: (pct: number) => ({ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width 0.4s ease' }),
     errorBox: { display: 'block', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--color-error) 12%, transparent)', border: '1px solid color-mix(in oklch, var(--color-error) 40%, transparent)', color: 'var(--color-error)', fontSize: 14, fontWeight: 600, marginBottom: 20 },
-    passWrap: { position: 'relative' },
+    passWrap: { position: 'relative' as const },
   }
 
   return (
@@ -450,7 +424,7 @@ export default function AuthPage() {
                         <span>Acepto los términos de confidencialidad y protección de datos</span>
                       </label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <button className="auth-btn-primary" type="button" disabled={!consentChecked} onClick={() => { if (form.role === 'pcd') setRegStep('pcd_wizard'); else if (form.role === 'tutor') setRegStep('tutor_wizard'); else if (form.role === 'institution') setRegStep('institution_wizard'); else if (form.role === 'empresa') setRegStep('empresa_wizard'); else setRegStep(2) }} style={{ padding: '15px 20px', fontSize: 15 }}>De acuerdo y continuar {Icons.arrowRight({ s: 18 })}</button>
+                        <button className="auth-btn-primary" type="button" disabled={!consentChecked} onClick={() => { if (form.role === 'pcd') setRegStep('pcd_wizard'); else if (form.role === 'tutor') setRegStep('tutor_wizard'); else if (form.role === 'institution') setRegStep('institution_wizard'); else if (form.role === 'empresa') setRegStep('empresa_wizard') }} style={{ padding: '15px 20px', fontSize: 15 }}>De acuerdo y continuar {Icons.arrowRight({ s: 18 })}</button>
                         <button className="auth-btn-secondary" type="button" onClick={() => setRegStep(1)}>{Icons.arrowLeft({ s: 16 })} Cambiar tipo de cuenta</button>
                       </div>
                     </div>
@@ -461,46 +435,7 @@ export default function AuthPage() {
                   {regStep === 'institution_wizard' && <InstitutionRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
                   {regStep === 'empresa_wizard' && <EnterpriseRegistrationWizard onBackToRoles={() => setRegStep(1)} />}
 
-                  {regStep === 2 && (
-                    <>
-                      <div style={{ marginBottom: 12 }}><p style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 700, marginBottom: 6 }}>Paso 2 de 2</p><div style={s.progress} role="progressbar" aria-valuenow={2} aria-valuemin={1} aria-valuemax={2} aria-label="Paso 2 de 2"><div style={s.progressBar(100)} /></div></div>
-                      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Crea tu cuenta {form.role === 'institution' ? 'institucional' : form.role === 'empresa' ? 'empresarial' : 'de tutor'}</h1>
-                      <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>Ingresa tus datos personales para completar el registro</p>
-                      {error && <div style={{ ...s.errorBox, marginBottom: 20 }} role="alert" aria-live="assertive">{Icons.shieldAlert({ s: 18 })} {error}</div>}
-                      <form onSubmit={e => { e.preventDefault(); handleRegister(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-                        <div><label htmlFor="reg-name" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>{form.role === 'institution' ? 'Nombre de la institución' : form.role === 'empresa' ? 'Nombre de la empresa o contacto' : 'Nombre completo'} <span style={{ color: '#ef4444' }}>*</span></label><input id="reg-name" name="name" autoComplete="name" className="auth-input" value={form.full_name} onChange={set('full_name')} required placeholder={form.role === 'institution' ? 'Ej. Centro de Inclusión Raíces' : form.role === 'empresa' ? 'Ej. Empresa Inclusiva S.A.' : 'Ej. Ana Pérez'} /></div>
-                        <div><label htmlFor="reg-email" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label><input id="reg-email" name="email" type="email" autoComplete="email" className="auth-input" value={form.email} onChange={set('email')} required placeholder="ejemplo@correo.com" /></div>
-                        <div>
-                          <label htmlFor="reg-pass" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Contraseña <span style={{ color: '#ef4444' }}>*</span></label>
-                          <div style={s.passWrap}><input id="reg-pass" name="new-password" type={showPass ? 'text' : 'password'} autoComplete="new-password" className="auth-input" style={{ paddingRight: 48 }} value={form.password} onChange={set('password')} required minLength={8} placeholder="Crea una contraseña segura" /><button type="button" onClick={() => setShowPass(v => !v)} className="auth-pass-toggle" aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>{showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}</button></div>
-                          {form.password && (
-                            <div style={{ marginTop: 6 }}>
-                              <div style={{ display: 'flex', gap: 4, height: 4, background: 'var(--border-color)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
-                                <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.3s ease' }} />
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: strength.color }}>Seguridad: {strength.label}</span>
-                                {isPasswordValid && (
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {Icons.check({ s: 13 })} Lista para registrar
-                                  </span>
-                                )}
-                              </div>
-                              <PasswordRequirements password={form.password} />
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <div style={{ flex: 1 }}><label htmlFor="reg-state" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label><select id="reg-state" name="state" autoComplete="address-level1" className="auth-input auth-select" value={form.state} onChange={e => { setForm(f => ({ ...f, state: e.target.value, city: '' })); setError('') }} required><option value="" disabled>Selecciona un estado</option>{STATES.map(st => <option key={st} value={st}>{st}</option>)}</select></div>
-                          <div style={{ flex: 1 }}><label htmlFor="reg-city" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label><select id="reg-city" name="city" autoComplete="address-level2" className="auth-input auth-select" value={form.city} onChange={set('city')} required disabled={!form.state}><option value="" disabled>{form.state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>{form.state && getMunicipalities(form.state).map(m => <option key={m} value={m}>{m}</option>)}</select></div>
-                        </div>
-                      </form>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={register.isPending || !form.full_name || !form.email || !isPasswordValid || !form.city || !form.state}>{register.isPending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.arrowRight({ s: 18 })}</button>
-                        <button className="auth-btn-secondary" type="button" onClick={() => setRegStep('consent')}>{Icons.arrowLeft({ s: 16 })} Volver</button>
-                      </div>
-                    </>
-                  )}                    {regStep !== 'pcd_wizard' && regStep !== 'tutor_wizard' && regStep !== 'institution_wizard' && regStep !== 'empresa_wizard' && <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--fg2)' }}>¿Ya tienes cuenta?{' '}<button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button></p>}
+                  {regStep !== 'pcd_wizard' && regStep !== 'tutor_wizard' && regStep !== 'institution_wizard' && regStep !== 'empresa_wizard' && <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--fg2)' }}>¿Ya tienes cuenta?{' '}<button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--primary)', padding: 0, textDecoration: 'underline' }} onClick={() => { setMode('login'); setError('') }}>Inicia sesión</button></p>}
                 </>
               )}
 

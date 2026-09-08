@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting / Incremental Migration */
+    "strict": true,
+    "allowJs": true,
+    "checkJs": false,
+
+    /* Paths & Aliases */
+    "paths": {
+      "@features/*": ["./src/features/*"],
+      "@features": ["./src/features"],
+      "@shared/*": ["./src/shared/*"],
+      "@shared": ["./src/shared"],
+      "@styles/*": ["./src/styles/*"],
+      "@styles": ["./src/styles"],
+      "@test/*": ["./src/test/*"],
+      "@test": ["./src/test"]
+    }
+  },
+  "include": ["src", "version.ts"]
+}

@@ -13,7 +13,6 @@ import {
   labelStyle,
   inputStyle,
   AppFooter,
-  TopNav,
 } from '../shared'
 
 function withRouter(ui) {
@@ -232,49 +231,6 @@ describe('style constants', () => {
     expect(inputStyle.width).toBe('100%')
     expect(inputStyle.height).toBe(48)
     expect(inputStyle.fontSize).toBe(16)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════
-// TopNav
-// ═══════════════════════════════════════════════════════════════
-describe('TopNav', () => {
-  it('renders the brand mark', () => {
-    render(withRouter(<TopNav />))
-    expect(screen.getByText('Raíces')).toBeInTheDocument()
-  })
-
-  it('renders user initials when user is provided', () => {
-    render(withRouter(<TopNav user={{ full_name: 'Juan Perez' }} />))
-    expect(screen.getByText('JP')).toBeInTheDocument()
-  })
-
-  it('renders first name when user is provided', () => {
-    render(withRouter(<TopNav user={{ full_name: 'Juan Perez' }} />))
-    expect(screen.getByText('Juan')).toBeInTheDocument()
-  })
-
-  it('renders avatar image when avatar_url is provided', () => {
-    render(withRouter(<TopNav user={{ full_name: 'Juan', avatar_url: 'http://img.com/a.png' }} />))
-    expect(screen.getByRole('img', { name: 'Juan' })).toBeInTheDocument()
-  })
-
-  it('renders logout button when onLogout is provided', () => {
-    render(withRouter(<TopNav onLogout={() => {}} />))
-    expect(screen.getByText(/Salir/)).toBeInTheDocument()
-  })
-
-  it('calls onLogout when logout button is clicked', async () => {
-    const onLogout = vi.fn()
-    const user = userEvent.setup()
-    render(withRouter(<TopNav onLogout={onLogout} />))
-    await user.click(screen.getByText(/Salir/))
-    expect(onLogout).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not render logout button when onLogout is not provided', () => {
-    render(withRouter(<TopNav />))
-    expect(screen.queryByText(/Salir/)).not.toBeInTheDocument()
   })
 })
 

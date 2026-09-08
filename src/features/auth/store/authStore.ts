@@ -1,23 +1,50 @@
 import { create } from 'zustand'
-import { getToken, getRefreshToken, getUser, saveToken, saveRefreshToken, saveUser, clearAllAuth } from '../../../shared/lib/storage'
+import type { User } from '../../../types/auth'
+import {
+  getToken,
+  getRefreshToken,
+  getUser,
+  saveToken,
+  saveRefreshToken,
+  saveUser,
+  clearAllAuth,
+} from '../../../shared/lib/storage'
 import { closeNotificationStream, suspendStream, resumeStream } from '@features/notifications'
+
+/**
+ * STORE GLOBAL DE AUTENTICACIÓN (Fase 3 · Migración TS)
+ * ====================================================
+ */
+
+export interface AuthState {
+  token: string | null
+  refreshToken: string | null
+  user: User | null
+  setAuth: (
+    token: string,
+    user?: User | null,
+    refresh?: string | null,
+    rememberMe?: boolean
+  ) => void
+  logout: () => void
+}
 
 // Restaurar estado desde storage al iniciar la app
 const initialToken = getToken()
 const initialRefresh = getRefreshToken()
 const initialUser = getUser()
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   token: initialToken,
   refreshToken: initialRefresh,
-  user: initialUser,
-  setAuth: (token, user, refresh, rememberMe) => {
+  user: initialUser as User | null,
+  setAuth: (token: string, user?: User | null, refresh?: string | null, rememberMe = true) => {
     // Al hacer login, reactivar el stream de notificaciones
     resumeStream()
     saveToken(token, rememberMe)
     saveRefreshToken(refresh, rememberMe)
     saveUser(user, rememberMe)
-    set({ token, user, refreshToken: refresh ?? null })
+    set({ token, user: user ?? null, refreshToken: refresh ?? null })
   },
   logout: () => {
     // 🛡️ Evitar bucles infinitos de redirección si ya estamos deslogueados (solo en el navegador real)

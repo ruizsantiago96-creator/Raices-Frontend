@@ -1,11 +1,11 @@
-import { useMemo, useCallback, useState } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe, useProfile } from '@features/auth'
 import { useRecomendaciones, useRecomendacionesEspecialistas, useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useRegistrarInteraccion, useInteraccionesPesos } from '@features/institutions/hooks/useInteractions'
-import { usePosts, useToggleLike, useForos } from '@features/social'
+import { usePosts, useForos } from '@features/social'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
@@ -14,9 +14,73 @@ import ProfileCompletionModal from '../components/ProfileCompletionModal'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 
 /* ═══════════════════════════════════════════════════════════
+   Contracts & Interfaces
+   ═══════════════════════════════════════════════════════════ */
+
+export interface FeedInstitution {
+  id: string | number
+  name: string
+  category: string
+  description?: string
+  city?: string
+  state?: string
+  logo_url?: string
+  cover_url?: string
+  photos?: string[]
+  final_score?: number
+  rating_avg?: number
+  rating_count?: number
+  created_at?: string
+  [key: string]: unknown
+}
+
+export interface Especialista {
+  id: string | number
+  nombre?: string
+  ciudad?: string
+  calificacionPromedio?: number
+  modalidad?: string
+  final_score?: number
+  category?: string
+  [key: string]: unknown
+}
+
+export interface PostItem {
+  id: string | number
+  title?: string
+  content: string
+  created_at?: string
+  like_count?: number
+  comment_count?: number
+  [key: string]: unknown
+}
+
+export interface ForoItem {
+  id: string | number
+  titulo: string
+  preguntaDetonante?: string
+  fechaCreacion?: string
+  respuestasCount?: number
+  [key: string]: unknown
+}
+
+export interface UnifiedFeedItem {
+  _type: 'institution' | 'post' | 'forum'
+  _id: string
+  _score: number
+  _createdAt?: string
+  _category: string
+  _title: string
+  _description?: string
+  _likes: number
+  _comments: number
+  _raw: unknown
+}
+
+/* ═══════════════════════════════════════════════════════════
    Helper: timeAgo
    ═══════════════════════════════════════════════════════════ */
-function timeAgo(dateString) {
+function timeAgo(dateString?: string | null): string | null {
   if (!dateString) return null
   const now = Date.now()
   const then = new Date(dateString).getTime()
@@ -36,7 +100,7 @@ function timeAgo(dateString) {
 /* ═══════════════════════════════════════════════════════════
    Helper: map category → friendly badge
    ═══════════════════════════════════════════════════════════ */
-const CATEGORY_BADGE_LABEL = {
+const CATEGORY_BADGE_LABEL: Record<string, string> = {
   funcional: 'Salud',
   educativo: 'Educación',
   laboral: 'Empleo',
@@ -52,7 +116,7 @@ const CATEGORY_BADGE_LABEL = {
 /* ═══════════════════════════════════════════════════════════
    Helper: get emoji by category
    ═══════════════════════════════════════════════════════════ */
-const getCategoryEmoji = (category) => {
+const getCategoryEmoji = (category?: string | null): React.ReactNode => {
   const normalized = (category ?? '').toLowerCase()
   if (normalized.includes('salud') || normalized.includes('terapia') || normalized === 'funcional') {
     return (
@@ -107,10 +171,16 @@ const getCategoryEmoji = (category) => {
 /* ═══════════════════════════════════════════════════════════
    FeedCard — Reddit/TikTok-style institution card
    ═══════════════════════════════════════════════════════════ */
-function FeedCard({ inst, isFav, onToggleFav }) {
-  const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
+interface FeedCardProps {
+  inst: FeedInstitution
+  isFav: boolean
+  onToggleFav: () => void
+}
+
+function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
+  const color = (CATEGORY_COLORS as Record<string, string>)[inst.category] ?? 'var(--primary)'
   const badgeLabel = CATEGORY_BADGE_LABEL[inst.category] ?? inst.category ?? 'Institución'
-  const hasImage = inst.cover_url || inst.photos?.[0]
+  const hasImage = inst.cover_url || (Array.isArray(inst.photos) && inst.photos[0])
 
   return (
     <article
@@ -176,7 +246,7 @@ function FeedCard({ inst, isFav, onToggleFav }) {
       </div>
 
       {/* ── Body ── */}
-      <Link to={`/institution/${inst.id}`} onClick={() => trackEngagement(inst.id, 'click_card', inst.category)} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link to={`/institution/${inst.id}`} onClick={() => trackEngagement(String(inst.id), 'click_card', inst.category)} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
         <div style={{ padding: '4px 24px 18px' }}>
           <h3 style={{
             fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700,
@@ -202,7 +272,7 @@ function FeedCard({ inst, isFav, onToggleFav }) {
               background: 'var(--bg-cool)', maxHeight: 280,
             }}>
               <img
-                src={inst.cover_url || inst.photos?.[0]}
+                src={inst.cover_url || (Array.isArray(inst.photos) ? inst.photos[0] : '')}
                 alt={inst.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', maxHeight: 280 }}
                 loading="lazy"
@@ -290,23 +360,28 @@ function FeedCard({ inst, isFav, onToggleFav }) {
 /* ═══════════════════════════════════════════════════════════
    Score an item using interest→category mapping + engagement
    ═══════════════════════════════════════════════════════════ */
-function scoreItem(item, interests = [], interestWeights = {}, engagementWeights = {}) {
+function scoreItem(
+  item: UnifiedFeedItem,
+  interests: unknown[] = [],
+  interestWeights: Record<string, number> = {},
+  engagementWeights: Record<string, number> = {}
+): number {
   let score = 0
-  const cat = String(item?._category ?? '').toLowerCase()
+  const cat = String(item._category ?? '').toLowerCase()
 
   // 1. Category match from registration interests
-  if (interestWeights?.[cat]) {
+  if (interestWeights[cat]) {
     score += interestWeights[cat] * 10
   }
 
   // 2. Engagement boost from saves/clicks
-  if (engagementWeights?.[cat]) {
+  if (engagementWeights[cat]) {
     score += engagementWeights[cat]
   }
 
   // 3. Text-level matching (fallback for granular interests)
-  const name = String(item?._title ?? item?.name ?? '').toLowerCase()
-  const desc = String(item?._description ?? item?.description ?? item?.content ?? item?.preguntaDetonante ?? '').toLowerCase()
+  const name = String(item._title ?? '').toLowerCase()
+  const desc = String(item._description ?? '').toLowerCase()
 
   if (Array.isArray(interests)) {
     for (const interest of interests) {
@@ -317,11 +392,11 @@ function scoreItem(item, interests = [], interestWeights = {}, engagementWeights
   }
 
   // 4. Popularity boost (likes + comments + responses)
-  score += (Number(item?._likes) || 0) * 2
-  score += (Number(item?._comments) || 0) * 1.5
+  score += (Number(item._likes) || 0) * 2
+  score += (Number(item._comments) || 0) * 1.5
 
   // 5. Recency boost (newer = higher score)
-  const age = item?._createdAt ? (Date.now() - new Date(item._createdAt).getTime()) / (1000 * 60 * 60) : 999
+  const age = item._createdAt ? (Date.now() - new Date(item._createdAt).getTime()) / (1000 * 60 * 60) : 999
   if (age < 1) score += 20       // < 1 hour
   else if (age < 24) score += 10  // < 1 day
   else if (age < 72) score += 5   // < 3 days
@@ -334,13 +409,13 @@ function scoreItem(item, interests = [], interestWeights = {}, engagementWeights
    ═══════════════════════════════════════════════════════════ */
 function BehaviorWeightsCard() {
   const { data, isLoading } = useInteraccionesPesos()
-  const pesos = data?.pesos ?? {}
+  const pesos: Record<string, number> = (data as { pesos?: Record<string, number> })?.pesos ?? {}
   const hasAny = Object.values(pesos).some(v => v > 0)
 
   if (isLoading) return null
   if (!hasAny) return null
 
-  const CATEGORY_CONFIG = {
+  const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
     funcional: { label: 'Salud', color: '#FF4D68', icon: '❤️' },
     educativo: { label: 'Educación', color: '#3A86FF', icon: '📚' },
     laboral: { label: 'Empleo', color: '#FB8500', icon: '💼' },
@@ -426,7 +501,7 @@ const SORT_TABS = [
   { key: 'populares', label: '⭐ Populares' },
 ]
 
-function sortFeed(items, mode) {
+function sortFeed(items: UnifiedFeedItem[], mode: string): UnifiedFeedItem[] {
   const sorted = [...items]
   switch (mode) {
     case 'recientes':
@@ -448,44 +523,51 @@ function sortFeed(items, mode) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DashboardPage — Reddit-style mixed feed
+   FeedPage — Reddit-style mixed feed
    ═══════════════════════════════════════════════════════════ */
-export default function DashboardPage() {
+export default function FeedPage() {
   const { data: profile } = useProfile()
   const { data: onboardingStatus } = useOnboardingStatus()
   const { data: recomendacionesData, isLoading: instLoading, refetch: refetchDiscovery } = useRecomendaciones()
   const { data: allInstitutions = [] } = useInstitutions({})
   // Si las recomendaciones fallan (500), usar TODAS las instituciones como fallback
-  const discoveryError = recomendacionesData?._backendError === true
-  const recommendations = discoveryError ? allInstitutions : (recomendacionesData?.instituciones ?? [])
+  const recData = recomendacionesData as { _backendError?: boolean; instituciones?: FeedInstitution[] } | undefined
+  const discoveryError = recData?._backendError === true
+  const recommendations: FeedInstitution[] = discoveryError
+    ? (allInstitutions as FeedInstitution[])
+    : (recData?.instituciones ?? [])
   const { data: especialistasData, isLoading: especialistasLoading } = useRecomendacionesEspecialistas()
-  const especialistas = especialistasData?.especialistas ?? []
-  const { data: posts = [], isLoading: postsLoading } = usePosts({ limite: 20 })
+  const espData = especialistasData as { especialistas?: Especialista[] } | undefined
+  const especialistas: Especialista[] = espData?.especialistas ?? []
+  const { data: postsData = [], isLoading: postsLoading } = usePosts({ limite: 20 })
+  const posts = postsData as PostItem[]
   const { data: forosData, isLoading: forosLoading } = useForos()
-  const foros = forosData?.foros ?? []
+  const forosList = forosData as { foros?: ForoItem[] } | undefined
+  const foros: ForoItem[] = forosList?.foros ?? []
   const { data: rawFavIds = [] } = useFavoriteIds()
   const favIds = useMemo(() => {
-    const arr = Array.isArray(rawFavIds)
-      ? rawFavIds
-      : (rawFavIds instanceof Set ? Array.from(rawFavIds) : (Array.isArray(rawFavIds?.datos) ? rawFavIds.datos : []))
+    const raw = rawFavIds as unknown
+    const arr: unknown[] = Array.isArray(raw)
+      ? raw
+      : (raw instanceof Set ? Array.from(raw) : (Array.isArray((raw as { datos?: unknown[] })?.datos) ? (raw as { datos: unknown[] }).datos : []))
     return arr.map(String)
   }, [rawFavIds])
-  const toggle = useToggleFavorite()
-  const toggleLike = useToggleLike()
-  const trackInteraccion = useRegistrarInteraccion()
+  const toggle = useToggleFavorite() as unknown as { mutate: (inst: FeedInstitution | string | number) => void }
+  const trackInteraccion = useRegistrarInteraccion() as unknown as { mutate: (payload: { institucionId: string | number; tipo: string; categoria?: string }) => void }
 
-  const [sortMode, setSortMode] = useState('relevantes')
+  const [sortMode, setSortMode] = useState<string>('relevantes')
   const { data: user } = useMe()
-  const { data: identidadStatus } = useEstadoValidacion()
+  const { data: rawIdentidadStatus } = useEstadoValidacion()
+  const identidadStatus = rawIdentidadStatus as { estado?: string } | undefined
 
   // Verificación y validación de identidad
   const isVerified = Boolean(user?.is_verified || identidadStatus?.estado === 'aprobado')
   const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
-  const isIncomplete = Boolean(onboardingStatus && !onboardingStatus.onboardingCompleto)
+  const isOnboardingComplete = Boolean((onboardingStatus as { onboardingCompleto?: boolean } | undefined)?.onboardingCompleto)
+  const isIncomplete = Boolean(onboardingStatus && !isOnboardingComplete)
 
   // Debe salir si fue rechazado por el admin, o si aún no está verificado y su perfil está incompleto.
-  // Estado en memoria de componente: al recargar la página vuelve a aparecer si le dio a "Más tarde".
-  const [modalDismissed, setModalDismissed] = useState(false)
+  const [modalDismissed, setModalDismissed] = useState<boolean>(false)
   const shouldShowProfileModal = !modalDismissed && (isRejected || (!isVerified && isIncomplete))
 
   const handleDismissModal = () => {
@@ -493,12 +575,12 @@ export default function DashboardPage() {
   }
 
   // ── User interests from localStorage or profile (used silently for sorting)
-  const userInterests = (() => {
+  const userInterests: unknown[] = (() => {
     try {
       const local = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
       if (Array.isArray(local) && local.length > 0) return local
     } catch (_) {}
-    const profileGoals = profile?.profiling?.goals
+    const profileGoals = (profile as { profiling?: { goals?: unknown[] } })?.profiling?.goals
     if (Array.isArray(profileGoals)) return profileGoals
     return []
   })()
@@ -511,9 +593,9 @@ export default function DashboardPage() {
 
   // ── Active categories from user's registration interests
   const activeCategories = useMemo(() => {
-    const cats = new Set()
+    const cats = new Set<string>()
     for (const [cat, weight] of Object.entries(interestWeights || {})) {
-      if (weight > 0) cats.add(cat)
+      if ((weight as number) > 0) cats.add(cat)
     }
     return cats
   }, [interestWeights])
@@ -522,7 +604,7 @@ export default function DashboardPage() {
 
   // ── Build unified feed: normalize all items to a common shape
   const unifiedFeed = useMemo(() => {
-    const items = []
+    const items: UnifiedFeedItem[] = []
     const recs = Array.isArray(recommendations) ? recommendations : []
     const postList = Array.isArray(posts) ? posts : []
     const forumList = Array.isArray(foros) ? foros : []
@@ -548,7 +630,6 @@ export default function DashboardPage() {
     }
 
     // Community posts → always shown (community is social, everyone sees it)
-    // But boost posts if user has social interest
     for (const post of postList) {
       if (!post) continue
       items.push({
@@ -594,15 +675,9 @@ export default function DashboardPage() {
   const feed = useMemo(() => sortFeed(unifiedFeed, sortMode), [unifiedFeed, sortMode])
 
   // ── Tracking helpers ─────────────────────────────────────────────
-  const trackClick = useCallback((inst) => {
+  const trackClick = useCallback((inst: Especialista) => {
     if (inst?.id) {
       trackInteraccion.mutate({ institucionId: inst.id, tipo: 'click_card', categoria: inst.category })
-    }
-  }, [trackInteraccion])
-
-  const trackVerDetalle = useCallback((inst) => {
-    if (inst?.id) {
-      trackInteraccion.mutate({ institucionId: inst.id, tipo: 'ver_detalle', categoria: inst.category })
     }
   }, [trackInteraccion])
 
@@ -610,14 +685,14 @@ export default function DashboardPage() {
   const hasAnyContent = feed.length > 0
 
   // ── Track engagement when user saves
-  const handleToggleFav = useCallback((inst) => {
-    trackEngagement(inst.id, 'save', inst.category)
+  const handleToggleFav = useCallback((inst: FeedInstitution) => {
+    trackEngagement(String(inst.id), 'save', inst.category)
     trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category })
     toggle.mutate(inst)
   }, [trackInteraccion, toggle])
 
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '800px' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '800px' } as React.CSSProperties}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
 
         {/* ── Sort Tabs ── */}
@@ -800,7 +875,7 @@ export default function DashboardPage() {
               const delay = `${Math.min(i * 0.06, 0.4)}s`
 
               if (item._type === 'institution') {
-                const inst = item._raw
+                const inst = item._raw as FeedInstitution
                 return (
                   <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
                     <FeedCard

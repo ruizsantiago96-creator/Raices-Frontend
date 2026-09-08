@@ -13,7 +13,7 @@ import { AccessibilityBar } from '@features/a11y'
 import FCMProvider from '@features/notifications/components/FCMProvider'
 import LandingPage from '@features/landing/pages/LandingPage'
 import AuthPage from '@features/auth/pages/AuthPage'
-import DashboardPage from '@features/dashboard/pages/DashboardPage'
+import FeedPage from '@features/feed/pages/FeedPage'
 import ExplorePage from '@features/institutions/pages/ExplorePage'
 import SocialPage from '@features/social/pages/SocialPage'
 import ForosPage from '@features/social/pages/ForosPage'
@@ -163,7 +163,8 @@ export default function App() {
 
                 {/* 🛡️ Rutas Protegidas que comparten el MainLayout Global */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/feed" element={<FeedPage />} />
+                  <Route path="/dashboard" element={<Navigate to="/feed" replace />} />
                   <Route path="/social" element={<FeatureGuard feature="comunidad"><SocialPage /></FeatureGuard>} />
                   <Route path="/foros" element={<FeatureGuard feature="comunidad"><ForosPage /></FeatureGuard>} />
                   <Route path="/messages" element={<FeatureGuard feature="comunidad"><MessagesPage /></FeatureGuard>} />

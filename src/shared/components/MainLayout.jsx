@@ -45,7 +45,7 @@ export default function MainLayout() {
   // Determinar la página/pestaña actual para resaltar el elemento correcto
   let currentPage = ''
   if (sidebarMode === 'app') {
-    if (location.pathname.startsWith('/dashboard')) currentPage = 'dashboard'
+    if (location.pathname.startsWith('/feed') || location.pathname.startsWith('/dashboard')) currentPage = 'feed'
     else if (location.pathname.startsWith('/explore')) currentPage = 'explore'
     else if (location.pathname.startsWith('/jobs')) currentPage = 'jobs'
     else if (location.pathname.startsWith('/favorites')) currentPage = 'favorites'

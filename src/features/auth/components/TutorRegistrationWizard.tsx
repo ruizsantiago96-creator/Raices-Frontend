@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -6,9 +6,99 @@ import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
-import PasswordRequirements from './PasswordRequirements'
+import {
+  LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
+  CONDICIONES_PCD,
+  NEURODIVERGENCIAS_LIST,
+  LIST_TEMPORALIDAD,
+  ESCALAS_OPCIONES_TUTOR as ESCALAS_OPCIONES,
+  LIST_FORMATOS_TUTOR as LIST_FORMATOS,
+  INTEREST_SECTIONS_TUTOR as INTEREST_SECTIONS,
+  LIST_VIABILIDAD,
+  LIST_NECESIDADES_TUTOR as LIST_NECESIDADES,
+  LIST_AREAS_APOYO_TUTOR as LIST_AREAS_APOYO,
+  MERIDA_ZONAS_SUGERIDAS,
+  LIST_EDUCACION_TUTOR as LIST_EDUCACION,
+  LIST_TERAPIAS,
+} from '../constants/registrationCatalogos'
+import { WizardNavButtons as NavButtons, ScaleCard, CheckChip, PasswordField, StateCitySelects } from './WizardUI'
+import { calcEdad, calcEtapaDependiente, calcEtapaVida as calcEtapaPerfil } from '../lib/age'
+import { saveOnboardingData } from '../lib/onboardingStorage'
+import { isValidEmail } from '../lib/validators'
+import type { User } from '../../../types/auth'
+
+export interface TutorRegistrationWizardProps {
+  onBackToRoles?: () => void
+  onGoToLogin?: (email?: string) => void
+}
+
+export type TutorWizardStep =
+  | 'identity'
+  | 'security'
+  | 'relationship'
+  | 'accommodation'
+  | 'condition'
+  | 'origin'
+  | 'history'
+  | 'support'
+  | 'scales1'
+  | 'scales2'
+  | 'formats'
+  | 'interests'
+  | 'viability'
+  | 'summary'
+  | 'thanks'
+
+interface TutorGeneralFormData {
+  nombres: string
+  apellidoPaterno: string
+  apellidoMaterno: string
+  birth_date: string
+  domicilio: string
+  email: string
+  password: string
+  curp: string
+  acompanamiento: string
+  estado: string
+  ciudad: string
+}
+
+interface TutorConditionData {
+  conditions: string[]
+  neurodivergencias: string[]
+  neuroOtro: string
+  tieneDiagnostico: string
+  diagnosticoEspecifico: string
+  redFlagDiagnostico: boolean
+  temporalidad: string
+}
+
+interface TutorScalesState {
+  autonomia: number
+  independencia: number
+  comunicacion: number
+  comprension: number
+  energia: number
+  movilidad: number
+  social: number
+  emocional: number
+}
+
+interface AiNarrativeData {
+  quienEres: string
+  contexto: string
+  loQueTeGusta: string
+}
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      message?: string
+      mensaje?: string
+    }
+  }
+}
 
 // ── LISTAS Y CATÁLOGOS ───────────────────────────────────────────
 const DESTINATARIOS = [
@@ -17,204 +107,8 @@ const DESTINATARIOS = [
   { id: 'otro', label: 'Para una persona a mi cuidado', desc: 'Rol de tutor/a legal, cuidador/a formal o acompañante' },
 ]
 
-const LIST_ACOMPANAMIENTO = [
-  { id: 'explorar_solo', label: 'Quiero explorar por mi cuenta.', desc: 'Navega libremente por todos los recursos, comunidades y oportunidades' },
-  { id: 'recomendaciones_paso', label: 'Me gustaría recibir sugerencias paso a paso.', desc: 'Te guiaremos con rutas y recomendaciones al ritmo de tu familia' },
-  { id: 'apoyo_necesite', label: 'Prefiero contar con apoyo cuando lo necesitemos.', desc: 'Acceso directo a acompañamiento, especialistas y orientación' },
-]
-
-const CONDICIONES_PCD = [
-  'Intelectual o cognitiva',
-  'Motriz o de movilidad física',
-  'Visual',
-  'Auditiva',
-  'Del habla y la comunicación',
-  'Neurodivergencia (especificar)',
-  'Psicosocial',
-  'Prefiero no responder',
-]
-
-const NEURODIVERGENCIAS_LIST = [
-  'Autismo', 'TDAH', 'Dislexia', 'Dispraxia',
-  'Síndrome de Tourette', 'Altas capacidades/superdotación', 'Otro',
-]
-
-const LIST_TEMPORALIDAD = [
-  { id: 'nacimiento', label: 'Desde el nacimiento' },
-  { id: 'infancia', label: 'Se presentó durante la infancia' },
-  { id: 'adolescencia', label: 'Se presentó durante la adolescencia' },
-  { id: 'vida_adulta', label: 'Se presentó en la vida adulta' },
-  { id: 'progresiva', label: 'Ha ido apareciendo o cambiando con el tiempo' },
-  { id: 'en_evaluacion', label: 'Actualmente está en proceso de evaluación' },
-]
-
-const ESCALAS_OPCIONES = {
-  autonomia: [
-    { value: 4, label: 'Toma decisiones con autonomía' },
-    { value: 3, label: 'Participa con apoyo ocasional' },
-    { value: 2, label: 'Requiere guía frecuente' },
-    { value: 1, label: 'Requiere representación o apoyo constante' },
-  ],
-  independencia: [
-    { value: 4, label: 'Se desenvuelve con autonomía' },
-    { value: 3, label: 'Requiere apoyo en algunas actividades' },
-    { value: 2, label: 'Requiere apoyo frecuente' },
-    { value: 1, label: 'Requiere acompañamiento constante' },
-  ],
-  comunicacion: [
-    { value: 4, label: 'Verbal fluida' },
-    { value: 3, label: 'Verbal con apoyos / limitada' },
-    { value: 2, label: 'No verbal (funcional / con apoyos)' },
-    { value: 1, label: 'En desarrollo o exploración' },
-  ],
-  comprension: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  energia: [
-    { value: 4, label: 'Alta → Participa activamente en la mayoría de actividades' },
-    { value: 3, label: 'Media → Participa bien con pausas o equilibrio' },
-    { value: 2, label: 'Variable → Depende del día, entorno o condición' },
-    { value: 1, label: 'Baja → Requiere actividades de baja demanda o periodos cortos' },
-  ],
-  movilidad: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
-  ],
-  social: [
-    { value: 4, label: 'Participa con facilidad' },
-    { value: 3, label: 'Participa con algunas barreras' },
-    { value: 2, label: 'Requiere apoyo frecuente' },
-    { value: 1, label: 'Requiere acompañamiento constante' },
-  ],
-  emocional: [
-    { value: 4, label: 'Poco o nada' },
-    { value: 3, label: 'Algunas veces' },
-    { value: 2, label: 'Frecuentemente' },
-    { value: 1, label: 'Requiere apoyo constante' },
-  ],
-}
-
-const LIST_FORMATOS = [
-  { id: 'texto', label: 'Leyendo textos', icon: '📖' },
-  { id: 'imagenes', label: 'Con imágenes y pictogramas', icon: '🖼️' },
-  { id: 'audio', label: 'Con explicaciones en audio', icon: '🎧' },
-  { id: 'video', label: 'Con videos demostrativos', icon: '🎬' },
-  { id: 'persona', label: 'Con apoyo y mediación de otra persona', icon: '🤝' },
-]
-
-const INTEREST_SECTIONS = [
-  {
-    title: 'DEPORTE / MOVIMIENTO', color: '#229B58',
-    items: ['Actividad física general', 'Deporte recreativo', 'Deporte adaptado', 'Competencia', 'Rehabilitación funcional', 'Movimiento / coordinación', 'Actividades al aire libre'],
-  },
-  {
-    title: 'BIENESTAR / ATENCIÓN ESPECIALIZADA', color: '#073B4C',
-    items: ['Terapias', 'Salud mental / emocional', 'Atención médica especializada', 'Odontología especializada', 'Rehabilitación', 'Regulación sensorial', 'Estética / cuidado personal especializado'],
-  },
-  {
-    title: 'EMPLEO / FORMACIÓN', color: '#FF4D68',
-    items: ['Primer empleo', 'Reintegración laboral', 'Capacitación laboral', 'Empleo adaptado', 'Empleo profesional', 'Trabajo flexible'],
-  },
-  {
-    title: 'AUTOEMPLEO / PROYECTOS', color: '#D4944C',
-    items: ['Emprendimiento', 'Negocio propio', 'Venta de productos', 'Servicios', 'Marca personal', 'Economía digital'],
-  },
-  {
-    title: 'ARTE / CULTURA / MÚSICA', color: '#9B51E0',
-    items: ['Música', 'Danza', 'Pintura / dibujo', 'Teatro', 'Literatura', 'Manualidades', 'Cultura / eventos'],
-  },
-  {
-    title: 'INDEPENDENCIA / VIDA DIARIA', color: '#2F80ED',
-    items: ['Vida cotidiana', 'Movilidad', 'Comunicación', 'Finanzas personales', 'Organización diaria', 'Vida independiente'],
-  },
-  {
-    title: 'VIDA SOCIAL / COMUNIDAD', color: '#E14E87',
-    items: ['Amistades', 'Eventos', 'Relaciones', 'Actividades grupales', 'Socialización guiada', 'Citas / vínculos', 'Espacios recreativos'],
-  },
-  {
-    title: 'EXPLORAR POSIBILIDADES', color: '#138A8A',
-    items: ['Descubrir intereses', 'Nuevas experiencias', 'Inspiración', 'Orientación', 'Comunidad', 'Futuro'],
-  },
-]
-
-const LIST_VIABILIDAD = [
-  { id: 'gratuita_becas', label: 'Gratuitas, con becas o apoyos' },
-  { id: 'bajo_costo', label: 'Bajo costo' },
-  { id: 'moderada', label: 'Inversión moderada' },
-  { id: 'sin_restricciones', label: 'Sin restricciones definidas' },
-]
-
-const LIST_NECESIDADES = [
-  'Transporte accesible',
-  'Accesibilidad en espacios públicos',
-  'Apoyo en la comunicación',
-  'Acompañamiento a actividades o citas',
-  'Apoyo con trámites y documentos',
-  'Apoyo económico / becas',
-  'Atención en salud y terapias',
-  'Apoyo emocional o psicológico familiar',
-  'Ajustes razonables en escuela o trabajo',
-  'Tecnología de apoyo / asistiva',
-]
-
-const LIST_AREAS_APOYO = [
-  'Movilidad y traslados',
-  'Cuidado personal y autocuidado',
-  'Comunicación',
-  'Actividades de la vida diaria',
-  'Ámbito educativo / escolar',
-  'Ámbito laboral / formativo',
-  'Trámites y gestiones',
-  'Vida social y participación',
-  'Tareas del hogar',
-  'Tecnología y dispositivos',
-  'Salud y bienestar integral',
-]
-
-const MERIDA_ZONAS_SUGERIDAS = [
-  'Centro (97000)',
-  'Altabrisa (97130)',
-  'Francisco de Montejo (97203)',
-  'Ciudad Caucel (97314)',
-  'Las Américas (97302)',
-  'García Ginerés (97070)',
-  'Campestre (97120)',
-  'Chuburná (97205)',
-  'Montebello (97113)',
-  'Itzimná (97100)',
-  'Pensiones (97217)',
-  'Los Héroes (97306)',
-]
-
-const LIST_EDUCACION = [
-  'Escuela regular',
-  'Escuela con apoyos (inclusiva)',
-  'Escuela de educación especial (CAM)',
-  'Educación en casa (homeschool)',
-  'Educación para adultos (INEA)',
-  'Estudios técnicos o de oficio',
-  'Universidad',
-  'No ha asistido a la escuela',
-]
-
-const LIST_TERAPIAS = [
-  'Física / rehabilitación',
-  'Ocupacional',
-  'De lenguaje / comunicación',
-  'Psicológica o emocional',
-  'Conductual (ABA)',
-  'Integración sensorial',
-  'Neuropsicología',
-  'Ninguna hasta ahora',
-]
-
 // ── Mapeos para el alta del dependiente ───────────────────────────
-const normText = (s) => (s || '')
+const normText = (s?: string) => (s || '')
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
@@ -231,10 +125,10 @@ const DEP_DISABILITY_KEYWORDS = [
   { keywords: ['down'], code: 'down' },
   { keywords: ['multipl'], code: 'multiple' },
 ]
-function wizardConditionsToCodes(conditions = [], neurodivergencias = []) {
+function wizardConditionsToCodes(conditions: string[] = [], neurodivergencias: string[] = []): string[] {
   const phrases = [...conditions, ...neurodivergencias]
     .filter(p => p && normText(p) !== 'prefiero no responder')
-  const codes = []
+  const codes: string[] = []
   for (const phrase of phrases) {
     const n = normText(phrase)
     if (n.includes('neurodivergencia')) continue
@@ -245,7 +139,7 @@ function wizardConditionsToCodes(conditions = [], neurodivergencias = []) {
 }
 
 /** Elige el parentesco del catálogo del backend; si no responde, usa el valor por defecto previo. */
-function resolveParentesco(parentescos, destinatario) {
+function resolveParentesco(parentescos: string[], destinatario: string): string {
   if (Array.isArray(parentescos) && parentescos.length > 0) {
     const keywords = destinatario === 'hijo'
       ? ['hij']
@@ -258,88 +152,8 @@ function resolveParentesco(parentescos, destinatario) {
   return destinatario === 'hijo' ? 'Hijo/a' : destinatario === 'familiar' ? 'Familiar' : 'Persona a mi cuidado'
 }
 
-// ── SCALE CARD (compact helper) ──────────────────────────────────
-function ScaleCard({ title, desc, options, value, onChange }) {
-  return (
-    <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
-      <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {options.map(opt => {
-          const isSelected = value === opt.value
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange(opt.value)}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 8,
-                border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-body)',
-                color: isSelected ? '#073B4C' : 'var(--fg1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>{opt.label}</span>
-              {isSelected && (
-                <span style={{ color: '#229B58', fontWeight: 800, fontSize: 13, flexShrink: 0, marginLeft: 6 }}>
-                  ✓
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ── CHECK CHIP (multi-select compact helper) ─────────────────────
-function CheckChip({ label, selected, onToggle, accent = '#229B58' }) {
-  return (
-    <button type="button" onClick={onToggle}
-      style={{
-        padding: '9px 12px', borderRadius: 8,
-        border: `1.5px solid ${selected ? accent : '#E5DCD2'}`,
-        background: selected ? `color-mix(in oklch, ${accent} 8%, white)` : '#ffffff',
-        color: selected ? '#073B4C' : 'var(--fg1)',
-        fontWeight: selected ? 700 : 500, fontSize: 12.5,
-        cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
-        fontFamily: 'var(--font-body)', transition: 'all 0.15s ease',
-      }}>
-      <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${selected ? accent : '#9ca3af'}`, background: selected ? accent : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-        {selected && Icons.check({ s: 10 })}
-      </div>
-      <span>{label}</span>
-    </button>
-  )
-}
-
-// ── NAV BUTTONS ──────────────────────────────────────────────────
-function NavButtons({ onBack, submitLabel, submitDisabled, submitIcon }) {
-  return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 14, flexShrink: 0 }}>
-      <button className="auth-btn-secondary" type="button" onClick={onBack} style={{ flex: 1 }}>
-        {Icons.arrowLeft({ s: 16 })} Volver
-      </button>
-      <button className="auth-btn-primary" type="submit" disabled={submitDisabled} style={{ flex: 2 }}>
-        {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
-      </button>
-    </div>
-  )
-}
-
 // ── STEP ORDER (13 pasos homologados con PCD) ─────────────────────
-const STEP_ORDER = [
+const STEP_ORDER: TutorWizardStep[] = [
   'identity',        // 1: Nombres, apellidos, fecha nacimiento, estado, municipio
   'security',        // 2: Email, contraseña
   'relationship',    // 3: ¿Para quién es el perfil?
@@ -357,21 +171,21 @@ const STEP_ORDER = [
 const TOTAL_STEPS = STEP_ORDER.length
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) {
+export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: TutorRegistrationWizardProps) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
 
-  const [wizardStep, setWizardStep] = useState('identity')
+  const [wizardStep, setWizardStep] = useState<TutorWizardStep>('identity')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [aiNarrative, setAiNarrative] = useState(null)
+  const [aiNarrative, setAiNarrative] = useState<AiNarrativeData | null>(null)
 
   // Step 1–2: Datos personales del tutor
-  const [generalForm, setGeneralForm] = useState({
+  const [generalForm, setGeneralForm] = useState<TutorGeneralFormData>({
     nombres: '', apellidoPaterno: '', apellidoMaterno: '',
     birth_date: '', domicilio: '', email: '', password: '',
     curp: '', acompanamiento: 'recomendaciones_paso',
@@ -386,73 +200,38 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
   const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState('')
 
   // Step 5–6: Condición y diagnóstico de la persona a cargo
-  const [conditionData, setConditionData] = useState({
+  const [conditionData, setConditionData] = useState<TutorConditionData>({
     conditions: [], neurodivergencias: [], neuroOtro: '',
     tieneDiagnostico: 'si', diagnosticoEspecifico: '',
     redFlagDiagnostico: false, temporalidad: 'nacimiento',
   })
 
   // Step 9–10: Escalas de vida de la persona a cargo
-  const [scales, setScales] = useState({
+  const [scales, setScales] = useState<TutorScalesState>({
     autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
     energia: 3, movilidad: 3, social: 3, emocional: 3,
   })
 
   // Step 11: Formatos
-  const [formatos, setFormatos] = useState(['texto', 'imagenes'])
+  const [formatos, setFormatos] = useState<string[]>(['texto', 'imagenes'])
 
   // Step 12–13: Intereses y viabilidad
-  const [selectedInterests, setSelectedInterests] = useState([])
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [otrosIntereses, setOtrosIntereses] = useState('')
   const [viabilidad, setViabilidad] = useState('sin_restricciones')
 
   // Step 7: Historial educativo y terapias
-  const [educacionHistory, setEducacionHistory] = useState([])
-  const [terapiaHistory, setTerapiaHistory] = useState([])
+  const [educacionHistory, setEducacionHistory] = useState<string[]>([])
+  const [terapiaHistory, setTerapiaHistory] = useState<string[]>([])
 
   // Step 8: Zonas/colonias preferidas, necesidades y áreas de apoyo
-  const [preferredZones, setPreferredZones] = useState([])
+  const [preferredZones, setPreferredZones] = useState<string[]>([])
   const [zonaInput, setZonaInput] = useState('')
-  const [needsList, setNeedsList] = useState([])
-  const [supportAreas, setSupportAreas] = useState([])
+  const [needsList, setNeedsList] = useState<string[]>([])
+  const [supportAreas, setSupportAreas] = useState<string[]>([])
 
   // Nombre de referencia para títulos y preguntas
   const personName = nombreDependiente.trim() || (destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado')
-
-  // ── Cálculo de edad y etapa de la persona a cargo ────────────────
-  const calcEdad = (birthDate) => {
-    if (!birthDate) return null
-    const bd = new Date(birthDate)
-    if (isNaN(bd.getTime())) return null
-    const hoy = new Date()
-    let edad = hoy.getFullYear() - bd.getFullYear()
-    const m = hoy.getMonth() - bd.getMonth()
-    if (m < 0 || (m === 0 && hoy.getDate() < bd.getDate())) edad--
-    return edad
-  }
-
-  // Etapas homologadas con el catálogo de dependientes (ver DependentForm)
-  const calcEtapaDependiente = (birthDate) => {
-    const edad = calcEdad(birthDate)
-    if (edad === null) return null
-    if (edad <= 12) return 'infancia'
-    if (edad <= 17) return 'adolescencia'
-    if (edad <= 29) return 'adultoJoven'
-    if (edad <= 59) return 'adulto'
-    return 'mayor'
-  }
-
-  // Etapas del perfil de necesidades (modelo de 16 campos del backend)
-  const calcEtapaPerfil = (birthDate) => {
-    const edad = calcEdad(birthDate)
-    if (edad === null) return null
-    if (edad <= 5) return 'infancia_temprana'
-    if (edad <= 12) return 'infancia'
-    if (edad <= 17) return 'adolescencia'
-    if (edad <= 29) return 'juventud'
-    if (edad <= 59) return 'adultez'
-    return 'adulto_mayor'
-  }
 
   // ── Helpers ─────────────────────────────────────────────────────
   const scrollTop = () => {
@@ -482,7 +261,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
   const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
 
   // ── Toggle handlers ─────────────────────────────────────────────
-  const toggleCondition = (cond) => {
+  const toggleCondition = (cond: string) => {
     setConditionData(prev => {
       let next = [...prev.conditions]
       if (cond === 'Prefiero no responder') {
@@ -495,7 +274,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     })
   }
 
-  const toggleNeuro = (item) => {
+  const toggleNeuro = (item: string) => {
     setConditionData(prev => ({
       ...prev,
       neurodivergencias: prev.neurodivergencias.includes(item)
@@ -504,23 +283,23 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     }))
   }
 
-  const toggleFormato = (id) => {
+  const toggleFormato = (id: string) => {
     setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  const toggleInterest = (item) => {
+  const toggleInterest = (item: string) => {
     setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleEducacionHistory = (item) => {
+  const toggleEducacionHistory = (item: string) => {
     setEducacionHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleTerapiaHistory = (item) => {
+  const toggleTerapiaHistory = (item: string) => {
     setTerapiaHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleSuggestedZone = (zone) => {
+  const toggleSuggestedZone = (zone: string) => {
     setPreferredZones(prev => prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone])
   }
 
@@ -533,20 +312,20 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     setZonaInput('')
   }
 
-  const removePreferredZone = (zone) => {
+  const removePreferredZone = (zone: string) => {
     setPreferredZones(prev => prev.filter(z => z !== zone))
   }
 
-  const toggleNeedsList = (item) => {
+  const toggleNeedsList = (item: string) => {
     setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
-  const toggleSupportAreas = (item) => {
+  const toggleSupportAreas = (item: string) => {
     setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   }
 
   // ── Step validation & transitions ────────────────────────────────
-  const handleIdentitySubmit = (e) => {
+  const handleIdentitySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.nombres || !generalForm.apellidoPaterno || !generalForm.apellidoMaterno) {
@@ -565,14 +344,14 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleSecuritySubmit = (e) => {
+  const handleSecuritySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.email) {
       setError('Por favor, ingresa tu correo electrónico.')
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(generalForm.email)) {
+    if (!isValidEmail(generalForm.email)) {
       setError('Por favor, ingresa un correo electrónico válido.')
       return
     }
@@ -584,7 +363,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleRelationshipSubmit = (e) => {
+  const handleRelationshipSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!nombreDependiente.trim()) {
@@ -599,14 +378,14 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleAccommodationSubmit = (e) => {
+  const handleAccommodationSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setWizardStep('condition')
     scrollTop()
   }
 
-  const handleConditionSubmit = (e) => {
+  const handleConditionSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (conditionData.conditions.length === 0) {
@@ -617,7 +396,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleOriginSubmit = (e) => {
+  const handleOriginSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (conditionData.conditions.includes('Neurodivergencia (especificar)') && conditionData.neurodivergencias.length === 0) {
@@ -628,21 +407,21 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleHistorySubmit = (e) => {
+  const handleHistorySubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setWizardStep('support')
     scrollTop()
   }
 
-  const handleSupportSubmit = (e) => {
+  const handleSupportSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setWizardStep('scales1')
     scrollTop()
   }
 
-  const handleScales1Submit = (e) => {
+  const handleScales1Submit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!scales.autonomia || !scales.independencia || !scales.comunicacion || !scales.comprension) {
@@ -653,7 +432,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleScales2Submit = (e) => {
+  const handleScales2Submit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!scales.energia || !scales.movilidad || !scales.social || !scales.emocional) {
@@ -664,7 +443,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleFormatsSubmit = (e) => {
+  const handleFormatsSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (formatos.length === 0) {
@@ -675,7 +454,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     scrollTop()
   }
 
-  const handleInterestsSubmit = (e) => {
+  const handleInterestsSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (selectedInterests.length === 0) {
@@ -693,7 +472,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
     const neuroList = conditionData.neurodivergencias.length > 0 ? ` con rasgos de ${conditionData.neurodivergencias.join(', ')}` : ''
     const quienEres = `Como tutor/a y cuidador/a de ${name}, reconoces su valor integral (${condList}${neuroList}) y buscas los mejores caminos para su autonomía y bienestar. Tu acompañamiento y dedicación son el pilar de su desarrollo.`
 
-    const tempoMap = {
+    const tempoMap: Record<string, string> = {
       nacimiento: 'desde su nacimiento', infancia: 'durante su infancia',
       adolescencia: 'durante su adolescencia', vida_adulta: 'en su vida adulta',
       progresiva: 'de forma evolutiva a lo largo del tiempo',
@@ -714,7 +493,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
   }
 
   // ── Envío final ─────────────────────────────────────────────────
-  const handleFinalSubmit = async (e) => {
+  const handleFinalSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSending(true)
@@ -738,8 +517,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
         preferenciasAcompanamiento: generalForm.acompanamiento,
       }
 
-      let authResult = null
-      let regError = null
+      let authResult: { tokenAcceso?: string; tokenRefresco?: string | null; requiereInicioSesion?: boolean; usuario?: { id: number | string; email: string } } | null = null
+      let regError: unknown = null
       try {
         const regRes = await api.post('/autenticacion/registro', registerPayload)
         authResult = regRes.data
@@ -758,8 +537,9 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
       //    mismas credenciales que el usuario acaba de crear.
       if (!authResult) {
         // El POST de registro falló (HTTP error): no hay cuenta ni nada que guardar.
-        const msg = regError?.response?.data?.message
-          ?? regError?.response?.data?.mensaje
+        const typedRegErr = regError as ApiErrorResponse | null
+        const msg = typedRegErr?.response?.data?.message
+          ?? typedRegErr?.response?.data?.mensaje
           ?? 'No se pudo completar el registro. Inténtalo de nuevo.'
         setError(msg)
         addToast(msg, 'error')
@@ -788,12 +568,10 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
       if (!token) {
         // No pudimos obtener sesión: no se puede guardar perfil ni dependiente.
         // Mostramos la narrativa y un aviso claro de qué falta completar.
-        localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
-        localStorage.setItem('raices_user_viability', viabilidad)
-        localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
+        saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
         const narrative = generateNarrative()
         setAiNarrative(narrative)
-        localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+        saveOnboardingData({ narrative })
         addToast(
           'Tu cuenta fue creada, pero no pudimos guardar el perfil de ' + (nombreDependiente.trim() || 'la persona a tu cuidado') + '. Inicia sesión y agrégala en "Mis personas".',
           'warning'
@@ -803,8 +581,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
         return
       }
 
-      const userObj = {
-        id: usuario?.id,
+      const userObj: User = {
+        id: String(usuario?.id ?? ''),
         email: usuario?.email || generalForm.email,
         role: 'tutor',
         full_name: nombreCompleto,
@@ -867,7 +645,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
 
       // 5. Registrar persona a cargo (dependiente) con los datos capturados
       //    en el wizard. Si falla, se avisa con claridad (ya no se traga el error).
-      let catParentescos = []
+      let catParentescos: string[] = []
       try {
         const catRes = await api.get('/catalogos')
         catParentescos = catRes?.data?.parentescos ?? []
@@ -886,9 +664,10 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
           // La edad se muestra en la tarjeta de "Mis personas" desde localStorage
           localStorage.setItem(`raices_dep_birth_date_${depRes.data.id}`, dependienteDOB)
         }
-      } catch (depErr) {
-        const depMsg = depErr?.response?.data?.message
-          ?? depErr?.response?.data?.mensaje
+      } catch (depErr: unknown) {
+        const typedDepErr = depErr as ApiErrorResponse | null
+        const depMsg = typedDepErr?.response?.data?.message
+          ?? typedDepErr?.response?.data?.mensaje
           ?? 'inténtalo de nuevo desde "Mis personas"'
         addToast(
           `Tu cuenta se creó, pero no pudimos agregar a ${nombreDependiente.trim() || 'la persona a tu cuidado'} a tus personas: ${depMsg}`,
@@ -897,13 +676,11 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
       }
 
       // 6. Guardar localmente (intereses y narrativa de bienvenida)
-      localStorage.setItem('raices_user_interests', JSON.stringify(selectedInterests))
-      localStorage.setItem('raices_user_viability', viabilidad)
-      localStorage.setItem('raices_user_formatos', JSON.stringify(formatos))
+      saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
 
       const narrative = generateNarrative()
       setAiNarrative(narrative)
-      localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+      saveOnboardingData({ narrative })
 
       addToast(
         `¡Registro completado! ${nombreDependiente.trim() || 'La persona a tu cuidado'} ya aparece en "Mis personas".`,
@@ -915,7 +692,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
       console.error('Final submit error:', err)
       const narrative = generateNarrative()
       setAiNarrative(narrative)
-      localStorage.setItem('raices_ai_narrative', JSON.stringify(narrative))
+      saveOnboardingData({ narrative })
       setWizardStep('thanks')
     } finally {
       setSending(false)
@@ -1006,26 +783,12 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
               onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Estado <span style={{ color: '#ef4444' }}>*</span></label>
-              <select className="auth-input auth-select" required
-                value={generalForm.estado}
-                onChange={e => setGeneralForm({ ...generalForm, estado: e.target.value, ciudad: '' })}>
-                <option value="" disabled>Selecciona un estado</option>
-                {STATES.map(st => <option key={st} value={st}>{st}</option>)}
-              </select>
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Municipio <span style={{ color: '#ef4444' }}>*</span></label>
-              <select className="auth-input auth-select" required disabled={!generalForm.estado}
-                value={generalForm.ciudad}
-                onChange={e => setGeneralForm({ ...generalForm, ciudad: e.target.value })}>
-                <option value="" disabled>{generalForm.estado ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
-                {generalForm.estado && getMunicipalities(generalForm.estado).map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-          </div>
+          <StateCitySelects
+            state={generalForm.estado}
+            city={generalForm.ciudad}
+            onStateChange={st => setGeneralForm({ ...generalForm, estado: st, ciudad: '' })}
+            onCityChange={c => setGeneralForm({ ...generalForm, ciudad: c })}
+          />
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button className="auth-btn-secondary" type="button" onClick={onBackToRoles} style={{ flex: 1 }}>
@@ -1061,35 +824,13 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
 
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPass ? 'text' : 'password'} className="auth-input" required
-                placeholder="Mínimo 8 caracteres"
-                value={generalForm.password}
-                onChange={e => setGeneralForm({ ...generalForm, password: e.target.value })}
-                style={{ paddingRight: 48 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="auth-pass-toggle"
-                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                aria-pressed={showPass}
-              >
-                {showPass ? Icons.eyeOff({ s: 20 }) : Icons.eye({ s: 20 })}
-              </button>
-            </div>
-            {generalForm.password && (
-              <div style={{ marginTop: 5 }}>
-                <div style={{ height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: passStrength.width, background: passStrength.color, transition: 'all 0.3s' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: passStrength.color, fontWeight: 600 }}>{passStrength.label}</span>
-                </div>
-                <PasswordRequirements password={generalForm.password} />
-              </div>
-            )}
+            <PasswordField
+              value={generalForm.password}
+              onChange={v => setGeneralForm({ ...generalForm, password: v })}
+              showPass={showPass}
+              onToggleShow={() => setShowPass(!showPass)}
+              strength={passStrength}
+            />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('identity'); scrollTop() }} submitLabel="Continuar" />
@@ -1161,10 +902,12 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
               const edad = calcEdad(fechaNacimientoDependiente)
               const etapaId = calcEtapaDependiente(fechaNacimientoDependiente)
               if (edad === null) return null
-              const etapaLabel = {
-                infancia: 'Infancia', adolescencia: 'Adolescencia',
-                adultoJoven: 'Adulto joven', adulto: 'Adulto', mayor: 'Adulto mayor',
-              }[etapaId]
+              const etapaLabel = etapaId
+                ? ({
+                    infancia: 'Infancia', adolescencia: 'Adolescencia',
+                    adultoJoven: 'Adulto joven', adulto: 'Adulto', mayor: 'Adulto mayor',
+                  } as Record<string, string>)[etapaId]
+                : null
               return (
                 <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '5px 0 0' }}>
                   {edad} años{etapaLabel ? ` · ${etapaLabel}` : ''} — lo usaremos para personalizar sus recomendaciones
@@ -1540,10 +1283,10 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participa en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: v })} />
-            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesita?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: v })} />
-            <ScaleCard title="C. Comunicación" desc="¿Cómo expresa sus necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: v })} />
-            <ScaleCard title="D. Comprensión" desc="¿Sigue instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: v })} />
+            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participa en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: Number(v) })} />
+            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesita?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: Number(v) })} />
+            <ScaleCard title="C. Comunicación" desc="¿Cómo expresa sus necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: Number(v) })} />
+            <ScaleCard title="D. Comprensión" desc="¿Sigue instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: Number(v) })} />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('support'); scrollTop() }} submitLabel="Continuar" />
@@ -1565,10 +1308,10 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }) 
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan su energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: v })} />
-            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúa físicamente con su entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: v })} />
-            <ScaleCard title="G. Social" desc="¿Cómo participa con otras personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: v })} />
-            <ScaleCard title="H. Emocional" desc="¿Qué tanta estabilidad y regulación emocional vive?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: v })} />
+            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan su energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: Number(v) })} />
+            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúa físicamente con su entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: Number(v) })} />
+            <ScaleCard title="G. Social" desc="¿Cómo participa con otras personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: Number(v) })} />
+            <ScaleCard title="H. Emocional" desc="¿Qué tanta estabilidad y regulación emocional vive?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: Number(v) })} />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar" />

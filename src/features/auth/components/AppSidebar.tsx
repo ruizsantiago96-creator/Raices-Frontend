@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useMe } from '../hooks/useAuth'
-import { Icons, LeafIcon } from '@shared/components/shared'
+import { Icons } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 
-const PlantEmoji = () => (
+const PlantEmoji: React.FC = () => (
   <svg width="20" height="30" viewBox="16 6 40 66" fill="none" style={{ display: 'block' }}>
     {/* Pot */}
     <path d="M22 47 L25 69 C25.5 71, 46.5 71, 47 69 L50 47 Z" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3.5" strokeLinejoin="round" />
@@ -25,13 +25,46 @@ const PlantEmoji = () => (
   </svg>
 )
 
-export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount, alertCritical, stats }) => {
+export interface AppSidebarStats {
+  activeJobs?: number
+  pendingApplicants?: number
+}
+
+export interface AppSidebarProps {
+  currentPage?: string
+  mode?: 'app' | 'admin' | 'institution'
+  tab?: string
+  onTab?: (tabId: string) => void
+  pendingCount?: number
+  alertCritical?: number
+  stats?: AppSidebarStats
+}
+
+interface SidebarItem {
+  id: string
+  label: string
+  icon: (props?: { s?: number; color?: string; filled?: boolean }) => React.ReactNode
+  path?: string
+  badge?: number
+  badgeColor?: string
+  hidden?: boolean
+}
+
+export const AppSidebar: React.FC<AppSidebarProps> = ({
+  currentPage = '',
+  mode = 'app',
+  tab,
+  onTab,
+  pendingCount,
+  alertCritical,
+  stats,
+}) => {
   const { user } = useAuthStore()
-  const { data: meData, isFetching } = useMe()
+  const { isFetching } = useMe()
   const { sidebarOpen, setSidebarOpen } = useUiStore()
   const location = useLocation()
   const navigate = useNavigate()
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true'
   })
 
@@ -49,8 +82,8 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     localStorage.setItem('sidebar_collapsed', String(nextVal))
   }
 
-  let items = []
-  let logoIcon = null
+  let items: SidebarItem[] = []
+  let logoIcon: React.ReactNode = null
   let title = 'Raíces'
 
   if (mode === 'admin') {
@@ -84,13 +117,13 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     title = 'Raíces'
     // ── Filtrar items según features del usuario ────────────────────
     const features = user?.features ?? {}
-    const hasFeature = (name) => {
+    const hasFeature = (name: string) => {
       if (Array.isArray(features)) return features.includes(name)
-      return features[name] !== false
+      return (features as Record<string, boolean>)[name] !== false
     }
 
     items = [
-      { id: 'dashboard', label: 'Inicio', icon: Icons.home, path: '/dashboard' },
+      { id: 'feed', label: 'Inicio', icon: Icons.home, path: '/feed' },
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
       { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
@@ -107,7 +140,6 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     if (user?.role === 'admin') {
       items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
     }
-
   }
 
   return (
@@ -157,7 +189,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
           {items.map((item) => {
             let isActive = false
             if (mode === 'app') {
-              isActive = currentPage === item.id
+              isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
             } else if (mode === 'admin') {
               isActive = tab === item.id
             } else if (mode === 'institution') {
@@ -173,7 +205,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
               return (
                 <Link
                   key={item.id}
-                  to={item.path}
+                  to={item.path!}
                   aria-current={isActive ? 'page' : undefined}
                   className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
                   style={{
@@ -204,7 +236,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
                 <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
-                {(item.badge > 0) && (
+                {item.badge !== undefined && item.badge > 0 && (
                   <span className="sidebar-badge" aria-label={`${item.badge} pendientes`} style={{
                     marginLeft: 'auto',
                     minWidth: 18, height: 18, borderRadius: 9,
@@ -243,7 +275,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
         {/* Volver a la app link for sub-portals */}
         {mode !== 'app' && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-            <Link to="/dashboard" className="sidebar-desktop-nav-item" style={{
+            <Link to="/feed" className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
               color: 'var(--sidebar-fg)',
               marginRight: 0,
@@ -362,7 +394,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
             {items.map((item) => {
               let isActive = false
               if (mode === 'app') {
-                isActive = currentPage === item.id
+                isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
               } else if (mode === 'admin') {
                 isActive = tab === item.id
               } else if (mode === 'institution') {
@@ -378,7 +410,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                 return (
                   <Link
                     key={item.id}
-                    to={item.path}
+                    to={item.path!}
                     onClick={() => setSidebarOpen(false)}
                     aria-current={isActive ? 'page' : undefined}
                     style={{
@@ -426,7 +458,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
                 >
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
                   <span style={{ flex: 1, lineHeight: 1.2 }}>{item.label}</span>
-                  {(item.badge > 0) && (
+                  {item.badge !== undefined && item.badge > 0 && (
                     <span style={{
                       minWidth: 18, height: 18, borderRadius: 9,
                       background: item.badgeColor, color: '#fff',
@@ -473,7 +505,7 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
             </div>
           ) : (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
-              <Link to="/dashboard" onClick={() => setSidebarOpen(false)} style={{
+              <Link to="/feed" onClick={() => setSidebarOpen(false)} style={{
                 textDecoration: 'none',
                 display: 'flex', alignItems: 'center', gap: 12,
                 color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
@@ -489,3 +521,5 @@ export const AppSidebar = ({ currentPage, mode = 'app', tab, onTab, pendingCount
     </>
   )
 }
+
+export default AppSidebar

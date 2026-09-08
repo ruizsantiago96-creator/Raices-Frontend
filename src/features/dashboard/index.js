@@ -1,7 +1,6 @@
 /**
- * Dashboard Feature — Public API
- *
- * This feature only contains pages (DashboardPage).
- * Pages are kept private — imported directly by App.jsx.
- * No reusable components or hooks to export.
+ * Dashboard / Feed Feature — Public API
  */
+export { default as FeedPage } from './pages/FeedPage'
+export { default as DashboardPage } from './pages/FeedPage'
+export { default } from './pages/FeedPage'

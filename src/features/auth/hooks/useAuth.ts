@@ -1,40 +1,70 @@
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
 import { setRememberMe, saveUser, getRememberMe } from '@shared/lib/storage'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
+import type { User, UserRole, BackendUser } from '../../../types/auth'
+
+/**
+ * HOOKS Y SERVICIOS DE AUTENTICACIÓN Y PERFIL (Fase 3 · Migración TS)
+ * ===================================================================
+ */
 
 /**
  * Normaliza el rol retornado por el backend al formato interno del frontend.
  * El backend puede retornar 'institucion', 'Institucion', etc. en español,
  * mientras que el frontend espera 'institution' (inglés).
- * @param {string} rawRole - Rol crudo del backend
- * @returns {string} Rol normalizado en inglés
  */
-export function normalizeRole(rawRole) {
-  if (!rawRole) return rawRole
+export function normalizeRole(rawRole?: string | null): UserRole {
+  if (!rawRole) return (rawRole ?? '') as UserRole
   const lower = rawRole.toLowerCase()
   if (lower === 'institucion' || lower === 'institución') return 'institution'
-  // El backend registra a los tutores con rol 'padre_tutor' (ver ROLE_MAP en
-  // useRegister); el frontend los maneja como 'tutor' en toda la app.
   if (lower === 'padre_tutor' || lower === 'padre-tutor') return 'tutor'
-  // Para otros roles, devolver tal cual (ya están en inglés: pcd, tutor, admin)
-  return rawRole
+  return rawRole as UserRole
 }
 
-export function useLogin() {
+/**
+ * Retorna la ruta inicial según el rol del usuario.
+ * Por defecto redirige al feed principal ('/feed').
+ */
+export function getHomePathByRole(rawRole?: string | null): string {
+  const role = normalizeRole(rawRole)
+  if (role === 'admin') return '/admin'
+  if (role === 'institution') return '/institution-portal'
+  return '/feed'
+}
+
+export interface LoginVariables {
+  _rememberMe?: boolean
+  email: string
+  password: string
+}
+
+export interface LoginSuccessData {
+  token: string
+  refreshToken: string | null
+  user?: User
+}
+
+export interface LoginResult {
+  source: 'backend' | 'firebase-bridge'
+  data: LoginSuccessData
+  rememberMe: boolean
+}
+
+export function useLogin(): UseMutationResult<LoginResult, Error, LoginVariables> {
   const { setAuth } = useAuthStore()
-  return useMutation({
-    mutationFn: async ({ _rememberMe, email, password }) => {
+  return useMutation<LoginResult, Error, LoginVariables>({
+    mutationFn: async ({ _rememberMe, email, password }: LoginVariables) => {
       const rememberMe = _rememberMe ?? true
 
       // ── Intento 1: Login contra nuestro backend ──────────────────
       try {
         const raw = await api.post('/autenticacion/inicio-sesion', { email, password }).then(r => r.data)
         // Mapear respuesta del backend (español) al formato interno
-        const data = {
+        const data: LoginSuccessData = {
           token: raw.tokenAcceso,
           refreshToken: raw.tokenRefresco ?? null,
           user: raw.usuario ? {
@@ -46,9 +76,10 @@ export function useLogin() {
           } : undefined,
         }
         return { source: 'backend', data, rememberMe }
-      } catch (err) {
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
         // Si el backend indica que el usuario está inactivo o desactivado, lanzamos el error amigable directamente.
-        const backendMessage = err.response?.data?.message ?? ''
+        const backendMessage = axiosErr.response?.data?.message ?? ''
         const isInactive = 
           backendMessage.toLowerCase().includes('inactiv') || 
           backendMessage.toLowerCase().includes('desactiv') || 
@@ -58,19 +89,12 @@ export function useLogin() {
           
         if (isInactive) {
           const customErr = new Error('Tu cuenta ha sido desactivada. Por favor, contacta al soporte.')
-          customErr.response = {
-            ...err.response,
-            data: {
-              ...err.response?.data,
-              message: 'Tu cuenta ha sido desactivada. Por favor, contacta al soporte.'
-            }
-          }
           throw customErr
         }
 
         // ── Solo interceptamos 401 y solo si el bridge está habilitado ──
-        if (err.response?.status !== 401 || !isBridgeAvailable()) {
-          throw err
+        if (axiosErr.response?.status !== 401 || !isBridgeAvailable()) {
+          throw err as Error
         }
 
         console.log('[Auth] Backend devolvió 401 — intentando puente con Firebase…')
@@ -84,44 +108,60 @@ export function useLogin() {
           source: 'firebase-bridge',
           data: {
             token: idToken,
-            user: profile,
+            user: profile as User,
             refreshToken: null,
           },
           rememberMe,
         }
       }
     },
-    onSuccess: (result) => {
+    onSuccess: (result: LoginResult) => {
       const { source, data, rememberMe } = result
       const token = data.token
       const refresh = data.refreshToken ?? null
 
-      console.log('[Auth] Login response:', { source, token: !!token, hasRefreshToken: !!refresh, rememberMe, role: data.user?.role })
+      console.log('[Auth] Login response:', { source, token: Boolean(token), hasRefreshToken: Boolean(refresh), rememberMe, role: data.user?.role })
 
       setRememberMe(rememberMe)
       setAuth(token, data.user, refresh, rememberMe)
 
       console.log('[Auth] Saved to storage:', {
-        hasToken: !!token,
-        hasRefreshToken: !!refresh,
+        hasToken: Boolean(token),
+        hasRefreshToken: Boolean(refresh),
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
-      // La navegación se maneja directamente en AuthPage.doLogin después del mutateAsync
     },
   })
 }
 
-export function useRegister() {
+export interface RegisterVariables {
+  _rememberMe?: boolean
+  full_name: string
+  role: string
+  city?: string
+  state?: string
+  [key: string]: unknown
+}
+
+export interface RegisterApiResponse {
+  tokenAcceso?: string
+  tokenRefresco?: string | null
+  usuario?: BackendUser
+  mensaje?: string
+  requiereInicioSesion?: boolean
+  [key: string]: unknown
+}
+
+export function useRegister(): UseMutationResult<RegisterApiResponse, Error, RegisterVariables> {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
   const { addToast } = useUiStore()
-  return useMutation({
-    mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }) => {
+  return useMutation<RegisterApiResponse, Error, RegisterVariables>({
+    mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }: RegisterVariables) => {
       // Mapear roles del frontend a los valores que acepta el backend
-      const ROLE_MAP = { tutor: 'padre_tutor', empresa: 'empresa', institution: 'institucion' }
+      const ROLE_MAP: Record<string, string> = { tutor: 'padre_tutor', empresa: 'empresa', institution: 'institucion' }
       const body = {
         ...rest,
-        // El backend usa "nombreCompleto" para validación y "nombre" internamente para instituciones
         ...(role === 'institution' ? { nombre: full_name, nombreCompleto: full_name } : { nombreCompleto: full_name }),
         rol: ROLE_MAP[role] || role,
         ciudad: city,
@@ -129,13 +169,10 @@ export function useRegister() {
       }
       return api.post('/autenticacion/registro', body).then(r => r.data)
     },
-    onSuccess: (raw, variables) => {
+    onSuccess: (raw: RegisterApiResponse, variables: RegisterVariables) => {
       const rememberMe = variables?._rememberMe ?? true
       const role = variables?.role
 
-      // Si el backend no retorna token, la cuenta se creó pero el usuario debe
-      // iniciar sesión por separado (respuesta con requiereInicioSesion: true
-      // o sin tokenAcceso). Redirigimos al login con un mensaje de éxito.
       if (!raw.tokenAcceso) {
         console.log('[Auth] ' + (role ?? 'user') + ' registered — no token returned. Redirecting to login.')
         addToast(raw.mensaje ?? 'Registro exitoso. Inicia sesión para continuar.', 'success')
@@ -146,30 +183,35 @@ export function useRegister() {
       // Con token: login automático
       const token = raw.tokenAcceso
       const refresh = raw.tokenRefresco ?? null
-      const user = raw.usuario ? {
+      const user: User | undefined = raw.usuario ? {
         id: raw.usuario.id,
         email: raw.usuario.email,
         role: normalizeRole(raw.usuario.rol),
-        full_name: raw.usuario.nombreCompleto,
+        full_name: raw.usuario.nombreCompleto || '',
         features: raw.usuario.features ?? {},
       } : undefined
-      console.log('[Auth] Register response:', { token: !!token, hasRefreshToken: !!refresh, rememberMe, role: user?.role })
+
+      console.log('[Auth] Register response:', { token: Boolean(token), hasRefreshToken: Boolean(refresh), rememberMe, role: user?.role })
       setRememberMe(rememberMe)
       setAuth(token, user, refresh, rememberMe)
       console.log('[Auth] Register - saved to storage:', {
-        hasToken: !!token,
-        hasRefreshToken: !!refresh,
+        hasToken: Boolean(token),
+        hasRefreshToken: Boolean(refresh),
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
-      if (role === 'admin') nav('/admin', { replace: true })
-      else nav('/dashboard', { replace: true })
+      nav(getHomePathByRole(role), { replace: true })
     },
   })
 }
 
-export function useMe() {
+export interface MeResponse extends User {
+  avatar_url?: string | null
+  is_verified?: boolean
+}
+
+export function useMe(): UseQueryResult<MeResponse, Error> {
   const { token } = useAuthStore()
-  return useQuery({
+  return useQuery<MeResponse, Error>({
     queryKey: ['me'],
     queryFn: () => api.get('/autenticacion/yo').then(r => {
       const d = r.data
@@ -183,67 +225,67 @@ export function useMe() {
         avatar_url: d.urlAvatar,
         is_verified: d.verificado,
         features: d.features ?? {},
-        // Nuevos campos del backend v1.0-v1.5
         destinatarioRegistro: d.destinatarioRegistro ?? null,
         curp: d.curp ?? null,
         telefonoContacto: d.telefonoContacto ?? null,
         preferenciasAcompanamiento: d.preferenciasAcompanamiento ?? null,
       }
     }),
-    enabled: !!token,
-    // Auto-refetch cada 2 minutos para que los cambios de features del tutor se reflejen sin recargar
+    enabled: Boolean(token),
     refetchInterval: 2 * 60 * 1000,
-    // Refetch cuando el usuario vuelve a la pestaña (complemento al interval)
     refetchOnWindowFocus: true,
   })
 }
 
-/**
- * @typedef {Object} PerfilNecesidades
- * @property {string} id - ID del perfil
- * @property {string} usuarioId - ID del usuario
- * @property {string[]} tiposDiscapacidad - Tipos de discapacidad
- * @property {string|null} severidadDiscapacidad - Severidad de la discapacidad
- * @property {string[]} modosComunicacion - Modos de comunicación
- * @property {string[]} necesidadesMovilidad - Necesidades de movilidad
- * @property {string[]} accesoTecnologia - Acceso a tecnología
- * @property {string[]} zonasPreferidas - Zonas preferidas
- * @property {string[]} necesidades - Necesidades generales
- * @property {string[]} metasActuales - Metas actuales
- * @property {string[]} areasApoyo - Áreas de apoyo
- * @property {string[]} historialEducacion - Historial educativo
- * @property {string[]} historialTerapia - Historial de terapia
- * @property {string|null} etapaVida - Etapa de vida
- * @property {string|null} preocupacionesActuales - Preocupaciones actuales
- * @property {string|null} nivelApoyo - Nivel de apoyo
- */
+export interface PerfilNecesidadesBackend {
+  id?: string
+  usuarioId?: string
+  tiposDiscapacidad?: string[]
+  severidadDiscapacidad?: string | null
+  modosComunicacion?: string[]
+  necesidadesMovilidad?: string[]
+  accesoTecnologia?: string[]
+  zonasPreferidas?: string[]
+  necesidades?: string[]
+  metasActuales?: string[]
+  areasApoyo?: string[]
+  historialEducacion?: string[]
+  historialTerapia?: string[]
+  etapaVida?: string | null
+  preocupacionesActuales?: string | null
+  nivelApoyo?: string | null
+  edad?: number | null
+  fechaNacimiento?: string | null
+}
 
-/**
- * @typedef {Object} UsuarioPerfilCompleto
- * @property {string} id - ID del usuario
- * @property {string} email - Correo electrónico
- * @property {string} nombreCompleto - Nombre completo
- * @property {string} [ciudad] - Ciudad
- * @property {string} [estado] - Estado
- * @property {boolean} activo - Si la cuenta está activa
- * @property {boolean} verificado - Si la identidad está verificada
- * @property {string} fechaCreacion - Fecha de creación (ISO)
- * @property {'admin'|'pcd'|'tutor'|'institution'} rol - Rol del usuario
- * @property {string} [urlAvatar] - URL del avatar
- * @property {PerfilNecesidades} [perfilNecesidades] - Perfil de necesidades
- */
+export interface ProfilingFrontend {
+  disability_types: string[]
+  severity: string | null
+  communication_modes: string[]
+  mobility_needs: string[]
+  tech_access: string[]
+  preferred_zones: string[]
+  needs: string[]
+  goals: string[]
+  support_areas: string[]
+  education_history: string[]
+  therapy_history: string[]
+  life_stage: string | null
+  current_concerns: string | null
+  support_level: string | null
+  age?: number | null
+  birth_date?: string | null
+}
 
-/**
- * Mapea un objeto de usuario desde el formato del backend (español)
- * al formato interno del frontend (inglés).
- * @param {Object} d - Objeto del backend con campos en español
- * @returns {Object} Objeto con campos en inglés
- */
-function mapUsuarioBackendToFrontend(d) {
+export interface UserProfileResponse extends User {
+  profiling: ProfilingFrontend | null
+}
+
+function mapUsuarioBackendToFrontend(d: BackendUser): User {
   return {
     id: d.id,
     email: d.email,
-    full_name: d.nombreCompleto,
+    full_name: d.nombreCompleto || '',
     city: d.ciudad,
     state: d.estado,
     role: normalizeRole(d.rol),
@@ -255,17 +297,11 @@ function mapUsuarioBackendToFrontend(d) {
   }
 }
 
-/**
- * Mapea el perfil de necesidades desde el formato del backend (español)
- * al formato interno del frontend (inglés).
- * @param {Object} p - Objeto perfilNecesidades del backend
- * @returns {Object} Objeto profiling con campos en inglés
- */
-function mapPerfilNecesidadesToFrontend(p) {
+function mapPerfilNecesidadesToFrontend(p?: PerfilNecesidadesBackend | null): ProfilingFrontend | null {
   if (!p) return null
   return {
     disability_types: p.tiposDiscapacidad ?? [],
-    severity: p.severidadDiscapacidad,
+    severity: p.severidadDiscapacidad ?? null,
     communication_modes: p.modosComunicacion ?? [],
     mobility_needs: p.necesidadesMovilidad ?? [],
     tech_access: p.accesoTecnologia ?? [],
@@ -275,21 +311,15 @@ function mapPerfilNecesidadesToFrontend(p) {
     support_areas: p.areasApoyo ?? [],
     education_history: p.historialEducacion ?? [],
     therapy_history: p.historialTerapia ?? [],
-    life_stage: p.etapaVida,
-    current_concerns: p.preocupacionesActuales,
-    support_level: p.nivelApoyo,
-    age: p.edad,
-    birth_date: p.fechaNacimiento,
+    life_stage: p.etapaVida ?? null,
+    current_concerns: p.preocupacionesActuales ?? null,
+    support_level: p.nivelApoyo ?? null,
+    age: p.edad ?? null,
+    birth_date: p.fechaNacimiento ?? null,
   }
 }
 
-/**
- * Mapea el perfil de necesidades desde el formato interno (inglés)
- * al formato del backend (español) para enviar al PUT.
- * @param {Object} profiling - Objeto profiling con campos en inglés
- * @returns {Object} Objeto perfilNecesidades con campos en español
- */
-function mapPerfilNecesidadesToBackend(profiling) {
+function mapPerfilNecesidadesToBackend(profiling: Partial<ProfilingFrontend>): PerfilNecesidadesBackend {
   return {
     tiposDiscapacidad: profiling.disability_types ?? [],
     severidadDiscapacidad: profiling.severity ?? null,
@@ -310,17 +340,13 @@ function mapPerfilNecesidadesToBackend(profiling) {
   }
 }
 
-/**
- * Hook para obtener el perfil completo del usuario autenticado.
- * GET /api/usuarios/perfil
- */
-export function useProfile() {
+export function useProfile(): UseQueryResult<UserProfileResponse, Error> {
   const { token, user } = useAuthStore()
-  return useQuery({
+  return useQuery<UserProfileResponse, Error>({
     queryKey: ['profile'],
     queryFn: () => api.get('/usuarios/perfil').then(r => {
       const d = r.data?.datos ?? r.data
-      const mapped = {
+      const mapped: UserProfileResponse = {
         ...mapUsuarioBackendToFrontend(d),
         profiling: mapPerfilNecesidadesToFrontend(d.perfilNecesidades),
       }
@@ -339,23 +365,21 @@ export function useProfile() {
       }
       return mapped
     }),
-    enabled: !!token,
+    enabled: Boolean(token),
   })
 }
 
-/**
- * Hook para actualizar el perfil del usuario.
- * PUT /api/usuarios/perfil
- *
- * Nota: el perfil de necesidades NO va embebido aquí; el backend lo espera
- * por separado vía POST /usuarios/perfil-necesidades (ver useUpdateNeedsProfile).
- */
-export function useUpdateProfile() {
+export interface UpdateProfileVariables {
+  full_name: string
+  city?: string
+  state?: string
+}
+
+export function useUpdateProfile(): UseMutationResult<BackendUser, Error, UpdateProfileVariables> {
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  return useMutation({
-    mutationFn: (data) => {
-      // Construir el body en español para el backend
+  return useMutation<BackendUser, Error, UpdateProfileVariables>({
+    mutationFn: (data: UpdateProfileVariables) => {
       const body = {
         nombreCompleto: data.full_name,
         ciudad: data.city,
@@ -363,34 +387,27 @@ export function useUpdateProfile() {
       }
       return api.put('/usuarios/perfil', body).then(r => r.data)
     },
-    onSuccess: (raw) => {
-      // Mapear la respuesta completa del backend al formato interno
+    onSuccess: (raw: BackendUser) => {
       const updatedUser = mapUsuarioBackendToFrontend(raw)
-      // Actualizar el store global con los nuevos datos del usuario
       if (user) {
         useAuthStore.setState({ user: updatedUser })
         saveUser(updatedUser, getRememberMe())
       }
-      // Invalidar queries para refrescar datos
       qc.invalidateQueries({ queryKey: ['profile'] })
       qc.invalidateQueries({ queryKey: ['me'] })
     },
   })
 }
 
-/**
- * Hook para guardar el perfil de necesidades.
- * POST /api/usuarios/perfil-necesidades
- *
- * El backend espera el perfil de necesidades aquí (no embebido en
- * PUT /usuarios/perfil). Acepta el objeto `profiling` con campos en
- * inglés y lo mapea al formato en español del backend.
- */
-export function useUpdateNeedsProfile() {
+export interface UpdateNeedsProfileVariables {
+  profiling: Partial<ProfilingFrontend>
+}
+
+export function useUpdateNeedsProfile(): UseMutationResult<unknown, Error, UpdateNeedsProfileVariables> {
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  return useMutation({
-    mutationFn: (data) => {
+  return useMutation<unknown, Error, UpdateNeedsProfileVariables>({
+    mutationFn: (data: UpdateNeedsProfileVariables) => {
       const body = mapPerfilNecesidadesToBackend(data.profiling)
       const userId = user?.id
       if (userId) {
@@ -398,7 +415,7 @@ export function useUpdateNeedsProfile() {
           localStorage.setItem(`raices_birth_date_${userId}`, data.profiling.birth_date)
         }
         if (data.profiling?.age) {
-          localStorage.setItem(`raices_age_${userId}`, data.profiling.age)
+          localStorage.setItem(`raices_age_${userId}`, String(data.profiling.age))
         }
       }
       return api.post('/usuarios/perfil-necesidades', body).then(r => r.data)
@@ -410,66 +427,51 @@ export function useUpdateNeedsProfile() {
   })
 }
 
-/**
- * Hook para subir y actualizar el avatar del usuario.
- * POST /api/usuarios/avatar (multipart/form-data)
- * @param {File} archivoImagen - Archivo de imagen a subir
- * @returns {{ mensaje: string, urlAvatar: string }}
- */
-export function useActualizarAvatar() {
+export interface ActualizarAvatarResponse {
+  mensaje: string
+  urlAvatar: string
+}
+
+export function useActualizarAvatar(): UseMutationResult<ActualizarAvatarResponse, Error, File> {
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  return useMutation({
-    mutationFn: (archivoImagen) => {
+  return useMutation<ActualizarAvatarResponse, Error, File>({
+    mutationFn: (archivoImagen: File) => {
       const formData = new FormData()
       formData.append('avatar', archivoImagen)
-      // Axios configura automáticamente el Content-Type con el boundary correcto
       return api.post('/usuarios/avatar', formData).then(r => r.data)
     },
-    onSuccess: (data) => {
-      // Actualizar el usuario en el store global con la nueva URL del avatar
+    onSuccess: (data: ActualizarAvatarResponse) => {
       if (data.urlAvatar && user) {
-        const updatedUser = { ...user, avatar_url: data.urlAvatar }
-        // Actualizar store directamente sin llamar setAuth (evita re-saves de token)
+        const updatedUser: User = { ...user, avatar_url: data.urlAvatar }
         useAuthStore.setState({ user: updatedUser })
-        // Persistir en storage con el rememberMe correcto
         saveUser(updatedUser, getRememberMe())
       }
-      // Invalidar queries para refrescar datos
       qc.invalidateQueries({ queryKey: ['me'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
     },
   })
 }
 
-/**
- * @typedef {Object} EliminarAvatarResponse
- * @property {boolean} exito - Si la operación fue exitosa
- * @property {string} mensaje - Mensaje de confirmación
- */
+export interface EliminarAvatarResponse {
+  exito: boolean
+  mensaje: string
+}
 
-/**
- * Hook para eliminar la foto de perfil/avatar del usuario.
- * DELETE /api/usuarios/avatar
- * @returns {EliminarAvatarResponse}
- */
-export function useEliminarAvatar() {
+export function useEliminarAvatar(): UseMutationResult<EliminarAvatarResponse, Error, void> {
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  return useMutation({
+  return useMutation<EliminarAvatarResponse, Error, void>({
     mutationFn: () => api.delete('/usuarios/avatar').then(r => r.data),
-    onSuccess: (data) => {
-      // Verificar que la operación fue exitosa antes de limpiar el avatar
+    onSuccess: (data: EliminarAvatarResponse) => {
       if (!data.exito) {
         throw new Error(data.mensaje ?? 'No se pudo eliminar el avatar')
       }
-      // Limpiar la URL del avatar en el store global
       if (user) {
-        const updatedUser = { ...user, avatar_url: null }
+        const updatedUser: User = { ...user, avatar_url: null }
         useAuthStore.setState({ user: updatedUser })
         saveUser(updatedUser, getRememberMe())
       }
-      // Invalidar queries para refrescar datos
       qc.invalidateQueries({ queryKey: ['me'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
     },

@@ -12,7 +12,7 @@ export { default as FeatureGuard } from './components/FeatureGuard'
 export { TopNav } from './components/TopNav'
 
 // ── Hooks (business logic used by other features) ─────────────────
-export { useLogin, useRegister, useMe, useProfile, useUpdateProfile, useUpdateNeedsProfile, useActualizarAvatar, useEliminarAvatar } from './hooks/useAuth'
+export { useLogin, useRegister, useMe, useProfile, useUpdateProfile, useUpdateNeedsProfile, useActualizarAvatar, useEliminarAvatar, getHomePathByRole } from './hooks/useAuth'
 export { useSessionVerify } from './hooks/useSessionVerify'
 
 // ── Store (auth state consumed by multiple features) ───────────────
