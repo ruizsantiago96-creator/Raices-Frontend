@@ -17,11 +17,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     css: false,
-    include: ['src/**/*.{test,spec}.{js,jsx}'],
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules', 'dist'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{js,jsx}'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
       exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.spec.*'],
       reporter: ['text', 'text-summary', 'json', 'html'],
       thresholds: {

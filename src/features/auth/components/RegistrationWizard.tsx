@@ -9,18 +9,9 @@ import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import { LIST_ACOMPANAMIENTO, CONDICIONES_PCD, NEURODIVERGENCIAS_LIST, LIST_TEMPORALIDAD, ESCALAS_OPCIONES, LIST_FORMATOS, INTEREST_SECTIONS, LIST_VIABILIDAD, LIST_NECESIDADES, LIST_AREAS_APOYO, MERIDA_ZONAS_SUGERIDAS, LIST_EDUCACION, LIST_TERAPIAS } from '../constants/registrationCatalogos'
 import { WizardNavButtons, ScaleCard, CheckChip, WizardProgress, WizardErrorBanner, PasswordField, StateCitySelects } from './WizardUI'
-import { CURP_REGEX, validateCurpMatch } from '../lib/validators'
 import { calcEdad365, calcEtapaVida365 } from '../lib/age'
 import { saveOnboardingData } from '../lib/onboardingStorage'
 import type { User } from '../../../types/auth'
-
-interface CurpIndicatorProps {
-  curp: string
-  nombres: string
-  apPat: string
-  apMat: string
-  birthDate: string
-}
 
 export interface RegistrationWizardProps {
   onBackToRoles?: () => void
@@ -93,27 +84,6 @@ interface ApiErrorResponse {
   }
 }
 
-// ── CURP INDICATOR (usuario: valida la CURP del PCD en tiempo real) ──
-function CurpIndicator(props: CurpIndicatorProps) {
-  const { curp, nombres, apPat, apMat, birthDate } = props
-  if (!curp || curp.length === 0) {
-    return <p style={{ fontSize: 11, margin: '4px 0 0', color: 'var(--fg3)' }}>18 caracteres alfanuméricos (ej. GARC850101HDFRL09)</p>
-  }
-  const fmt = CURP_REGEX.test(curp)
-  const full = curp.length === 18
-  const cr = fmt ? validateCurpMatch(curp, nombres, apPat, apMat, birthDate) : { valid: false, errors: [], nameIsComplete: false }
-  const col = !full ? 'var(--fg3)' : !fmt ? '#ef4444' : !cr.valid ? '#f97316' : cr.nameIsComplete ? '#22c55e' : 'var(--fg3)'
-  const ico = !full ? '' : !fmt ? '\u2717' : !cr.valid ? '\u26a0' : cr.nameIsComplete ? '\u2713' : '\u2139'
-
-  let txt = ''
-  if (!full) txt = curp.length + '/18 caracteres'
-  else if (!fmt) txt = 'Formato de CURP no válido'
-  else if (!cr.valid) txt = cr.errors[0]
-  else if (cr.nameIsComplete) txt = 'CURP válida y coincide con nombre y fecha'
-  else txt = 'CURP válida (completa tu nombre y apellidos para verificar)'
-  return <p style={{ fontSize: 12, margin: '4px 0 0', color: col }}>{ico} {txt}</p>
-}
-
 // ── STEP ORDER ───────────────────────────────────────────────────
 const STEP_ORDER: PcdWizardStep[] = [
   'identity',     // 1: Nombres, apellidos, fecha nacimiento
@@ -142,7 +112,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
   const [wizardStep, setWizardStep] = useState<PcdWizardStep>('identity')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const [docFile, setDocFile] = useState<File | null>(null)
+  const [docFile] = useState<File | null>(null)
   const [showPass, setShowPass] = useState(false)
 
   const handleFinishToLogin = () => {

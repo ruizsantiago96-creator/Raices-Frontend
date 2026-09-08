@@ -17,6 +17,8 @@
     "strict": true,
     "allowJs": true,
     "checkJs": false,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
 
     /* Paths & Aliases */
     "paths": {

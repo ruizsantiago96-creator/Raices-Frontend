@@ -38,16 +38,10 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(getRememberMe)
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [consentChecked, setConsentChecked] = useState(false)
   const login = useLogin()
   const { addToast } = useUiStore()
   const { token, user } = useAuthStore()
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   const urlMode = params.get('mode')
   const [prevUrlMode, setPrevUrlMode] = useState(urlMode)

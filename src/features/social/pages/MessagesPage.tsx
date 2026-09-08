@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, HTMLAttributes, ChangeEvent, FormEv
 import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
 import { useMiembrosDestacados } from '../hooks/useCommunity'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
-import { useAuthStore, useMe } from '@features/auth'
+import { useMe } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { SOCIAL_UI } from '../constants/socialMessages'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -1511,7 +1511,6 @@ export function DirectMessages({
 
 export default function MessagesPage() {
   const { data: user } = useMe()
-  const { logout } = useAuthStore()
 
   return (
     <main className="responsive-main" style={{ ['--main-max-width' as string]: '1060px' }}>

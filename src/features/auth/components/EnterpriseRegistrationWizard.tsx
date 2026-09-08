@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUiStore } from '@shared/stores/uiStore'
 import api from '@shared/lib/api'
 import { Icons } from '@shared/components/shared'
 import { ENTERPRISE_SUBTYPES, ECOSYSTEM_SERVICES, COMMUNITIES } from '../constants/enterpriseCatalogos'
@@ -29,7 +28,6 @@ export type EnterpriseWizardStep = 'subtype' | 'org' | 'services' | 'community' 
 export default function EnterpriseRegistrationWizard({
   onBackToRoles = () => {},
 }: EnterpriseRegistrationWizardProps): React.JSX.Element {
-  const { addToast } = useUiStore()
   const nav = useNavigate()
   const createAccount = useCreateAccount<EnterpriseFormData>({
     role: 'empresa',

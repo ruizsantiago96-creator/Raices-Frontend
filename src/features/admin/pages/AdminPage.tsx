@@ -1,4 +1,3 @@
-import React from 'react'
 import { useMe } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAdminAlerts } from '../hooks/useAdmin'

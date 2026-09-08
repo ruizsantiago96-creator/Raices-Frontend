@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUiStore } from '@shared/stores/uiStore'
 import api from '@shared/lib/api'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { INSTITUTION_SUBTYPES, SERVICE_CATEGORIES, INSTITUTION_CATEGORIES, COMMUNITIES } from '../constants/institutionCatalogos'
@@ -29,7 +28,6 @@ export type InstitutionWizardStep = 'subtype' | 'org' | 'category' | 'services' 
 export default function InstitutionRegistrationWizard({
   onBackToRoles = () => {},
 }: InstitutionRegistrationWizardProps): React.JSX.Element {
-  const { addToast } = useUiStore()
   const nav = useNavigate()
 
   const createAccount = useCreateAccount<InstitutionFormData>({
@@ -62,7 +60,6 @@ export default function InstitutionRegistrationWizard({
   const [wizardStep, setWizardStep] = useState<InstitutionWizardStep>('subtype')
   const [sending, setSending] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const [showPass, setShowPass] = useState<boolean>(false)
 
   // Step 1: Subtipo institucional
   const [subtipo, setSubtipo] = useState<string>('')
@@ -348,7 +345,7 @@ export default function InstitutionRegistrationWizard({
               Contraseña segura <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
-              type={showPass ? 'text' : 'password'}
+              type="password"
               className="auth-input"
               required
               placeholder="Mínimo 8 caracteres"

@@ -16,7 +16,6 @@ import { Icons, labelStyle } from '@shared/components/shared'
 import type {
   CreateRutaPayload,
   PasoRuta,
-  RutaDesarrollo,
   RutaPrioridad,
   RutaEstado,
 } from '@/types/rutas'
