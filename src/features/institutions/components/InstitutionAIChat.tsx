@@ -1,30 +1,38 @@
-/**
- * InstitutionAIChat — Panel de chat con asistente IA para preguntas sobre la institución.
- *
- * Props:
- *   institutionName — Nombre de la institución (para placeholder)
- *
- * API: POST /api/ia/conversacion
- * Request: { mensaje: string, historial: Array<{role, content}> }
- * Response: { respuesta: string, simulado: boolean }
- */
-
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useChat } from '../../tutor/hooks/useAI'
 import { Icons } from '@shared/components/shared'
 
-export default function InstitutionAIChat({ institutionName }) {
-  const chat = useChat()
+export interface InstitutionAIChatProps {
+  institutionName: string
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface AIChatResponse {
+  respuesta?: string
+  simulado?: boolean
+  [key: string]: unknown
+}
+
+export default function InstitutionAIChat({ institutionName }: InstitutionAIChatProps) {
+  const chat = useChat() as unknown as {
+    mutateAsync: (variables: { mensaje: string; historial?: ChatMessage[] }) => Promise<AIChatResponse>
+    isPending: boolean
+    error?: { response?: { status?: number } }
+  }
   const [aiInput, setAiInput] = useState('')
-  const [chatHistory, setChatHistory] = useState([])
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [lastSimulado, setLastSimulado] = useState(false)
-  const chatEndRef = useRef(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatHistory, chat.isPending])
 
-  const handleSendAi = async (e) => {
+  const handleSendAi = async (e: FormEvent) => {
     e.preventDefault()
     const msg = aiInput.trim()
     if (!msg || chat.isPending) return
@@ -35,8 +43,8 @@ export default function InstitutionAIChat({ institutionName }) {
     }
 
     setAiInput('')
-    const userMsg = { role: 'user', content: msg }
-    const nextHistory = [...chatHistory, userMsg]
+    const userMsg: ChatMessage = { role: 'user', content: msg }
+    const nextHistory: ChatMessage[] = [...chatHistory, userMsg]
     setChatHistory(nextHistory)
 
     try {
@@ -47,11 +55,12 @@ export default function InstitutionAIChat({ institutionName }) {
       })
 
       // API returns: { respuesta, simulado }
-      const aiMsg = { role: 'assistant', content: res.respuesta ?? '...' }
+      const aiMsg: ChatMessage = { role: 'assistant', content: res.respuesta ?? '...' }
       setChatHistory(h => [...h, aiMsg])
       setLastSimulado(res.simulado === true)
-    } catch (err) {
-      const status = err.response?.status
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { status?: number } }
+      const status = errorResponse.response?.status
       let errorMsg = 'Hubo un error al conectar con el asistente. Intenta de nuevo.'
 
       if (status === 429) {

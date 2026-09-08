@@ -1,30 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
-
-/**
- * @typedef {Object} InstitucionAdmin
- * @property {string} id - ID de la institución
- * @property {string} [nombre] - Nombre de la institución
- * @property {string} [categoria] - Categoría: funcional, educativo, laboral, social
- * @property {string} [ciudad] - Ciudad de la institución
- * @property {boolean} activa - Si la institución está activa
- * @property {boolean} verificada - Si está verificada
- * @property {number} [calificacionPromedio] - Calificación promedio
- * @property {number} [cantidadCalificaciones] - Cantidad de calificaciones
- * @property {string} fechaCreacion - Fecha de creación (ISO)
- */
+import type { Institution, RawBackendInstitucion, UpdateInstitucionPayload } from '@/types/institutions'
 
 /**
  * Mapea campos en español del response de la API a los campos en inglés
  * que el componente InstitutionsTab espera.
- * @param {InstitucionAdmin} inst - Objeto crudo del API
- * @returns {Object} Institución con campos normalizados
  */
-function mapInstitucionAdmin(inst) {
+function mapInstitucionAdmin(inst: RawBackendInstitucion): Institution {
   return {
     ...inst,
-    id: inst.id ?? inst._id ?? inst.documentId ?? inst.institutionId,
+    id: inst.id ?? inst._id ?? inst.documentId ?? inst.institutionId ?? '',
     name: inst.nombre ?? inst.name ?? 'Sin nombre',
     category: inst.categoria ?? inst.category,
     city: inst.ciudad ?? inst.city,
@@ -38,29 +24,31 @@ function mapInstitucionAdmin(inst) {
 }
 
 /* ── Instituciones ── */
-/**
- * Hook para listar todas las instituciones (panel admin).
- * GET /api/administracion/instituciones
- */
 /** Helper: returns true only if the current user is an admin. */
 const useIsAdmin = () => useAuthStore(s => s.user?.role === 'admin')
 
-export function useAllInstitutions(opts) {
+export interface UseAdminInstitutionsOptions {
+  enabled?: boolean
+  [key: string]: unknown
+}
+
+export function useAllInstitutions(opts?: UseAdminInstitutionsOptions): UseQueryResult<Institution[]> {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'institutions'],
-    queryFn: () => api.get('/administracion/instituciones').then(r => {
+    queryFn: async (): Promise<Institution[]> => {
+      const r = await api.get('/administracion/instituciones')
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      const mapped = data.map(mapInstitucionAdmin)
+      const mapped = (data as RawBackendInstitucion[]).map(mapInstitucionAdmin)
       // Deduplicar por ID para evitar instituciones repetidas del backend
-      const seen = new Map()
+      const seen = new Map<string | number, Institution>()
       for (const inst of mapped) {
         if (!seen.has(inst.id)) seen.set(inst.id, inst)
       }
       return [...seen.values()]
-    }),
+    },
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
   })
@@ -70,55 +58,57 @@ export function useAllInstitutions(opts) {
  * Hook para listar instituciones pendientes de aprobación.
  * GET /api/administracion/instituciones/pending
  */
-export function usePendingInstitutions(opts) {
+export function usePendingInstitutions(opts?: UseAdminInstitutionsOptions): UseQueryResult<Institution[]> {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['admin', 'pending'],
-    queryFn: () => api.get('/administracion/instituciones/pendientes').then(r => {
+    queryFn: async (): Promise<Institution[]> => {
+      const r = await api.get('/administracion/instituciones/pendientes')
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      const mapped = data.map(mapInstitucionAdmin)
+      const mapped = (data as RawBackendInstitucion[]).map(mapInstitucionAdmin)
       // Deduplicar por ID para evitar instituciones repetidas del backend
-      const seen = new Map()
+      const seen = new Map<string | number, Institution>()
       for (const inst of mapped) {
         if (!seen.has(inst.id)) seen.set(inst.id, inst)
       }
       return [...seen.values()]
-    }),
+    },
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
   })
 }
 
-export function useApproveInstitution() {
+export function useApproveInstitution(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.post(`/administracion/instituciones/${id}/aprobar`).then(r => r.data),
+    mutationFn: (id: string | number) => api.post(`/administracion/instituciones/${id}/aprobar`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
 
-export function useRejectInstitution() {
+export function useRejectInstitution(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/administracion/instituciones/${id}`).then(r => r.data),
+    mutationFn: (id: string | number) => api.delete(`/administracion/instituciones/${id}`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
 
-export function useToggleVerifyInstitution() {
+export function useToggleVerifyInstitution(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.patch(`/administracion/instituciones/${id}/verificar`).then(r => r.data),
+    mutationFn: (id: string | number) => api.patch(`/administracion/instituciones/${id}/verificar`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
   })
 }
 
-export function useUpdateAdminInstitution() {
+export function useUpdateAdminInstitution(): UseMutationResult<unknown, Error, UpdateInstitucionPayload & { id: string | number }> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }) => api.put(`/administracion/instituciones/${id}`, data).then(r => r.data),
+    mutationFn: ({ id, ...data }: UpdateInstitucionPayload & { id: string | number }) =>
+      api.put(`/administracion/instituciones/${id}`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin'] })
       qc.invalidateQueries({ queryKey: ['institutions'] })

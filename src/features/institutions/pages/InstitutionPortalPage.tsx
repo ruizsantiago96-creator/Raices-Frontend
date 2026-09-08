@@ -9,7 +9,7 @@ import CandidatosTab from '../components/CandidatosTab'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import { PORTAL_UI } from '../constants/institutionPortalMessages'
 
-const TAB_TITLES = {
+const TAB_TITLES: Record<string, string> = {
   postulaciones: PORTAL_UI.TAB_POSTULACIONES,
   candidatos: PORTAL_UI.TAB_CANDIDATOS,
   foros: PORTAL_UI.TAB_FOROS,
@@ -35,7 +35,7 @@ export default function InstitutionPortalPage() {
   const handleViewCandidates = () => onTab('candidatos')
 
   return (
-    <main id="main" className="responsive-main" style={{ '--main-max-width': '1100px' }}>
+    <main id="main" className="responsive-main" style={{ '--main-max-width': '1100px' } as Record<string, string>}>
       {/* Loading */}
       {loadingInst && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', color: 'var(--fg3)', fontSize: 15, gap: 10 }}>

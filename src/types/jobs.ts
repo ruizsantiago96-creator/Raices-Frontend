@@ -15,7 +15,10 @@ export interface Job {
   disability_inclusive?: boolean
   disability_types?: string[]
   is_active?: boolean
+  applicants_count?: number
+  applicantsCount?: number
   created_at?: string
+  updated_at?: string
 
   // Institución asociada/embebida
   institution_id?: string | number
@@ -99,8 +102,15 @@ export interface RawBackendJob {
   tiposDiscapacidad?: string[]
   is_active?: boolean
   activa?: boolean
+  applicants_count?: number
+  applicantsCount?: number
+  numPostulantes?: number
+  postulantesCount?: number
+  cantidadPostulantes?: number
   created_at?: string
   fechaCreacion?: string
+  updated_at?: string
+  fechaActualizacion?: string
   institution_id?: string | number
   institucionId?: string | number
   institution_name?: string

@@ -1,11 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
+import type { Job, RawBackendJob } from '@/types/jobs'
+import type { InstitutionJobApplicant, RawBackendJobApplicant } from '@/types/institutions'
 
 /* ── Map helpers ─────────────────────────────────────────── */
 
-function mapJob(job) {
-  if (!job) return job
+function mapJob(job: RawBackendJob): Job {
+  if (!job) return job as unknown as Job
 
   let status = job.status ?? job.estadoPostulacion ?? job.estado ?? 'active'
   if (status === 'activa' || status === 'Activa') status = 'active'
@@ -13,8 +15,8 @@ function mapJob(job) {
 
   return {
     ...job,
-    id: job.id ?? job._id ?? job.vacanteId,
-    title: job.title ?? job.titulo,
+    id: (job.id ?? (job as { _id?: string | number })._id ?? (job as { vacanteId?: string | number }).vacanteId ?? '') as string | number,
+    title: job.title ?? job.titulo ?? '',
     description: job.description ?? job.descripcion,
     requirements: job.requirements ?? job.requisitos,
     modality: job.modality ?? job.modalidad,
@@ -23,16 +25,16 @@ function mapJob(job) {
     city: job.city ?? job.ciudad,
     state: job.state ?? job.estado,
     disability_inclusive: job.disability_inclusive ?? job.inclusivaDiscapacidad,
-    applicants_count: job.applicants_count ?? job.numPostulantes ?? job.postulantesCount ?? job.cantidadPostulantes ?? 0,
-    created_at: job.created_at ?? job.fechaCreacion ?? job.createdAt,
-    updated_at: job.updated_at ?? job.fechaActualizacion ?? job.updatedAt,
+    applicants_count: (job.applicants_count ?? job.numPostulantes ?? job.postulantesCount ?? job.cantidadPostulantes ?? 0) as number,
+    created_at: (job.created_at ?? job.fechaCreacion ?? (job as { createdAt?: string }).createdAt) as string | undefined,
+    updated_at: (job.updated_at ?? job.fechaActualizacion ?? (job as { updatedAt?: string }).updatedAt) as string | undefined,
     status,
-    is_active: job.is_active ?? job.activa ?? status === 'active',
+    is_active: (job.is_active ?? job.activa ?? status === 'active') as boolean,
   }
 }
 
-function mapApplicant(app) {
-  if (!app) return app
+function mapApplicant(app: RawBackendJobApplicant): InstitutionJobApplicant {
+  if (!app) return app as unknown as InstitutionJobApplicant
 
   let status = app.status ?? app.estadoPostulacion ?? app.estado ?? 'pending'
   if (status === 'pendiente' || status === 'Pendiente') status = 'pending'
@@ -42,10 +44,10 @@ function mapApplicant(app) {
 
   return {
     ...app,
-    id: app.id ?? app._id ?? app.postulacionId,
+    id: app.id ?? app._id ?? app.postulacionId ?? '',
     user_id: app.user_id ?? app.usuarioId ?? app.usuario?.id,
-    user_name: app.user_name ?? app.nombreUsuario ?? app.usuario?.nombreCompleto ?? app.nombreCompleto,
-    user_email: app.user_email ?? app.emailUsuario ?? app.usuario?.email ?? app.email,
+    user_name: app.user_name ?? app.nombreUsuario ?? app.usuario?.nombreCompleto,
+    user_email: app.user_email ?? app.emailUsuario ?? app.usuario?.email,
     job_id: app.job_id ?? app.vacanteId ?? app.vacante?.id,
     job_title: app.job_title ?? app.tituloVacante ?? app.vacante?.titulo ?? app.titulo,
     cover_letter: app.cover_letter ?? app.cartaPresentacion ?? app.carta_presentacion,
@@ -56,23 +58,27 @@ function mapApplicant(app) {
 
 /* ── Institution Job Postings ────────────────────────────── */
 
-/**
- * Fetch all job postings created by the current institution.
- * Uses /empleo with a filter to get only the institution's own jobs.
- */
 /** Helper: returns true only if the current user has the institution role. */
 const useIsInstitution = () => useAuthStore(s => s.user?.role === 'institution')
 
-export function useMyJobPostings(opts) {
+export interface UseInstitutionJobsOptions {
+  enabled?: boolean
+  [key: string]: unknown
+}
+
+/**
+ * Fetch all job postings created by the current institution.
+ */
+export function useMyJobPostings(opts?: UseInstitutionJobsOptions): UseQueryResult<Job[]> {
   const isInstitution = useIsInstitution()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'job-postings'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Job[]> => {
       const r = await api.get('/empleo', { params: { mias: true } })
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      return data.map(mapJob)
+      return (data as RawBackendJob[]).map(mapJob)
     },
     staleTime: 1000 * 60 * 2,
     enabled: isInstitution && callerEnabled !== false,
@@ -83,64 +89,65 @@ export function useMyJobPostings(opts) {
 /**
  * Get a single job posting detail for the institution.
  */
-export function useJobPosting(id) {
+export function useJobPosting(id?: string | number): UseQueryResult<Job> {
   return useQuery({
     queryKey: ['institution', 'job-posting', id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Job> => {
       const r = await api.get(`/empleo/${id}`)
-      const inst = r.data?.datos ?? r.data
+      const inst = (r.data?.datos ?? r.data) as RawBackendJob
       return mapJob(inst)
     },
     enabled: !!id,
   })
 }
 
-/**
- * Create a new job posting.
- */
-export function useCreateJobPosting() {
+export interface CreateJobPostingPayload {
+  titulo: string
+  descripcion?: string
+  requisitos?: string
+  modalidad?: string
+  horario?: string
+  rangoSalario?: string
+  ciudad?: string
+  estado?: string
+  inclusivaDiscapacidad?: boolean
+  [key: string]: unknown
+}
+
+export function useCreateJobPosting(): UseMutationResult<unknown, Error, CreateJobPostingPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.post('/empleo', data).then(r => r.data),
+    mutationFn: (data: CreateJobPostingPayload) => api.post('/empleo', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'job-postings'] })
     },
   })
 }
 
-/**
- * Update a job posting (e.g., toggle active/paused).
- */
-export function useUpdateJobPosting() {
+export function useUpdateJobPosting(): UseMutationResult<unknown, Error, Partial<CreateJobPostingPayload> & { id: string | number }> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }) => api.put(`/empleo/${id}`, data).then(r => r.data),
+    mutationFn: ({ id, ...data }: Partial<CreateJobPostingPayload> & { id: string | number }) => api.put(`/empleo/${id}`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'job-postings'] })
     },
   })
 }
 
-/**
- * Delete a job posting.
- */
-export function useDeleteJobPosting() {
+export function useDeleteJobPosting(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/empleo/${id}`).then(r => r.data),
+    mutationFn: (id: string | number) => api.delete(`/empleo/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'job-postings'] })
     },
   })
 }
 
-/**
- * Toggle job posting between active and paused.
- */
-export function useToggleJobStatus() {
+export function useToggleJobStatus(): UseMutationResult<unknown, Error, { id: string | number; is_active: boolean }> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, is_active }) =>
+    mutationFn: ({ id, is_active }: { id: string | number; is_active: boolean }) =>
       api.patch(`/empleo/${id}/estado`, { activa: is_active }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'job-postings'] })
@@ -150,24 +157,20 @@ export function useToggleJobStatus() {
 
 /* ── Job Applicants ──────────────────────────────────────── */
 
-/**
- * Fetch all applicants to a specific job posting.
- * Endpoint: GET /api/empleo/postulantes-institucion?vacanteId=xxx
- */
-export function useJobApplicants(jobId, opts) {
+export function useJobApplicants(jobId?: string | number, opts?: UseInstitutionJobsOptions): UseQueryResult<InstitutionJobApplicant[]> {
   const isInstitution = useIsInstitution()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'job-applicants', jobId],
-    queryFn: async () => {
+    queryFn: async (): Promise<InstitutionJobApplicant[]> => {
       try {
-        // Use the dedicated per-vacante endpoint (new alias)
         const r = await api.get('/empleo/postulantes-vacante', { params: { vacanteId: jobId } })
         const res = r.data
         const data = Array.isArray(res) ? res : (res?.datos ?? [])
-        return data.map(mapApplicant)
-      } catch (err) {
-        if (err.response?.status === 404) return []
+        return (data as RawBackendJobApplicant[]).map(mapApplicant)
+      } catch (err: unknown) {
+        const errorResponse = err as { response?: { status?: number } }
+        if (errorResponse.response?.status === 404) return []
         throw err
       }
     },
@@ -176,25 +179,20 @@ export function useJobApplicants(jobId, opts) {
   })
 }
 
-/**
- * Fetch all applicants across all of the institution's job postings.
- * Endpoint: GET /api/empleo/postulantes-institucion (all for current institution)
- */
-export function useAllJobApplicants(opts) {
+export function useAllJobApplicants(opts?: UseInstitutionJobsOptions): UseQueryResult<InstitutionJobApplicant[]> {
   const isInstitution = useIsInstitution()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['institution', 'all-applicants'],
-    queryFn: async () => {
+    queryFn: async (): Promise<InstitutionJobApplicant[]> => {
       try {
-        // Primary: fetch all postulantes for the institution in one call
         const r = await api.get('/empleo/postulantes-institucion')
         const res = r.data
         const data = Array.isArray(res) ? res : (res?.datos ?? [])
-        return data.map(mapApplicant)
-      } catch (err) {
-        // If the bulk endpoint doesn't exist yet, return empty — never fall back to N+1
-        if (err.response?.status === 404) return []
+        return (data as RawBackendJobApplicant[]).map(mapApplicant)
+      } catch (err: unknown) {
+        const errorResponse = err as { response?: { status?: number } }
+        if (errorResponse.response?.status === 404) return []
         throw err
       }
     },
@@ -204,20 +202,15 @@ export function useAllJobApplicants(opts) {
   })
 }
 
-// Map frontend status values to backend values
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, string> = {
   accepted: 'aceptada',
   rejected: 'rechazada',
 }
 
-/**
- * Update the status of an applicant to a job posting.
- * Endpoint: PATCH /api/empleo/postulaciones/:id/estado (correcto según backend)
- */
-export function useUpdateApplicationStatus() {
+export function useUpdateApplicationStatus(): UseMutationResult<unknown, Error, { applicantId: string | number; status: string }> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ applicantId, status }) => {
+    mutationFn: ({ applicantId, status }: { applicantId: string | number; status: string }) => {
       const backendStatus = STATUS_MAP[status] ?? status
       return api.patch(`/empleo/postulaciones/${applicantId}/estado`, { estado: backendStatus }).then(r => r.data)
     },

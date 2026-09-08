@@ -1,25 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
 import api from '@shared/lib/api'
-
-/**
- * @typedef {Object} FiltrosInstituciones
- * @property {string} [busqueda]  - Búsqueda por nombre, descripción o ciudad
- * @property {string} [ciudad]    - Búsqueda parcial por ciudad
- * @property {string} [categoria] - Categoría: 'funcional', 'educativo', 'laboral', 'social'
- * @property {string} [tipoDiscapacidad] - Tipo de discapacidad: 'tea', 'motriz', 'visual', etc.
- * @property {number|string} [edad] - Edad del usuario para filtrar
- */
+import type {
+  Institution,
+  RawBackendInstitucion,
+  FiltrosInstituciones,
+  CrearInstitucionPayload,
+  UpdateInstitucionPayload,
+  ValidarCsfQrResponse,
+} from '@/types/institutions'
 
 /**
  * Limpia un objeto de filtros eliminando claves con valores vacíos, null o undefined.
- * @param {FiltrosInstituciones} filtros
- * @returns {Record<string, string|number>} Filtros limpios para enviar como query params
  */
-function limpiarFiltros(filtros) {
-  const cleaned = {}
+function limpiarFiltros(filtros: FiltrosInstituciones): Record<string, string | number> {
+  const cleaned: Record<string, string | number> = {}
   for (const [key, value] of Object.entries(filtros)) {
     if (value !== null && value !== undefined && value !== '') {
-      cleaned[key] = value
+      cleaned[key] = value as string | number
     }
   }
   return cleaned
@@ -28,16 +25,15 @@ function limpiarFiltros(filtros) {
 /**
  * Mapea los campos en español del response de la API a los campos en inglés
  * que el frontend espera (name, description, category, city, etc.).
- * @param {Object} inst - Objeto institución crudo de la API
- * @returns {Object} Institución con campos normalizados en inglés
  */
-export function mapInstitucion(inst) {
-  if (!inst) return inst
+export function mapInstitucion(inst: RawBackendInstitucion): Institution {
+  if (!inst) return inst as unknown as Institution
 
   return {
     ...inst,
+    id: inst.id ?? inst._id ?? inst.documentId ?? inst.institutionId ?? '',
     // ── Core fields ──────────────────────────────────────
-    name: inst.name ?? inst.nombre,
+    name: inst.name ?? inst.nombre ?? '',
     description: inst.description ?? inst.descripcion,
     category: inst.category ?? inst.categoria,
     subcategory: inst.subcategory ?? inst.subcategoria,
@@ -92,17 +88,16 @@ export function mapInstitucion(inst) {
 /**
  * Hook para listar instituciones con filtros opcionales.
  * GET /api/instituciones
- * @param {FiltrosInstituciones} filtros
  */
-export function useInstitutions(filtros = {}) {
+export function useInstitutions(filtros: FiltrosInstituciones = {}): UseQueryResult<Institution[]> {
   const params = limpiarFiltros(filtros)
   return useQuery({
     queryKey: ['institutions', params],
-    queryFn: async () => {
+    queryFn: async (): Promise<Institution[]> => {
       const r = await api.get('/instituciones', { params })
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      return data.map(mapInstitucion)
+      return (data as RawBackendInstitucion[]).map(mapInstitucion)
     },
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -110,121 +105,82 @@ export function useInstitutions(filtros = {}) {
 }
 
 /**
- * @typedef {Object} Institucion
- * @property {string} id - ID único de la institución
- * @property {string} name - Nombre de la institución
- * @property {string} [description] - Descripción de la institución
- * @property {string} [category] - Categoría: 'funcional', 'educativo', 'laboral', 'social'
- * @property {string} [city] - Ciudad de la institución
- * @property {string} [state] - Estado de la institución
- * @property {string} [address] - Dirección de la institución
- * @property {string} [phone] - Teléfono de contacto
- * @property {string} [email] - Correo electrónico de contacto
- * @property {string} [website] - Sitio web de la institución
- * @property {string[]} [disability_types] - Tipos de discapacidad que atiende
- * @property {number} [lat] - Latitud
- * @property {number} [lng] - Longitud
- * @property {number} [rating_avg] - Calificación promedio
- * @property {number} [rating_count] - Cantidad de reseñas
- * @property {string} [plan_type] - Tipo de plan (ej. 'premium')
- * @property {boolean} [is_verified] - Si la institución está verificada
- * @property {string} [created_at] - Fecha de creación (ISO)
- */
-
-/**
  * Hook para obtener el detalle de una institución por su ID.
  * GET /api/instituciones/:id
- * @param {string} id - ID único de la institución a consultar
- * @returns {{ data: Institucion | undefined, isLoading: boolean, error: Error | null }}
  */
-export function useInstitution(id) {
+export function useInstitution(id?: string | number): UseQueryResult<Institution> {
   return useQuery({
     queryKey: ['institution', id],
-    queryFn: () => api.get(`/instituciones/${id}`).then(r => {
-      const inst = r.data?.datos ?? r.data
+    queryFn: async (): Promise<Institution> => {
+      const r = await api.get(`/instituciones/${id}`)
+      const inst = (r.data?.datos ?? r.data) as RawBackendInstitucion
       return mapInstitucion(inst)
-    }),
+    },
     enabled: !!id,
   })
 }
 
 /**
- * @typedef {Object} DatosInstitucion
- * @property {string} nombre - Nombre de la institución
- * @property {string} [descripcion] - Descripción de la institución
- * @property {string} [categoria] - Categoría: 'funcional', 'educativo', 'laboral', 'social'
- * @property {string} [ciudad] - Ciudad de la institución
- * @property {string} [estado] - Estado de la institución
- * @property {string} [direccion] - Dirección de la institución
- * @property {string} [telefono] - Teléfono de contacto
- * @property {string} [email] - Correo electrónico de contacto
- * @property {string} [sitioWeb] - Sitio web de la institución
- * @property {string[]} [tiposDiscapacidad] - Tipos de discapacidad que atiende
- * @property {Object} [coordenadas] - Coordenadas geográficas
- * @property {number} [coordenadas.lat] - Latitud
- * @property {number} [coordenadas.lng] - Longitud
- */
-
-/**
- * @typedef {Object} RespuestaCrearInstitucion
- * @property {string} id - ID de la institución creada
- * @property {string[]} tiposDiscapacidad - Tipos de discapacidad
- * @property {string} creadoPor - UID del usuario que la creó
- * @property {boolean} activa - Si la institución está activa
- * @property {boolean} verificada - Si la institución está verificada
- * @property {string} fechaCreacion - Fecha de creación (ISO)
- */
-
-/**
  * Hook para crear una nueva institución.
  * POST /api/instituciones
  */
-export function useCrearInstitucion() {
+export function useCrearInstitucion(): UseMutationResult<Institution, Error, CrearInstitucionPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (datosInstitucion) => api.post('/instituciones', datosInstitucion).then(r => r.data?.datos ?? r.data),
+    mutationFn: async (datosInstitucion: CrearInstitucionPayload): Promise<Institution> => {
+      const r = await api.post('/instituciones', datosInstitucion)
+      const data = (r.data?.datos ?? r.data) as RawBackendInstitucion
+      return mapInstitucion(data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institutions'] })
     },
   })
 }
 
-export function useDiscovery(filtros = {}) {
+export function useDiscovery(filtros: FiltrosInstituciones = {}): UseQueryResult<Institution[]> {
   const params = limpiarFiltros(filtros)
   return useQuery({
     queryKey: ['discovery', params],
-    queryFn: async () => {
+    queryFn: async (): Promise<Institution[]> => {
       const r = await api.get('/descubrimiento', { params })
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
-      return data.map(mapInstitucion)
+      return (data as RawBackendInstitucion[]).map(mapInstitucion)
     },
   })
 }
 
-export function useMiInstitucion(opts) {
+export interface UseMiInstitucionOptions {
+  enabled?: boolean
+  [key: string]: unknown
+}
+
+export function useMiInstitucion(opts?: UseMiInstitucionOptions): UseQueryResult<Institution | null> {
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery({
     queryKey: ['mi-institucion'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Institution | null> => {
       try {
         const r = await api.get('/instituciones/mi-institucion')
-        const inst = r.data?.datos ?? r.data
+        const inst = (r.data?.datos ?? r.data) as RawBackendInstitucion
         return mapInstitucion(inst)
-      } catch (err) {
+      } catch (err: unknown) {
+        const errorResponse = err as { response?: { status?: number } }
         // 404 = usuario no tiene institución registrada → tratar como null
-        if (err.response?.status === 404) return null
+        if (errorResponse.response?.status === 404) return null
         throw err
       }
     },
+    enabled: callerEnabled !== false,
     ...restOpts,
   })
 }
 
-export function useUpdateMiInstitucion() {
+export function useUpdateMiInstitucion(): UseMutationResult<unknown, Error, UpdateInstitucionPayload> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.put('/instituciones/mi-institucion', data).then(r => r.data),
+    mutationFn: (data: UpdateInstitucionPayload) => api.put('/instituciones/mi-institucion', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mi-institucion'] })
       qc.invalidateQueries({ queryKey: ['institutions'] })
@@ -232,20 +188,20 @@ export function useUpdateMiInstitucion() {
   })
 }
 
-export function useUpdateInstitution() {
+export function useUpdateInstitution(): UseMutationResult<unknown, Error, UpdateInstitucionPayload & { id: string | number }> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }) => api.put(`/instituciones/${id}`, data).then(r => r.data),
+    mutationFn: ({ id, ...data }: UpdateInstitucionPayload & { id: string | number }) => api.put(`/instituciones/${id}`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institutions'] })
     },
   })
 }
 
-export function useDeleteInstitution() {
+export function useDeleteInstitution(): UseMutationResult<unknown, Error, string | number> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/instituciones/${id}`).then(r => r.data),
+    mutationFn: (id: string | number) => api.delete(`/instituciones/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institutions'] })
     },
@@ -255,16 +211,15 @@ export function useDeleteInstitution() {
 /**
  * Hook para obtener el detalle completo de una institución (admin o propietario).
  * GET /api/instituciones/:id/detalle
- * Retorna la institución sin importar su estado (pendiente, inactiva o verificada).
- * @param {string} id - ID único de la institución
  */
-export function useInstitutionDetail(id) {
+export function useInstitutionDetail(id?: string | number): UseQueryResult<Institution> {
   return useQuery({
     queryKey: ['institution-detail', id],
-    queryFn: () => api.get(`/instituciones/${id}/detalle`).then(r => {
-      const inst = r.data?.datos ?? r.data
+    queryFn: async (): Promise<Institution> => {
+      const r = await api.get(`/instituciones/${id}/detalle`)
+      const inst = (r.data?.datos ?? r.data) as RawBackendInstitucion
       return mapInstitucion(inst)
-    }),
+    },
     enabled: !!id,
   })
 }
@@ -274,9 +229,9 @@ export function useInstitutionDetail(id) {
    POST /instituciones/validar-csf-qr
    ═══════════════════════════════════════════════════════════ */
 
-export function useValidarCsfQr() {
+export function useValidarCsfQr(): UseMutationResult<ValidarCsfQrResponse, Error, File> {
   return useMutation({
-    mutationFn: (file) => {
+    mutationFn: (file: File) => {
       const formData = new FormData()
       formData.append('archivo', file)
       return api.post('/instituciones/validar-csf-qr', formData, {
@@ -291,7 +246,7 @@ export function useValidarCsfQr() {
    DELETE /instituciones/mi-institucion
    ═══════════════════════════════════════════════════════════ */
 
-export function useDeleteMyInstitution() {
+export function useDeleteMyInstitution(): UseMutationResult<unknown, Error, void> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: () => api.delete('/instituciones/mi-institucion').then(r => r.data),

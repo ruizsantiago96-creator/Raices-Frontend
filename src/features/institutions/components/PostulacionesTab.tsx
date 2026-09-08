@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, type FormEvent, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, LeafIcon } from '@shared/components/shared'
 import { useMyJobPostings, useCreateJobPosting, useDeleteJobPosting, useToggleJobStatus } from '../hooks/useInstitutionJobs'
@@ -10,12 +10,20 @@ import { JOB_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import { useMe } from '../../auth/hooks/useAuth'
 import { useMiInstitucion } from '../hooks/useInstitutions'
 import { useChat } from '../../tutor/hooks/useAI'
+import type { Job } from '@/types/jobs'
+import type { CreateJobPostingPayload } from '../hooks/useInstitutionJobs'
+
+interface CreateJobModalProps {
+  onClose: () => void
+}
 
 /* ─── CreateJobModal ──────────────────────────────────────── */
-function CreateJobModal({ onClose }) {
+function CreateJobModal({ onClose }: CreateJobModalProps) {
   const { data: user } = useMe()
   const { data: myInstitution } = useMiInstitucion()
-  const chatMutation = useChat()
+  const chatMutation = useChat() as unknown as {
+    mutateAsync: (variables: { mensaje: string }) => Promise<{ respuesta?: string }>
+  }
   const createJob = useCreateJobPosting()
   const { addToast } = useUiStore()
 
@@ -28,7 +36,7 @@ function CreateJobModal({ onClose }) {
     return `${myInstitution?.ciudad || ''}${myInstitution?.state || myInstitution?.estado ? `, ${myInstitution.state || myInstitution.estado}` : ''}`
   })
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CreateJobPostingPayload>({
     titulo: '',
     descripcion: '',
     requisitos: '',
@@ -37,10 +45,12 @@ function CreateJobModal({ onClose }) {
     rangoSalario: '',
     ciudad: myInstitution?.ciudad || '',
     estado: myInstitution?.state || myInstitution?.estado || '',
-    inclusivaDiscapacidad: true
+    inclusivaDiscapacidad: true,
   })
 
-  const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const update = <K extends keyof CreateJobPostingPayload>(key: K, val: CreateJobPostingPayload[K]) => {
+    setForm(f => ({ ...f, [key]: val }))
+  }
 
   const handleAIWrite = async () => {
     if (!cargo.trim()) return
@@ -81,15 +91,15 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
     setStep(2)
   }
 
-  const handleLocationChange = (val) => {
+  const handleLocationChange = (val: string) => {
     setLocationInput(val)
     const parts = val.split(',')
     update('ciudad', parts[0]?.trim() || '')
     update('estado', parts[1]?.trim() || '')
   }
 
-  const insertText = (before, after) => {
-    const textarea = document.getElementById('job-desc-textarea')
+  const insertText = (before: string, after: string) => {
+    const textarea = document.getElementById('job-desc-textarea') as HTMLTextAreaElement | null
     if (!textarea) return
     const start = textarea.selectionStart
     const end = textarea.selectionEnd
@@ -103,18 +113,19 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
     }, 0)
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       await createJob.mutateAsync(form)
       addToast(PORTAL_TOAST.JOB_CREATED, 'success')
       onClose()
-    } catch (err) {
-      addToast(err?.response?.data?.message ?? PORTAL_TOAST.JOB_CREATE_FAILED, 'error')
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { data?: { message?: string } } }
+      addToast(errorResponse?.response?.data?.message ?? PORTAL_TOAST.JOB_CREATE_FAILED, 'error')
     }
   }
 
-  const inputStylePremium = {
+  const inputStylePremium: CSSProperties = {
     width: '100%',
     padding: '12px 16px',
     border: '1px solid var(--border-color)',
@@ -128,7 +139,7 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
     transition: 'all 0.2s ease',
   }
 
-  const labelStylePremium = {
+  const labelStylePremium: CSSProperties = {
     fontSize: 14,
     fontWeight: 700,
     color: 'var(--fg2)',
@@ -136,7 +147,7 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
     marginBottom: 8,
   }
 
-  const toolbarBtnStyle = {
+  const toolbarBtnStyle: CSSProperties = {
     background: 'none',
     border: 'none',
     color: 'var(--fg2)',
@@ -247,113 +258,126 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          
-          {/* Grid fields */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <label style={labelStylePremium}>Cargo <span style={{ cursor: 'help', color: 'var(--fg3)' }} title="Nombre del puesto">❔</span></label>
-              <input required value={form.titulo} onChange={e => update('titulo', e.target.value)} style={inputStylePremium} />
-            </div>
-            <div>
-              <label style={labelStylePremium}>Empresa</label>
-              <input value={empresa} onChange={e => setEmpresa(e.target.value)} style={inputStylePremium} />
-            </div>
+          <div>
+            <label style={labelStylePremium}>Título del empleo *</label>
+            <input 
+              required 
+              value={form.titulo} 
+              onChange={e => update('titulo', e.target.value)} 
+              placeholder="Ej. Desarrollador Web" 
+              style={inputStylePremium} 
+            />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label style={labelStylePremium}>Tipo de lugar de trabajo</label>
-              <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStylePremium, cursor: 'pointer' }}>
+              <label style={labelStylePremium}>Modalidad</label>
+              <select 
+                value={form.modalidad} 
+                onChange={e => update('modalidad', e.target.value)} 
+                style={{ ...inputStylePremium, cursor: 'pointer' }}
+              >
                 <option value="presencial">Presencial</option>
                 <option value="remoto">Remoto</option>
                 <option value="híbrido">Híbrido</option>
               </select>
             </div>
             <div>
-              <label style={labelStylePremium}>Ubicación del empleo <span style={{ cursor: 'help', color: 'var(--fg3)' }} title="Ciudad, Estado">❔</span></label>
-              <input value={locationInput} onChange={e => handleLocationChange(e.target.value)} placeholder="Ej. Mérida, Yucatán" style={inputStylePremium} />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <label style={labelStylePremium}>Tipo de empleo</label>
-              <select value={form.horario} onChange={e => update('horario', e.target.value)} style={{ ...inputStylePremium, cursor: 'pointer' }}>
+              <label style={labelStylePremium}>Horario</label>
+              <select 
+                value={form.horario} 
+                onChange={e => update('horario', e.target.value)} 
+                style={{ ...inputStylePremium, cursor: 'pointer' }}
+              >
                 <option value="Jornada completa">Jornada completa</option>
-                <option value="Medio tiempo">Medio tiempo</option>
-                <option value="Por contrato">Por contrato</option>
-                <option value="Prácticas">Prácticas</option>
+                <option value="Media jornada">Media jornada</option>
+                <option value="Por horas">Por horas</option>
+                <option value="Flexible">Flexible</option>
               </select>
             </div>
-            <div>
-              <label style={labelStylePremium}>Rango de salario (opcional)</label>
-              <input value={form.rangoSalario} onChange={e => update('rangoSalario', e.target.value)} placeholder="Ej. $15,000 - $18,000" style={inputStylePremium} />
-            </div>
           </div>
 
-          {/* AI rewrite action button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <button 
-              type="button" 
-              onClick={handleAIWrite} 
-              disabled={isLoadingAI}
-              style={{ padding: '8px 16px', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }}
-            >
-              {isLoadingAI ? Icons.loader({ s: 14 }) : Icons.sparkles({ s: 13 })}
-              {isLoadingAI ? 'Reescribiendo con IA...' : 'Reescribir con IA'}
-            </button>
-          </div>
-
-          {/* Description area */}
           <div>
-            <label style={labelStylePremium}>Descripción*</label>
+            <label style={labelStylePremium}>Ubicación del empleo *</label>
+            <input 
+              required
+              value={locationInput} 
+              onChange={e => handleLocationChange(e.target.value)} 
+              placeholder="Ciudad, Estado (ej. Mérida, Yucatán)" 
+              style={inputStylePremium} 
+            />
+          </div>
 
-            {/* Warning suggestion card */}
-            {!aiCardDismissed && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: '12px 16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: 12, fontSize: 13, color: 'var(--fg2)' }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span>💡</span>
-                  <span>Crea un gran anuncio de empleo con las sugerencias a continuación. <a href="#" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }} onClick={e => e.preventDefault()}>Más información</a></span>
+          <div>
+            <label style={labelStylePremium}>Rango salarial</label>
+            <input 
+              value={form.rangoSalario} 
+              onChange={e => update('rangoSalario', e.target.value)} 
+              placeholder="Ej. $15,000 - $20,000 MXN mensuales" 
+              style={inputStylePremium} 
+            />
+          </div>
+
+          {/* AI Info Card Banner */}
+          {!aiCardDismissed && (
+            <div style={{ background: 'color-mix(in srgb, var(--primary) 6%, #fff)', border: '1px solid var(--primary-subtle)', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
+              <div style={{ color: 'var(--primary)', flexShrink: 0, marginTop: 2 }}>
+                {Icons.sparkles({ s: 18 })}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--fg1)', marginBottom: 2 }}>
+                  Hemos redactado este borrador con IA
                 </div>
-                <button type="button" onClick={() => setAiCardDismissed(true)} aria-label="Cerrar sugerencia" style={{ background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', padding: 0 }}>
-                  &times;
-                </button>
+                <div style={{ fontSize: 12.5, color: 'var(--fg2)', lineHeight: 1.45 }}>
+                  Revísalo cuidadosamente y ajústalo para que represente los requisitos y cultura específicos de tu institución.
+                </div>
               </div>
-            )}
+              <button 
+                type="button" 
+                onClick={() => setAiCardDismissed(true)} 
+                style={{ background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', padding: 2 }}
+              >
+                &times;
+              </button>
+            </div>
+          )}
 
-            {/* Textarea editor container */}
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-surface)' }}>
-              {/* Toolbar */}
-              <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
-                <button type="button" onClick={() => insertText('**', '**')} style={toolbarBtnStyle} title="Negrita"><b>B</b></button>
-                <button type="button" onClick={() => insertText('*', '*')} style={{ ...toolbarBtnStyle, fontStyle: 'italic' }} title="Cursiva">I</button>
-                <button type="button" onClick={() => insertText('\n- ', '')} style={toolbarBtnStyle} title="Lista con viñetas">• List</button>
-                <button type="button" onClick={() => insertText('\n1. ', '')} style={toolbarBtnStyle} title="Lista numerada">1. List</button>
+          {/* Description with toolbar */}
+          <div>
+            <label style={labelStylePremium}>Descripción del empleo *</label>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--modal-input-bg)' }}>
+              {/* Text formatting toolbar */}
+              <div style={{ display: 'flex', gap: 4, padding: '6px 10px', background: 'color-mix(in srgb, var(--bg-cool) 50%, transparent)', borderBottom: '1px solid var(--border-color)', alignItems: 'center' }}>
+                <button type="button" onClick={() => insertText('**', '**')} style={toolbarBtnStyle} title="Negrita"><strong>B</strong></button>
+                <button type="button" onClick={() => insertText('*', '*')} style={toolbarBtnStyle} title="Cursiva"><em>I</em></button>
+                <button type="button" onClick={() => insertText('\n• ', '')} style={toolbarBtnStyle} title="Viñeta">• Viñeta</button>
+                <button type="button" onClick={() => insertText('\n1. ', '')} style={toolbarBtnStyle} title="Numeración">1. Lista</button>
               </div>
-
-              {/* Textarea itself */}
               <textarea 
                 id="job-desc-textarea"
-                rows={10} 
-                required 
-                value={form.descripcion} 
-                onChange={e => update('descripcion', e.target.value)} 
-                placeholder="Describe los detalles del puesto..." 
-                style={{ width: '100%', padding: '16px', border: 'none', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6 }}
+                required
+                rows={8}
+                value={form.descripcion}
+                onChange={e => update('descripcion', e.target.value)}
+                style={{ width: '100%', padding: '12px 16px', border: 'none', outline: 'none', fontSize: 13.5, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'transparent', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6 }}
               />
             </div>
           </div>
 
-          {/* Disability inclusive check */}
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--fg2)', cursor: 'pointer', marginTop: 4 }}>
-            <input type="checkbox" checked={form.inclusivaDiscapacidad} onChange={e => update('inclusivaDiscapacidad', e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'var(--fg2)', cursor: 'pointer', marginTop: 4 }}>
+            <input 
+              type="checkbox" 
+              checked={form.inclusivaDiscapacidad} 
+              onChange={e => update('inclusivaDiscapacidad', e.target.checked)} 
+              style={{ width: 16, height: 16, accentColor: 'var(--primary)' }} 
+            />
             {PORTAL_UI.INCLUSIVE_CHECKBOX}
           </label>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
             <button type="button" onClick={() => setStep(1)} style={{ padding: '12px 24px', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>Atrás</button>
-            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || !form.descripcion.trim() || createJob.isPending} style={{ padding: '12px 28px', fontSize: 14, fontWeight: 700, borderRadius: '24px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}>
+            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || !form.descripcion?.trim() || createJob.isPending} style={{ padding: '12px 28px', fontSize: 14, fontWeight: 700, borderRadius: '24px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}>
               {createJob.isPending ? 'Publicando...' : 'Publicar vacante'}
             </button>
           </div>
@@ -364,8 +388,14 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
   )
 }
 
+interface DeleteConfirmModalProps {
+  job: Job
+  onClose: () => void
+  onConfirm: () => void
+}
+
 /* ─── DeleteConfirmModal ─────────────────────────────────── */
-function DeleteConfirmModal({ job, onClose, onConfirm }) {
+function DeleteConfirmModal({ job, onClose, onConfirm }: DeleteConfirmModalProps) {
   return createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)' }}>
@@ -379,7 +409,7 @@ function DeleteConfirmModal({ job, onClose, onConfirm }) {
           {PORTAL_UI.DELETE_CONFIRM_MESSAGE}
         </p>
         <p style={{ fontSize: 14, color: 'var(--fg1)', fontWeight: 600, margin: '0 0 20px' }}>
-          "{job.title}"
+          &quot;{job.title}&quot;
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={onClose}>{PORTAL_UI.CANCEL_BUTTON}</button>
@@ -391,13 +421,17 @@ function DeleteConfirmModal({ job, onClose, onConfirm }) {
   )
 }
 
+export interface PostulacionesTabProps {
+  onViewCandidates: (jobId: string | number) => void
+}
+
 /* ─── PostulacionesTab ───────────────────────────────────── */
-export default function PostulacionesTab({ onViewCandidates }) {
+export default function PostulacionesTab({ onViewCandidates }: PostulacionesTabProps) {
   const { addToast } = useUiStore()
   const navigate = useNavigate()
   const [showCreate, setShowCreate] = useState(false)
   const [search, setSearch] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState<Job | null>(null)
 
   const { data: myInstitution, isLoading: loadingInst } = useMiInstitucion()
   const { data: jobs = [], isLoading, isError, refetch } = useMyJobPostings()
@@ -406,15 +440,15 @@ export default function PostulacionesTab({ onViewCandidates }) {
   const hasInstitution = !loadingInst && !!myInstitution
 
   const filteredJobs = search.trim()
-    ? jobs.filter(j => {
+    ? (jobs as Job[]).filter(j => {
         const q = search.toLowerCase()
         return (j.title ?? '').toLowerCase().includes(q) ||
                (j.city ?? '').toLowerCase().includes(q) ||
                (j.modality ?? '').toLowerCase().includes(q)
       })
-    : jobs
+    : (jobs as Job[])
 
-  const handleToggleStatus = (job) => {
+  const handleToggleStatus = (job: Job) => {
     toggleStatus.mutate(
       { id: job.id, is_active: !job.is_active },
       {
@@ -435,7 +469,19 @@ export default function PostulacionesTab({ onViewCandidates }) {
     })
   }
 
-  const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
+  const inputStyle: CSSProperties = {
+    height: 40,
+    padding: '0 12px 0 36px',
+    border: '1px solid var(--border-color)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: 14,
+    color: 'var(--fg1)',
+    background: 'var(--bg-surface)',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-body)',
+    width: '100%',
+  }
 
   const handleCreateJob = () => {
     if (!hasInstitution) {

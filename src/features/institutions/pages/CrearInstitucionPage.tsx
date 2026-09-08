@@ -1,15 +1,20 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCrearInstitucion, useMiInstitucion } from '../hooks/useInstitutions'
 import { useMe, useAuthStore, TopNav } from '@features/auth'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { PORTAL_UI } from '../constants/institutionPortalMessages'
+import type { CrearInstitucionPayload } from '@/types/institutions'
 
 /* ═══════════════════════════════════════════════════════════════════
    LIQUID GLASS DESIGN TOKENS (inline for this page)
    ═══════════════════════════════════════════════════════════════════ */
-const GLASS = {
+const GLASS: {
+  panel: React.CSSProperties
+  input: React.CSSProperties
+  label: React.CSSProperties
+} = {
   panel: {
     background: 'rgba(255, 249, 242, 0.55)',
     backdropFilter: 'blur(24px) saturate(190%)',
@@ -46,7 +51,12 @@ const GLASS = {
 /* ═══════════════════════════════════════════════════════════════════
    STEP INDICATOR
    ═══════════════════════════════════════════════════════════════════ */
-function StepIndicator({ currentStep, totalSteps }) {
+interface StepIndicatorProps {
+  currentStep: number
+  totalSteps: number
+}
+
+function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
       {Array.from({ length: totalSteps }, (_, i) => (
@@ -81,7 +91,14 @@ function StepIndicator({ currentStep, totalSteps }) {
 /* ═══════════════════════════════════════════════════════════════════
    GLASS SECTION WRAPPER
    ═══════════════════════════════════════════════════════════════════ */
-function GlassSection({ icon, title, delay, children }) {
+interface GlassSectionProps {
+  icon: React.ReactNode
+  title: string
+  delay: string
+  children: React.ReactNode
+}
+
+function GlassSection({ icon, title, delay, children }: GlassSectionProps) {
   return (
     <div
       className={`animate-fade-in-up ${delay}`}
@@ -98,12 +115,35 @@ function GlassSection({ icon, title, delay, children }) {
   )
 }
 
+interface CrearFormState {
+  nombre: string
+  descripcion: string
+  categoria: string
+  email: string
+  telefono: string
+  ciudad: string
+  estado: string
+  tiposDiscapacidad: string[]
+  rfc: string
+  documentoLegal: File | null
+  sitioWeb: string
+  telefonoOficial: string
+  razonSocial: string
+  declaracionJurada: boolean
+}
+
+interface CatalogoOption {
+  id?: string
+  value?: string
+  label?: string
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
 export default function CrearInstitucionPage() {
-  const [phase, setPhase] = useState(1) // 1 = básico, 2 = verificación
-  const [form, setForm] = useState({
+  const [phase, setPhase] = useState<number>(1) // 1 = básico, 2 = verificación
+  const [form, setForm] = useState<CrearFormState>({
     // Phase 1 - Basic (field names match backend API)
     nombre: '',
     descripcion: '',
@@ -121,19 +161,19 @@ export default function CrearInstitucionPage() {
     razonSocial: '',
     declaracionJurada: false,
   })
-  const [apiError, setApiError] = useState(null)
-  const [fieldErrors, setFieldErrors] = useState({})
-  const fileInputRef = useRef(null)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: user } = useMe()
-  const { token } = useAuthStore()
+  const { token, logout } = useAuthStore()
   const navigate = useNavigate()
   const crear = useCrearInstitucion()
   const { data: catalogos, isLoading: loadingCatalogos } = useCatalogos()
   const { data: existingInst, isLoading: loadingExisting } = useMiInstitucion()
 
-  const CATEGORIES = catalogos?.categoriasInstitucion ?? []
-  const DISABILITY_TYPES = catalogos?.tiposDiscapacidad ?? []
+  const CATEGORIES = (catalogos?.categoriasInstitucion ?? []) as (string | CatalogoOption)[]
+  const DISABILITY_TYPES = (catalogos?.tiposDiscapacidad ?? []) as (string | CatalogoOption)[]
   const isAuthenticated = !!token
 
   // Pre-fill form from user profile when data loads (run once)
@@ -152,18 +192,23 @@ export default function CrearInstitucionPage() {
   }, [user])
 
   // If institution already exists, redirect to portal
+  useEffect(() => {
+    if (!loadingExisting && existingInst) {
+      navigate('/institution-portal', { replace: true })
+    }
+  }, [loadingExisting, existingInst, navigate])
+
   if (!loadingExisting && existingInst) {
-    navigate('/institution-portal', { replace: true })
     return null
   }
 
-  const updateField = (key, value) => {
+  const updateField = <K extends keyof CrearFormState>(key: K, value: CrearFormState[K]) => {
     setForm(prev => ({ ...prev, [key]: value }))
     if (apiError) setApiError(null)
     if (fieldErrors[key]) setFieldErrors(prev => { const n = { ...prev }; delete n[key]; return n })
   }
 
-  const toggleDisability = (value) => {
+  const toggleDisability = (value: string) => {
     setForm(prev => ({
       ...prev,
       tiposDiscapacidad: prev.tiposDiscapacidad.includes(value)
@@ -173,8 +218,8 @@ export default function CrearInstitucionPage() {
   }
 
   /* ── Validation ──────────────────────────────────────── */
-  const validatePhase1 = () => {
-    const errors = {}
+  const validatePhase1 = (): boolean => {
+    const errors: Record<string, string> = {}
     if (!form.nombre.trim()) errors.nombre = 'El nombre es obligatorio'
     if (!form.categoria) errors.categoria = 'Selecciona una categoría'
     if (!form.telefono.trim()) errors.telefono = 'El teléfono es obligatorio'
@@ -182,8 +227,8 @@ export default function CrearInstitucionPage() {
     return Object.keys(errors).length === 0
   }
 
-  const validatePhase2 = () => {
-    const errors = {}
+  const validatePhase2 = (): boolean => {
+    const errors: Record<string, string> = {}
     if (form.declaracionJurada !== true) errors.declaracionJurada = 'Debes aceptar la declaración'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
@@ -195,8 +240,8 @@ export default function CrearInstitucionPage() {
   }
 
   /** Build the payload from form state, optionally including verification fields. */
-  const buildPayload = (includeVerification = false) => {
-    const base = {
+  const buildPayload = (includeVerification = false): CrearInstitucionPayload => {
+    const base: Record<string, unknown> = {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim() || undefined,
       categoria: form.categoria || undefined,
@@ -213,12 +258,10 @@ export default function CrearInstitucionPage() {
         sitioWeb: form.sitioWeb.trim() || undefined,
         razonSocial: form.razonSocial.trim() || undefined,
         telefonoOficial: form.telefonoOficial.trim() || undefined,
-        // NOTE: documentoLegal (File) requires multipart/form-data on the backend.
-        // For now, send filename as metadata; full upload requires backend support.
         documentoLegalNombre: form.documentoLegal?.name || undefined,
       })
     }
-    return Object.fromEntries(Object.entries(base).filter(([, v]) => v !== undefined))
+    return Object.fromEntries(Object.entries(base).filter(([, v]) => v !== undefined)) as unknown as CrearInstitucionPayload
   }
 
   const handleSubmit = async (includeVerification = false) => {
@@ -230,10 +273,11 @@ export default function CrearInstitucionPage() {
       const result = await crear.mutateAsync(datos)
       if (result?.id) navigate('/institution-portal')
       else navigate('/explore')
-    } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.error || ''
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { status?: number; data?: { message?: string; error?: string } } }
+      const msg = errorObj.response?.data?.message || errorObj.response?.data?.error || ''
       // Si el backend dice que ya tiene institución, redirigir al portal
-      if (err.response?.status === 400 && msg.toLowerCase().includes('ya tienes')) {
+      if (errorObj.response?.status === 400 && msg.toLowerCase().includes('ya tienes')) {
         navigate('/institution-portal', { replace: true })
         return
       }
@@ -245,7 +289,7 @@ export default function CrearInstitucionPage() {
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-        <TopNav currentPage="explore" />
+        <TopNav currentPage="explore" user={user} onLogout={logout} />
         <main style={{ maxWidth: 520, margin: '0 auto', padding: '60px 32px', textAlign: 'center' }}>
           <div className="animate-scale-in" style={{ ...GLASS.panel, padding: '52px 36px' }}>
             <div style={{
@@ -277,19 +321,19 @@ export default function CrearInstitucionPage() {
   }
 
   /* ── Field style with error state ────────────────────── */
-  const fieldStyle = (hasError) => ({
+  const fieldStyle = (hasError?: boolean): React.CSSProperties => ({
     ...GLASS.input,
     borderColor: hasError ? 'var(--color-error)' : 'rgba(229, 220, 210, 0.7)',
     background: hasError ? 'rgba(254, 242, 242, 0.5)' : 'rgba(255, 249, 242, 0.6)',
   })
 
-  const errorTextStyle = { fontSize: 12, color: 'var(--color-error)', marginTop: 4, fontWeight: 600 }
+  const errorTextStyle: React.CSSProperties = { fontSize: 12, color: 'var(--color-error)', marginTop: 4, fontWeight: 600 }
 
   /* ══════════════════════════════════════════════════════
      RENDER
      ══════════════════════════════════════════════════════ */
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '680px' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '680px' } as Record<string, string>}>
       {/* Back button */}
       <button
         onClick={() => phase === 2 ? setPhase(1) : navigate(-1)}
@@ -335,7 +379,7 @@ export default function CrearInstitucionPage() {
                 type="text" value={form.nombre}
                 onChange={e => updateField('nombre', e.target.value)}
                 placeholder={PORTAL_UI.REG_INSTITUTION_NAME_PLACEHOLDER}
-                style={fieldStyle(fieldErrors.nombre)} required
+                style={fieldStyle(!!fieldErrors.nombre)} required
               />
               {fieldErrors.nombre && <div style={errorTextStyle}>{fieldErrors.nombre}</div>}
             </div>
@@ -362,10 +406,10 @@ export default function CrearInstitucionPage() {
               ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {CATEGORIES.map(cat => {
-                  const catValue = cat.value ?? cat
-                  const catLabel = cat.label ?? cat
+                  const catValue = typeof cat === 'string' ? cat : (cat.value ?? cat.id ?? '')
+                  const catLabel = typeof cat === 'string' ? cat : (cat.label ?? catValue)
                   const active = form.categoria === catValue
-                  const color = CATEGORY_COLORS[catValue] ?? 'var(--primary)'
+                  const color = (CATEGORY_COLORS as Record<string, string>)[catValue] ?? 'var(--primary)'
                   return (
                     <button
                       key={catValue} type="button"
@@ -410,7 +454,7 @@ export default function CrearInstitucionPage() {
                 type="tel" value={form.telefono}
                 onChange={e => updateField('telefono', e.target.value)}
                 placeholder={PORTAL_UI.REG_REP_PHONE_PLACEHOLDER}
-                style={fieldStyle(fieldErrors.telefono)} required
+                style={fieldStyle(!!fieldErrors.telefono)} required
               />
               {fieldErrors.telefono && <div style={errorTextStyle}>{fieldErrors.telefono}</div>}
             </div>
@@ -456,8 +500,8 @@ export default function CrearInstitucionPage() {
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {DISABILITY_TYPES.map(dt => {
-                const dtValue = dt.id ?? dt.value ?? dt
-                const dtLabel = dt.label ?? dt
+                const dtValue = typeof dt === 'string' ? dt : (dt.id ?? dt.value ?? '')
+                const dtLabel = typeof dt === 'string' ? dt : (dt.label ?? dtValue)
                 const active = form.tiposDiscapacidad.includes(dtValue)
                 return (
                   <button

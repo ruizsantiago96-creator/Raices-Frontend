@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import { CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { createRoot } from 'react-dom/client'
+import type { Institution } from '@/types/institutions'
 
 const MERIDA = { lng: -89.5926, lat: 20.9674 }
-const OSM_STYLE = {
+const OSM_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
     osm: {
@@ -18,10 +19,15 @@ const OSM_STYLE = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 }
 
-export default function MapView({ institutions = [], height = '400px' }) {
-  const containerRef = useRef(null)
-  const mapRef = useRef(null)
-  const markersRef = useRef([])
+interface MapViewProps {
+  institutions?: Institution[]
+  height?: string
+}
+
+export default function MapView({ institutions = [], height = '400px' }: MapViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
 
   // Initialize map once
   useEffect(() => {
@@ -79,7 +85,7 @@ export default function MapView({ institutions = [], height = '400px' }) {
       el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)' })
 
       // Build popup HTML
-      const color = CATEGORY_COLORS[inst.category] ?? '#01ADFF'
+      const color = (inst.category && CATEGORY_COLORS[inst.category]) ?? '#01ADFF'
       const popupNode = document.createElement('div')
       popupNode.style.cssText = 'font-family:Lato,sans-serif;min-width:200px;padding:4px 2px'
 
@@ -115,7 +121,12 @@ export default function MapView({ institutions = [], height = '400px' }) {
   )
 }
 
-function PopupContent({ inst, color }) {
+interface PopupContentProps {
+  inst: Institution
+  color: string
+}
+
+function PopupContent({ inst, color }: PopupContentProps) {
   const handleClick = () => {
     window.location.href = `/institution/${inst.id}`
   }
@@ -133,7 +144,7 @@ function PopupContent({ inst, color }) {
         {inst.name}
       </div>
       <div style={{ marginBottom: 10 }}>
-        <CategoryTag label={inst.category} color={color} />
+        <CategoryTag label={inst.category ?? ''} color={color} />
       </div>
       {inst.city && (
         <div style={{ fontSize: 12, color: '#6B7E85', marginBottom: 10 }}>

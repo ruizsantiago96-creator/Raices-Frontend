@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type MouseEvent, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, hashColor } from '@shared/components/shared'
@@ -6,30 +6,48 @@ import { useAllJobApplicants, useUpdateApplicationStatus } from '../hooks/useIns
 import { PORTAL_UI, PORTAL_TOAST, APPLICATION_STATUS_COLORS } from '../constants/institutionPortalMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { JOB_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import type { InstitutionJobApplicant } from '@/types/institutions'
 
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: 'pending' | 'reviewed' | 'accepted' | 'rejected'
+  label: string
+  color: string
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: PORTAL_UI.APP_STATUS_PENDING, color: APPLICATION_STATUS_COLORS.pending },
   { value: 'reviewed', label: PORTAL_UI.APP_STATUS_REVIEWED, color: APPLICATION_STATUS_COLORS.reviewed },
   { value: 'accepted', label: PORTAL_UI.APP_STATUS_ACCEPTED, color: APPLICATION_STATUS_COLORS.accepted },
   { value: 'rejected', label: PORTAL_UI.APP_STATUS_REJECTED, color: APPLICATION_STATUS_COLORS.rejected },
 ]
 
-const FILTER_OPTIONS = [
+interface FilterOption {
+  value: 'all' | 'pending' | 'reviewed' | 'accepted'
+  label: string
+}
+
+const FILTER_OPTIONS: FilterOption[] = [
   { value: 'all', label: PORTAL_UI.FILTER_ALL },
   { value: 'pending', label: PORTAL_UI.FILTER_PENDING },
   { value: 'reviewed', label: PORTAL_UI.FILTER_REVIEWED },
   { value: 'accepted', label: PORTAL_UI.FILTER_ACCEPTED },
 ]
 
+interface StatusDropdownProps {
+  currentStatus: string
+  applicantId: string | number
+  onChange: (args: { applicantId: string | number; status: string }) => void
+}
+
 /* ─── StatusDropdown ──────────────────────────────────────── */
-function StatusDropdown({ currentStatus, applicantId, onChange }) {
+function StatusDropdown({ currentStatus, applicantId, onChange }: StatusDropdownProps) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const [menuPos, setMenuPos] = useState(null)
+  const ref = useRef<HTMLDivElement>(null)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    const handler = (e: globalThis.MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     if (open) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -37,7 +55,7 @@ function StatusDropdown({ currentStatus, applicantId, onChange }) {
 
   const current = STATUS_OPTIONS.find(s => s.value === currentStatus) ?? STATUS_OPTIONS[0]
 
-  const handleSelect = (value) => {
+  const handleSelect = (value: string) => {
     onChange({ applicantId, status: value })
     setOpen(false)
   }
@@ -45,7 +63,7 @@ function StatusDropdown({ currentStatus, applicantId, onChange }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
-        onClick={(e) => {
+        onClick={(e: MouseEvent<HTMLButtonElement>) => {
           if (open) { setOpen(false); setMenuPos(null); return }
           const r = e.currentTarget.getBoundingClientRect()
           setMenuPos({ top: r.bottom + 4, left: r.left })
@@ -97,13 +115,13 @@ function StatusDropdown({ currentStatus, applicantId, onChange }) {
 /* ─── CandidatosTab ──────────────────────────────────────── */
 export default function CandidatosTab() {
   const { addToast } = useUiStore()
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'reviewed' | 'accepted'>('all')
   const [search, setSearch] = useState('')
 
   const { data: applicants = [], isLoading, isError, refetch } = useAllJobApplicants()
   const updateStatus = useUpdateApplicationStatus()
 
-  const filtered = applicants.filter(app => {
+  const filtered = (applicants as InstitutionJobApplicant[]).filter(app => {
     const matchesFilter = filter === 'all' || app.status === filter
     if (!search.trim()) return matchesFilter
     const q = search.toLowerCase()
@@ -120,7 +138,7 @@ export default function CandidatosTab() {
     accepted: applicants.filter(a => a.status === 'accepted').length,
   }
 
-  const handleStatusChange = ({ applicantId, status }) => {
+  const handleStatusChange = ({ applicantId, status }: { applicantId: string | number; status: string }) => {
     updateStatus.mutate(
       { applicantId, status },
       {
@@ -130,7 +148,19 @@ export default function CandidatosTab() {
     )
   }
 
-  const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
+  const inputStyle: CSSProperties = {
+    height: 40,
+    padding: '0 12px 0 36px',
+    border: '1px solid var(--border-color)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: 14,
+    color: 'var(--fg1)',
+    background: 'var(--bg-surface)',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-body)',
+    width: '100%',
+  }
 
   if (isError) {
     return <BackendFallback method={JOB_ENDPOINTS.LIST.method} endpoint={JOB_ENDPOINTS.LIST.path} onRetry={() => refetch()} />

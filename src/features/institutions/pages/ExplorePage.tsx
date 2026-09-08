@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useInstitutions } from '../hooks/useInstitutions'
 import { useRecomendaciones } from '../hooks/useRecommendations'
@@ -7,16 +6,17 @@ import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavo
 import { useRegistrarInteraccion } from '../hooks/useInteractions'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
-import { useMe, useAuthStore, AppSidebar, TopNav } from '@features/auth'
+import { useAuthStore } from '@features/auth'
 import MapView from '../components/MapView'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import BackendFallback from '@shared/components/BackendFallback'
 import { INSTITUTION_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import { getToken } from '@shared/lib/storage'
+import type { Institution, FiltrosInstituciones } from '@/types/institutions'
 
 const PAGE_SIZE = 50
 
-const MOCK_INSTITUTIONS = [
+const MOCK_INSTITUTIONS: Institution[] = [
   { id: 1, name: 'Centro de Terapia Familiar', category: 'funcional', city: 'Ciudad de México', state: 'CDMX', description: 'Servicios de terapia familiar y de pareja con profesionales certificados.', rating_avg: 4.8, rating_count: 124 },
   { id: 2, name: 'Instituto de Educación Inclusiva', category: 'educativo', city: 'Guadalajara', state: 'Jalisco', description: 'Programas educativos adaptados para niños y jóvenes con capacidades diferentes.', rating_avg: 4.6, rating_count: 89 },
   { id: 3, name: 'Empleo Digno A.C.', category: 'laboral', city: 'Monterrey', state: 'Nuevo León', description: 'Conectamos personas con discapacidad con empresas inclusivas.', rating_avg: 4.9, rating_count: 203 },
@@ -25,13 +25,18 @@ const MOCK_INSTITUTIONS = [
   { id: 6, name: 'Deporte y Recreación Adaptada', category: 'social', city: 'Cancún', state: 'Quintana Roo', description: 'Actividades deportivas y recreativas para todas las capacidades.', rating_avg: 4.8, rating_count: 91 },
 ]
 
-function useDebounce(value, delay) {
-  const [debounced, setDebounced] = useState(value)
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value)
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay)
     return () => clearTimeout(timer)
   }, [value, delay])
   return debounced
+}
+
+interface CategoryOption {
+  value: string
+  label: string
 }
 
 export default function ExplorePage() {
@@ -41,60 +46,60 @@ export default function ExplorePage() {
   const [ciudad, setCiudad] = useState('')
 
   const [showFilters, setShowFilters] = useState(false)
-  const [view, setView] = useState('grid')
+  const [view, setView] = useState<'grid' | 'list'>('grid')
   const [showMap, setShowMap] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const { data: user } = useMe()
   const { token } = useAuthStore()
   const navigate = useNavigate()
-  const { data: catalogos } = useCatalogos()
+  const { data: catalogos } = useCatalogos() as {
+    data?: {
+      categoriasInstitucion?: Array<{ value?: string; label?: string } | string>
+      tiposDiscapacidad?: Array<{ id?: string; value?: string; label?: string } | string>
+      [key: string]: unknown
+    }
+  }
 
   // Catálogos del backend (únicos por su valor de filtro)
-  const CATEGORIES = []
-  const seenCats = new Set()
+  const CATEGORIES: CategoryOption[] = []
+  const seenCats = new Set<string>()
   const rawCats = catalogos?.categoriasInstitucion ?? [
     { value: 'funcional', label: 'Salud y Terapia' },
     { value: 'educativo', label: 'Educación' },
     { value: 'laboral', label: 'Empleo' },
-    { value: 'social', label: 'Comunidad y Recreación' }
+    { value: 'social', label: 'Comunidad y Recreación' },
   ]
   for (const c of rawCats) {
-    const val = c.value ?? c
-    if (!seenCats.has(val)) {
+    const val = typeof c === 'string' ? c : (c.value ?? '')
+    const lbl = typeof c === 'string' ? c.charAt(0).toUpperCase() + c.slice(1) : (c.label ?? val)
+    if (val && !seenCats.has(val)) {
       seenCats.add(val)
-      CATEGORIES.push({
-        value: val,
-        label: c.label ?? (typeof c === 'string' ? c.charAt(0).toUpperCase() + c.slice(1) : val)
-      })
+      CATEGORIES.push({ value: val, label: lbl })
     }
   }
   const DISABILITY_TYPES = [
     { value: '', label: 'Todos' },
-    ...(catalogos?.tiposDiscapacidad ?? []).map(d => ({
-      value: d.id ?? d.value ?? d,
-      label: d.label ?? d,
-    })),
+    ...(catalogos?.tiposDiscapacidad ?? []).map(d => {
+      if (typeof d === 'string') return { value: d, label: d }
+      return {
+        value: d.id ?? d.value ?? '',
+        label: d.label ?? d.value ?? '',
+      }
+    }),
   ]
 
-  // ── Fuente única de verdad para la sesión ──────────────────────
-  // Esta ruta ya está protegida por <ProtectedRoute>, así que si llegamos
-  // aquí el usuario TIENE sesión. El token del store puede quedar
-  // momentáneamente desincronizado del storage real (p. ej. login sin
-  // "Recordarme" guarda en sessionStorage, o un forceLogout en curso
-  // desde api.js), lo que hacía parpadear/aparecer la vista de invitado.
-  // Consultamos también el storage antes de asumir "no autenticado".
   const isAuthenticated = !!token || !!getToken()
   const urlQuery = params.get('q') ?? ''
   const urlCategory = params.get('category') ?? ''
   const [search, setSearch] = useState(urlQuery)
   const [category, setCategory] = useState(urlCategory)
+
   // Sync when URL params change (e.g. from TopNav search bar navigation)
   if (urlQuery !== search) setSearch(urlQuery)
   if (urlCategory !== category) setCategory(urlCategory)
 
   const debouncedSearch = useDebounce(search, 400)
 
-  const filters = {
+  const filters: FiltrosInstituciones = {
     ...(debouncedSearch ? { busqueda: debouncedSearch } : {}),
     ...(category ? { categoria: category } : {}),
     ...(tipoDiscapacidad ? { tipoDiscapacidad } : {}),
@@ -110,33 +115,42 @@ export default function ExplorePage() {
   }
 
   const { data: apiInstitutions = [], isLoading: loadingInstitutions, error, refetch } = useInstitutions(filters)
-  const { data: rawFavIds = [] } = useFavoriteIds()
-  const toggle = useToggleFavorite()
-  const trackInteraccion = useRegistrarInteraccion()
-  const { data: recomendacionesData, isLoading: loadingRecomendaciones } = useRecomendaciones()
+  const { data: rawFavIds = [] } = useFavoriteIds() as { data?: unknown }
+  const toggle = useToggleFavorite() as unknown as { mutate: (inst: Institution) => void }
+  const trackInteraccion = useRegistrarInteraccion() as unknown as {
+    mutate: (payload: { institucionId: string | number; tipo: string; categoria?: string }) => void
+  }
+  const { data: recomendacionesData, isLoading: loadingRecomendaciones } = useRecomendaciones() as {
+    data?: { instituciones?: Institution[] }
+    isLoading: boolean
+  }
   const recomendaciones = recomendacionesData?.instituciones ?? []
 
   const favSet = useMemo(() => {
     const arr = Array.isArray(rawFavIds)
       ? rawFavIds
-      : (rawFavIds instanceof Set ? Array.from(rawFavIds) : (Array.isArray(rawFavIds?.datos) ? rawFavIds.datos : []))
+      : (rawFavIds instanceof Set ? Array.from(rawFavIds) : (Array.isArray((rawFavIds as { datos?: unknown[] })?.datos) ? (rawFavIds as { datos: unknown[] }).datos : []))
     return new Set(arr.map(String))
   }, [rawFavIds])
 
   // ── Tracking helpers ─────────────────────────────────────────────
-  const trackClick = (inst) => {
+  const trackClick = (inst: Institution) => {
     if (isAuthenticated && inst?.id) {
       trackInteraccion.mutate({ institucionId: inst.id, tipo: 'click_card', categoria: inst.category })
     }
   }
-  const trackGuardar = (inst) => {
+  const trackGuardar = (inst: Institution) => {
     if (isAuthenticated && inst?.id) {
       trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category })
     }
   }
 
   const mockInstitutions = MOCK_INSTITUTIONS.filter(inst => {
-    const matchesSearch = !debouncedSearch || inst.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || inst.city.toLowerCase().includes(debouncedSearch.toLowerCase()) || inst.description.toLowerCase().includes(debouncedSearch.toLowerCase())
+    const s = debouncedSearch.toLowerCase()
+    const matchesSearch = !debouncedSearch ||
+      inst.name.toLowerCase().includes(s) ||
+      (inst.city ?? '').toLowerCase().includes(s) ||
+      (inst.description ?? '').toLowerCase().includes(s)
     const matchesCategory = !category || inst.category === category
     return matchesSearch && matchesCategory
   })
@@ -154,7 +168,7 @@ export default function ExplorePage() {
   /* ── Guest view ────────────────────────────────────────────── */
   if (!isAuthenticated) {
     return (
-      <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' }}>
+      <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' } as Record<string, string>}>
         <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>
@@ -277,7 +291,7 @@ export default function ExplorePage() {
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button onClick={() => setShowMap(v => !v)} title="Vista mapa" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-color)', background: showMap ? 'var(--primary)' : 'var(--bg-surface)', color: showMap ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{Icons.mapPin({ s: 16 })}</button>
-          {['grid', 'list'].map(v => (
+          {(['grid', 'list'] as const).map(v => (
             <button key={v} onClick={() => setView(v)} title={v === 'grid' ? 'Vista cuadrícula' : 'Vista lista'} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', borderRadius: 8, background: view === v && !showMap ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: view === v && !showMap ? 'var(--primary)' : 'var(--fg3)', cursor: 'pointer', transition: 'all 0.2s' }}>{v === 'grid' ? Icons.grid({ s: 16 }) : Icons.list({ s: 16 })}</button>
           ))}
         </div>
@@ -310,23 +324,34 @@ function EmptyState() {
   return <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 60, textAlign: 'center' }}><div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>{Icons.search({ s: 24 })}</div><h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px', fontFamily: 'var(--font-display)' }}>Sin resultados</h3><p style={{ fontSize: 15, color: 'var(--fg3)', margin: 0 }}>Intenta con otro término o categoría</p></div>
 }
 
-function ErrorState({ onRetry }) {
+interface ErrorStateProps {
+  onRetry: () => void
+}
+
+function ErrorState({ onRetry }: ErrorStateProps) {
   return <BackendFallback method={INSTITUTION_ENDPOINTS.LIST.method} endpoint={INSTITUTION_ENDPOINTS.LIST.path} onRetry={onRetry} />
 }
 
-function InstitutionCard({ inst, isFav, onToggleFav, onClick }) {
-  const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
+interface CardProps {
+  inst: Institution
+  isFav?: boolean
+  onToggleFav?: () => void
+  onClick?: () => void
+}
+
+function InstitutionCard({ inst, isFav, onToggleFav, onClick }: CardProps) {
+  const color = (inst.category && CATEGORY_COLORS[inst.category]) ?? 'var(--primary)'
   return (
     <div style={{ height: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, transition: 'box-shadow 0.2s ease', cursor: onClick ? 'pointer' : undefined }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
       onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <CategoryTag label={inst.category} color={color} />
+        <CategoryTag label={inst.category ?? ''} color={color} />
         {onToggleFav && (<button onClick={onToggleFav} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isFav ? '#C4789A' : 'var(--fg3)', padding: 0, display: 'flex' }}>{Icons.heart({ s: 18, filled: isFav })}</button>)}
       </div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.3 }}>{inst.name}</div>
-      <div style={{ fontSize: 14, color: 'var(--fg3)', lineHeight: 1.5, flex: 1 }}>{inst.description?.slice(0, 80)}{inst.description?.length > 80 ? '...' : ''}</div>
+      <div style={{ fontSize: 14, color: 'var(--fg3)', lineHeight: 1.5, flex: 1 }}>{inst.description?.slice(0, 80)}{inst.description && inst.description.length > 80 ? '...' : ''}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--fg3)' }}>{Icons.mapPin({ s: 14 })} {inst.city}{inst.state ? `, ${inst.state}` : ''}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -343,8 +368,8 @@ function InstitutionCard({ inst, isFav, onToggleFav, onClick }) {
   )
 }
 
-function InstitutionRow({ inst, isFav, onToggleFav, onClick }) {
-  const color = CATEGORY_COLORS[inst.category] ?? 'var(--primary)'
+function InstitutionRow({ inst, isFav, onToggleFav, onClick }: CardProps) {
+  const color = (inst.category && CATEGORY_COLORS[inst.category]) ?? 'var(--primary)'
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 16, transition: 'box-shadow 0.2s ease', cursor: onClick ? 'pointer' : undefined }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
@@ -354,7 +379,7 @@ function InstitutionRow({ inst, isFav, onToggleFav, onClick }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--fg1)' }}>{inst.name}</span>
-          <CategoryTag label={inst.category} color={color} />
+          <CategoryTag label={inst.category ?? ''} color={color} />
         </div>
         <div style={{ fontSize: 13, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.mapPin({ s: 13 })} {inst.city}{inst.state ? `, ${inst.state}` : ''}</span>
