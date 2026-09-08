@@ -1,19 +1,26 @@
 import { useState } from 'react'
 import { Icons } from '@shared/components/shared'
 import { useAdminAlerts } from '../hooks/useAdmin'
-import { Card, SectionTitle, Skeleton, EmptyState } from './AdminUI'
+import { Card, EmptyState } from './AdminUI'
+import type { AdminAlert } from '@/types/admin'
 
-const SEVERITY_META = {
+interface SeverityMeta {
+  color: string
+  icon: (props?: { s?: number; color?: string }) => React.ReactNode
+}
+
+const SEVERITY_META: Record<string, SeverityMeta> = {
   alta: { color: 'var(--color-error)', icon: Icons.shieldAlert },
   media: { color: 'var(--color-empleo)', icon: Icons.target },
   info: { color: 'var(--color-comunidad)', icon: Icons.sparkles },
 }
 
-function formatTimeAgo(dateString) {
+function formatTimeAgo(dateString?: string): string {
+  if (!dateString) return ''
   try {
     const d = new Date(dateString)
     const now = new Date()
-    const diffMs = now - d
+    const diffMs = now.getTime() - d.getTime()
     const diffMins = Math.floor(diffMs / 60000)
     if (diffMins < 1) return 'Ahora mismo'
     if (diffMins < 60) return `Hace ${diffMins} min`
@@ -26,9 +33,14 @@ function formatTimeAgo(dateString) {
   }
 }
 
-export default function AlertsTab({ alerts: initialAlerts, onNavigate }) {
+export interface AlertsTabProps {
+  alerts?: AdminAlert[]
+  onNavigate?: (tab: string) => void
+}
+
+export default function AlertsTab({ alerts: initialAlerts }: AlertsTabProps) {
   const [filter, setFilter] = useState('all')
-  const { data: freshAlerts, refetch, isFetching } = useAdminAlerts()
+  const { data: freshAlerts } = useAdminAlerts()
   const alerts = freshAlerts ?? initialAlerts ?? []
 
   const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter)

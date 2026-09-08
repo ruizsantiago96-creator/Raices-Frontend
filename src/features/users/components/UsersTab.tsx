@@ -1,12 +1,19 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useAdminUsers, useToggleUserActive, useChangeUserRole, useDeleteUser, useUpdateUserAdmin } from '../hooks/useUsers'
-import { USERS_UI, ROLE_LABELS } from '../constants/usersMessages'
+import { USERS_UI } from '../constants/usersMessages'
+import type { UsuarioAdmin } from '@/types/admin'
 
 /* ════════════════════ Paleta y helpers ════════════════════ */
-const ROLE_META = {
+interface RoleMetaConfig {
+  bg: string
+  fg: string
+  label: string
+}
+
+const ROLE_META: Record<string, RoleMetaConfig> = {
   admin: { bg: '#C4789A', fg: '#C4789A', label: 'Admin' },
   institution: { bg: '#01ADFF', fg: '#01ADFF', label: 'Institución' },
   tutor: { bg: '#D4944C', fg: '#D4944C', label: 'Tutor' },
@@ -14,29 +21,41 @@ const ROLE_META = {
   user: { bg: '#6b7280', fg: '#6b7280', label: 'Usuario' },
 }
 
-const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
+const card: React.CSSProperties = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-color)',
+  borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--shadow-sm)',
+}
 
-function Card({ children, style, className }) {
+interface CardProps {
+  children: React.ReactNode
+  style?: React.CSSProperties
+  className?: string
+}
+
+function Card({ children, style, className }: CardProps) {
   return <div className={`card ${className || ''}`} style={{ padding: 24, ...style }}>{children}</div>
 }
 
-function SectionTitle({ icon, children, right }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {icon && <span style={{ color: 'var(--primary)' }}>{icon}</span>}
-        {children}
-      </h2>
-      {right}
-    </div>
-  )
+interface SkeletonProps {
+  w?: string | number
+  h?: string | number
+  r?: string | number
+  style?: React.CSSProperties
 }
 
-function Skeleton({ w = '100%', h = 16, r = 6, style }) {
+function Skeleton({ w = '100%', h = 16, r = 6, style }: SkeletonProps) {
   return <div style={{ width: w, height: h, borderRadius: r, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', ...style }} />
 }
 
-function EmptyState({ icon, title, sub }) {
+interface EmptyStateProps {
+  icon: React.ReactNode
+  title: string
+  sub?: string
+}
+
+function EmptyState({ icon, title, sub }: EmptyStateProps) {
   return (
     <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ color: 'var(--fg3)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>{icon}</div>
@@ -46,7 +65,16 @@ function EmptyState({ icon, title, sub }) {
   )
 }
 
-function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+interface ConfirmDialogProps {
+  title: string
+  message: string
+  confirmLabel: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }: ConfirmDialogProps) {
   return createPortal(
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
@@ -70,7 +98,11 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
 /* ════════════════════ TAB: Usuarios ════════════════════ */
 const USER_PAGE_SIZE = 8
 
-export default function UsersTab({ currentUserId }) {
+export interface UsersTabProps {
+  currentUserId?: string | number
+}
+
+export default function UsersTab({ currentUserId }: UsersTabProps) {
   const { addToast } = useUiStore()
   const { data: users = [], isLoading } = useAdminUsers()
   const toggleActive = useToggleUserActive()
@@ -80,26 +112,24 @@ export default function UsersTab({ currentUserId }) {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const [actionMenuId, setActionMenuId] = useState(null)
-  const [confirm, setConfirm] = useState(null)
-  const [roleConfirm, setRoleConfirm] = useState(null)
-  const [pendingRoleChange, setPendingRoleChange] = useState(null)
-  const [editUser, setEditUser] = useState(null)
+  const [actionMenuId, setActionMenuId] = useState<string | number | null>(null)
+  const [confirm, setConfirm] = useState<UsuarioAdmin | null>(null)
+  const [roleConfirm, setRoleConfirm] = useState<UsuarioAdmin | null>(null)
+  const [editUser, setEditUser] = useState<UsuarioAdmin | null>(null)
   const [editForm, setEditForm] = useState({ full_name: '', email: '' })
-  const actionMenuRef = useRef(null)
-  const [menuPos, setMenuPos] = useState(null)
+  const actionMenuRef = useRef<HTMLDivElement | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
 
   useEffect(() => {
-    const handler = (e) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
-        setActionMenuId(null); setMenuPos(null)
+    const handler = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setActionMenuId(null)
+        setMenuPos(null)
       }
     }
     if (actionMenuId) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [actionMenuId])
-
-
 
   const filtered = users.filter(u => {
     const matchSearch = !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
@@ -110,13 +140,19 @@ export default function UsersTab({ currentUserId }) {
   const safePage = Math.min(page, totalPages)
   const paged = filtered.slice((safePage - 1) * USER_PAGE_SIZE, safePage * USER_PAGE_SIZE)
 
-  const onToggle = (u) => toggleActive.mutate(u.id, {
+  const onToggle = (u: UsuarioAdmin) => toggleActive.mutate(u.id, {
     onSuccess: (d) => { addToast(d.is_active ? 'Usuario activado' : 'Usuario desactivado', 'success'); setActionMenuId(null) },
-    onError: (e) => addToast(e.response?.data?.message ?? 'Error', 'error'),
+    onError: (e: unknown) => {
+      const err = e as { response?: { data?: { message?: string } } }
+      addToast(err.response?.data?.message ?? 'Error', 'error')
+    },
   })
-  const onRole = (id, role) => changeRole.mutate({ id, role }, {
+  const onRole = (id: string | number, role: string) => changeRole.mutate({ id, role }, {
     onSuccess: () => { addToast('Rol actualizado', 'success'); setRoleConfirm(null); setActionMenuId(null) },
-    onError: (e) => addToast(e.response?.data?.message ?? 'Error', 'error'),
+    onError: (e: unknown) => {
+      const err = e as { response?: { data?: { message?: string } } }
+      addToast(err.response?.data?.message ?? 'Error', 'error')
+    },
   })
   const doDelete = () => {
     if (!confirm?.id) return
@@ -125,10 +161,13 @@ export default function UsersTab({ currentUserId }) {
     setActionMenuId(null)
     deleteUser.mutate(idToDelete, {
       onSuccess: () => addToast('Usuario eliminado', 'success'),
-      onError: (e) => addToast(e.response?.data?.message ?? 'Error al eliminar', 'error'),
+      onError: (e: unknown) => {
+        const err = e as { response?: { data?: { message?: string } } }
+        addToast(err.response?.data?.message ?? 'Error al eliminar', 'error')
+      },
     })
   }
-  const openEdit = (u) => {
+  const openEdit = (u: UsuarioAdmin) => {
     setEditUser(u)
     setEditForm({ full_name: u.full_name ?? '', email: u.email ?? '' })
     setActionMenuId(null)
@@ -137,11 +176,26 @@ export default function UsersTab({ currentUserId }) {
     if (!editUser) return
     updateUser.mutate({ id: editUser.id, ...editForm }, {
       onSuccess: () => { addToast('Usuario actualizado', 'success'); setEditUser(null) },
-      onError: (e) => addToast(e.response?.data?.message ?? 'Error al actualizar', 'error'),
+      onError: (e: unknown) => {
+        const err = e as { response?: { data?: { message?: string } } }
+        addToast(err.response?.data?.message ?? 'Error al actualizar', 'error')
+      },
     })
   }
 
-  const inputStyle = { height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%' }
+  const inputStyle: React.CSSProperties = {
+    height: 40,
+    padding: '0 12px 0 36px',
+    border: '1px solid var(--border-color)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: 14,
+    color: 'var(--fg1)',
+    background: 'var(--bg-surface)',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-body)',
+    width: '100%',
+  }
 
   return (
     <div>
@@ -179,7 +233,7 @@ export default function UsersTab({ currentUserId }) {
               </thead>
               <tbody>
                 {paged.map((u, i) => {
-                  const isSelf = u.id === currentUserId
+                  const isSelf = String(u.id) === String(currentUserId)
                   const meta = ROLE_META[u.role] ?? ROLE_META.user
                   return (
                     <tr key={u.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}

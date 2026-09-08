@@ -1,15 +1,15 @@
-import { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icons } from '@shared/components/shared'
 
-const CARD = {
+const CARD: React.CSSProperties = {
   background: 'var(--bg-surface)',
   border: '1px solid var(--border-color)',
   borderRadius: 'var(--radius-md)',
   boxShadow: 'var(--shadow-sm)',
 }
 
-const INPUT_STYLE = {
+const INPUT_STYLE: React.CSSProperties = {
   height: 40,
   padding: '0 12px 0 36px',
   border: '1px solid var(--border-color)',
@@ -23,7 +23,7 @@ const INPUT_STYLE = {
   width: '100%',
 }
 
-const HEADER_CELL = {
+const HEADER_CELL: React.CSSProperties = {
   padding: '12px 16px',
   textAlign: 'left',
   fontSize: 12,
@@ -33,9 +33,14 @@ const HEADER_CELL = {
   letterSpacing: '0.05em',
 }
 
-const CELL_PADDING = '14px 16px'
+export interface SkeletonProps {
+  w?: string | number
+  h?: string | number
+  r?: string | number
+  style?: React.CSSProperties
+}
 
-function Skeleton({ w = '100%', h = 16, r = 6, style }) {
+function Skeleton({ w = '100%', h = 16, r = 6, style }: SkeletonProps) {
   return (
     <div
       style={{
@@ -50,19 +55,36 @@ function Skeleton({ w = '100%', h = 16, r = 6, style }) {
   )
 }
 
-function EmptyState({ icon, title, sub }) {
+export interface EmptyStateProps {
+  icon?: React.ReactNode
+  title?: string
+  sub?: string
+}
+
+function EmptyState({ icon, title, sub }: EmptyStateProps) {
   return (
     <div style={{ ...CARD, textAlign: 'center', padding: '48px 24px', margin: '0 auto' }}>
-      <div style={{ color: 'var(--fg3)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
-        {icon}
-      </div>
-      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg2)', margin: 0 }}>{title}</p>
+      {icon && (
+        <div style={{ color: 'var(--fg3)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+          {icon}
+        </div>
+      )}
+      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg2)', margin: 0 }}>{title ?? 'Sin datos'}</p>
       {sub && <p style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 4 }}>{sub}</p>}
     </div>
   )
 }
 
-function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+export interface ConfirmDialogProps {
+  title: string
+  message: string
+  confirmLabel: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }: ConfirmDialogProps) {
   return createPortal(
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ ...CARD, padding: 28, maxWidth: 420, width: '100%' }}>
@@ -120,13 +142,21 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
   )
 }
 
+export interface PaginationProps {
+  safePage: number
+  totalPages: number
+  onPrev: () => void
+  onNext: () => void
+  onGo: (p: number) => void
+}
+
 function Pagination({
   safePage,
   totalPages,
   onPrev,
   onNext,
   onGo,
-}) {
+}: PaginationProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 18 }}>
       <button
@@ -190,79 +220,14 @@ function Pagination({
   )
 }
 
-function MenuButton({ onClick, children, isOpen, menuRef, menuPos, portalContent, ...rest }) {
-  return (
-    <td style={{ padding: CELL_PADDING, position: 'relative', ...rest }}>
-      <button
-        onClick={(e) => {
-          if (isOpen) {
-            onClick?.(null)
-            return
-          }
-          const r = e.currentTarget.getBoundingClientRect()
-          menuRef.current && setMenuPosFromRect(r)
-        }}
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          border: '1px solid var(--border-color)',
-          background: 'var(--bg-surface)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--fg3)',
-          transition: 'all 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--bg-cool)'
-          e.currentTarget.style.color = 'var(--fg1)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'var(--bg-surface)'
-          e.currentTarget.style.color = 'var(--fg3)'
-        }}
-      >
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="5" cy="12" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="19" cy="12" r="2" />
-        </svg>
-      </button>
-      {isOpen && menuPos && createPortal(
-        <div
-          ref={menuRef}
-          style={{
-            position: 'fixed',
-            top: menuPos.top,
-            right: menuPos.right,
-            width: 210,
-            background: 'var(--bg-surface)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-lg)',
-            zIndex: 9999,
-            padding: '6px 0',
-            animation: 'fade-in 0.12s ease-out',
-          }}
-        >
-          {portalContent}
-        </div>,
-        document.body
-      )}
-    </td>
-  )
+export interface SearchBarProps {
+  value?: string
+  onChange?: (val: string) => void
+  placeholder?: string
+  icon?: React.ReactNode
 }
 
-function setMenuPosFromRect(menuRef, r, setMenuPos) {
-  setMenuPos?.({
-    top: r.bottom + 4,
-    right: window.innerWidth - r.right - 16,
-  })
-}
-
-function SearchBar({ value, onChange, placeholder, icon }) {
+function SearchBar({ value, onChange, placeholder, icon }: SearchBarProps) {
   return (
     <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
       <span
@@ -277,7 +242,7 @@ function SearchBar({ value, onChange, placeholder, icon }) {
         {icon ?? Icons.search({ s: 16 })}
       </span>
       <input
-        value={value}
+        value={value ?? ''}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         style={INPUT_STYLE}
@@ -286,7 +251,7 @@ function SearchBar({ value, onChange, placeholder, icon }) {
   )
 }
 
-const FILTER_BUTTON = {
+const FILTER_BUTTON: React.CSSProperties = {
   padding: '7px 16px',
   borderRadius: 20,
   border: '1px solid var(--border-color)',
@@ -298,7 +263,18 @@ const FILTER_BUTTON = {
   color: 'var(--fg2)',
 }
 
-function FilterPills({ items, current, onChange }) {
+export interface FilterItem {
+  k: string
+  l: string
+}
+
+export interface FilterPillsProps {
+  items: FilterItem[]
+  current?: string
+  onChange?: (key: string) => void
+}
+
+function FilterPills({ items, current, onChange }: FilterPillsProps) {
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       {items.map((f) => (
@@ -318,25 +294,28 @@ function FilterPills({ items, current, onChange }) {
   )
 }
 
-const ROW_HOVER = {
-  borderBottom: (i, length) =>
-    i < length - 1 ? '1px solid var(--border-color)' : 'none',
-  transition: 'background 0.15s',
+export interface RowWrapperProps {
+  children: React.ReactNode
+  i: number
+  length: number
+  onRowHover?: (e: React.MouseEvent<HTMLTableRowElement>, entering: boolean) => void
+  style?: React.CSSProperties
 }
 
-function RowWrapper({ children, i, length, onRowHover, style }) {
+function RowWrapper({ children, i, length, onRowHover, style }: RowWrapperProps) {
   return (
     <tr
       style={{
-        ...ROW_HOVER(i, length),
+        borderBottom: i < length - 1 ? '1px solid var(--border-color)' : 'none',
+        transition: 'background 0.15s',
         ...style,
       }}
       onMouseEnter={(e) =>
-        onRowHover?.(e, true) ?? (e.currentTarget.style.backgroundColor =
+        onRowHover ? onRowHover(e, true) : (e.currentTarget.style.backgroundColor =
           'color-mix(in oklch, var(--primary) 2%, var(--bg-surface))')
       }
       onMouseLeave={(e) =>
-        onRowHover?.(e, false) ?? (e.currentTarget.style.backgroundColor = 'transparent')
+        onRowHover ? onRowHover(e, false) : (e.currentTarget.style.backgroundColor = 'transparent')
       }
     >
       {children}
@@ -344,25 +323,67 @@ function RowWrapper({ children, i, length, onRowHover, style }) {
   )
 }
 
+export interface TableMenuRenderContext {
+  menuRef: React.RefObject<HTMLDivElement | null>
+  menuPos: { top: number; right: number } | null
+  actionMenuId: string | number | null
+  onActionMenuToggle: (id: string | number) => void
+  onCloseMenu: () => void
+}
+
+export interface AdminTableConfig<T = unknown> {
+  headers?: Array<string | { key?: string; label?: string }>
+  rows: T[]
+  renderRow?: (row: T, ctx: TableMenuRenderContext) => React.ReactNode
+  rowKey?: (row: T) => string | number
+}
+
+export interface AdminFilters {
+  items?: FilterItem[]
+  current?: string
+  onChange?: (key: string) => void
+}
+
+export interface AdminSearch {
+  value?: string
+  onChange?: (val: string) => void
+  placeholder?: string
+}
+
+export interface AdminPagination {
+  page?: number
+  safePage: number
+  totalPages: number
+  onPageChange?: (page: number) => void
+  pageSizes?: number[]
+  pendingMode?: boolean
+}
+
+export interface AdminEmptyMessage {
+  icon?: React.ReactNode
+  title?: string
+  sub?: string
+}
+
+export interface AdminSectionLayoutProps<T = unknown> {
+  title?: string
+  subtitle?: string
+  toolbar?: React.ReactNode
+  filters?: AdminFilters
+  search?: AdminSearch
+  isLoading?: boolean
+  emptyMessage?: AdminEmptyMessage
+  table?: AdminTableConfig<T>
+  pagination?: AdminPagination
+  skeletonCount?: number
+  tableWrapStyle?: React.CSSProperties
+}
+
 /* ════════════════════════════════════════════════════════════════
    Layout reutilizable para tablas de administración
-   Props:
-     - title: string
-     - subtitle: string
-     - toolbar: ReactNode (se renderiza sobre la barra unificada)
-     - filters: {items: {k,label}[], current, onChange}
-     - search: {value, onChange, placeholder}
-     - isLoading
-     - emptyMessage: {icon, title, sub}
-     - table: {headers, renderRow, rowKey, rowProps}
-     - pagination: {page, safePage, totalPages, onPageChange, pageSizes?}
-     - skeletonCount?: number
-     - tableWrapStyle?: object
    ════════════════════════════════════════════════════════════════ */
 
-export default function AdminSectionLayout({
-  title,
-  subtitle,
+export default function AdminSectionLayout<T = unknown>({
   toolbar,
   filters = {},
   search = {},
@@ -372,14 +393,14 @@ export default function AdminSectionLayout({
   pagination,
   skeletonCount = 3,
   tableWrapStyle,
-}) {
-  const actionMenuRef = useRef(null)
-  const [menuPos, setMenuPos] = useState(null)
-  const [actionMenuId, setActionMenuId] = useState(null)
+}: AdminSectionLayoutProps<T>) {
+  const actionMenuRef = useRef<HTMLDivElement | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
+  const [actionMenuId, setActionMenuId] = useState<string | number | null>(null)
 
   useEffect(() => {
-    const handler = (e) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
+    const handler = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
         setActionMenuId(null)
         setMenuPos(null)
       }
@@ -387,9 +408,6 @@ export default function AdminSectionLayout({
     if (actionMenuId) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [actionMenuId])
-
-  const isPending =
-    filters.current === 'pending' && pagination?.pendingMode === true
 
   return (
     <div>
@@ -487,15 +505,19 @@ export default function AdminSectionLayout({
                     background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))',
                   }}
                 >
-                  {table.headers?.map((h) => (
-                    <th key={h.key ?? h} style={HEADER_CELL}>
-                      {h}
-                    </th>
-                  ))}
+                  {table?.headers?.map((h) => {
+                    const key = typeof h === 'string' ? h : (h.key ?? h.label ?? '')
+                    const label = typeof h === 'string' ? h : (h.label ?? key)
+                    return (
+                      <th key={key} style={HEADER_CELL}>
+                        {label}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {table.rows.map((row, i) => (
+                {table?.rows.map((row, i) => (
                   <RowWrapper key={table.rowKey?.(row) ?? i} i={i} length={table.rows.length}>
                     {table.renderRow?.(row, {
                       menuRef: actionMenuRef,

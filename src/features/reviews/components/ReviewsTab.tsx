@@ -1,21 +1,46 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
 import { useAdminReviews, useDeleteReview } from '../hooks/useAdminReviews'
 import { REVIEWS_UI } from '../constants/reviewsMessages'
+import type { ReviewAdmin } from '@/types/admin'
 
-const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
+const card: React.CSSProperties = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-color)',
+  borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--shadow-sm)',
+}
 
-function Card({ children, style, className }) {
+interface CardProps {
+  children: React.ReactNode
+  style?: React.CSSProperties
+  className?: string
+}
+
+function Card({ children, style, className }: CardProps) {
   return <div className={`card ${className || ''}`} style={{ padding: 24, ...style }}>{children}</div>
 }
 
-function Skeleton({ w = '100%', h = 16, r = 6, style }) {
+interface SkeletonProps {
+  w?: string | number
+  h?: string | number
+  r?: string | number
+  style?: React.CSSProperties
+}
+
+function Skeleton({ w = '100%', h = 16, r = 6, style }: SkeletonProps) {
   return <div style={{ width: w, height: h, borderRadius: r, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', ...style }} />
 }
 
-function EmptyState({ icon, title, sub }) {
+interface EmptyStateProps {
+  icon: React.ReactNode
+  title: string
+  sub?: string
+}
+
+function EmptyState({ icon, title, sub }: EmptyStateProps) {
   return (
     <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ color: 'var(--fg3)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>{icon}</div>
@@ -25,7 +50,16 @@ function EmptyState({ icon, title, sub }) {
   )
 }
 
-function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+interface ConfirmDialogProps {
+  title: string
+  message: string
+  confirmLabel: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }: ConfirmDialogProps) {
   return createPortal(
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={e => e.stopPropagation()} className="card" style={{ padding: 28, maxWidth: 420, width: '100%' }}>
@@ -46,11 +80,11 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
   )
 }
 
-function btn(color) {
+function btn(color: string): React.CSSProperties {
   return {
     display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
     border: `1px solid ${color}`, background: 'transparent', color,
-    cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s'
+    cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s',
   }
 }
 
@@ -59,7 +93,7 @@ export default function ReviewsTab() {
   const { addToast } = useUiStore()
   const { data: reviews = [], isLoading } = useAdminReviews()
   const del = useDeleteReview()
-  const [confirm, setConfirm] = useState(null)
+  const [confirm, setConfirm] = useState<ReviewAdmin | null>(null)
 
   const doDelete = () => {
     if (!confirm?.id) return
@@ -67,7 +101,10 @@ export default function ReviewsTab() {
     setConfirm(null)
     del.mutate(idToDelete, {
       onSuccess: () => addToast('Reseña eliminada', 'success'),
-      onError: (err) => addToast(err?.response?.data?.mensaje ?? 'No se pudo eliminar la reseña', 'error'),
+      onError: (err: unknown) => {
+        const e = err as { response?: { data?: { mensaje?: string } } }
+        addToast(e?.response?.data?.mensaje ?? 'No se pudo eliminar la reseña', 'error')
+      },
     })
   }
 
@@ -99,6 +136,7 @@ export default function ReviewsTab() {
         </div>
       )}
 
+      {/* Delete Confirm */}
       {confirm && (
         <ConfirmDialog
           title={REVIEWS_UI.DELETE_TITLE}

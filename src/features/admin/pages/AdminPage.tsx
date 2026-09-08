@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import React from 'react'
 import { useMe } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAdminAlerts } from '../hooks/useAdmin'
@@ -12,30 +12,40 @@ import SettingsTab from '../components/SettingsTab'
 import AlertsTab from '../components/AlertsTab'
 import AuditTab from '../components/AuditTab'
 
+type AdminTabKey =
+  | 'overview'
+  | 'intelligence'
+  | 'institutions'
+  | 'users'
+  | 'identities'
+  | 'reviews'
+  | 'alerts'
+  | 'settings'
+  | 'audit'
+
+const TAB_TITLES: Record<string, string> = {
+  overview: 'Resumen del ecosistema',
+  intelligence: 'Inteligencia de necesidades',
+  institutions: 'Gestión de instituciones',
+  users: 'Gestión de usuarios',
+  identities: 'Verificación de identidad',
+  reviews: 'Moderación de reseñas',
+  alerts: 'Alertas de riesgo',
+  settings: 'Configuración de plataforma',
+  audit: 'Auditoría',
+}
+
 export default function AdminPage() {
-  const navigate = useNavigate()
   const { data: user } = useMe()
-  const tab = useUiStore(s => s.adminTab)
+  const tab = useUiStore(s => s.adminTab) as AdminTabKey
   const onTab = useUiStore(s => s.setAdminTab)
   const { data: alerts = [] } = useAdminAlerts()
 
-  const TAB_TITLES = {
-    overview: 'Resumen del ecosistema',
-    intelligence: 'Inteligencia de necesidades',
-    institutions: 'Gestión de instituciones',
-    users: 'Gestión de usuarios',
-    identities: 'Verificación de identidad',
-    reviews: 'Moderación de reseñas',
-    alerts: 'Alertas de riesgo',
-    settings: 'Configuración de plataforma',
-    audit: 'Auditoría',
-  }
-
   return (
-    <main id="main" className="responsive-main" style={{ '--main-max-width': '1200px' }}>
+    <main id="main" className="responsive-main" style={{ '--main-max-width': '1200px' } as Record<string, string>}>
       {/* Section Title */}
       <h1 key={tab} className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', marginBottom: 28, letterSpacing: '-0.02em' }}>
-        {TAB_TITLES[tab]}
+        {TAB_TITLES[tab] ?? 'Administración'}
       </h1>
 
       <div key={`content-${tab}`} className="animate-tab-in">

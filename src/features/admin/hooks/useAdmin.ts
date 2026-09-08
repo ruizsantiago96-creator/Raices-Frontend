@@ -1,6 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { useAuthStore } from '@features/auth'
+import type {
+  AdminStats,
+  NeedsIntelligenceData,
+  AdminAlert,
+  AdminSettings,
+  ActiveVisitorsDetail,
+  RawActiveVisitors,
+  DocumentoIdentidadAdmin,
+  RechazarVerificacionPayload,
+  VerificacionesFilters,
+  AuditoriaLog,
+  AuditoriaStats,
+  AuditoriaFilters,
+} from '@/types/admin'
 
 /* ═══════════════════════════════════════════════════════════════════
    Admin — Stats, Analytics, Alerts, Settings
@@ -9,10 +23,10 @@ import { useAuthStore } from '@features/auth'
 /** Helper: returns true only if the current user is an admin. */
 const useIsAdmin = () => useAuthStore(s => s.user?.role === 'admin')
 
-export function useAdminStats(opts) {
+export function useAdminStats(opts?: Omit<UseQueryOptions<AdminStats>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
     queryFn: () => api.get('/administracion/estadisticas').then(r => r.data),
     staleTime: 1000 * 60 * 5,
@@ -21,14 +35,14 @@ export function useAdminStats(opts) {
   })
 }
 
-export function useAdminAnalytics(opts) {
+export function useAdminAnalytics(opts?: Omit<UseQueryOptions<AdminStats>, 'queryKey' | 'queryFn'>) {
   return useAdminStats(opts)
 }
 
-export function useNeedsIntelligence(opts) {
+export function useNeedsIntelligence(opts?: Omit<UseQueryOptions<NeedsIntelligenceData>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<NeedsIntelligenceData>({
     queryKey: ['admin', 'needs-intelligence'],
     queryFn: () => api.get('/administracion/inteligencia-necesidades').then(r => r.data),
     staleTime: 1000 * 60 * 10,
@@ -37,10 +51,10 @@ export function useNeedsIntelligence(opts) {
   })
 }
 
-export function useAdminAlerts(opts) {
+export function useAdminAlerts(opts?: Omit<UseQueryOptions<AdminAlert[]>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<AdminAlert[]>({
     queryKey: ['admin', 'alerts'],
     queryFn: () => api.get('/administracion/alertas').then(r => r.data),
     staleTime: 1000 * 60 * 2, // 2 min — las alertas deben estar relativamente frescas
@@ -50,10 +64,10 @@ export function useAdminAlerts(opts) {
   })
 }
 
-export function useAdminSettings(opts) {
+export function useAdminSettings(opts?: Omit<UseQueryOptions<AdminSettings>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<AdminSettings>({
     queryKey: ['admin', 'settings'],
     queryFn: () => api.get('/administracion/configuracion').then(r => r.data),
     enabled: isAdmin && callerEnabled !== false,
@@ -64,7 +78,7 @@ export function useAdminSettings(opts) {
 export function useUpdateSettings() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data) => api.put('/administracion/configuracion', data).then(r => r.data),
+    mutationFn: (data: Partial<AdminSettings>) => api.put('/administracion/configuracion', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
   })
 }
@@ -76,7 +90,7 @@ export function useUpdateSettings() {
 /**
  * Mapea la respuesta de visitantes activos a un formato consistente.
  */
-function mapActiveVisitors(raw) {
+function mapActiveVisitors(raw?: RawActiveVisitors): ActiveVisitorsDetail {
   if (!raw) return { live: 0, historialMinutos: [], promedioDiario: 0, promedioSemanal: 0, promedioMensual: 0 }
   const live = raw.personasActivas ?? raw.enVivo ?? raw.live ?? raw.activos ?? raw.active ?? 0
   const historialMinutos = raw.historialMinutos ?? raw.history ?? raw.timeline ?? []
@@ -86,18 +100,16 @@ function mapActiveVisitors(raw) {
   return { live, historialMinutos, promedioDiario, promedioSemanal, promedioMensual }
 }
 
-export function useAdminDetailedAnalytics(opts) {
+export function useAdminDetailedAnalytics(opts?: Omit<UseQueryOptions<Record<string, unknown>>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<Record<string, unknown>>({
     queryKey: ['admin', 'detailed-analytics'],
     queryFn: async () => {
       const { data } = await api.get('/administracion/analiticas')
       // Handle various response formats
       if (data?.datos) return data.datos
       if (data?.data) return data.data
-      if (Array.isArray(data)) return data
-      // If it's an object with metric properties, return as-is for the component to parse
       return data
     },
     staleTime: 1000 * 60 * 5,
@@ -106,10 +118,10 @@ export function useAdminDetailedAnalytics(opts) {
   })
 }
 
-export function useAdminActiveUsersDetail(opts) {
+export function useAdminActiveUsersDetail(opts?: Omit<UseQueryOptions<ActiveVisitorsDetail>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<ActiveVisitorsDetail>({
     queryKey: ['admin', 'active-users-detail'],
     queryFn: () => api.get('/administracion/visitantes-activos').then(r => mapActiveVisitors(r.data)),
     staleTime: 1000 * 30,
@@ -126,10 +138,13 @@ export function useAdminActiveUsersDetail(opts) {
    POST /api/administracion/documentos-identidad/:id/rechazar
    ═══════════════════════════════════════════════════════════════════ */
 
-export function useAdminVerificaciones(filters = {}, opts) {
+export function useAdminVerificaciones(
+  filters: VerificacionesFilters = {},
+  opts?: Omit<UseQueryOptions<DocumentoIdentidadAdmin[]>, 'queryKey' | 'queryFn'>
+) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<DocumentoIdentidadAdmin[]>({
     queryKey: ['admin', 'verificaciones', filters],
     queryFn: () => api.get('/administracion/documentos-identidad/pendientes', { params: filters }).then(r => r.data?.datos ?? r.data),
     staleTime: 1000 * 60 * 2,
@@ -141,7 +156,7 @@ export function useAdminVerificaciones(filters = {}, opts) {
 export function useAprobarVerificacion() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
+    mutationFn: (id: string | number) => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
       qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
@@ -152,7 +167,8 @@ export function useAprobarVerificacion() {
 export function useRechazarVerificacion() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...body }) => api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
+    mutationFn: ({ id, ...body }: RechazarVerificacionPayload) =>
+      api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
       qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
@@ -166,22 +182,25 @@ export function useRechazarVerificacion() {
    GET  /api/administracion/auditoria/estadisticas
    ═══════════════════════════════════════════════════════════════════ */
 
-export function useAdminAuditoria(filters = {}, opts) {
+export function useAdminAuditoria(
+  filters: AuditoriaFilters = {},
+  opts?: Omit<UseQueryOptions<AuditoriaLog[]>, 'queryKey' | 'queryFn'>
+) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<AuditoriaLog[]>({
     queryKey: ['admin', 'auditoria', filters],
-    queryFn: () => api.get('/administracion/auditoria', { params: filters }).then(r => r.data),
+    queryFn: () => api.get('/administracion/auditoria', { params: filters }).then(r => r.data?.datos ?? r.data),
     staleTime: 1000 * 60 * 2,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
   })
 }
 
-export function useAdminAuditoriaStats(opts) {
+export function useAdminAuditoriaStats(opts?: Omit<UseQueryOptions<AuditoriaStats>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
-  return useQuery({
+  return useQuery<AuditoriaStats>({
     queryKey: ['admin', 'auditoria-stats'],
     queryFn: () => api.get('/administracion/auditoria/estadisticas').then(r => r.data),
     staleTime: 1000 * 60 * 5,
@@ -189,9 +208,3 @@ export function useAdminAuditoriaStats(opts) {
     ...restOpts,
   })
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   NOTE: User management hooks have been moved to @features/users
-   NOTE: Institution admin hooks have been moved to @features/institutions
-   NOTE: Review admin hooks have been moved to @features/reviews
-   ═══════════════════════════════════════════════════════════════════ */

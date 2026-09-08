@@ -1,32 +1,33 @@
-import { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   useAdminVerificaciones,
   useAprobarVerificacion,
-  useRechazarVerificacion
+  useRechazarVerificacion,
 } from '../hooks/useAdmin'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle } from '@shared/components/shared'
+import type { DocumentoIdentidadAdmin, UsuarioVerificacionGroup } from '@/types/admin'
 
 /* ══════════════════════════════════════════════════════════════════════
    Helpers
    ══════════════════════════════════════════════════════════════════════ */
 
-const ROLE_LABELS = {
+const ROLE_LABELS: Record<string, string> = {
   pcd: 'Persona con discapacidad',
   tutor: 'Tutor / familiar',
   institution: 'Institución',
   admin: 'Admin',
 }
 
-const TIPO_LABELS = {
+const TIPO_LABELS: Record<string, string> = {
   curp: 'CURP',
   identificacion_oficial: 'Identificación oficial',
 }
 
 /** Agrupa documentos por usuarioId. */
-function groupByUser(docs) {
-  const map = new Map()
+function groupByUser(docs: DocumentoIdentidadAdmin[]): UsuarioVerificacionGroup[] {
+  const map = new Map<string | number, UsuarioVerificacionGroup>()
   for (const doc of docs) {
     const uid = doc.usuarioId
     if (!map.has(uid)) {
@@ -38,7 +39,7 @@ function groupByUser(docs) {
         documentos: [],
       })
     }
-    map.get(uid).documentos.push(doc)
+    map.get(uid)?.documentos.push(doc)
   }
   return Array.from(map.values()).sort((a, b) => {
     // Priorizar usuarios con más documentos pendientes
@@ -48,7 +49,7 @@ function groupByUser(docs) {
   })
 }
 
-function userStatusSummary(user) {
+function userStatusSummary(user: UsuarioVerificacionGroup) {
   const pendientes = user.documentos.filter(d => d.estado === 'pendiente').length
   const aprobados = user.documentos.filter(d => d.estado === 'aprobado').length
   const rechazados = user.documentos.filter(d => d.estado === 'rechazado').length
@@ -63,9 +64,21 @@ function userStatusSummary(user) {
    Sub-componentes
    ══════════════════════════════════════════════════════════════════════ */
 
-function DocumentRow({ doc, onApprove, onReject, isProcessing }) {
+interface DocumentWithUrl extends DocumentoIdentidadAdmin {
+  urlDocumento?: string
+}
+
+interface DocumentRowProps {
+  doc: DocumentWithUrl
+  onApprove: (id: string | number) => Promise<void>
+  onReject: (id: string | number) => void
+  isProcessing: boolean
+}
+
+function DocumentRow({ doc, onApprove, onReject, isProcessing }: DocumentRowProps) {
   const isPending = doc.estado === 'pendiente'
   const isCurp = doc.tipo === 'curp'
+  const fileUrl = doc.urlDocumento ?? doc.urlArchivo
 
   return (
     <div style={{
@@ -106,9 +119,9 @@ function DocumentRow({ doc, onApprove, onReject, isProcessing }) {
 
       {/* Right: view link + actions */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {doc.urlDocumento ? (
+        {fileUrl ? (
           <a
-            href={doc.urlDocumento}
+            href={fileUrl}
             target="_blank"
             rel="noreferrer"
             style={{
@@ -165,13 +178,22 @@ function DocumentRow({ doc, onApprove, onReject, isProcessing }) {
   )
 }
 
-function UserCard({ user, onApproveOne, onRejectOne, onApproveAll, onRejectAll, processingIds }) {
+interface UserCardProps {
+  user: UsuarioVerificacionGroup
+  onApproveOne: (id: string | number) => Promise<void>
+  onRejectOne: (id: string | number) => void
+  onApproveAll: (pendingDocs: DocumentoIdentidadAdmin[]) => Promise<void>
+  onRejectAll: (pendingDocs: DocumentoIdentidadAdmin[]) => void
+  processingIds: Set<string | number>
+}
+
+function UserCard({ user, onApproveOne, onRejectOne, onApproveAll, onRejectAll, processingIds }: UserCardProps) {
   const pending = useMemo(() => user.documentos.filter(d => d.estado === 'pendiente'), [user.documentos])
   const summary = useMemo(() => userStatusSummary(user), [user])
   const hasMultiplePending = pending.length > 1
 
   const earliestDate = useMemo(() => {
-    const dates = user.documentos.map(d => d.fechaSubida).filter(Boolean).sort()
+    const dates = user.documentos.map(d => d.fechaSubida ?? d.created_at).filter(Boolean).sort()
     return dates[0]
   }, [user.documentos])
 
@@ -301,13 +323,13 @@ export default function IdentitiesTab() {
   const rejectVerif = useRechazarVerificacion()
 
   // Track which document IDs are currently being processed
-  const [processingIds, setProcessingIds] = useState(() => new Set())
+  const [processingIds, setProcessingIds] = useState<Set<string | number>>(() => new Set())
 
   // Rejection modal state
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
-  const [rejectTarget, setRejectTarget] = useState(null) // null = single doc, array = batch
-  const [rejectMode, setRejectMode] = useState('single') // 'single' | 'batch'
+  const [rejectTarget, setRejectTarget] = useState<string | number | DocumentoIdentidadAdmin[] | null>(null)
+  const [rejectMode, setRejectMode] = useState<'single' | 'batch'>('single')
 
   const groupedUsers = useMemo(() => {
     if (!Array.isArray(queue)) return []
@@ -315,7 +337,7 @@ export default function IdentitiesTab() {
   }, [queue])
 
   // ── Process a single document ──────────────────────────
-  const processDoc = useCallback(async (id, action, reason) => {
+  const processDoc = useCallback(async (id: string | number, action: 'approve' | 'reject', reason?: string): Promise<boolean> => {
     setProcessingIds(prev => new Set(prev).add(id))
     try {
       if (action === 'approve') {
@@ -336,12 +358,12 @@ export default function IdentitiesTab() {
   }, [approveVerif, rejectVerif])
 
   // ── Single doc actions ─────────────────────────────────
-  const handleApproveOne = useCallback(async (id) => {
+  const handleApproveOne = useCallback(async (id: string | number) => {
     const ok = await processDoc(id, 'approve')
     addToast(ok ? 'Documento aprobado' : 'Error al aprobar', ok ? 'success' : 'error')
   }, [processDoc, addToast])
 
-  const handleRejectOne = useCallback((id) => {
+  const handleRejectOne = useCallback((id: string | number) => {
     setRejectTarget(id)
     setRejectMode('single')
     setRejectReason('')
@@ -349,9 +371,10 @@ export default function IdentitiesTab() {
   }, [])
 
   // ── Batch actions ──────────────────────────────────────
-  const handleApproveAll = useCallback(async (pendingDocs) => {
+  const handleApproveAll = useCallback(async (pendingDocs: DocumentoIdentidadAdmin[]) => {
     if (!window.confirm(`¿Aprobar los ${pendingDocs.length} documentos de este usuario?`)) return
-    let ok = 0, fail = 0
+    let ok = 0
+    let fail = 0
     for (const doc of pendingDocs) {
       const success = await processDoc(doc.id, 'approve')
       if (success) ok++
@@ -361,7 +384,7 @@ export default function IdentitiesTab() {
     if (fail > 0) addToast(`${fail} documento${fail > 1 ? 's' : ''} falló`, 'error')
   }, [processDoc, addToast])
 
-  const handleRejectAll = useCallback((pendingDocs) => {
+  const handleRejectAll = useCallback((pendingDocs: DocumentoIdentidadAdmin[]) => {
     setRejectTarget(pendingDocs)
     setRejectMode('batch')
     setRejectReason('')
@@ -369,19 +392,19 @@ export default function IdentitiesTab() {
   }, [])
 
   // ── Rejection modal submit ─────────────────────────────
-  const handleRejectSubmit = useCallback(async (e) => {
+  const handleRejectSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!rejectReason.trim()) {
       addToast('Debes especificar un motivo de rechazo', 'error')
       return
     }
 
-    if (rejectMode === 'single') {
+    if (rejectMode === 'single' && (typeof rejectTarget === 'string' || typeof rejectTarget === 'number')) {
       const ok = await processDoc(rejectTarget, 'reject', rejectReason.trim())
       addToast(ok ? 'Documento rechazado' : 'Error al rechazar', ok ? 'success' : 'error')
-    } else {
-      // batch
-      let ok = 0, fail = 0
+    } else if (rejectMode === 'batch' && Array.isArray(rejectTarget)) {
+      let ok = 0
+      let fail = 0
       for (const doc of rejectTarget) {
         const success = await processDoc(doc.id, 'reject', rejectReason.trim())
         if (success) ok++
@@ -395,6 +418,8 @@ export default function IdentitiesTab() {
     setRejectReason('')
     setRejectTarget(null)
   }, [rejectMode, rejectTarget, rejectReason, processDoc, addToast])
+
+  const batchDocs = Array.isArray(rejectTarget) ? rejectTarget : []
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
@@ -462,14 +487,14 @@ export default function IdentitiesTab() {
             </h3>
             <p style={{ fontSize: 13.5, color: 'var(--fg2)', marginBottom: 20 }}>
               {rejectMode === 'batch'
-                ? `Se rechazarán ${rejectTarget?.length ?? 0} documentos con el siguiente motivo:`
+                ? `Se rechazarán ${batchDocs.length} documentos con el siguiente motivo:`
                 : 'Especifica la razón del rechazo para que el usuario pueda corregirla.'
               }
             </p>
 
-            {rejectMode === 'batch' && rejectTarget && (
+            {rejectMode === 'batch' && batchDocs.length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-                {rejectTarget.map((doc) => (
+                {batchDocs.map((doc) => (
                   <span key={doc.id} style={{
                     fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6,
                     background: 'rgba(220,53,69,0.1)', color: '#DC3545',
@@ -501,7 +526,7 @@ export default function IdentitiesTab() {
                 style={{ background: '#DC3545', border: 'none', padding: '10px 20px', borderRadius: 8, color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 {Icons.x({ s: 14 })}
-                {rejectMode === 'batch' ? `Rechazar ${rejectTarget?.length ?? 0} documentos` : 'Confirmar rechazo'}
+                {rejectMode === 'batch' ? `Rechazar ${batchDocs.length} documentos` : 'Confirmar rechazo'}
               </button>
             </div>
           </form>

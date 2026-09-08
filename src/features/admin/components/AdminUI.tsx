@@ -1,13 +1,31 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-/* ════════════════════ Componentes UI base ════════════════════ */
-const card = { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }
 
-export function Card({ children, style, className }) {
+/* ════════════════════ Componentes UI base ════════════════════ */
+const card: React.CSSProperties = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-color)',
+  borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--shadow-sm)',
+}
+
+export interface CardProps {
+  children: React.ReactNode
+  style?: React.CSSProperties
+  className?: string
+}
+
+export function Card({ children, style, className }: CardProps) {
   return <div className={className} style={{ ...card, padding: 24, ...style }}>{children}</div>
 }
 
-export function SectionTitle({ icon, children, right }) {
+export interface SectionTitleProps {
+  icon?: React.ReactNode
+  children: React.ReactNode
+  right?: React.ReactNode
+}
+
+export function SectionTitle({ icon, children, right }: SectionTitleProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -19,11 +37,24 @@ export function SectionTitle({ icon, children, right }) {
   )
 }
 
-export function Skeleton({ w = '100%', h = 16, r = 6, style }) {
+export interface SkeletonProps {
+  w?: string | number
+  h?: string | number
+  r?: string | number
+  style?: React.CSSProperties
+}
+
+export function Skeleton({ w = '100%', h = 16, r = 6, style }: SkeletonProps) {
   return <div style={{ width: w, height: h, borderRadius: r, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', ...style }} />
 }
 
-export function EmptyState({ icon, title, sub }) {
+export interface EmptyStateProps {
+  icon: React.ReactNode
+  title: string
+  sub?: string
+}
+
+export function EmptyState({ icon, title, sub }: EmptyStateProps) {
   return (
     <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ color: 'var(--fg3)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>{icon}</div>
@@ -34,11 +65,17 @@ export function EmptyState({ icon, title, sub }) {
 }
 
 /* ════════════════════ Animated Counter ════════════════════ */
-export function AnimatedCounter({ value, duration = 800, style }) {
-  const numVal = typeof value === 'number' ? value : parseInt(value, 10)
+export interface AnimatedCounterProps {
+  value: number | string
+  duration?: number
+  style?: React.CSSProperties
+}
+
+export function AnimatedCounter({ value, duration = 800, style }: AnimatedCounterProps) {
+  const numVal = typeof value === 'number' ? value : parseInt(String(value), 10)
   const safeVal = (value == null || value === 0) ? 0 : (isNaN(numVal) ? 0 : numVal)
   const [display, setDisplay] = useState(safeVal)
-  const ref = useRef(null)
+  const ref = useRef<HTMLSpanElement>(null)
   const hasAnimated = useRef(false)
 
   useEffect(() => {
@@ -48,7 +85,7 @@ export function AnimatedCounter({ value, duration = 800, style }) {
       if (entry.isIntersecting && !hasAnimated.current) {
         hasAnimated.current = true
         const start = performance.now()
-        const animate = (now) => {
+        const animate = (now: number) => {
           const elapsed = now - start
           const progress = Math.min(elapsed / duration, 1)
           const eased = 1 - Math.pow(1 - progress, 3)
@@ -67,7 +104,15 @@ export function AnimatedCounter({ value, duration = 800, style }) {
 }
 
 /* ── Barra horizontal con etiqueta ── */
-export function HBar({ label, value, max, color = 'var(--primary)', suffix }) {
+export interface HBarProps {
+  label: string
+  value: number
+  max: number
+  color?: string
+  suffix?: string
+}
+
+export function HBar({ label, value, max, color = 'var(--primary)', suffix }: HBarProps) {
   const pct = max > 0 ? (value / max) * 100 : 0
   return (
     <div style={{ marginBottom: 12 }}>
@@ -82,7 +127,16 @@ export function HBar({ label, value, max, color = 'var(--primary)', suffix }) {
   )
 }
 
-export function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+export interface ConfirmDialogProps {
+  title: string
+  message: string
+  confirmLabel: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+export function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }: ConfirmDialogProps) {
   return createPortal(
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 9999 }}>
       <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 28, maxWidth: 420, width: '100%' }}>

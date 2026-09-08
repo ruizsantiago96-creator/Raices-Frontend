@@ -1,31 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import type { UsuarioAdmin, RawBackendUsuarioAdmin, UpdateUserAdminPayload } from '@/types/admin'
 
 /**
- * @typedef {Object} UsuarioAdmin
- * @property {string} id - ID del usuario
- * @property {string} email - Correo electrónico
- * @property {string} nombreCompleto - Nombre completo
- * @property {'admin'|'pcd'|'tutor'|'institution'} rol - Rol del usuario
- * @property {string} [ciudad] - Ciudad del usuario
- * @property {string} [estado] - Estado del usuario
- * @property {boolean} activo - Si el usuario está activo
- * @property {string} fechaCreacion - Fecha de creación (ISO)
+ * Mapea campos en español del response de la API a los campos normalizados.
  */
-
-/**
- * Mapea campos en español del response de la API a los campos en inglés
- * que el componente UsersTab espera.
- * @param {UsuarioAdmin} u - Objeto crudo del API
- * @returns {Object} Usuario con campos normalizados
- */
-function mapUsuarioAdmin(u) {
+function mapUsuarioAdmin(u: RawBackendUsuarioAdmin): UsuarioAdmin {
   return {
     ...u,
-    id: u.id ?? u._id ?? u.uid,
+    id: (u.id ?? u._id ?? u.uid ?? '') as string | number,
     full_name: u.nombreCompleto ?? u.full_name ?? u.nombre ?? 'Sin nombre',
+    email: u.email ?? '',
     role: u.rol ?? u.role ?? 'user',
-    is_active: u.activo ?? u.is_active ?? true,
+    is_active: (u.activo ?? u.is_active ?? true) as boolean,
     created_at: u.fechaCreacion ?? u.created_at ?? u.createdAt,
   }
 }
@@ -35,11 +22,11 @@ function mapUsuarioAdmin(u) {
  * GET /api/administracion/usuarios
  */
 export function useAdminUsers() {
-  return useQuery({
+  return useQuery<UsuarioAdmin[]>({
     queryKey: ['admin', 'users'],
     queryFn: () => api.get('/administracion/usuarios').then(r => {
       const res = r.data
-      const data = Array.isArray(res) ? res : (res?.datos ?? [])
+      const data: RawBackendUsuarioAdmin[] = Array.isArray(res) ? res : (res?.datos ?? [])
       return data.map(mapUsuarioAdmin)
     }),
   })
@@ -48,7 +35,7 @@ export function useAdminUsers() {
 export function useToggleUserActive() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.patch(`/administracion/usuarios/${id}/activo`).then(r => r.data),
+    mutationFn: (id: string | number) => api.patch<{ is_active: boolean }>(`/administracion/usuarios/${id}/activo`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
@@ -56,7 +43,8 @@ export function useToggleUserActive() {
 export function useChangeUserRole() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, role }) => api.patch(`/administracion/usuarios/${id}/rol`, { rol: role, role: role }).then(r => r.data),
+    mutationFn: ({ id, role }: { id: string | number; role: string }) =>
+      api.patch(`/administracion/usuarios/${id}/rol`, { rol: role, role: role }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
@@ -64,16 +52,16 @@ export function useChangeUserRole() {
 export function useDeleteUser() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id) => api.delete(`/administracion/usuarios/${id}`).then(r => r.data),
-    onMutate: async (id) => {
+    mutationFn: (id: string | number) => api.delete(`/administracion/usuarios/${id}`).then(r => r.data),
+    onMutate: async (id: string | number) => {
       await qc.cancelQueries({ queryKey: ['admin', 'users'] })
-      const previousUsers = qc.getQueryData(['admin', 'users'])
-      qc.setQueryData(['admin', 'users'], (old = []) =>
+      const previousUsers = qc.getQueryData<UsuarioAdmin[]>(['admin', 'users'])
+      qc.setQueryData<UsuarioAdmin[]>(['admin', 'users'], (old = []) =>
         old.filter(u => String(u.id) !== String(id))
       )
       return { previousUsers }
     },
-    onError: (err, id, context) => {
+    onError: (_err, _id, context) => {
       if (context?.previousUsers) {
         qc.setQueryData(['admin', 'users'], context.previousUsers)
       }
@@ -87,7 +75,8 @@ export function useDeleteUser() {
 export function useUpdateUserAdmin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }) => api.put(`/administracion/usuarios/${id}`, data).then(r => r.data),
+    mutationFn: ({ id, ...data }: UpdateUserAdminPayload) =>
+      api.put(`/administracion/usuarios/${id}`, data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
