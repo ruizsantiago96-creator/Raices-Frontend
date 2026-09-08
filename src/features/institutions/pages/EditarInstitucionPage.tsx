@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMiInstitucion, useUpdateMiInstitucion, useValidarCsfQr } from '../hooks/useInstitutions'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
