@@ -39,7 +39,7 @@ export function calcEdad(birthDate: string | null | undefined): number | null {
   let edad = hoy.getFullYear() - bd.getFullYear()
   const m = hoy.getMonth() - bd.getMonth()
   if (m < 0 || (m === 0 && hoy.getDate() < bd.getDate())) edad--
-  return edad
+  return edad < 0 ? null : edad
 }
 
 /**
@@ -49,7 +49,7 @@ export function calcEdad(birthDate: string | null | undefined): number | null {
  */
 export function calcEtapaVida(birthDate: string | null | undefined): EtapaVida | null {
   const edad = calcEdad(birthDate)
-  if (edad === null) return null
+  if (edad === null || edad < 0) return null
   if (edad <= 5) return 'infancia_temprana'
   if (edad <= 12) return 'infancia'
   if (edad <= 17) return 'adolescencia'
@@ -65,7 +65,7 @@ export function calcEtapaVida(birthDate: string | null | undefined): EtapaVida |
  */
 export function calcEtapaDependiente(birthDate: string | null | undefined): EtapaDependiente | null {
   const edad = calcEdad(birthDate)
-  if (edad === null) return null
+  if (edad === null || edad < 0) return null
   if (edad <= 12) return 'infancia'
   if (edad <= 17) return 'adolescencia'
   if (edad <= 29) return 'adultoJoven'
@@ -81,7 +81,9 @@ export function calcEdad365(birthDate: string | null | undefined): number | null
   if (!birthDate) return null
   const time = new Date(birthDate).getTime()
   if (isNaN(time)) return null
-  return Math.floor((Date.now() - time) / (365.25 * 24 * 60 * 60 * 1000))
+  const diff = Date.now() - time
+  if (diff < 0) return null
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))
 }
 
 /**
@@ -91,7 +93,7 @@ export function calcEdad365(birthDate: string | null | undefined): number | null
 export function calcEtapaVida365(birthDate: string | null | undefined): EtapaVida | null {
   if (!birthDate) return null
   const age = calcEdad365(birthDate)
-  if (age === null || isNaN(age)) return null
+  if (age === null || isNaN(age) || age < 0) return null
   if (age <= 5) return 'infancia_temprana'
   if (age <= 12) return 'infancia'
   if (age <= 17) return 'adolescencia'

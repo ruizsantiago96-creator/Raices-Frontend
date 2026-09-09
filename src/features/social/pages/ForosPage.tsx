@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
-import { useForos, useForoDetail, useCreateForo, useCreateForoRespuesta } from '../hooks/useCommunity'
+import { useForos, useForoDetail, useCreateForo, useCreateForoRespuesta, useDeleteForo } from '../hooks/useCommunity'
 import type { ForoItem, ForoRespuesta } from '@/types/social'
 
 const PAGE_SIZE = 10
@@ -18,11 +18,14 @@ const relativeDate = (d?: string | number | Date | null) => {
 }
 
 /* ── Forum Card ──────────────────────────────────────────── */
-function ForumCard({ forum, onClick }: { forum: ForoItem; onClick: (id: string | number) => void }) {
+function ForumCard({ forum, onClick, onDelete }: { forum: ForoItem; onClick: (id: string | number) => void; onDelete?: (id: string | number) => void }) {
   const isExclusivo = forum.exclusivoPadres
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick(forum.id)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick(forum.id) }}
       style={{
         width: '100%', textAlign: 'left', background: 'var(--bg-surface)',
         border: '1px solid var(--border-color)', borderRadius: 12, padding: 20,
@@ -51,6 +54,26 @@ function ForumCard({ forum, onClick }: { forum: ForoItem; onClick: (id: string |
           }}>
             {forum.respuestasCount} respuesta{forum.respuestasCount !== 1 ? 's' : ''}
           </span>
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (window.confirm('¿Estás seguro de que deseas eliminar este foro? Esta acción no se puede deshacer.')) {
+                  onDelete(forum.id)
+                }
+              }}
+              style={{
+                background: 'transparent', border: 'none', padding: 4, borderRadius: 6,
+                color: 'var(--fg3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--fg3)'; e.currentTarget.style.background = 'transparent' }}
+              title="Eliminar foro"
+            >
+              {Icons.trash({ s: 14 })}
+            </button>
+          )}
         </div>
       </div>
       {forum.preguntaDetonante && (
@@ -65,7 +88,7 @@ function ForumCard({ forum, onClick }: { forum: ForoItem; onClick: (id: string |
         <span>·</span>
         <span>{relativeDate(forum.fechaCreacion)}</span>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -433,6 +456,7 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
   const total = data?.total ?? 0
 
   const isInstitutionOrAdmin = user?.role === 'institution' || user?.role === 'admin'
+  const deleteForo = useDeleteForo()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -536,7 +560,11 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }} className="stagger-children">
                 {foros.map((forum) => (
                   <div key={forum.id} className="animate-fade-in-up">
-                    <ForumCard forum={forum} onClick={setSelectedForoId} />
+                    <ForumCard 
+                      forum={forum} 
+                      onClick={setSelectedForoId} 
+                      onDelete={isInstitutionOrAdmin ? (id) => deleteForo.mutate(id) : undefined}
+                    />
                   </div>
                 ))}
               </div>

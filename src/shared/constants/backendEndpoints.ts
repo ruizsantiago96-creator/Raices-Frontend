@@ -1005,8 +1005,16 @@ export const ADMIN_ENDPOINTS = {
   GET_DOCUMENTOS_PENDIENTES: {
     method: 'GET',
     path: '/administracion/documentos-identidad/pendientes',
-    description: 'Lista de documentos de identidad pendientes de revisiÃ³n',
-    params: { estado: 'string?' },
+    description: 'Lista paginada de documentos de identidad pendientes de revisión. SOLO devuelve pendientes.',
+    // ⚠️ Contrato real (Swagger): NO existe el param `estado`. Enviar params
+    // no documentados provoca 500 en el backend.
+    params: {
+      pagina: 'number?',     // default 1
+      limite: 'number?',     // default 20
+      ordenarPor: 'string?', // default fechaCreacion
+      direccion: 'asc|desc?', // default desc
+      buscar: 'string?',
+    },
     response: {
       datos: [{
         id: 'string',

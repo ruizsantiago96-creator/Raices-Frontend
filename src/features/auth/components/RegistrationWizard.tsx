@@ -10,6 +10,7 @@ import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStren
 import { LIST_ACOMPANAMIENTO, CONDICIONES_PCD, NEURODIVERGENCIAS_LIST, LIST_TEMPORALIDAD, ESCALAS_OPCIONES, LIST_FORMATOS, INTEREST_SECTIONS, LIST_VIABILIDAD, LIST_NECESIDADES, LIST_AREAS_APOYO, MERIDA_ZONAS_SUGERIDAS, LIST_EDUCACION, LIST_TERAPIAS } from '../constants/registrationCatalogos'
 import { WizardNavButtons, ScaleCard, CheckChip, WizardProgress, WizardErrorBanner, PasswordField, StateCitySelects } from './WizardUI'
 import { calcEdad365, calcEtapaVida365 } from '../lib/age'
+import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '../lib/validators'
 import { saveOnboardingData } from '../lib/onboardingStorage'
 import type { User } from '../../../types/auth'
 
@@ -257,8 +258,9 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       setError('Por favor, completa tu nombre y apellidos.')
       return
     }
-    if (!generalForm.birth_date) {
-      setError('Por favor, ingresa tu fecha de nacimiento.')
+    const birthValidation = validateBirthDate(generalForm.birth_date)
+    if (!birthValidation.valid) {
+      setError(birthValidation.error || 'Por favor, ingresa una fecha de nacimiento válida.')
       return
     }
     if (!generalForm.estado || !generalForm.ciudad) {
@@ -586,7 +588,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'identity' && (
         <form onSubmit={handleIdentitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Cuéntanos sobre ti
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -619,6 +621,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="date" className="auth-input" required
+              max={getMaxBirthDate()}
+              min={MIN_BIRTH_DATE}
               value={generalForm.birth_date}
               onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
           </div>
@@ -647,7 +651,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'security' && (
         <form onSubmit={handleSecuritySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Seguridad de tu cuenta
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -683,7 +687,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'accommodation' && (
         <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Preferencia de acompañamiento
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -699,7 +703,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                   style={{
                     padding: '14px 16px', borderRadius: 12,
                     border: `2px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                    background: isSelected ? 'rgba(34,155,88,0.08)' : '#ffffff',
+                    background: isSelected ? 'rgba(34,155,88,0.08)' : 'var(--bg-surface)',
                     textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
                     transition: 'all 0.2s ease',
                   }}>
@@ -707,7 +711,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                     {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? '#073B4C' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--primary)' : 'var(--fg1)' }}>{opt.label}</div>
                     <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
                   </div>
                 </button>
@@ -725,7 +729,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'condition' && (
         <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Háblanos de tu condición
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -741,13 +745,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                   style={{
                     padding: '12px 14px', borderRadius: 10,
                     border: `1.5px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34,155,88,0.08)' : '#ffffff',
-                    color: isChecked ? '#073B4C' : 'var(--fg1)',
+                    background: isChecked ? 'rgba(34,155,88,0.08)' : 'var(--bg-surface)',
+                    color: isChecked ? 'var(--primary)' : 'var(--fg1)',
                     fontWeight: isChecked ? 700 : 500, fontSize: 13,
                     cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
                     transition: 'all 0.15s ease',
                   }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
                     {isChecked && Icons.check({ s: 10 })}
                   </div>
                   <span>{cond}</span>
@@ -766,7 +770,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'origin' && (
         <form onSubmit={handleOriginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div style={{ marginBottom: 0 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Origen y diagnóstico
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -777,13 +781,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
           {/* Neurodivergencia (condicional) */}
           {conditionData.conditions.includes('Neurodivergencia (especificar)') && (
             <div style={{ background: '#FFF9F2', border: '1.5px solid #F4C84A', borderRadius: 12, padding: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>Especificar neurodivergencia:</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--fg1)', marginBottom: 10 }}>Especificar neurodivergencia:</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
                 {NEURODIVERGENCIAS_LIST.map(nd => {
                   const isChecked = conditionData.neurodivergencias.includes(nd)
                   return (
                     <button key={nd} type="button" onClick={() => toggleNeuro(nd)}
-                      style={{ padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isChecked ? '#073B4C' : '#E5DCD2'}`, background: isChecked ? '#073B4C' : '#ffffff', color: isChecked ? '#ffffff' : 'var(--fg1)', fontWeight: 600, fontSize: 12, cursor: 'pointer', textAlign: 'left' }}>
+                      style={{ padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isChecked ? 'var(--primary)' : '#E5DCD2'}`, background: isChecked ? 'var(--primary)' : 'var(--bg-surface)', color: isChecked ? '#ffffff' : 'var(--fg1)', fontWeight: 600, fontSize: 12, cursor: 'pointer', textAlign: 'left' }}>
                       {nd}
                     </button>
                   )
@@ -798,14 +802,14 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
 
           {/* Diagnóstico */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿Tienes algún diagnóstico en específico?</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 8 }}>¿Tienes algún diagnóstico en específico?</label>
             <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
               <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'si', redFlagDiagnostico: false })}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34,155,88,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34,155,88,0.08)' : 'var(--bg-surface)', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
                 Sí (especificar)
               </button>
               <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'no', diagnosticoEspecifico: '', redFlagDiagnostico: true })}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'no' ? '#FF4D68' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'no' ? 'rgba(255,77,104,0.08)' : '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'no' ? '#FF4D68' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'no' ? 'rgba(255,77,104,0.08)' : 'var(--bg-surface)', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
                 No
               </button>
             </div>
@@ -814,7 +818,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                 value={conditionData.diagnosticoEspecifico}
                 onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })} />
             ) : conditionData.tieneDiagnostico === 'no' ? (
-              <div style={{ background: 'rgba(255,77,104,0.08)', border: '1px solid rgba(255,77,104,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#073B4C', lineHeight: 1.5 }}>
+              <div style={{ background: 'rgba(255,77,104,0.08)', border: '1px solid rgba(255,77,104,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--fg1)', lineHeight: 1.5 }}>
                 💡 <strong>Nota:</strong> Al no contar con un diagnóstico formal, te abriremos un camino especializado para conectar con especialistas.
               </div>
             ) : null}
@@ -822,7 +826,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
 
           {/* Temporalidad */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 8 }}>¿En qué momento comenzó esta condición?</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 8 }}>¿En qué momento comenzó esta condición?</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
               {LIST_TEMPORALIDAD.map(t => {
                 const isSelected = conditionData.temporalidad === t.id
@@ -830,8 +834,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                   <button key={t.id} type="button" onClick={() => setConditionData({ ...conditionData, temporalidad: t.id })}
                     style={{
                       padding: '9px 12px', borderRadius: 8,
-                      border: `1.5px solid ${isSelected ? '#073B4C' : '#E5DCD2'}`,
-                      background: isSelected ? '#073B4C' : '#ffffff',
+                      border: `1.5px solid ${isSelected ? 'var(--primary)' : '#E5DCD2'}`,
+                      background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
                       color: isSelected ? '#ffffff' : 'var(--fg1)',
                       fontWeight: isSelected ? 700 : 500, fontSize: 12, cursor: 'pointer', textAlign: 'left',
                       display: 'flex', alignItems: 'center', gap: 8,
@@ -856,7 +860,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'history' && (
         <form onSubmit={handleHistorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Historial educativo y terapias
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -865,8 +869,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🎓 Educación</h3>
+            <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>🎓 Educación</h3>
               <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Qué tipo de escuela o estudios has cursado? (Puedes elegir varias.)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
                 {LIST_EDUCACION.map(op => (
@@ -875,8 +879,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
               </div>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🩺 Terapias recibidas</h3>
+            <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>🩺 Terapias recibidas</h3>
               <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Con qué terapias cuentas o has contado? (Puedes elegir varias.)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
                 {LIST_TERAPIAS.map(op => (
@@ -896,7 +900,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'support' && (
         <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Zonas y apoyos que te sirven
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -905,14 +909,14 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>📍 Colonias o zonas de preferencia</h3>
+            <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>📍 Colonias o zonas de preferencia</h3>
               <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>
                 Selecciona las zonas en {generalForm.ciudad || 'Mérida'} donde te sea más fácil acudir a servicios o actividades.
               </p>
 
               {/* Sugerencias de colonias y C.P. en Mérida */}
-              {(!generalForm.ciudad || generalForm.ciudad.toLowerCase().includes('m') || generalForm.estado === 'Yucatán') && (
+              {generalForm.ciudad === 'Mérida' && (
                 <div style={{ marginBottom: 12 }}>
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>
                     Sugerencias frecuentes en Mérida:
@@ -929,8 +933,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                             padding: '9px 12px',
                             borderRadius: 8,
                             border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                            background: isSelected ? 'color-mix(in oklch, #229B58 8%, white)' : '#ffffff',
-                            color: isSelected ? '#073B4C' : 'var(--fg1)',
+                            background: isSelected ? 'color-mix(in oklch, #229B58 8%, white)' : 'var(--bg-surface)',
+                            color: isSelected ? 'var(--primary)' : 'var(--fg1)',
                             fontSize: 12.5,
                             fontWeight: isSelected ? 700 : 500,
                             cursor: 'pointer',
@@ -945,7 +949,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                           <div style={{
                             width: 16, height: 16, borderRadius: 4,
                             border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`,
-                            background: isSelected ? '#229B58' : '#ffffff',
+                            background: isSelected ? '#229B58' : 'var(--bg-surface)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: '#fff', flexShrink: 0
                           }}>
@@ -967,7 +971,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text" className="auth-input"
-                    style={{ flex: 1, minWidth: 0, background: '#ffffff', borderRadius: 8, border: '1.5px solid #E5DCD2' }}
+                    style={{ flex: 1, minWidth: 0, background: 'var(--bg-surface)', borderRadius: 8, border: '1.5px solid var(--border-color)' }}
                     placeholder="Ej. García Ginerés, 97070, Kanasín…"
                     value={zonaInput}
                     onChange={e => setZonaInput(e.target.value)}
@@ -1004,7 +1008,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                           border: '1.5px solid rgba(34,155,88,0.45)',
                           fontSize: 12.5,
                           fontWeight: 600,
-                          color: '#073B4C',
+                          color: 'var(--fg1)',
                         }}
                       >
                         📍 {z}
@@ -1016,7 +1020,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#073B4C',
+                            color: 'var(--fg1)',
                             fontWeight: 800,
                             padding: 0,
                             fontSize: 14,
@@ -1033,8 +1037,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
               )}
             </div>
 
-            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🧩 Necesidades generales</h3>
+            <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>🧩 Necesidades generales</h3>
               <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿Qué necesidades o barreras enfrentas en tu día a día?</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
                 {LIST_NECESIDADES.map(op => (
@@ -1043,8 +1047,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
               </div>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: 14 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>🤝 Áreas donde requieres apoyo</h3>
+            <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: 14 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>🤝 Áreas donde requieres apoyo</h3>
               <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>¿En cuáles áreas te gustaría contar con más ayuda?</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
                 {LIST_AREAS_APOYO.map(op => (
@@ -1064,7 +1068,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'scales1' && (
         <form onSubmit={handleScales1Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Escalas de Vida (1/2)
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -1089,7 +1093,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'scales2' && (
         <form onSubmit={handleScales2Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Escalas de Vida (2/2)
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -1114,7 +1118,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'formats' && (
         <form onSubmit={handleFormatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               ¿Cómo prefieres recibir información?
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -1130,13 +1134,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                   style={{
                     padding: '16px 14px', borderRadius: 14,
                     border: `2px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
+                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
                     cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                     transition: 'all 0.2s ease',
                   }}>
                   <span style={{ fontSize: 32 }}>{f.icon}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: isChecked ? '#073B4C' : 'var(--fg1)' }}>{f.label}</span>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: isChecked ? 'var(--primary)' : 'var(--fg1)' }}>{f.label}</span>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                     {isChecked && Icons.check({ s: 11 })}
                   </div>
                 </button>
@@ -1158,7 +1162,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF4D68', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
                 ✨ Explora tus pasiones
               </div>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: '0 0 6px', lineHeight: 1.2 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 6px', lineHeight: 1.2 }}>
                 ¿Qué caminos te gustaría explorar? <span style={{ color: '#ef4444' }}>*</span>
               </h2>
               <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -1187,7 +1191,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                           style={{
                             padding: '7px 13px', borderRadius: 8,
                             border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
-                            background: isSelected ? sec.color : '#ffffff',
+                            background: isSelected ? sec.color : 'var(--bg-surface)',
                             color: isSelected ? '#ffffff' : 'var(--fg1)',
                             fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
                             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -1224,7 +1228,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       {wizardStep === 'viability' && (
         <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Viabilidad económica
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
@@ -1232,8 +1236,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
             </p>
           </div>
 
-          <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 14, padding: '16px' }}>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#073B4C', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
+          <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: '16px' }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para ti hoy?</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
               {LIST_VIABILIDAD.map((v) => {
                 const isSelected = viabilidad === v.id
@@ -1242,8 +1246,8 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
                     style={{
                       padding: '12px 14px', borderRadius: 10,
                       border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                      background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
-                      color: isSelected ? '#073B4C' : 'var(--fg1)',
+                      background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
+                      color: isSelected ? 'var(--primary)' : 'var(--fg1)',
                       fontWeight: isSelected ? 700 : 500, fontSize: 12.5,
                       cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
                       transition: 'all 0.15s ease',
@@ -1259,7 +1263,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#073B4C', marginBottom: 5 }}>Otros temas que te gustaría explorar</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Otros temas que te gustaría explorar</label>
             <input type="text" className="auth-input" placeholder="Ej. Robótica accesible, astronomía, ajedrez adaptado..."
               value={otrosIntereses} onChange={e => setOtrosIntereses(e.target.value)} />
           </div>

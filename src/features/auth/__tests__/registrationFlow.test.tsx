@@ -489,3 +489,45 @@ describe('Contrato de registro — Tutor', () => {
     expect(await screen.findByText(/gracias por ser el apoyo de/i)).toBeInTheDocument()
   }, 20000)
 })
+
+describe('Validación de fecha de nacimiento en wizards de registro', () => {
+  it('rechaza fecha de nacimiento futura en RegistrationWizard', async () => {
+    renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
+
+    fireEvent.change(screen.getByPlaceholderText('Ej. Juan Carlos'), { target: { value: 'Ana' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. García'), { target: { value: 'Pérez' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
+    expect(dateInput).toHaveAttribute('max')
+    expect(dateInput).toHaveAttribute('min', '1900-01-01')
+
+    fireEvent.change(dateInput, { target: { value: '2028-06-28' } })
+    fillStateCity()
+
+    const form = dateInput.closest('form')!
+    fireEvent.submit(form)
+
+    expect(await screen.findByText(/la fecha de nacimiento no puede ser una fecha futura/i)).toBeInTheDocument()
+  })
+
+  it('rechaza fecha de nacimiento futura del dependiente en TutorRegistrationWizard', async () => {
+    renderWithProviders(<TutorRegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
+
+    await fillIdentityStep('Ej. Ana Laura')
+    await fillSecurityStep()
+
+    await screen.findByPlaceholderText('Ej. Mateo')
+    fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
+
+    const dateInputs = document.querySelectorAll('input[type="date"]')
+    const depDateInput = dateInputs[dateInputs.length - 1] as HTMLInputElement
+    expect(depDateInput).toHaveAttribute('max')
+    expect(depDateInput).toHaveAttribute('min', '1900-01-01')
+
+    fireEvent.change(depDateInput, { target: { value: '2028-06-28' } })
+    const form = depDateInput.closest('form')!
+    fireEvent.submit(form)
+
+    expect(await screen.findByText(/la fecha de nacimiento no puede ser una fecha futura/i)).toBeInTheDocument()
+  })
+})

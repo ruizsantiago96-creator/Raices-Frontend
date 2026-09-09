@@ -1,17 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
-import type { UsuarioAdmin, RawBackendUsuarioAdmin, UpdateUserAdminPayload } from '@/types/admin'
+import type { AdminUserRole, UsuarioAdmin, RawBackendUsuarioAdmin, UpdateUserAdminPayload } from '@/types/admin'
 
 /**
  * Mapea campos en español del response de la API a los campos normalizados.
  */
 function mapUsuarioAdmin(u: RawBackendUsuarioAdmin): UsuarioAdmin {
+  const rawRole = String(u.rol ?? u.role ?? 'user').toLowerCase()
+  let normalizedRole = rawRole
+  if (rawRole === 'institucion') normalizedRole = 'institution'
+  if (rawRole === 'padre_tutor') normalizedRole = 'tutor'
+  if (rawRole === 'persona_discapacidad') normalizedRole = 'pcd'
+
   return {
     ...u,
     id: (u.id ?? u._id ?? u.uid ?? '') as string | number,
     full_name: u.nombreCompleto ?? u.full_name ?? u.nombre ?? 'Sin nombre',
     email: u.email ?? '',
-    role: u.rol ?? u.role ?? 'user',
+    role: normalizedRole as AdminUserRole,
     is_active: (u.activo ?? u.is_active ?? true) as boolean,
     created_at: u.fechaCreacion ?? u.created_at ?? u.createdAt,
   }

@@ -20,7 +20,17 @@ function getAccionStyle(accion: string | undefined | null) {
   return { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8' }
 }
 
-
+/**
+ * Algunos contadores del endpoint de estadísticas llegan como objetos
+ * (p. ej. {usuario, cantidad}) o arreglos (rankings); solo los números son
+ * renderizables como hijos de React.
+ */
+function toStatNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value)
+  if (Array.isArray(value)) return value.length
+  return 0
+}
 
 interface AuditLogRowProps {
   log: {
@@ -97,6 +107,12 @@ export default function AuditTab({ onNavigate }: AuditTabProps = {}) {
   const total = (auditData as { datos?: unknown[]; data?: unknown[]; total?: number; totalPaginas?: number } | undefined)?.total ?? logs.length
   const totalPaginas = (auditData as { datos?: unknown[]; data?: unknown[]; total?: number; totalPaginas?: number } | undefined)?.totalPaginas ?? 1
 
+  // Normalizar contadores: `usuariosActivos` puede venir como ranking [{usuario, cantidad}].
+  const statRecords = (stats ?? {}) as Record<string, unknown>
+  const statTotalRegistros = toStatNumber(statRecords.totalRegistros ?? statRecords.totalEventos ?? statRecords.total)
+  const statAccionesHoy = toStatNumber(statRecords.eventosHoy ?? statRecords.accionesHoy)
+  const statUsuariosActivos = toStatNumber(statRecords.usuariosActivos)
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
       {/* Title & Filters */}
@@ -115,9 +131,9 @@ export default function AuditTab({ onNavigate }: AuditTabProps = {}) {
           display: 'flex', gap: 20, marginBottom: 20, padding: '8px 0',
           borderBottom: '1px solid var(--border-color)', fontSize: 12, color: 'var(--fg3)',
         }}>
-          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{(stats as { totalRegistros?: number; total?: number; accionesHoy?: number; usuariosActivos?: number }).totalRegistros ?? (stats as { totalRegistros?: number; total?: number; accionesHoy?: number; usuariosActivos?: number }).total ?? 0}</strong> registros</span>
-          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{(stats as { totalRegistros?: number; total?: number; accionesHoy?: number; usuariosActivos?: number }).accionesHoy ?? 0}</strong> acciones hoy</span>
-          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{(stats as { totalRegistros?: number; total?: number; accionesHoy?: number; usuariosActivos?: number }).usuariosActivos ?? 0}</strong> usuarios activos</span>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{statTotalRegistros}</strong> registros</span>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{statAccionesHoy}</strong> acciones hoy</span>
+          <span><strong style={{ color: 'var(--fg1)', fontWeight: 700 }}>{statUsuariosActivos}</strong> usuarios activos</span>
         </div>
       )}
 

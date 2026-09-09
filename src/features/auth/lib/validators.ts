@@ -13,6 +13,67 @@ export function isValidEmail(email: string | null | undefined): boolean {
   return EMAIL_REGEX.test(email ?? '')
 }
 
+// ── FECHA DE NACIMIENTO ─────────────────────────────────────────────
+
+export const MIN_BIRTH_DATE = '1900-01-01'
+
+/**
+ * Retorna la fecha máxima permitida en formato YYYY-MM-DD correspondiente a hoy en hora local.
+ */
+export function getMaxBirthDate(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export interface BirthDateValidationResult {
+  valid: boolean
+  error?: string
+}
+
+/**
+ * Valida si una fecha de nacimiento es válida:
+ * - No vacía
+ * - Formato YYYY-MM-DD
+ * - Fecha real de calendario
+ * - No futura (no posterior a hoy)
+ * - Año >= 1900
+ */
+export function validateBirthDate(birthDate: string | null | undefined): BirthDateValidationResult {
+  if (!birthDate || !birthDate.trim()) {
+    return { valid: false, error: 'Por favor, ingresa tu fecha de nacimiento.' }
+  }
+
+  const trimmed = birthDate.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return { valid: false, error: 'Por favor, ingresa una fecha de nacimiento válida.' }
+  }
+
+  const [y, m, d] = trimmed.split('-').map(Number)
+  if (y < 1900) {
+    return { valid: false, error: 'El año de nacimiento no puede ser anterior a 1900.' }
+  }
+
+  const parsed = new Date(y, m - 1, d)
+  if (
+    parsed.getFullYear() !== y ||
+    parsed.getMonth() !== m - 1 ||
+    parsed.getDate() !== d
+  ) {
+    return { valid: false, error: 'La fecha de nacimiento ingresada no es válida.' }
+  }
+
+  const today = new Date()
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  if (parsed > todayStart) {
+    return { valid: false, error: 'La fecha de nacimiento no puede ser una fecha futura.' }
+  }
+
+  return { valid: true }
+}
+
 // ── CURP ───────────────────────────────────────────────────────────
 
 export const CURP_REGEX: RegExp = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i

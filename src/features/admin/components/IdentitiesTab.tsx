@@ -316,8 +316,9 @@ function UserCard({ user, onApproveOne, onRejectOne, onApproveAll, onRejectAll, 
 
 export default function IdentitiesTab() {
   const { addToast } = useUiStore()
-  const [filterEstado, setFilterEstado] = useState('pendiente')
-  const { data: queue = [], isLoading } = useAdminVerificaciones({ estado: filterEstado || undefined })
+  // ⚠️ El backend solo expone GET /documentos-identidad/pendientes (sin filtro por estado).
+  // La cola siempre muestra documentos pendientes.
+  const { data: queue = [], isLoading, isError, refetch } = useAdminVerificaciones()
 
   const approveVerif = useAprobarVerificacion()
   const rejectVerif = useRechazarVerificacion()
@@ -424,31 +425,31 @@ export default function IdentitiesTab() {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
 
-      {/* ── Title & Filters ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Cola de Verificación de Identidad</h2>
-          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>
-            Revisa CURPs e identificaciones oficiales — {groupedUsers.length} usuario{groupedUsers.length !== 1 ? 's' : ''} en la cola
-          </p>
-        </div>
-        <div>
-          <select
-            className="onboarding-input auth-select"
-            style={{ height: 38, fontSize: 13.5, padding: '0 12px' }}
-            value={filterEstado}
-            onChange={e => setFilterEstado(e.target.value)}
-          >
-            <option value="pendiente">Pendientes</option>
-            <option value="aprobado">Aprobados</option>
-            <option value="rechazado">Rechazados</option>
-            <option value="">Todos</option>
-          </select>
-        </div>
+      {/* ── Title ── */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Cola de Verificación de Identidad</h2>
+        <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>
+          Revisa CURPs e identificaciones oficiales — {groupedUsers.length} usuario{groupedUsers.length !== 1 ? 's' : ''} en la cola
+        </p>
       </div>
 
       {/* ── Content ── */}
-      {isLoading ? (
+      {isError ? (
+        <div style={{
+          border: '1px solid rgba(220,53,69,0.4)', background: 'rgba(220,53,69,0.06)',
+          borderRadius: 12, padding: 32, textAlign: 'center',
+        }}>
+          <p style={{ margin: '0 0 4px', fontWeight: 700, color: '#DC3545', fontSize: 14 }}>
+            Error al cargar la cola de verificación
+          </p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--fg3)' }}>
+            El servidor respondió con un error interno (500). No es un problema de esta pantalla — reintenta o avisa al equipo de backend.
+          </p>
+          <button className="btn-primary" onClick={() => refetch()} style={{ cursor: 'pointer' }}>
+            Reintentar
+          </button>
+        </div>
+      ) : isLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[0, 1, 2].map(i => (
             <div key={i} style={{

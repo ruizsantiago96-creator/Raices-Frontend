@@ -1,6 +1,7 @@
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { TUTOR_UI } from '../constants/tutorMessages'
+import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '@/features/auth/lib/validators'
 import type { Dependiente, CrearDependientePayload, UpdateDependentPayload, EtapaVidaOption } from '@/types/tutor'
 
 export default function DependentForm({ initial, onCancel, onSave, saving = false, relationships = [], disabilities = [] }: {
@@ -74,9 +75,27 @@ export default function DependentForm({ initial, onCancel, onSave, saving = fals
           <div style={{ marginBottom: 18 }}><label htmlFor="dep-rel" style={labelStyle}>{TUTOR_UI.RELATION_LABEL}</label><select id="dep-rel" style={{ ...inputStyle, cursor: 'pointer' }} value={form.parentesco} onChange={set('parentesco')}>{relationships.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-birth-date" style={labelStyle}>Fecha de nacimiento</label>
-            <input type="date" id="dep-birth-date" style={inputStyle} max={new Date().toISOString().split('T')[0]} min="1900-01-01" value={form.birth_date || ''} onChange={e => {
+            <input type="date" id="dep-birth-date" style={inputStyle} max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={form.birth_date || ''} onChange={e => {
               const bdate = e.target.value; let calculatedStage = ''
-              if (bdate) { const bd = new Date(bdate); if (!isNaN(bd.getTime())) { const t = new Date(); let age = t.getFullYear() - bd.getFullYear(); const m = t.getMonth() - bd.getMonth(); if (m < 0 || (m === 0 && t.getDate() < bd.getDate())) age--; if (age <= 12) calculatedStage = 'infancia'; else if (age <= 17) calculatedStage = 'adolescencia'; else if (age <= 29) calculatedStage = 'adultoJoven'; else if (age <= 59) calculatedStage = 'adulto'; else calculatedStage = 'mayor' } }
+              if (bdate) {
+                const v = validateBirthDate(bdate)
+                if (v.valid) {
+                  const bd = new Date(bdate)
+                  if (!isNaN(bd.getTime())) {
+                    const t = new Date()
+                    let age = t.getFullYear() - bd.getFullYear()
+                    const m = t.getMonth() - bd.getMonth()
+                    if (m < 0 || (m === 0 && t.getDate() < bd.getDate())) age--
+                    if (age >= 0) {
+                      if (age <= 12) calculatedStage = 'infancia'
+                      else if (age <= 17) calculatedStage = 'adolescencia'
+                      else if (age <= 29) calculatedStage = 'adultoJoven'
+                      else if (age <= 59) calculatedStage = 'adulto'
+                      else calculatedStage = 'mayor'
+                    }
+                  }
+                }
+              }
               setForm(f => ({ ...f, birth_date: bdate, etapaVida: calculatedStage }))
             }} />
           </div>

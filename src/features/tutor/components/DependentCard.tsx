@@ -46,7 +46,9 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
       let age = today.getFullYear() - birthDate.getFullYear()
       const m = today.getMonth() - birthDate.getMonth()
       if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
-      dependentAge = `${age} años`
+      if (age >= 0) {
+        dependentAge = `${age} años`
+      }
     }
   }
 

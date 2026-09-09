@@ -150,10 +150,16 @@ export interface RechazarVerificacionPayload {
   motivoRechazo?: string
 }
 
+/**
+ * Filtros de GET /administracion/documentos-identidad/pendientes (según Swagger del backend).
+ * ⚠️ El backend NO acepta `estado`: el endpoint devuelve únicamente documentos pendientes.
+ * Enviar params no documentados (ej. `estado`) provoca un 500 en el backend.
+ */
 export interface VerificacionesFilters {
-  estado?: string
-  tipo?: string
-  rol?: string
+  pagina?: number
+  limite?: number
+  ordenarPor?: string
+  direccion?: 'asc' | 'desc'
   buscar?: string
   [key: string]: unknown
 }
@@ -238,13 +244,33 @@ export interface AuditoriaStats {
   totalEventos?: number
   eventosHoy?: number
   accionesFrecuentes?: Array<{ accion: string; total: number }>
+  /** Alias del backend para el total de registros. */
+  totalRegistros?: number
+  total?: number
+  /** Alias del backend para eventos de hoy. */
+  accionesHoy?: number
+  /**
+   * ⚠️ El backend devuelve aquí un ranking `Array<{ usuario: string; cantidad: number }>`
+   * (usuarios más activos), NO un número. No renderizar directamente.
+   */
+  usuariosActivos?: number | Array<{ usuario: string; cantidad: number }>
   [key: string]: unknown
 }
 
+/**
+ * Filtros de GET /administracion/auditoria.
+ * ⚠️ El backend espera `fechaDesde`/`fechaHasta` (no `desde`/`hasta`);
+ * el hook normaliza los nombres heredados automáticamente.
+ */
 export interface AuditoriaFilters {
   usuarioId?: string | number
   accion?: string
+  recurso?: string
+  fechaDesde?: string
+  fechaHasta?: string
+  /** @deprecated usar fechaDesde — el hook lo mapea */
   desde?: string
+  /** @deprecated usar fechaHasta — el hook lo mapea */
   hasta?: string
   pagina?: number
   limite?: number

@@ -56,8 +56,8 @@ export function ScaleCard({
   onChange,
 }: ScaleCardProps): React.JSX.Element {
   return (
-    <div style={{ background: '#ffffff', border: '1.5px solid #E5DCD2', borderRadius: 12, padding: 14 }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#073B4C', margin: '0 0 3px' }}>{title}</h3>
+    <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
+      <h3 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 3px' }}>{title}</h3>
       <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {options.map(opt => {
@@ -70,14 +70,14 @@ export function ScaleCard({
               style={{
                 padding: '9px 12px',
                 borderRadius: 8,
-                border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                background: isSelected ? 'rgba(34, 155, 88, 0.08)' : '#ffffff',
+                border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}`,
+                background: isSelected ? 'var(--primary-subtle)' : 'transparent',
                 fontWeight: isSelected ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
                 textAlign: 'left',
                 fontFamily: 'var(--font-body)',
-                color: isSelected ? '#073B4C' : 'var(--fg1)',
+                color: isSelected ? 'var(--primary)' : 'var(--fg1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -86,7 +86,7 @@ export function ScaleCard({
             >
               <span>{opt.label}</span>
               {isSelected && (
-                <span style={{ color: '#229B58', fontWeight: 800, fontSize: 13, flexShrink: 0, marginLeft: 6 }}>
+                <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: 13, flexShrink: 0, marginLeft: 6 }}>
                   ✓
                 </span>
               )}
@@ -119,9 +119,9 @@ export function CheckChip({
       style={{
         padding: '9px 12px',
         borderRadius: 8,
-        border: `1.5px solid ${selected ? accent : '#E5DCD2'}`,
-        background: selected ? `color-mix(in oklch, ${accent} 8%, white)` : '#ffffff',
-        color: selected ? '#073B4C' : 'var(--fg1)',
+        border: `1.5px solid ${selected ? accent : 'var(--border-color)'}`,
+        background: selected ? `color-mix(in oklch, ${accent} 15%, transparent)` : 'var(--bg-surface)',
+        color: selected ? 'var(--fg1)' : 'var(--fg1)',
         fontWeight: selected ? 700 : 500,
         fontSize: 12.5,
         cursor: 'pointer',
@@ -138,8 +138,8 @@ export function CheckChip({
           width: 16,
           height: 16,
           borderRadius: 4,
-          border: `1.5px solid ${selected ? accent : '#9ca3af'}`,
-          background: selected ? accent : '#ffffff',
+          border: `1.5px solid ${selected ? accent : 'var(--border-color)'}`,
+          background: selected ? accent : 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -541,6 +541,14 @@ export function useCreateForoRespuesta(foroId: string | number) {
   })
 }
 
+export function useDeleteForo() {
+  const qc = useQueryClient()
+  return useMutation<any, Error, string | number>({
+    mutationFn: (foroId) => api.delete(`/comunidad/foros/${foroId}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['foros'] }),
+  })
+}
+
 /* ═══════════════════════════════════════════════════════════
    CONECTEMOS (Galería pública)
    ═══════════════════════════════════════════════════════════ */

@@ -136,6 +136,12 @@ export function useAdminActiveUsersDetail(opts?: Omit<UseQueryOptions<ActiveVisi
    GET  /api/administracion/documentos-identidad/pendientes
    POST /api/administracion/documentos-identidad/:id/aprobar
    POST /api/administracion/documentos-identidad/:id/rechazar
+
+   ⚠️ Contrato real del backend (Swagger):
+   - El endpoint devuelve SOLO documentos pendientes (no acepta `estado`).
+   - Params soportados: pagina (1), limite (20), ordenarPor (fechaCreacion),
+     direccion (asc|desc), buscar. Enviar params no documentados → 500.
+   - Respuesta: { datos: DocumentoIdentidadAdmin[], total, pagina?, limite? }
    ═══════════════════════════════════════════════════════════════════ */
 
 export function useAdminVerificaciones(
@@ -144,9 +150,24 @@ export function useAdminVerificaciones(
 ) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  // Solo enviar los params que el backend declara en Swagger; filtrar vacíos
+  // para no mandar claves con `undefined` ni params de nivel UI.
+  const { estado: _estado, tipo: _tipo, rol: _rol, ...paramsValidos } = filters
+  const params = Object.fromEntries(
+    Object.entries(paramsValidos).filter(([, v]) => v !== undefined && v !== '')
+  )
   return useQuery<DocumentoIdentidadAdmin[]>({
-    queryKey: ['admin', 'verificaciones', filters],
-    queryFn: () => api.get('/administracion/documentos-identidad/pendientes', { params: filters }).then(r => r.data?.datos ?? r.data),
+    queryKey: ['admin', 'verificaciones', params],
+    queryFn: () =>
+      api
+        .get('/administracion/documentos-identidad/pendientes', { params })
+        .then(r => {
+          const data = r.data
+          // Respuesta paginada { datos, total } o lista plana (compatibilidad)
+          if (Array.isArray(data)) return data as DocumentoIdentidadAdmin[]
+          if (Array.isArray(data?.datos)) return data.datos as DocumentoIdentidadAdmin[]
+          return []
+        }),
     staleTime: 1000 * 60 * 2,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
@@ -188,9 +209,29 @@ export function useAdminAuditoria(
 ) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  // Normalizar a los params documentados: pagina, limite, usuarioId, accion,
+  // recurso, fechaDesde, fechaHasta. Mapear alias legacy y filtrar vacíos.
+  const { desde, hasta, ...rest } = filters
+  const params = Object.fromEntries(
+    Object.entries({
+      ...rest,
+      fechaDesde: rest.fechaDesde ?? desde,
+      fechaHasta: rest.fechaHasta ?? hasta,
+    }).filter(([, v]) => v !== undefined && v !== '')
+  )
   return useQuery<AuditoriaLog[]>({
-    queryKey: ['admin', 'auditoria', filters],
-    queryFn: () => api.get('/administracion/auditoria', { params: filters }).then(r => r.data?.datos ?? r.data),
+    queryKey: ['admin', 'auditoria', params],
+    queryFn: () =>
+      api
+        .get('/administracion/auditoria', { params })
+        .then(r => {
+          const data = r.data
+          // Respuesta paginada { datos, total, ... } o lista plana (compatibilidad)
+          if (Array.isArray(data)) return data as AuditoriaLog[]
+          if (Array.isArray(data?.datos)) return data.datos as AuditoriaLog[]
+          if (Array.isArray(data?.data)) return data.data as AuditoriaLog[]
+          return []
+        }),
     staleTime: 1000 * 60 * 2,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
