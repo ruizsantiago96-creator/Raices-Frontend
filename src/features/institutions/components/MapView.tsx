@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react'
-import maplibregl from 'maplibre-gl'
+// MapLibre GL JS v6 es ESM-only: sin export default, se usa namespace import.
+import * as maplibregl from 'maplibre-gl'
+// En bundlers (Vite) hay que indicar la URL del worker explícitamente.
+// ?worker&url emite un chunk self-contained (el worker importa un sibling shared).
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
 import { createRoot } from 'react-dom/client'
 import type { Institution } from '@/types/institutions'
+
+maplibregl.setWorkerUrl(workerUrl)
 
 const MERIDA = { lng: -89.5926, lat: 20.9674 }
 const OSM_STYLE: maplibregl.StyleSpecification = {

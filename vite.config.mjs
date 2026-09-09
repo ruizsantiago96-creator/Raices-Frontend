@@ -13,6 +13,10 @@ export default defineConfig({
       '@styles': path.resolve(__dirname, 'src/styles'),
     },
   },
+  optimizeDeps: {
+    // El worker de maplibre-gl v6 puede fallar durante el pre-bundling de deps.
+    exclude: ['maplibre-gl'],
+  },
   server: {
     port: 3000,
     strictPort: true,
