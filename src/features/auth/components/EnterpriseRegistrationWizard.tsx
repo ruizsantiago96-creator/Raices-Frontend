@@ -130,7 +130,7 @@ export default function EnterpriseRegistrationWizard({
       setError('El nombre es obligatorio.')
       return
     }
-    setWizardStep('org_desc')
+    setWizardStep('account_email')
     scrollTop()
   }
 

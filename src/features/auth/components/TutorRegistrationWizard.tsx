@@ -602,7 +602,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       saveUser(userObj, true)
       
       addToast('¡Cuenta creada exitosamente!', 'success')
-      nav('/dashboard', { replace: true })
+      setWizardStep('thanks')
     } catch (err: any) {
        const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
        setError(msg)

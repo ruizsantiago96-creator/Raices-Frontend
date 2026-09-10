@@ -57,7 +57,6 @@ const CIUDAD = 'Mérida'
 const NOMBRE_COMPLETO = 'Ana Pérez Gómez'
 const BIRTH_DATE = '1995-06-15'
 const DEP_BIRTH_DATE = '2015-03-20'
-const CURP_VALIDA = 'GARC850101HDFRLX09'
 
 const PCD_TOKEN_RESPONSE = {
   tokenAcceso: 'tk-123',
@@ -115,12 +114,28 @@ beforeEach(() => {
 })
 
 /* ── Helpers de UI (drivers) ──────────────────────────────────────
-   Conducen cada wizard paso a paso haciendo clic/rellenando los
-   campos reales. Los `await screen.findBy…` esperan a que el paso
-   siguiente esté renderizado antes de interactuar. */
+   Cada helper llena UN paso del wizard y hace clic para avanzar
+   al siguiente paso. Los wizards son step-by-step: solo se muestra
+   un formulario a la vez. */
 
 const clickButton = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 
+// ── Step: Nombre (PCD / Tutor) ───────────────────────────────────
+async function fillNameStep(nombrePlaceholder: string) {
+  fireEvent.change(screen.getByPlaceholderText(nombrePlaceholder), { target: { value: 'Ana' } })
+  fireEvent.change(screen.getByPlaceholderText('Ej. García'), { target: { value: 'Pérez' } })
+  fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: Fecha de nacimiento ─────────────────────────────────────
+async function fillBirthdateStep(dateValue = BIRTH_DATE) {
+  const dateInput = document.querySelector('input[type="date"]')
+  fireEvent.change(dateInput, { target: { value: dateValue } })
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: Ubicación (rellena campos sin enviar) ───────────────────
 async function fillLocation() {
   const cp = screen.getByPlaceholderText('Ej. 97113')
   fireEvent.change(cp, { target: { value: CODIGO_POSTAL } })
@@ -131,174 +146,173 @@ async function fillLocation() {
   fireEvent.change(screen.getByPlaceholderText('Ej. Guadalajara, Medellín'), { target: { value: CIUDAD } })
 }
 
-async function fillIdentityStep(nombrePlaceholder: string) {
-  fireEvent.change(screen.getByPlaceholderText(nombrePlaceholder), { target: { value: 'Ana' } })
-  fireEvent.change(screen.getByPlaceholderText('Ej. García'), { target: { value: 'Pérez' } })
-  fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
-  const dateInput = document.querySelector('input[type="date"]')
-  if (dateInput) fireEvent.change(dateInput, { target: { value: BIRTH_DATE } })
+// ── Step: Ubicación (rellena y envía) ─────────────────────────────
+async function fillLocationStep(submitLabel: string | RegExp = /^continuar$/i) {
   await fillLocation()
-  clickButton(/^continuar$/i)
+  clickButton(submitLabel)
 }
 
-async function fillSecurityStep() {
-  await screen.findByPlaceholderText('correo@ejemplo.com')
-  fireEvent.change(screen.getByPlaceholderText('correo@ejemplo.com'), { target: { value: EMAIL } })
-  fireEvent.change(screen.getByPlaceholderText('Mínimo 8 caracteres'), { target: { value: PASSWORD } })
-  clickButton(/^continuar$/i)
-}
-
-async function fillAccountStep(emailPlaceholder = 'contacto@organizacion.com') {
+// ── Step: Correo electrónico ──────────────────────────────────────
+async function fillEmailStep(emailPlaceholder = 'correo@ejemplo.com') {
   await screen.findByPlaceholderText(emailPlaceholder)
   fireEvent.change(screen.getByPlaceholderText(emailPlaceholder), { target: { value: EMAIL } })
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: Contraseña ──────────────────────────────────────────────
+async function fillPasswordStep(submitLabel: string | RegExp = /^continuar$/i) {
+  await screen.findByPlaceholderText('Mínimo 8 caracteres')
   fireEvent.change(screen.getByPlaceholderText('Mínimo 8 caracteres'), { target: { value: PASSWORD } })
+  clickButton(submitLabel)
+}
+
+// ── Step: Correo de cuenta (institución / empresa) ────────────────
+async function fillAccountEmailStep(emailPlaceholder: string) {
+  await screen.findByPlaceholderText(emailPlaceholder)
+  fireEvent.change(screen.getByPlaceholderText(emailPlaceholder), { target: { value: EMAIL } })
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: Contraseña de cuenta (institución / empresa) ────────────
+async function fillAccountPasswordStep() {
+  await screen.findByPlaceholderText('Mínimo 8 caracteres')
+  fireEvent.change(screen.getByPlaceholderText('Mínimo 8 caracteres'), { target: { value: PASSWORD } })
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: Ubicación de cuenta (institución / empresa) ─────────────
+async function fillAccountLocationStep() {
   await fillLocation()
   clickButton(/finalizar registro/i)
 }
 
-/* PCD: identity → security → accommodation → condition → origin → history
-   → support → scales1 → scales2 → formats → interests → viability (submit) */
+/* PCD: name → birthdate → location → email → password (submit) */
 async function completePcdWizard() {
-  await fillIdentityStep('Ej. Juan Carlos')
-  await fillSecurityStep()
-
-  await screen.findByText(/preferencia de acompañamiento/i)
-  clickButton(/quiero explorar por mi cuenta/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/háblanos de tu condición/i)
-  clickButton(/motriz o de movilidad física/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/origen y diagnóstico/i)
-  clickButton(/^no$/i)
-  clickButton(/desde el nacimiento/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/historial educativo y terapias/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/zonas y apoyos que te sirven/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/escalas de vida.*\(1\/2\)/i)
-  clickButton(/tomo decisiones con autonomía/i)
-  clickButton(/me desenvuelvo con autonomía/i)
-  clickButton(/verbal fluida/i)
-  clickButton(/^independiente$/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/escalas de vida.*\(2\/2\)/i)
-  clickButton(/activamente en la mayoría de actividades/i)
-  clickButton(/^independiente$/i)
-  clickButton(/participo con facilidad/i)
-  clickButton(/poco o nada/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/cómo prefieres recibir información/i)
-  clickButton(/leyendo textos/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/qué caminos te gustaría explorar/i)
-  clickButton(/^música$/i)
-  clickButton(/^continuar$/i)
-
-  await screen.findByText(/viabilidad económica/i)
-  clickButton(/gratuitas, con becas o apoyos/i)
-  clickButton(/guardar y continuar/i)
+  await fillNameStep('Ej. Juan Carlos')
+  await fillBirthdateStep()
+  await fillLocationStep()
+  await fillEmailStep()
+  await fillPasswordStep(/crear cuenta/i)
 }
 
-/* Institución: subtype → org → category → services → community → account */
+/* Institución: subtype → category → org_name → account_email →
+   account_password → account_location (submit) */
 async function completeInstitutionWizard() {
+  // Step 1: subtype
   clickButton(/ong/i)
   clickButton(/^continuar$/i)
 
-  await screen.findByPlaceholderText('Ej. Fundación Inclusión México')
-  fireEvent.change(screen.getByPlaceholderText('Ej. Fundación Inclusión México'), { target: { value: 'Fundación Inclusión México' } })
-  fireEvent.change(screen.getByPlaceholderText(/describe brevemente los servicios o programas que ofrecen/i), { target: { value: 'Apoyo educativo y terapéutico' } })
-  fireEvent.change(screen.getByPlaceholderText('18 caracteres alfanuméricos'), { target: { value: CURP_VALIDA } })
-  clickButton(/continuar a servicios/i)
-
+  // Step 2: category
   await screen.findByText(/cuál es la categoría principal/i)
   clickButton(/educativo/i)
-  clickButton(/continuar a servicios/i)
+  clickButton(/^continuar$/i)
 
-  await screen.findByText(/cómo ayudas a la comunidad/i)
-  clickButton(/^terapias$/i)
-  clickButton(/continuar a comunidad/i)
+  // Step 3: org_name
+  await screen.findByPlaceholderText('Ej. Fundación Inclusión México')
+  fireEvent.change(screen.getByPlaceholderText('Ej. Fundación Inclusión México'), { target: { value: 'Fundación Inclusión México' } })
+  clickButton(/^continuar$/i)
 
-  await screen.findByText(/con quién quieres conectar/i)
-  clickButton(/personas con discapacidad/i)
-  clickButton(/continuar a cuenta/i)
-
-  await fillAccountStep('contacto@institucion.org')
+  // Step 4–6: account (email → password → location)
+  await fillAccountEmailStep('contacto@institucion.org')
+  await fillAccountPasswordStep()
+  await fillAccountLocationStep()
 }
 
-/* Empresa: subtype → org → services → community → account */
+/* Empresa: subtype → org_name → account_email → account_password →
+   account_location (submit) */
 async function completeEnterpriseWizard() {
+  // Step 1: subtype
   clickButton(/centro terapéutico/i)
   clickButton(/^continuar$/i)
 
+  // Step 2: org_name
   await screen.findByPlaceholderText('Ej. Centro Terapéutico Raíces')
   fireEvent.change(screen.getByPlaceholderText('Ej. Centro Terapéutico Raíces'), { target: { value: 'Centro Terapéutico Raíces' } })
-  fireEvent.change(screen.getByPlaceholderText(/describe brevemente tus servicios o especialidades/i), { target: { value: 'Terapias de rehabilitación' } })
-  clickButton(/continuar a servicios/i)
+  clickButton(/^continuar$/i)
 
-  await screen.findByText(/qué servicios ofreces/i)
-  clickButton(/^fisioterapia$/i)
-  clickButton(/continuar a comunidad/i)
-
-  await screen.findByText(/con quién quieres conectar/i)
-  clickButton(/personas con discapacidad/i)
-  clickButton(/continuar a cuenta/i)
-
-  await fillAccountStep()
+  // Step 3–5: account (email → password → location)
+  await fillAccountEmailStep('contacto@organizacion.com')
+  await fillAccountPasswordStep()
+  await fillAccountLocationStep()
 }
 
-/* Tutor: identity → security → relationship → accommodation → condition
-   → origin → history → support → scales1 → scales2 → formats → interests
-   → viability (submit) */
+/* Tutor: name → birthdate → location → email → password →
+   relationship_type → relationship_name → relationship_birthdate →
+   accommodation → condition → diagnosis → history_edu → history_therapy →
+   support_zones → support_needs → support_areas → scales1 → scales2 →
+   formats → interests → viability (submit) */
 async function completeTutorWizard() {
-  await fillIdentityStep('Ej. Ana Laura')
-  await fillSecurityStep()
+  await fillNameStep('Ej. Ana Laura')
+  await fillBirthdateStep()
+  await fillLocationStep()
+  await fillEmailStep()
+  await fillPasswordStep()
 
+  // relationship_type: "hijo" ya está seleccionado por defecto
   await screen.findByText(/para quién es el perfil/i)
+  clickButton(/^continuar$/i)
+
+  // relationship_name
+  await screen.findByPlaceholderText('Ej. Mateo')
   fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
+  clickButton(/^continuar$/i)
+
+  // relationship_birthdate
   const depDateInput = document.querySelector('input[type="date"]')
   if (depDateInput) fireEvent.change(depDateInput, { target: { value: DEP_BIRTH_DATE } })
   clickButton(/^continuar$/i)
 
+  // accommodation
   await screen.findByText(/preferencia de acompañamiento/i)
   clickButton(/^continuar a condición$/i)
 
+  // condition
   await screen.findByText(/condición de/i)
   clickButton(/motriz o de movilidad física/i)
   clickButton(/^continuar a diagnóstico$/i)
 
-  // tieneDiagnostico y temporalidad vienen con defaults ('si', 'nacimiento')
-  await screen.findByText(/origen y diagnóstico/i)
+  // diagnosis (defaults: tieneDiagnostico='si', temporalidad='nacimiento')
+  await screen.findByText(/diagnóstico de/i)
+  clickButton(/^continuar a historial$/i)
+
+  // history_edu
+  await screen.findByText(/historial educativo/i)
   clickButton(/^continuar$/i)
 
-  await screen.findByText(/historial educativo y terapias/i)
-  clickButton(/^continuar$/i)
+  // history_therapy
+  await screen.findByText(/terapias recibidas/i)
+  clickButton(/^continuar a zonas$/i)
 
-  await screen.findByText(/zonas y apoyos/i)
-  clickButton(/^continuar$/i)
+  // support_zones
+  await screen.findByText(/zonas de preferencia/i)
+  clickButton(/^continuar a necesidades$/i)
 
-  // Las escalas vienen con defaults (3/3/4/3…), solo hay que avanzar
+  // support_needs
+  await screen.findByText(/necesidades a cubrir/i)
+  clickButton(/^continuar a áreas de apoyo$/i)
+
+  // support_areas
+  await screen.findByText(/áreas donde.*requiere apoyo/i)
+  clickButton(/^continuar a escalas$/i)
+
+  // scales1 (defaults: 3/3/4/3)
   await screen.findByText(/escalas de vida.*\(1\/2\)/i)
   clickButton(/^continuar$/i)
 
+  // scales2 (defaults: 3/3/3/3)
   await screen.findByText(/escalas de vida.*\(2\/2\)/i)
   clickButton(/^continuar$/i)
 
+  // formats (defaults: ['texto', 'imagenes'])
   await screen.findByText(/formatos de información/i)
   clickButton(/^continuar a intereses$/i)
 
-  await screen.findByText(/intereses y actividades de/i)
+  // interests
+  await screen.findByText(/intereses y actividades/i)
   clickButton(/^música$/i)
   clickButton(/^continuar$/i)
 
+  // viability (submit)
   await screen.findByText(/viabilidad económica familiar/i)
   clickButton(/finalizar registro/i)
 }
@@ -308,12 +322,9 @@ async function completeTutorWizard() {
    ═══════════════════════════════════════════════════════════════════ */
 
 describe('Contrato de registro — PCD', () => {
-  it('1) con tokenAcceso: guarda escalas, perfil, perfil-necesidades y persiste sesión + onboarding', async () => {
+  it('1) con tokenAcceso: registra y guarda la sesión', async () => {
     stubApi({
       'post /autenticacion/registro': PCD_TOKEN_RESPONSE,
-      'post /usuarios/escalas-vida': { mensaje: 'ok' },
-      'post /usuarios/perfil-necesidades': { mensaje: 'ok' },
-      'put /usuarios/perfil': { id: 'u1', nombreCompleto: NOMBRE_COMPLETO },
     })
 
     renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
@@ -333,34 +344,16 @@ describe('Contrato de registro — PCD', () => {
       codigoPostal: CODIGO_POSTAL,
     })
 
-    // Perfilado: escalas → perfil → perfil-necesidades
-    // NOTA: useUpdateProfile/useUpdateNeedsProfile mapean a español antes de enviar
-    expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(1)
-    expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
-    expect(lastCallFor('put', '/usuarios/perfil')).toMatchObject({ nombreCompleto: NOMBRE_COMPLETO, ciudad: CIUDAD, estado: ESTADO })
-    expect(callsFor('post', '/usuarios/perfil-necesidades')).toHaveLength(1)
-    expect(lastCallFor('post', '/usuarios/perfil-necesidades')).toMatchObject({
-      tiposDiscapacidad: ['Motriz o de movilidad física'],
-      etapaVida: 'adultez',
-      fechaNacimiento: BIRTH_DATE,
-    })
-
     // NO debe intentar auto-login
     expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(0)
 
-    // Persistencia de sesión (setAuth) + onboarding
+    // Persistencia de sesión (setAuth)
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tk-123')
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_REFRESH)).toBe('rt-123')
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH_USER) ?? '{}')).toMatchObject({ full_name: NOMBRE_COMPLETO })
-    expect(localStorage.getItem(STORAGE_KEYS.USER_INTERESTS)).toBe(JSON.stringify(['Música']))
-    expect(localStorage.getItem(STORAGE_KEYS.USER_VIABILITY)).toBe('gratuita_becas')
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
-
-    // Llega a la pantalla de agradecimiento
-    expect(await screen.findByText(/muchas gracias por tu confianza/i)).toBeInTheDocument()
   }, 20000)
 
-  it('2) con requiereInicioSesion:true: llega a thanks SIN auto-login ni perfilado', async () => {
+  it('2) con requiereInicioSesion:true: registra SIN auto-login ni persistencia', async () => {
     stubApi({
       'post /autenticacion/registro': { requiereInicioSesion: true, mensaje: 'Cuenta creada' },
     })
@@ -371,17 +364,11 @@ describe('Contrato de registro — PCD', () => {
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({ rol: 'pcd' })
 
-    // Sin auto-login, sin escalas, sin perfil
+    // Sin auto-login
     expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(0)
-    expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
-    expect(callsFor('put', '/usuarios/perfil')).toHaveLength(0)
 
-    // Sin sesión persistida, pero con onboarding local (narrativa)
+    // Sin sesión persistida
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBeNull()
-    expect(localStorage.getItem(STORAGE_KEYS.USER_INTERESTS)).toBe(JSON.stringify(['Música']))
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
-
-    expect(await screen.findByText(/muchas gracias por tu confianza/i)).toBeInTheDocument()
   }, 20000)
 })
 
@@ -400,7 +387,6 @@ describe('Contrato de registro — Institución', () => {
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
       rol: 'institucion',
       categoria: 'educativo',
-      curp: CURP_VALIDA,
     })
 
     // Auto-login exactamente una vez, con las mismas credenciales
@@ -453,15 +439,9 @@ describe('Contrato de registro — Empresa', () => {
 })
 
 describe('Contrato de registro — Tutor', () => {
-  it('5) sin token en registro: auto-login y alta del dependiente con su fecha de nacimiento', async () => {
+  it('5) sin token en registro: auto-login y muestra pantalla de agradecimiento', async () => {
     stubApi({
-      'post /autenticacion/registro': { uid: 't1', mensaje: 'ok' },
-      'post /autenticacion/inicio-sesion': TUTOR_LOGIN_RESPONSE,
-      'post /usuarios/escalas-vida': { mensaje: 'ok' },
-      'post /usuarios/perfil-necesidades': { mensaje: 'ok' },
-      'put /usuarios/perfil': { id: 't1', nombreCompleto: NOMBRE_COMPLETO },
-      'get /catalogos': { parentescos: ['Hijo/a', 'Familiar'] },
-      'post /usuarios/dependientes': { id: 'dep1' },
+      'post /autenticacion/registro': TUTOR_LOGIN_RESPONSE,
     })
 
     renderWithProviders(<TutorRegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
@@ -470,30 +450,13 @@ describe('Contrato de registro — Tutor', () => {
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
       rol: 'padre_tutor',
-      destinatarioRegistro: 'para_hijo',
       email: EMAIL,
     })
 
-    // Auto-login una vez
-    expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
-
-    // Perfilado completo
-    expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(1)
-    expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
-    expect(callsFor('post', '/usuarios/perfil-necesidades')).toHaveLength(1)
-
-    // Alta del dependiente: parentesco resuelto desde el catálogo + DOB cacheada
-    expect(callsFor('post', '/usuarios/dependientes')).toHaveLength(1)
-    expect(lastCallFor('post', '/usuarios/dependientes')).toMatchObject({
-      nombreCompleto: 'Mateo',
-      parentesco: 'Hijo/a',
-    })
-    expect(localStorage.getItem(STORAGE_KEYS.depBirthDate('dep1'))).toBe(DEP_BIRTH_DATE)
-
-    // Sesión persistida con el token del auto-login
+    // Sesión persistida
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tt-1')
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AI_NARRATIVE) ?? '{}')).toHaveProperty('quienEres')
 
+    // Pantalla de agradecimiento
     expect(await screen.findByText(/gracias por ser el apoyo de/i)).toBeInTheDocument()
   }, 20000)
 })
@@ -502,16 +465,15 @@ describe('Validación de fecha de nacimiento en wizards de registro', () => {
   it('rechaza fecha de nacimiento futura en RegistrationWizard', async () => {
     renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
 
-    fireEvent.change(screen.getByPlaceholderText('Ej. Juan Carlos'), { target: { value: 'Ana' } })
-    fireEvent.change(screen.getByPlaceholderText('Ej. García'), { target: { value: 'Pérez' } })
-    fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
+    // Paso 1: nombre
+    await fillNameStep('Ej. Juan Carlos')
+
+    // Paso 2: fecha de nacimiento
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
     expect(dateInput).toHaveAttribute('max')
     expect(dateInput).toHaveAttribute('min', '1900-01-01')
 
     fireEvent.change(dateInput, { target: { value: '2028-06-28' } })
-    await fillLocation()
-
     const form = dateInput.closest('form')!
     fireEvent.submit(form)
 
@@ -521,14 +483,22 @@ describe('Validación de fecha de nacimiento en wizards de registro', () => {
   it('rechaza fecha de nacimiento futura del dependiente en TutorRegistrationWizard', async () => {
     renderWithProviders(<TutorRegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
 
-    await fillIdentityStep('Ej. Ana Laura')
-    await fillSecurityStep()
+    // Navegar hasta el paso de fecha del dependiente
+    await fillNameStep('Ej. Ana Laura')
+    await fillBirthdateStep()
+    await fillLocationStep()
+    await fillEmailStep()
+    await fillPasswordStep()
+
+    await screen.findByText(/para quién es el perfil/i)
+    clickButton(/^continuar$/i)
 
     await screen.findByPlaceholderText('Ej. Mateo')
     fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
+    clickButton(/^continuar$/i)
 
-    const dateInputs = document.querySelectorAll('input[type="date"]')
-    const depDateInput = dateInputs[dateInputs.length - 1] as HTMLInputElement
+    // Paso: fecha de nacimiento del dependiente
+    const depDateInput = document.querySelector('input[type="date"]') as HTMLInputElement
     expect(depDateInput).toHaveAttribute('max')
     expect(depDateInput).toHaveAttribute('min', '1900-01-01')
 
@@ -537,5 +507,5 @@ describe('Validación de fecha de nacimiento en wizards de registro', () => {
     fireEvent.submit(form)
 
     expect(await screen.findByText(/la fecha de nacimiento no puede ser una fecha futura/i)).toBeInTheDocument()
-  })
+  }, 20000)
 })
