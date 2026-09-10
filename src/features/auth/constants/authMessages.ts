@@ -53,9 +53,9 @@ export const AUTH_UI = {
   REGISTER_NAME_PLACEHOLDER: 'Ej. Ana Pérez',
   REGISTER_EMAIL_PLACEHOLDER: 'correo@ejemplo.com',
   REGISTER_PASSWORD_MIN: 'Mínimo 8 caracteres',
-  REGISTER_STATE_PLACEHOLDER: 'Selecciona tu estado',
-  REGISTER_CITY_PLACEHOLDER: 'Selecciona tu municipio',
-  REGISTER_CITY_DISABLED: 'Primero elige tu estado',
+  REGISTER_STATE_PLACEHOLDER: 'Ingresa tu estado, región o provincia',
+  REGISTER_CITY_PLACEHOLDER: 'Ingresa tu ciudad',
+  REGISTER_CITY_DISABLED: 'Ingresa tu ciudad',
   
   // Recuperar contraseña
   FORGOT_TITLE: 'Recuperar contraseña',

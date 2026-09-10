@@ -40,6 +40,7 @@ export interface PcdFormData {
   birth_date: string
   ciudad: string
   estado: string
+  pais?: string
   [key: string]: unknown
 }
 
@@ -56,6 +57,8 @@ export interface InstitutionFormData {
   accountForm?: {
     email?: string
     password?: string
+    country?: string
+    postalCode?: string
     city?: string
     state?: string
   }
@@ -63,6 +66,7 @@ export interface InstitutionFormData {
   password?: string
   ciudad?: string
   estado?: string
+  pais?: string
   categoria?: string
   subtipo?: string
   selectedServices?: string[]
@@ -81,6 +85,8 @@ export interface EnterpriseFormData {
   accountForm?: {
     email?: string
     password?: string
+    country?: string
+    postalCode?: string
     city?: string
     state?: string
   }
@@ -88,6 +94,7 @@ export interface EnterpriseFormData {
   password?: string
   ciudad?: string
   estado?: string
+  pais?: string
   subtipo?: string
   selectedServices?: string[]
   selectedCommunity?: string
@@ -122,7 +129,7 @@ const ROLE_TO_BACKEND: Record<string, string> = {
  * Construye el payload de registro para PCD
  */
 export function buildPcdPayload(form: PcdFormData, extra: Record<string, unknown> = {}): PcdRegisterPayload {
-  const { nombres, apellidoPaterno, apellidoMaterno, email, password, curp, birth_date, ciudad, estado } = form
+  const { nombres, apellidoPaterno, apellidoMaterno, email, password, curp, birth_date, ciudad, estado, pais } = form
   const nombreCompleto = [nombres, apellidoPaterno, apellidoMaterno].filter(Boolean).join(' ').trim()
 
   return {
@@ -134,6 +141,7 @@ export function buildPcdPayload(form: PcdFormData, extra: Record<string, unknown
     fechaNacimiento: birth_date,
     ciudad,
     estado,
+    ...(pais ? { pais } : {}),
     ...extra,
   }
 }
@@ -142,7 +150,7 @@ export function buildPcdPayload(form: PcdFormData, extra: Record<string, unknown
  * Construye el payload de registro para Tutor
  */
 export function buildTutorPayload(form: PcdFormData, extra: Record<string, unknown> = {}): TutorRegisterPayload {
-  const { nombres, apellidoPaterno, apellidoMaterno, email, password, curp, birth_date, ciudad, estado } = form
+  const { nombres, apellidoPaterno, apellidoMaterno, email, password, curp, birth_date, ciudad, estado, pais } = form
   const nombreCompleto = [nombres, apellidoPaterno, apellidoMaterno].filter(Boolean).join(' ').trim()
 
   return {
@@ -154,6 +162,7 @@ export function buildTutorPayload(form: PcdFormData, extra: Record<string, unkno
     fechaNacimiento: birth_date,
     ciudad,
     estado,
+    ...(pais ? { pais } : {}),
     ...extra,
   }
 }
@@ -170,6 +179,8 @@ export function buildInstitutionPayload(data: InstitutionFormData): InstitutionR
     rol: 'institucion',
     ciudad: (data.accountForm?.city || data.ciudad) ?? '',
     estado: (data.accountForm?.state || data.estado) ?? '',
+    pais: (data.accountForm?.country || data.pais) ?? '',
+    codigoPostal: data.accountForm?.postalCode || undefined,
     categoria: data.categoria,
     tipoInstitucion: data.subtipo,
     curp: (data.orgForm?.curp || '').trim().toUpperCase(),
@@ -195,6 +206,8 @@ export function buildEnterprisePayload(data: EnterpriseFormData): EnterpriseRegi
     rol: 'empresa',
     ciudad: (data.accountForm?.city || data.ciudad) ?? '',
     estado: (data.accountForm?.state || data.estado) ?? '',
+    pais: (data.accountForm?.country || data.pais) ?? '',
+    codigoPostal: data.accountForm?.postalCode || undefined,
     tipoEcosistema: data.subtipo,
     descripcion: data.orgForm?.descripcion,
     especialidades: data.orgForm?.especialidades,

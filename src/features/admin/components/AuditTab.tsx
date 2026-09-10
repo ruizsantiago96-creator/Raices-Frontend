@@ -147,10 +147,10 @@ export default function AuditTab({ onNavigate }: AuditTabProps = {}) {
           onChange={e => { setFilterAccion(e.target.value); setFilters(f => ({ ...f, pagina: 1 })) }}
         >
           <option value="">Todas las acciones</option>
-          <option value="crear">Crear</option>
+          {/* Sin "crear" ni "login": el backend no registra acciones con esos prefijos
+              (devolverían siempre 0 registros). Ver contrato con equipo backend. */}
           <option value="actualizar">Actualizar</option>
           <option value="eliminar">Eliminar</option>
-          <option value="login">Login</option>
           <option value="aprobar">Aprobar</option>
           <option value="rechazar">Rechazar</option>
         </select>

@@ -3,10 +3,9 @@ import { useSearchParams } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore, useProfile, useUpdateProfile } from '@features/auth'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
-import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
+import { Icons } from '@shared/components/shared'
+import { LocationInputs } from '../../auth/components/WizardUI'
 import { ProfileIdentitySection } from '../components/ProfileIdentitySection'
-import { SearchableSelect } from '../components/SearchableSelect'
 import { DocumentoIdentidadEstado } from '@/types/profile'
 
 export default function MiIdentidadPage() {
@@ -15,7 +14,7 @@ export default function MiIdentidadPage() {
   const updateProfile = useUpdateProfile()
   const { addToast } = useUiStore()
   const [isEditingAddress, setIsEditingAddress] = useState(false)
-  const [addressForm, setAddressForm] = useState({ state: '', city: '' })
+  const [addressForm, setAddressForm] = useState({ country: 'MX', postalCode: '', state: '', city: '' })
   const { logout } = useAuthStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
@@ -25,6 +24,8 @@ export default function MiIdentidadPage() {
 
   const handleStartEditAddress = () => {
     setAddressForm({
+      country: profile?.country ?? 'MX',
+      postalCode: profile?.codigoPostal ?? '',
       state: profile?.state ?? '',
       city: profile?.city ?? '',
     })
@@ -34,6 +35,8 @@ export default function MiIdentidadPage() {
   const handleSaveAddress = async () => {
     try {
       await updateProfile.mutateAsync({
+        country: addressForm.country,
+        postalCode: addressForm.postalCode || undefined,
         city: addressForm.city,
         state: addressForm.state,
       })
@@ -216,7 +219,7 @@ export default function MiIdentidadPage() {
                   >
                     <div style={{ padding: '12px 16px', background: 'var(--bg-warm, #f8fafc)', borderRadius: 10 }}>
                       <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>País</div>
-                      <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>México</div>
+                      <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg1)', marginTop: 4 }}>{profile?.country || 'México'}</div>
                     </div>
                     <div style={{ padding: '12px 16px', background: 'var(--bg-warm, #f8fafc)', borderRadius: 10 }}>
                       <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ciudad / Estado</div>
@@ -228,31 +231,16 @@ export default function MiIdentidadPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                      <div>
-                        <label style={labelStyle}>País</label>
-                        <input style={{ ...inputStyle, background: 'var(--bg-warm)', cursor: 'not-allowed', marginTop: 4 }} value="México" disabled />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <div>
-                          <label style={labelStyle}>Estado</label>
-                          <SearchableSelect
-                            value={addressForm.state}
-                            onChange={(val) => setAddressForm((f) => ({ ...f, state: val, city: '' }))}
-                            options={STATES}
-                            placeholder="Selecciona un estado..."
-                          />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>Ciudad / Municipio</label>
-                          <SearchableSelect
-                            value={addressForm.city}
-                            onChange={(val) => setAddressForm((f) => ({ ...f, city: val }))}
-                            options={addressForm.state ? getMunicipalities(addressForm.state) : []}
-                            placeholder={addressForm.state ? 'Selecciona...' : 'Elige un estado primero'}
-                            disabled={!addressForm.state}
-                          />
-                        </div>
-                      </div>
+                      <LocationInputs
+                        country={addressForm.country}
+                        postalCode={addressForm.postalCode}
+                        state={addressForm.state}
+                        city={addressForm.city}
+                        onCountryChange={(country) => setAddressForm((f) => ({ ...f, country }))}
+                        onPostalCodeChange={(postalCode) => setAddressForm((f) => ({ ...f, postalCode }))}
+                        onStateChange={(state) => setAddressForm((f) => ({ ...f, state }))}
+                        onCityChange={(city) => setAddressForm((f) => ({ ...f, city }))}
+                      />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
                       <button

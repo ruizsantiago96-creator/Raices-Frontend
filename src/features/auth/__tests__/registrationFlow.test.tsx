@@ -50,8 +50,10 @@ vi.mock('@features/notifications', () => ({
 
 const EMAIL = 'ana@example.com'
 const PASSWORD = 'Passw0rd!' // cumple los 5 criterios de checkPasswordCriteria
+const PAIS = 'MX'
+const CODIGO_POSTAL = '00000' // no está en el catálogo → fallback manual
 const ESTADO = 'Yucatán'
-const MUNICIPIO = 'Mérida'
+const CIUDAD = 'Mérida'
 const NOMBRE_COMPLETO = 'Ana Pérez Gómez'
 const BIRTH_DATE = '1995-06-15'
 const DEP_BIRTH_DATE = '2015-03-20'
@@ -119,10 +121,14 @@ beforeEach(() => {
 
 const clickButton = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 
-function fillStateCity() {
-  const selects = screen.getAllByRole('combobox')
-  fireEvent.change(selects[0], { target: { value: ESTADO } })
-  fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: MUNICIPIO } })
+async function fillLocation() {
+  const cp = screen.getByPlaceholderText('Ej. 97113')
+  fireEvent.change(cp, { target: { value: CODIGO_POSTAL } })
+  fireEvent.blur(cp)
+  // 00000 no está en el catálogo → se despliega el fallback manual
+  const estado = await screen.findByPlaceholderText('Ej. Jalisco, Antioquia')
+  fireEvent.change(estado, { target: { value: ESTADO } })
+  fireEvent.change(screen.getByPlaceholderText('Ej. Guadalajara, Medellín'), { target: { value: CIUDAD } })
 }
 
 async function fillIdentityStep(nombrePlaceholder: string) {
@@ -131,7 +137,7 @@ async function fillIdentityStep(nombrePlaceholder: string) {
   fireEvent.change(screen.getByPlaceholderText('Ej. López'), { target: { value: 'Gómez' } })
   const dateInput = document.querySelector('input[type="date"]')
   if (dateInput) fireEvent.change(dateInput, { target: { value: BIRTH_DATE } })
-  fillStateCity()
+  await fillLocation()
   clickButton(/^continuar$/i)
 }
 
@@ -146,7 +152,7 @@ async function fillAccountStep(emailPlaceholder = 'contacto@organizacion.com') {
   await screen.findByPlaceholderText(emailPlaceholder)
   fireEvent.change(screen.getByPlaceholderText(emailPlaceholder), { target: { value: EMAIL } })
   fireEvent.change(screen.getByPlaceholderText('Mínimo 8 caracteres'), { target: { value: PASSWORD } })
-  fillStateCity()
+  await fillLocation()
   clickButton(/finalizar registro/i)
 }
 
@@ -321,15 +327,17 @@ describe('Contrato de registro — PCD', () => {
       email: EMAIL,
       rol: 'pcd',
       fechaNacimiento: BIRTH_DATE,
-      ciudad: MUNICIPIO,
+      ciudad: CIUDAD,
       estado: ESTADO,
+      pais: PAIS,
+      codigoPostal: CODIGO_POSTAL,
     })
 
     // Perfilado: escalas → perfil → perfil-necesidades
     // NOTA: useUpdateProfile/useUpdateNeedsProfile mapean a español antes de enviar
     expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(1)
     expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
-    expect(lastCallFor('put', '/usuarios/perfil')).toMatchObject({ nombreCompleto: NOMBRE_COMPLETO, ciudad: MUNICIPIO, estado: ESTADO })
+    expect(lastCallFor('put', '/usuarios/perfil')).toMatchObject({ nombreCompleto: NOMBRE_COMPLETO, ciudad: CIUDAD, estado: ESTADO })
     expect(callsFor('post', '/usuarios/perfil-necesidades')).toHaveLength(1)
     expect(lastCallFor('post', '/usuarios/perfil-necesidades')).toMatchObject({
       tiposDiscapacidad: ['Motriz o de movilidad física'],
@@ -502,7 +510,7 @@ describe('Validación de fecha de nacimiento en wizards de registro', () => {
     expect(dateInput).toHaveAttribute('min', '1900-01-01')
 
     fireEvent.change(dateInput, { target: { value: '2028-06-28' } })
-    fillStateCity()
+    await fillLocation()
 
     const form = dateInput.closest('form')!
     fireEvent.submit(form)

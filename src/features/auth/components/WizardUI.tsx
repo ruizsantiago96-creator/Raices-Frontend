@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useId, useRef, useState } from 'react'
 import { Icons } from '@shared/components/shared'
-import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
+import { lookupPostalCode, validatePostalCodeFormat } from '@shared/lib/postalCodeLookup'
+import { COUNTRIES, DEFAULT_COUNTRY } from '@shared/constants/countries'
 import PasswordRequirements from './PasswordRequirements'
 
 /**
@@ -284,51 +285,278 @@ export function PasswordField({
   )
 }
 
-// ── Selects Estado / Municipio con dependencia ────────────────────
-export interface StateCitySelectsProps {
+// ── Inputs de Ubicación (País + Código Postal con autocompletado) ────
+
+/** Estado del autocompletado por código postal. */
+type PostalStatus =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'found'; etiqueta: string }
+  | { kind: 'notfound' }
+  | { kind: 'format'; mensaje: string }
+  | { kind: 'nocatalog' }
+
+export interface LocationInputsProps {
+  country: string
+  postalCode: string
   state: string
   city: string
-  onStateChange: (state: string) => void
-  onCityChange: (city: string) => void
+  onCountryChange: (val: string) => void
+  onPostalCodeChange: (val: string) => void
+  onStateChange: (val: string) => void
+  onCityChange: (val: string) => void
 }
 
-export function StateCitySelects({
+/**
+ * Vista inicial compacta: solo País (selector ISO, México por defecto) y
+ * Código Postal. Estado/Ciudad NO se muestran al inicio para no saturar.
+ *
+ * Al completar el CP (blur o formato ya válido a medio teclear) se busca en
+ * el catálogo local (GeoNames, CC BY 4.0):
+ *   ✓ encontrado  → rellena internamente Estado y Ciudad (para el submit) y
+ *                   muestra el chip "📍 Ciudad, Estado" con botón Editar.
+ *   ✗ no existe   → despliega suavemente los campos "Estado / Región" y
+ *                   "Ciudad" (texto libre, dos columnas) con un aviso sutil:
+ *                   fallback manual que nunca bloquea al usuario.
+ *
+ * El payload resultante siempre contiene { pais, codigoPostal, estado, ciudad }.
+ */
+export function LocationInputs({
+  country,
+  postalCode,
   state,
   city,
+  onCountryChange,
+  onPostalCodeChange,
   onStateChange,
   onCityChange,
-}: StateCitySelectsProps): React.JSX.Element {
+}: LocationInputsProps): React.JSX.Element {
+  const uid = useId()
+  const [status, setStatus] = useState<PostalStatus>({ kind: 'idle' })
+  // Si ya hay estado/ciudad guardados (p. ej. edición de perfil), abrimos el modo manual
+  const [manualOpen, setManualOpen] = useState(() => Boolean(state || city))
+  const debounceRef = useRef<number | null>(null)
+  const lastLookupRef = useRef('')
+
+  // Limpieza del temporizador al desmontar
+  useEffect(() => () => { if (debounceRef.current) window.clearTimeout(debounceRef.current) }, [])
+
+  const runLookup = async (cc: string, cp: string) => {
+    const trimmed = cp.trim()
+    if (!cc || !trimmed) return
+    const key = `${cc}:${trimmed}`
+    if (lastLookupRef.current === key) return
+    lastLookupRef.current = key
+
+    setStatus({ kind: 'loading' })
+    const result = await lookupPostalCode(cc, trimmed)
+    switch (result.status) {
+      case 'encontrado': {
+        const { estado, ciudad } = result.location
+        if (!estado || !ciudad) {
+          // Datos incompletos en el catálogo → tratamos como fallback manual
+          setStatus({ kind: 'notfound' })
+          setManualOpen(true)
+          break
+        }
+        onStateChange(estado)
+        onCityChange(ciudad)
+        setStatus({ kind: 'found', etiqueta: `${ciudad}, ${estado}` })
+        setManualOpen(false)
+        break
+      }
+      case 'formato_invalido':
+        setStatus({ kind: 'format', mensaje: `Formato de código postal no válido para este país (${result.mensaje}).` })
+        break
+      case 'no_encontrado':
+        setStatus({ kind: 'notfound' })
+        setManualOpen(true)
+        break
+      case 'catalogo_no_disponible':
+        setStatus({ kind: 'nocatalog' })
+        setManualOpen(true)
+        break
+    }
+  }
+
+  const handlePostalChange = (value: string) => {
+    onPostalCodeChange(value)
+    lastLookupRef.current = ''
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    const trimmed = value.trim()
+    if (!trimmed) {
+      setStatus({ kind: 'idle' })
+      return
+    }
+    // Autocompletado anticipado solo cuando el formato ya es válido
+    // (evita errores de formato a medio teclear); blur siempre consulta.
+    if (trimmed.length >= 4 && !validatePostalCodeFormat(country, trimmed)) {
+      debounceRef.current = window.setTimeout(() => { void runLookup(country, trimmed) }, 450)
+    } else {
+      setStatus({ kind: 'idle' })
+    }
+  }
+
+  const handlePostalBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    const val = e.target.value
+    if (val.trim()) void runLookup(country, val)
+  }
+
+  const handleCountryChange = (value: string) => {
+    onCountryChange(value)
+    lastLookupRef.current = ''
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    // Revalidamos el CP actual contra el nuevo país
+    if (postalCode.trim()) void runLookup(value, postalCode)
+  }
+
+  const countryName = COUNTRIES.find(c => c.code === country)?.name ?? country
+  const postalInvalid = status.kind === 'format'
+  const foundChip = status.kind === 'found' && !manualOpen
+
   return (
-    <div style={{ display: 'flex', gap: 10 }}>
-      <div style={{ flex: 1 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
-          Estado <span style={{ color: '#ef4444' }}>*</span>
-        </label>
-        <select
-          className="auth-input auth-select"
-          required
-          value={state}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onStateChange(e.target.value)}
-        >
-          <option value="" disabled>Selecciona un estado</option>
-          {STATES.map(st => <option key={st} value={st}>{st}</option>)}
-        </select>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Animación suave para el despliegue del fallback manual y el chip */}
+      <style>{`@keyframes locFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }`}</style>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label htmlFor={`${uid}-pais`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+            País <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <select
+            id={`${uid}-pais`}
+            className="auth-input"
+            required
+            value={country || DEFAULT_COUNTRY}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleCountryChange(e.target.value)}
+            style={{ height: 48 }}
+          >
+            {COUNTRIES.map(c => (
+              <option key={c.code} value={c.code}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label htmlFor={`${uid}-cp`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+            Código postal <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <input
+            id={`${uid}-cp`}
+            type="text"
+            className="auth-input"
+            required
+            autoComplete="postal-code"
+            inputMode="numeric"
+            placeholder="Ej. 97113"
+            aria-invalid={postalInvalid}
+            aria-describedby={status.kind !== 'idle' && status.kind !== 'loading' ? `${uid}-cp-ayuda` : undefined}
+            value={postalCode}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePostalChange(e.target.value)}
+            onBlur={handlePostalBlur}
+          />
+        </div>
       </div>
-      <div style={{ flex: 1 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
-          Municipio <span style={{ color: '#ef4444' }}>*</span>
-        </label>
-        <select
-          className="auth-input auth-select"
-          required
-          disabled={!state}
-          value={city}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onCityChange(e.target.value)}
+
+      {status.kind === 'loading' && (
+        <p aria-live="polite" style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg3)', margin: '-4px 0 0' }}>
+          Buscando código postal…
+        </p>
+      )}
+
+      {status.kind === 'format' && (
+        <p
+          id={`${uid}-cp-ayuda`}
+          aria-live="polite"
+          style={{ fontSize: 12, marginTop: -4, fontWeight: 600, color: '#ef4444' }}
         >
-          <option value="" disabled>{state ? 'Selecciona un municipio' : 'Primero elige un estado'}</option>
-          {state && getMunicipalities(state).map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-      </div>
+          {status.mensaje}
+        </p>
+      )}
+
+      {foundChip && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: -4, animation: 'locFadeIn 0.25s ease' }}>
+          <span
+            id={`${uid}-cp-ayuda`}
+            style={{
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: '#1d7a42',
+              background: 'rgba(34,155,88,0.1)',
+              border: '1px solid rgba(34,155,88,0.35)',
+              borderRadius: 8,
+              padding: '4px 10px',
+            }}
+          >
+            📍 {status.etiqueta}
+          </span>
+          <button
+            type="button"
+            onClick={() => setManualOpen(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--primary)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              padding: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Editar
+          </button>
+        </div>
+      )}
+
+      {manualOpen && (
+        <div style={{ animation: 'locFadeIn 0.25s ease' }}>
+          {(status.kind === 'notfound' || status.kind === 'nocatalog') && (
+            <p
+              aria-live="polite"
+              style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg3)', margin: '0 0 8px', lineHeight: 1.4 }}
+            >
+              {status.kind === 'nocatalog'
+                ? `Sin catálogo local para ${countryName}. Por favor completa tu estado y ciudad manualmente.`
+                : 'Código no detectado en el catálogo. Por favor completa tu estado y ciudad manualmente.'}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor={`${uid}-estado`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+                Estado / Región <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                id={`${uid}-estado`}
+                type="text"
+                className="auth-input"
+                required
+                autoComplete="address-level1"
+                placeholder="Ej. Jalisco, Antioquia"
+                value={state}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onStateChange(e.target.value)}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor={`${uid}-ciudad`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+                Ciudad <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                id={`${uid}-ciudad`}
+                type="text"
+                className="auth-input"
+                required
+                autoComplete="address-level2"
+                placeholder="Ej. Guadalajara, Medellín"
+                value={city}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onCityChange(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

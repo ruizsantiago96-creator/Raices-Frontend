@@ -39,6 +39,25 @@ export type TutorWizardStep =
   | 'location'
   | 'email'
   | 'password'
+  | 'relationship_type'
+  | 'relationship_name'
+  | 'relationship_birthdate'
+  | 'accommodation'
+  | 'condition'
+  | 'neurodivergence'
+  | 'diagnosis'
+  | 'history_edu'
+  | 'history_therapy'
+  | 'support_zones'
+  | 'support_needs'
+  | 'support_areas'
+  | 'scales1'
+  | 'scales2'
+  | 'formats'
+  | 'interests'
+  | 'viability'
+  | 'summary'
+  | 'thanks'
 
 interface TutorGeneralFormData {
   nombres: string
@@ -151,6 +170,23 @@ const STEP_ORDER: TutorWizardStep[] = [
   'location',
   'email',
   'password',
+  'relationship_type',
+  'relationship_name',
+  'relationship_birthdate',
+  'accommodation',
+  'condition',
+  'neurodivergence',
+  'diagnosis',
+  'history_edu',
+  'history_therapy',
+  'support_zones',
+  'support_needs',
+  'support_areas',
+  'scales1',
+  'scales2',
+  'formats',
+  'interests',
+  'viability',
 ]
 const TOTAL_STEPS = STEP_ORDER.length
 
@@ -563,52 +599,209 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
   // ── Envío final ─────────────────────────────────────────────────
   const handleFinalSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setSending(true)
     setError('')
+    setSending(true)
+
     try {
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
+
+      // 1. Registrar tutor en backend
       const registerPayload = {
         nombreCompleto,
         email: generalForm.email,
         password: generalForm.password,
         rol: 'padre_tutor',
         ...(generalForm.curp ? { curp: generalForm.curp } : {}),
+        domicilio: generalForm.domicilio,
         fechaNacimiento: generalForm.birth_date,
         ciudad: generalForm.ciudad,
         estado: generalForm.estado,
         ...(generalForm.pais ? { pais: generalForm.pais } : {}),
         ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
+        destinatarioRegistro: destinatario === 'hijo' ? 'para_hijo' : 'para_familiar',
+        telefonoContacto: '',
+        preferenciasAcompanamiento: generalForm.acompanamiento,
       }
 
-      const regRes = await api.post('/autenticacion/registro', registerPayload)
-      const authResult = regRes.data
-
-      if (authResult?.requiereInicioSesion) {
-         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
-         nav('/auth?mode=login', { replace: true })
-         return
+      let authResult: { tokenAcceso?: string; tokenRefresco?: string | null; requiereInicioSesion?: boolean; usuario?: { id: number | string; email: string } } | null = null
+      let regError: unknown = null
+      try {
+        const regRes = await api.post('/autenticacion/registro', registerPayload)
+        authResult = regRes.data
+      } catch (regErr) {
+        console.warn('Registro warning:', regErr)
+        regError = regErr
       }
 
-      if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
+      // 2. Obtener sesión para poder guardar el perfil de la persona a cargo
+      //    y registrarla como dependiente. El backend puede responder de
+      //    varias formas tras crear la cuenta:
+      //      - con token (login automático)
+      //      - sin token con bandera requiereInicioSesion
+      //      - sin token ni bandera (p. ej. { uid, mensaje } como en otros roles)
+      //    En todos los casos sin token intentamos iniciar sesión con las
+      //    mismas credenciales que el usuario acaba de crear.
+      if (!authResult) {
+        // El POST de registro falló (HTTP error): no hay cuenta ni nada que guardar.
+        const typedRegErr = regError as ApiErrorResponse | null
+        const msg = typedRegErr?.response?.data?.message
+          ?? typedRegErr?.response?.data?.mensaje
+          ?? 'No se pudo completar el registro. Inténtalo de nuevo.'
+        setError(msg)
+        addToast(msg, 'error')
+        return
+      }
+
+      let token = authResult?.tokenAcceso ?? null
+      let refreshToken = authResult?.tokenRefresco ?? null
+      let usuario = authResult?.usuario ?? null
+
+      if (!token) {
+        try {
+          const loginRes = await api.post('/autenticacion/inicio-sesion', {
+            email: generalForm.email,
+            password: generalForm.password,
+          })
+          const lr = loginRes.data
+          token = lr?.tokenAcceso ?? null
+          refreshToken = lr?.tokenRefresco ?? null
+          usuario = lr?.usuario ?? null
+        } catch (loginErr) {
+          console.warn('Auto login tras registro (sin token) falló:', loginErr)
+        }
+      }
+
+      if (!token) {
+        // No pudimos obtener sesión: no se puede guardar perfil ni dependiente.
+        // Mostramos la narrativa y un aviso claro de qué falta completar.
+        saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
+        const narrative = generateNarrative()
+        setAiNarrative(narrative)
+        saveOnboardingData({ narrative })
+        addToast(
+          'Tu cuenta fue creada, pero no pudimos guardar el perfil de ' + (nombreDependiente.trim() || 'la persona a tu cuidado') + '. Inicia sesión y agrégala en "Mis personas".',
+          'warning'
+        )
+        setWizardStep('thanks')
+        scrollTop()
+        return
+      }
 
       const userObj: User = {
-        id: String(authResult.usuario?.id ?? ''),
-        email: authResult.usuario?.email || generalForm.email,
+        id: String(usuario?.id ?? ''),
+        email: usuario?.email || generalForm.email,
         role: 'tutor',
         full_name: nombreCompleto,
       }
       setRememberMe(true)
-      setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
+      setAuth(token, userObj, refreshToken, true)
       saveUser(userObj, true)
-      
-      addToast('¡Cuenta creada exitosamente!', 'success')
-      nav('/dashboard', { replace: true })
-    } catch (err: any) {
-       const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
-       setError(msg)
-       addToast(msg, 'error')
+
+      // Fecha de nacimiento de la persona a cargo: el perfil que guardamos
+      // describe a {personName}, así que edad/etapa se calculan con SU fecha.
+      const dependienteDOB = fechaNacimientoDependiente || generalForm.birth_date
+      const dependienteEdad = calcEdad(dependienteDOB)
+      const dependienteEtapaDep = calcEtapaDependiente(dependienteDOB)
+      const dependienteEtapaPerfil = calcEtapaPerfil(dependienteDOB)
+
+      // 3. Guardar escalas de vida
+      const scalesPayload = {
+        nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
+        nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
+        nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
+        nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
+        tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+        temporalidadOrigen: conditionData.temporalidad,
+        preferenciaFormato: formatos[0] || 'texto',
+        areasInteres: selectedInterests,
+        viabilidadEconomica: viabilidad,
+      }
+      try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (scErr) { console.warn('Scales save notice:', scErr) }
+
+      // 4. Guardar perfil y necesidades (describen a la persona a cargo)
+      const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
+      const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
+      try {
+        await updateProfile.mutateAsync({
+          full_name: nombreCompleto,
+          city: generalForm.ciudad,
+          state: generalForm.estado,
+        })
+        await updateNeedsProfile.mutateAsync({
+          profiling: {
+            disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
+            severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
+            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
+            mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
+            tech_access: formatos,
+            preferred_zones: preferredZones,
+            needs: needsList,
+            goals: selectedInterests,
+            support_areas: supportAreas,
+            education_history: educacionHistory,
+            therapy_history: terapiaHistory,
+            life_stage: dependienteEtapaPerfil,
+            current_concerns: conditionData.diagnosticoEspecifico || null,
+            support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
+            birth_date: dependienteDOB,
+            age: dependienteEdad,
+          },
+        })
+      } catch (profErr) { console.warn('Profiling save notice:', profErr) }
+
+      // 5. Registrar persona a cargo (dependiente) con los datos capturados
+      //    en el wizard. Si falla, se avisa con claridad (ya no se traga el error).
+      let catParentescos: string[] = []
+      try {
+        const catRes = await api.get('/catalogos')
+        catParentescos = catRes?.data?.parentescos ?? []
+      } catch { /* sin catálogo usamos los valores por defecto */ }
+
+      const depPayload = {
+        nombreCompleto: nombreDependiente.trim() || (generalForm.nombres + ' ' + generalForm.apellidoPaterno).trim(),
+        parentesco: resolveParentesco(catParentescos, destinatario),
+        tiposDiscapacidad: wizardConditionsToCodes(disabilityTypes, conditionData.neurodivergencias),
+        ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
+        notas: conditionData.diagnosticoEspecifico || null,
+      }
+      try {
+        const depRes = await api.post('/usuarios/dependientes', depPayload)
+        if (depRes?.data?.id && dependienteDOB) {
+          // La edad se muestra en la tarjeta de "Mis personas" desde localStorage
+          localStorage.setItem(`raices_dep_birth_date_${depRes.data.id}`, dependienteDOB)
+        }
+      } catch (depErr: unknown) {
+        const typedDepErr = depErr as ApiErrorResponse | null
+        const depMsg = typedDepErr?.response?.data?.message
+          ?? typedDepErr?.response?.data?.mensaje
+          ?? 'inténtalo de nuevo desde "Mis personas"'
+        addToast(
+          `Tu cuenta se creó, pero no pudimos agregar a ${nombreDependiente.trim() || 'la persona a tu cuidado'} a tus personas: ${depMsg}`,
+          'warning'
+        )
+      }
+
+      // 6. Guardar localmente (intereses y narrativa de bienvenida)
+      saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
+
+      const narrative = generateNarrative()
+      setAiNarrative(narrative)
+      saveOnboardingData({ narrative })
+
+      addToast(
+        `¡Registro completado! ${nombreDependiente.trim() || 'La persona a tu cuidado'} ya aparece en "Mis personas".`,
+        'success'
+      )
+      setWizardStep('thanks')
+      scrollTop()
+    } catch (err) {
+      console.error('Final submit error:', err)
+      const narrative = generateNarrative()
+      setAiNarrative(narrative)
+      saveOnboardingData({ narrative })
+      setWizardStep('thanks')
     } finally {
-       setSending(false)
+      setSending(false)
     }
   }
 

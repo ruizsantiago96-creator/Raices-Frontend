@@ -140,11 +140,14 @@ export default function AuthPage() {
           align-items: center;
           justify-content: center;
           min-height: 100vh;
-          background: var(--bg-warm);
+          background: #dbcfc2;
           padding: 40px 20px;
           box-sizing: border-box;
           font-family: var(--font-body);
           transition: background-color 0.3s ease;
+        }
+        html[data-theme="dark"] .auth-page-container {
+          background: color-mix(in oklch, #dbcfc2 10%, var(--bg-warm));
         }
         .auth-card {
           display: flex;

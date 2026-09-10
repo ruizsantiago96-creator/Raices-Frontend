@@ -1,6 +1,6 @@
 import React from 'react'
 import { Icons } from '@shared/components/shared'
-import { WizardNavButtons, PasswordField, StateCitySelects } from './WizardUI'
+import { WizardNavButtons, PasswordField, LocationInputs } from './WizardUI'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import { isValidCurp } from '../lib/validators'
 
@@ -25,6 +25,8 @@ export interface OrgFormData {
 export interface AccountFormData {
   email: string
   password: string
+  country: string
+  postalCode: string
   state: string
   city: string
   showPass?: boolean
@@ -647,6 +649,7 @@ export interface OrganizationAccountStepProps {
   onAccountChange: (field: string, value: string | boolean) => void
   onStateChange: (state: string) => void
   onCityChange: (city: string) => void
+  onCountryChange?: (country: string) => void
   onBack: () => void
   onSubmit: () => void
   sending?: boolean
@@ -659,6 +662,7 @@ export function OrganizationAccountStep({
   onAccountChange,
   onStateChange,
   onCityChange,
+  onCountryChange,
   onBack,
   onSubmit,
   sending = false,
@@ -712,9 +716,13 @@ export function OrganizationAccountStep({
       </div>
 
       {showCitySelect && (
-        <StateCitySelects
+        <LocationInputs
+          country={accountForm.country}
+          postalCode={accountForm.postalCode}
           state={accountForm.state}
           city={accountForm.city}
+          onCountryChange={c => (onCountryChange ? onCountryChange(c) : onAccountChange('country', c))}
+          onPostalCodeChange={cp => onAccountChange('postalCode', cp)}
           onStateChange={st => onStateChange(st)}
           onCityChange={c => onCityChange(c)}
         />
@@ -820,12 +828,16 @@ export function validateAccountForm(accountForm: Partial<AccountFormData>): Vali
     }
   }
 
+  if (!accountForm.country) {
+    errors.push('Ingresa tu país.')
+  }
+
   if (!accountForm.state) {
-    errors.push('Selecciona tu estado.')
+    errors.push('Ingresa tu estado, región o provincia.')
   }
 
   if (!accountForm.city) {
-    errors.push('Selecciona tu municipio.')
+    errors.push('Ingresa tu ciudad.')
   }
 
   return {

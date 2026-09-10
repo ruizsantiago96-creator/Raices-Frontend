@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { Icons } from '@shared/components/shared'
 import { ENTERPRISE_SUBTYPES, ECOSYSTEM_SERVICES, COMMUNITIES } from '../constants/enterpriseCatalogos'
-import { WizardNavButtons, StateCitySelects } from './WizardUI'
+import { WizardNavButtons, LocationInputs } from './WizardUI'
 import {
   OrganizationProgress,
   OrganizationSubtypeStep,
@@ -22,7 +22,18 @@ export interface EnterpriseRegistrationWizardProps {
   onBackToRoles?: () => void
 }
 
-export type EnterpriseWizardStep = 'subtype' | 'org' | 'services' | 'community' | 'account' | 'thanks'
+export type EnterpriseWizardStep =
+  | 'org_name'
+  | 'account_email'
+  | 'account_password'
+  | 'account_location'
+
+const STEP_ORDER: EnterpriseWizardStep[] = [
+  'org_name',
+  'account_email',
+  'account_password',
+  'account_location',
+]
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function EnterpriseRegistrationWizard({
@@ -62,7 +73,7 @@ export default function EnterpriseRegistrationWizard({
   // Step 1: Subtipo
   const [subtipo, setSubtipo] = useState<string>('')
 
-  // Step 2: Info de la organización
+  // Info de la organización
   const [orgForm, setOrgForm] = useState<OrgFormData>({
     nombre: '',
     descripcion: '',
@@ -72,16 +83,18 @@ export default function EnterpriseRegistrationWizard({
     website: '',
   })
 
-  // Step 3: Servicios
+  // Servicios
   const [selectedServices, setSelectedServices] = useState<string[]>([])
 
-  // Step 4: Comunidad a conectar
+  // Comunidad a conectar
   const [selectedCommunity, setSelectedCommunity] = useState<string>('')
 
-  // Step 5: Cuenta y ubicación
+  // Cuenta y ubicación
   const [accountForm, setAccountForm] = useState<AccountFormData>({
     email: '',
     password: '',
+    country: 'MX',
+    postalCode: '',
     state: '',
     city: '',
   })
@@ -91,10 +104,8 @@ export default function EnterpriseRegistrationWizard({
     if (col) col.scrollTop = 0
   }
 
-  const TOTAL_STEPS = 5
-  const stepIndex = (['subtype', 'org', 'services', 'community', 'account'] as const).indexOf(
-    wizardStep as 'subtype' | 'org' | 'services' | 'community' | 'account'
-  )
+  const TOTAL_STEPS = 11
+  const stepIndex = STEP_ORDER.indexOf(wizardStep)
 
   const toggleService = (item: string): void => {
     setSelectedServices(prev => (prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]))
@@ -108,17 +119,49 @@ export default function EnterpriseRegistrationWizard({
       setError('Selecciona el tipo de organización.')
       return
     }
-    setWizardStep('org')
+    setWizardStep('org_name')
     scrollTop()
   }
 
-  const handleOrgSubmit = (e?: React.FormEvent): void => {
+  const handleOrgNameSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
-    const validation = validateOrgForm(orgForm)
-    if (!validation.isValid) {
-      setError(validation.errors[0])
+    setError('')
+    if (!orgForm.nombre.trim()) {
+      setError('El nombre es obligatorio.')
       return
     }
+    setWizardStep('org_desc')
+    scrollTop()
+  }
+
+  const handleOrgDescSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!orgForm.descripcion.trim()) {
+      setError('La descripción es obligatoria.')
+      return
+    }
+    setWizardStep('org_specialties')
+    scrollTop()
+  }
+
+  const handleOrgSpecialtiesSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    setWizardStep('org_contact')
+    scrollTop()
+  }
+
+  const handleOrgContactSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    setWizardStep('org_website')
+    scrollTop()
+  }
+
+  const handleOrgWebsiteSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
     setWizardStep('services')
     scrollTop()
   }
@@ -141,7 +184,29 @@ export default function EnterpriseRegistrationWizard({
       setError('Selecciona la comunidad con la que quieres conectar.')
       return
     }
-    setWizardStep('account')
+    setWizardStep('account_email')
+    scrollTop()
+  }
+
+  const handleAccountEmailSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!accountForm.email.trim()) {
+      setError('El correo es obligatorio.')
+      return
+    }
+    setWizardStep('account_password')
+    scrollTop()
+  }
+
+  const handleAccountPasswordSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!accountForm.password.trim()) {
+      setError('La contraseña es obligatoria.')
+      return
+    }
+    setWizardStep('account_location')
     scrollTop()
   }
 
@@ -201,7 +266,7 @@ export default function EnterpriseRegistrationWizard({
           selectedSubtype={subtipo}
           onSelectSubtype={setSubtipo}
           onBack={onBackToRoles}
-          onContinue={() => { handleSubtypeSubmit(); setWizardStep('org'); scrollTop() }}
+          onContinue={() => { handleSubtypeSubmit() }}
           title="¿Qué tipo de organización representas?"
           description="Conecta tu experiencia con las personas que más la necesitan."
           accentColor="#D4944C"
@@ -209,98 +274,104 @@ export default function EnterpriseRegistrationWizard({
         />
       )}
 
-      {/* STEP 2: INFO DE LA ORGANIZACIÓN */}
-      {wizardStep === 'org' && (
-        <OrganizationInfoStep
-          orgForm={orgForm}
-          onOrgChange={(field, value) => setOrgForm(prev => ({ ...prev, [field]: value }))}
-          onBack={() => { setWizardStep('subtype'); scrollTop() }}
-          onContinue={() => { handleOrgSubmit(); setWizardStep('services'); scrollTop() }}
-          title={`Cuéntanos sobre tu ${selectedLabel.toLowerCase()}`}
-          description="Esta información ayuda a la comunidad a conocerte."
-          showEspecialidades={true}
-          placeholderNombre={subtipo === 'especialista' ? 'Ej. Dra. María López' : 'Ej. Centro Terapéutico Raíces'}
-          placeholderDescripcion="Describe brevemente tus servicios o especialidades..."
-        />
+      {/* STEP 2: NOMBRE DE LA ORGANIZACIÓN */}
+      {wizardStep === 'org_name' && (
+        <form onSubmit={handleOrgNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              ¿Cómo se llama tu {selectedLabel.toLowerCase()}?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Ingresa el nombre público de tu organización o tu nombre como especialista.
+            </p>
+          </div>
+          <div>
+            <input
+              type="text"
+              className="auth-input"
+              required
+              placeholder={subtipo === 'especialista' ? 'Ej. Dra. María López' : 'Ej. Centro Terapéutico Raíces'}
+              value={orgForm.nombre}
+              onChange={(e) => setOrgForm({ ...orgForm, nombre: e.target.value })}
+            />
+          </div>
+          <WizardNavButtons onBack={() => { setWizardStep('subtype'); scrollTop() }} submitLabel="Continuar" />
+        </form>
       )}
 
-      {/* STEP 3: SERVICIOS */}
-      {wizardStep === 'services' && (
-        <OrganizationServicesStep
-          serviceCategories={ECOSYSTEM_SERVICES}
-          selectedServices={selectedServices}
-          onToggleService={toggleService}
-          onBack={() => { setWizardStep('org'); scrollTop() }}
-          onContinue={() => { handleServicesSubmit(); setWizardStep('community'); scrollTop() }}
-          title="¿Qué servicios ofreces?"
-          description="Selecciona las áreas en las que puedes apoyar. La IA conectará a las personas según lo que necesiten."
-        />
-      )}
-
-      {/* STEP 4: COMUNIDAD A CONECTAR */}
-      {wizardStep === 'community' && (
-        <OrganizationCommunityStep
-          communities={COMMUNITIES}
-          selectedCommunity={selectedCommunity}
-          onSelectCommunity={setSelectedCommunity}
-          onBack={() => { setWizardStep('services'); scrollTop() }}
-          onContinue={() => { handleCommunitySubmit(); setWizardStep('account'); scrollTop() }}
-          title="¿Con quién quieres conectar?"
-          description="Conecta tu experiencia con quienes más la necesitan."
-          accentColor="#D4944C"
-        />
-      )}
-
-      {/* STEP 5: CUENTA Y UBICACIÓN */}
-      {wizardStep === 'account' && (
-        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+      {/* STEP 9: CUENTA - EMAIL */}
+      {wizardStep === 'account_email' && (
+        <form onSubmit={handleAccountEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
               Crea tu cuenta
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Estos datos son para acceder a tu panel.
+              Ingresa el correo electrónico para acceder a tu panel.
             </p>
           </div>
-
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
-              Correo electrónico <span style={{ color: '#ef4444' }}>*</span>
-            </label>
             <input
               type="email"
               className="auth-input"
               required
               placeholder="contacto@organizacion.com"
               value={accountForm.email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
             />
           </div>
+          <WizardNavButtons onBack={() => { setWizardStep('community'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
 
+      {/* STEP 10: CUENTA - PASSWORD */}
+      {wizardStep === 'account_password' && (
+        <form onSubmit={handleAccountPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Contraseña segura
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Crea una contraseña segura para tu cuenta.
+            </p>
+          </div>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
-              Contraseña segura <span style={{ color: '#ef4444' }}>*</span>
-            </label>
             <input
               type={accountForm.showPass ? 'text' : 'password'}
               className="auth-input"
               required
               placeholder="Mínimo 8 caracteres"
               value={accountForm.password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountForm(prev => ({ ...prev, password: e.target.value }))}
-              style={{ paddingRight: 48 }}
+              onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
             />
           </div>
+          <WizardNavButtons onBack={() => { setWizardStep('account_email'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
 
-          <StateCitySelects
+      {/* STEP 11: UBICACIÓN */}
+      {wizardStep === 'account_location' && (
+        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              ¿Dónde se encuentran?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Esta información permite conectarte con personas en tu área.
+            </p>
+          </div>
+          <LocationInputs
+            country={accountForm.country}
+            postalCode={accountForm.postalCode}
             state={accountForm.state}
             city={accountForm.city}
-            onStateChange={(st: string) => setAccountForm(prev => ({ ...prev, state: st, city: '' }))}
-            onCityChange={(c: string) => setAccountForm(prev => ({ ...prev, city: c }))}
+            onCountryChange={(p) => setAccountForm({ ...accountForm, country: p })}
+            onPostalCodeChange={(cp) => setAccountForm({ ...accountForm, postalCode: cp })}
+            onStateChange={(st) => setAccountForm({ ...accountForm, state: st })}
+            onCityChange={(c) => setAccountForm({ ...accountForm, city: c })}
           />
-
           <WizardNavButtons
-            onBack={() => { setWizardStep('community'); scrollTop() }}
+            onBack={() => { setWizardStep('account_password'); scrollTop() }}
             submitLabel={sending ? 'Creando cuenta...' : 'Finalizar registro'}
             submitDisabled={sending}
           />

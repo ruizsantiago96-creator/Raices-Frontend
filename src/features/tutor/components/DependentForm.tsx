@@ -66,8 +66,11 @@ export default function DependentForm({ initial, onCancel, onSave, saving = fals
   return (
     <div onClick={onCancel} className="modal-overlay" style={{ zIndex: 1000, overflowY: 'auto' }}>
       <div onClick={e => e.stopPropagation()} role="dialog" className="glass-card" aria-modal="true" aria-label={form.id ? 'Editar persona' : 'Agregar persona'} style={{ padding: 28, maxWidth: 540, width: '100%', margin: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{form.id ? TUTOR_UI.EDIT_TITLE : TUTOR_UI.CREATE_TITLE}</h2>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{form.id ? TUTOR_UI.EDIT_TITLE : TUTOR_UI.CREATE_TITLE}</h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '4px 0 0', lineHeight: 1.4, maxWidth: '85%' }}>Este formulario es exclusivo para los datos de la persona con discapacidad / a tu cuidado, <strong>no para los datos del tutor</strong>.</p>
+          </div>
           <button onClick={onCancel} aria-label="Cerrar" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 18 })}</button>
         </div>
         <form onSubmit={submit}>

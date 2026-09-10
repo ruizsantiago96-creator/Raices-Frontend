@@ -140,6 +140,7 @@ export interface RegisterVariables {
   role: string
   city?: string
   state?: string
+  country?: string
   [key: string]: unknown
 }
 
@@ -157,7 +158,7 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
   const nav = useNavigate()
   const { addToast } = useUiStore()
   return useMutation<RegisterApiResponse, Error, RegisterVariables>({
-    mutationFn: ({ _rememberMe, full_name, role, city, state, ...rest }: RegisterVariables) => {
+    mutationFn: ({ _rememberMe, full_name, role, city, state, country, ...rest }: RegisterVariables) => {
       // Mapear roles del frontend a los valores que acepta el backend
       const ROLE_MAP: Record<string, string> = { tutor: 'padre_tutor', empresa: 'empresa', institution: 'institucion' }
       const body = {
@@ -166,6 +167,7 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
         rol: ROLE_MAP[role] || role,
         ciudad: city,
         estado: state,
+        ...(country ? { pais: country } : {}),
       }
       return api.post('/autenticacion/registro', body).then(r => r.data)
     },
@@ -222,6 +224,8 @@ export function useMe(): UseQueryResult<MeResponse, Error> {
         full_name: d.nombreCompleto,
         city: d.ciudad,
         state: d.estado,
+        country: d.pais,
+        codigoPostal: d.codigoPostal,
         avatar_url: d.urlAvatar,
         is_verified: d.verificado,
         features: d.features ?? {},
@@ -288,6 +292,8 @@ function mapUsuarioBackendToFrontend(d: BackendUser): User {
     full_name: d.nombreCompleto || '',
     city: d.ciudad,
     state: d.estado,
+    country: d.pais,
+    codigoPostal: d.codigoPostal,
     role: normalizeRole(d.rol),
     avatar_url: d.urlAvatar,
     is_active: d.activo,
@@ -373,6 +379,8 @@ export interface UpdateProfileVariables {
   full_name?: string
   city?: string
   state?: string
+  country?: string
+  postalCode?: string
   profiling?: Partial<ProfilingFrontend>
 }
 
@@ -386,6 +394,8 @@ export function useUpdateProfile(): UseMutationResult<BackendUser, Error, Update
       if (data.full_name !== undefined) body.nombreCompleto = data.full_name
       if (data.city !== undefined) body.ciudad = data.city
       if (data.state !== undefined) body.estado = data.state
+      if (data.country !== undefined) body.pais = data.country
+      if (data.postalCode !== undefined) body.codigoPostal = data.postalCode
       if (Object.keys(body).length > 0) {
         const res = await api.put('/usuarios/perfil', body)
         resultUser = res.data

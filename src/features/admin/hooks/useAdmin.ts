@@ -157,7 +157,9 @@ export function useAdminVerificaciones(
     Object.entries(paramsValidos).filter(([, v]) => v !== undefined && v !== '')
   )
   return useQuery<DocumentoIdentidadAdmin[]>({
-    queryKey: ['admin', 'verificaciones', params],
+    // ⚠️ Key solo con primitivos — un objeto inline crea referencia nueva en
+    // cada render y dispara refetches infinitos.
+    queryKey: ['admin', 'verificaciones', params.pagina ?? null, params.limite ?? null, params.ordenarPor ?? null, params.direccion ?? null, params.buscar ?? null],
     queryFn: () =>
       api
         .get('/administracion/documentos-identidad/pendientes', { params })
@@ -169,6 +171,11 @@ export function useAdminVerificaciones(
           return []
         }),
     staleTime: 1000 * 60 * 2,
+    // 🛡️ Anti-bucle: los errores del backend (500) no deben re-disparar peticiones.
+    retry: false,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
   })
@@ -220,7 +227,9 @@ export function useAdminAuditoria(
     }).filter(([, v]) => v !== undefined && v !== '')
   )
   return useQuery<AuditoriaLog[]>({
-    queryKey: ['admin', 'auditoria', params],
+    // ⚠️ Key solo con primitivos — un objeto inline crea referencia nueva en
+    // cada render y dispara refetches infinitos.
+    queryKey: ['admin', 'auditoria', params.pagina ?? null, params.limite ?? null, params.usuarioId ?? null, params.accion ?? null, params.recurso ?? null, params.fechaDesde ?? null, params.fechaHasta ?? null],
     queryFn: () =>
       api
         .get('/administracion/auditoria', { params })
@@ -233,6 +242,11 @@ export function useAdminAuditoria(
           return []
         }),
     staleTime: 1000 * 60 * 2,
+    // 🛡️ Anti-bucle: un 500 del backend no debe re-disparar peticiones en loop.
+    retry: false,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,
   })

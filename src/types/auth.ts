@@ -25,6 +25,8 @@ export interface User {
   full_name: string
   city?: string
   state?: string
+  country?: string
+  codigoPostal?: string
   avatar_url?: string | null
   is_active?: boolean
   is_verified?: boolean
@@ -44,6 +46,8 @@ export interface BackendUser {
   nombreCompleto?: string
   ciudad?: string
   estado?: string
+  pais?: string
+  codigoPostal?: string
   urlAvatar?: string | null
   activo?: boolean
   verificado?: boolean
@@ -83,6 +87,7 @@ export interface PcdRegisterPayload {
   fechaNacimiento: string
   ciudad: string
   estado: string
+  pais?: string
   [key: string]: unknown
 }
 
@@ -95,6 +100,7 @@ export interface TutorRegisterPayload {
   fechaNacimiento: string
   ciudad: string
   estado: string
+  pais?: string
   [key: string]: unknown
 }
 
@@ -106,6 +112,7 @@ export interface InstitutionRegisterPayload {
   rol: 'institucion'
   ciudad: string
   estado: string
+  pais?: string
   categoria?: string
   tipoInstitucion?: string
   curp?: string
@@ -127,6 +134,7 @@ export interface EnterpriseRegisterPayload {
   rol: 'empresa'
   ciudad: string
   estado: string
+  pais?: string
   tipoEcosistema?: string
   descripcion?: string
   especialidades?: string
