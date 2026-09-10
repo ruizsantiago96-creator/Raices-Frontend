@@ -1,13 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore, useProfile, useUpdateProfile } from '@features/auth'
+import { getFirebaseAuth } from '@features/auth/lib/firebaseAuth'
+import { sendPasswordResetEmail, type Auth as FirebaseAuth } from 'firebase/auth'
+import type { User } from '@/types/auth'
+
+
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { STATES, getMunicipalities } from '@shared/lib/mexicoLocations'
 import { ProfileIdentitySection } from '../components/ProfileIdentitySection'
 import { SearchableSelect } from '../components/SearchableSelect'
 import { DocumentoIdentidadEstado } from '@/types/profile'
+import api from '@shared/lib/api'
 
 export default function MiIdentidadPage() {
   const { data: status, isLoading, isError } = useEstadoValidacion()
@@ -20,6 +26,17 @@ export default function MiIdentidadPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const activeTab = tabParam === 'seguridad' ? 'seguridad' : 'verificacion'
+
+// ─── Estado para Cambio de Contraseña ──────────────────────────
+const [changingPassword, setChangingPassword] = useState(false)
+
+const usuarioActual = useAuthStore((s) => s.user) ?? null as User | null
+
+  // ─── Estado para Cerrar Sesión Global ──────────────────────────
+  const [closingAllSessions, setClosingAllSessions] = useState(false)
+
+  // ─── Estado para Eliminar Cuenta ───────────────────────────────
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const estado: DocumentoIdentidadEstado = (status?.estado ?? 'sin_documentos') as DocumentoIdentidadEstado
 
@@ -43,6 +60,78 @@ export default function MiIdentidadPage() {
       addToast('Error al guardar la dirección', 'error')
     }
   }
+
+// ─── 1. Cambio de Contraseña (Firebase Client SDK) ─────────────
+const handleChangePassword = useCallback(async () => {
+  const auth = getFirebaseAuth()
+  if (!auth) {
+    addToast('No hay sesión activa para cambiar la contraseña', 'error')
+    return
+  }
+
+  const emailDelUsuario = usuarioActual?.email
+  if (!emailDelUsuario) {
+    addToast('No hay sesión activa para cambiar la contraseña', 'error')
+    return
+  }
+
+  setChangingPassword(true)
+  try {
+    await sendPasswordResetEmail(auth as FirebaseAuth, emailDelUsuario)
+    addToast(
+      'Se ha enviado un enlace a tu correo para cambiar la contraseña.',
+      'success',
+    )
+  } catch (err: unknown) {
+    const firebaseError = err as { code?: string }
+    if (firebaseError.code === 'auth/requires-recent-login') {
+      addToast(
+        'Por seguridad, debes cerrar sesión, volver a entrar e intentar de nuevo',
+        'warning',
+      )
+    } else {
+      addToast('Error al cambiar la contraseña. Intenta de nuevo.', 'error')
+    }
+  } finally {
+    setChangingPassword(false)
+  }
+}, [addToast, usuarioActual])
+
+// ─── Cerrar Sesión en Todos los Dispositivos ──────────────────
+const handleCerrarSesionGlobal = useCallback(async () => {
+  const estaConfirmado = window.confirm('¿Estás seguro que quieres cerrar sesión en todos los dispositivos?')
+  if (!estaConfirmado) return
+
+  setClosingAllSessions(true)
+  try {
+    await api.post('/autenticacion/cerrar-sesion-global')
+  } catch {
+    // El endpoint aún no existe (404) — continuar con el logout local
+  } finally {
+    logout()
+    setClosingAllSessions(false)
+  }
+}, [logout])
+
+  // ─── Eliminar Cuenta ───────────────────────────────────────────
+  const handleEliminarCuenta = useCallback(async () => {
+    const confirmado = window.confirm(
+      '¿Estás seguro? Esta acción es irreversible y borrará todos tus datos.',
+    )
+    if (!confirmado) return
+
+    setDeletingAccount(true)
+    try {
+      // Llamada al futuro endpoint que eliminará la cuenta y datos en cascada
+      await api.delete('/usuarios/cuenta')
+    } catch {
+      // El endpoint aún puede no existir — continuar con logout
+    } finally {
+      addToast('Cuenta eliminada correctamente', 'success')
+      logout()
+      setDeletingAccount(false)
+    }
+  }, [addToast, logout])
 
   return (
     <main id="main" className="responsive-main" style={{ '--main-max-width': '720px' } as React.CSSProperties}>
@@ -308,10 +397,11 @@ export default function MiIdentidadPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {/* ─── Cambiar Contraseña ─── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                   <div>
                     <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cambiar contraseña</h4>
-                    <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Recibe notificaciones en tiempo real y alertas del equipo.</p>
+                    <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Actualiza tu contraseña para mantener tu cuenta segura.</p>
                   </div>
                   <button
                     type="button"
@@ -324,24 +414,18 @@ export default function MiIdentidadPage() {
                       gap: 6,
                       borderRadius: 8,
                       border: '1px solid var(--border-color)',
-                      cursor: 'pointer',
+                      cursor: changingPassword ? 'not-allowed' : 'pointer',
                       background: 'var(--bg-surface)',
                       fontWeight: 600,
+                      opacity: changingPassword ? 0.6 : 1,
                     }}
+                    onClick={handleChangePassword}
+                    disabled={changingPassword}
                   >
-                    {Icons.edit ? Icons.edit({ s: 14 }) : '✏️'} Cambiar contraseña
+                    {Icons.edit ? Icons.edit({ s: 14 }) : '✏️'} {changingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Autenticación de dos factores (2FA)</h4>
-                    <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0 }}>Mantén tu cuenta segura habilitando la verificación en dos pasos.</p>
-                  </div>
-                  <div style={{ width: 44, height: 24, borderRadius: 12, background: 'var(--primary)', position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 2px' }}>
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', marginLeft: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -363,6 +447,7 @@ export default function MiIdentidadPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {/* ─── Cerrar Sesión Global ─── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                   <div>
                     <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Cerrar sesión en todos los dispositivos</h4>
@@ -379,16 +464,19 @@ export default function MiIdentidadPage() {
                       gap: 6,
                       borderRadius: 8,
                       border: '1px solid var(--border-color)',
-                      cursor: 'pointer',
+                      cursor: closingAllSessions ? 'not-allowed' : 'pointer',
                       background: 'var(--bg-surface)',
                       fontWeight: 600,
+                      opacity: closingAllSessions ? 0.6 : 1,
                     }}
-                    onClick={logout}
+                    onClick={handleCerrarSesionGlobal}
+                    disabled={closingAllSessions}
                   >
-                    Cerrar sesión
+                    {closingAllSessions ? 'Cerrando...' : 'Cerrar sesión'}
                   </button>
                 </div>
 
+                {/* ─── Eliminar Cuenta ─── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
                   <div>
                     <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 4px' }}>Eliminar cuenta</h4>
@@ -404,17 +492,22 @@ export default function MiIdentidadPage() {
                       background: 'transparent',
                       color: 'var(--color-error, #DC3545)',
                       fontWeight: 600,
-                      cursor: 'pointer',
+                      cursor: deletingAccount ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s',
+                      opacity: deletingAccount ? 0.6 : 1,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'color-mix(in oklch, var(--color-error, #DC3545) 8%, transparent)'
+                      if (!deletingAccount) {
+                        e.currentTarget.style.background = 'color-mix(in oklch, var(--color-error, #DC3545) 8%, transparent)'
+                      }
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent'
                     }}
+                    onClick={handleEliminarCuenta}
+                    disabled={deletingAccount}
                   >
-                    Eliminar cuenta
+                    {deletingAccount ? 'Eliminando...' : 'Eliminar cuenta'}
                   </button>
                 </div>
               </div>

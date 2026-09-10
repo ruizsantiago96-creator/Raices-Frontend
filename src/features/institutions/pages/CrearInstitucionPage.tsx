@@ -289,7 +289,11 @@ export default function CrearInstitucionPage() {
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', fontFamily: 'var(--font-body)' }}>
-        <TopNav currentPage="explore" user={user} onLogout={logout} />
+        <TopNav currentPage="explore" user={user} onLogout={() => {
+          if (window.confirm('¿Estás seguro de cerrar sesión?')) {
+            logout()
+          }
+        }} />
         <main style={{ maxWidth: 520, margin: '0 auto', padding: '60px 32px', textAlign: 'center' }}>
           <div className="animate-scale-in" style={{ ...GLASS.panel, padding: '52px 36px' }}>
             <div style={{

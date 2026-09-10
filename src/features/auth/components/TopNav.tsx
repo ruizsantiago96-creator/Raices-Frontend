@@ -578,6 +578,8 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                     <button
                       onClick={() => {
                         setDropdownOpen(false)
+                        const estaConfirmado = window.confirm('¿Estás seguro de cerrar sesión?')
+                        if (!estaConfirmado) return
                         onLogout()
                       }}
                       className="dropdown-item dropdown-logout"

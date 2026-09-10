@@ -52,6 +52,12 @@ export const AUTH_ENDPOINTS = {
     description: 'Eliminar cookies httpOnly (logout server-side). Llamar ademÃ¡s de limpiar tokens del cliente.',
     response: null, // 204 No Content
   },
+  CERRAR_SESION_GLOBAL: {
+    method: 'POST',
+    path: '/autenticacion/cerrar-sesion-global',
+    description: '[FUTURO] Revoca todos los refresh tokens del usuario usando revokeRefreshTokens. CerrarÃ¡ sesiÃ³n en todos los dispositivos.',
+    response: null, // 204 No Content
+  },
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1236,6 +1242,16 @@ export const RUTAS_ENDPOINTS = {
     path: '/rutas-desarrollo/:rutaId/pasos/:pasoId/descompletar',
   },
 }
+// ——— USUARIOS / SEGURIDAD (futuros) ———
+export const USER_SECURITY_ENDPOINTS = {
+  DELETE_OWN_ACCOUNT: {
+    method: 'DELETE',
+    path: '/usuarios/cuenta',
+    description: '[FUTURO] Elimina la cuenta del usuario autenticado y todos sus datos en cascada.',
+    response: null, // 204 No Content
+  },
+}
+
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RESUMEN: TODOS LOS ENDPOINTS
@@ -1259,6 +1275,7 @@ export const ALL_ENDPOINTS = {
   ...ADMIN_ENDPOINTS,
   ...MULTIMEDIA_ENDPOINTS,
   ...RUTAS_ENDPOINTS,
+  ...USER_SECURITY_ENDPOINTS,
 }
 
 export interface EndpointInfo {
