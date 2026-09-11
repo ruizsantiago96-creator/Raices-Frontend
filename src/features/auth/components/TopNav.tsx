@@ -5,6 +5,7 @@ import { FluentEmoji } from '../constants/fluentEmojis'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
 import { useNotifications, useMarkRead } from '@features/notifications'
 import { useUiStore } from '@shared/stores/uiStore'
+import { LordIcon } from '@shared/components/LordIcon'
 import type { User } from '@/types/auth'
 
 function formatTimeAgo(dateString: string): string {
@@ -352,11 +353,11 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
             title={darkMode ? 'Modo claro' : 'Modo oscuro'}
             className="topnav-icon-btn"
           >
-            {darkMode ? (
-              <FluentEmoji.estrella size={24} />
-            ) : (
-              <FluentEmoji.luna size={24} />
-            )}
+            <LordIcon
+              src={darkMode ? '/icons/sun.json' : '/icons/moon.json'}
+              size={24}
+              trigger="hover"
+            />
           </button>
         )}
 
@@ -371,7 +372,11 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
             title="Mensajes"
             className="topnav-icon-btn"
           >
-            <FluentEmoji.chat size={24} />
+            <LordIcon
+              src="/icons/chat.json"
+              size={24}
+              trigger="hover"
+            />
           </button>
         )}
 
@@ -385,7 +390,11 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
               className="topnav-icon-btn"
               style={{ position: 'relative' }}
             >
-              <FluentEmoji.campana size={24} />
+              <LordIcon
+                src="/icons/bell.json"
+                size={24}
+                trigger="hover"
+              />
               {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute', top: 10, right: 10,

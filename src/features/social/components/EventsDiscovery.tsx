@@ -1,16 +1,25 @@
 import { useState } from 'react'
-import { Icons } from '../../../shared/components/shared'
-import { FluentEmoji } from '../../auth/constants/fluentEmojis'
+import {
+  Users,
+  BookOpen,
+  Gamepad2,
+  Bot,
+  Palette,
+  Trophy,
+  HeartPulse,
+  Wrench,
+  MapPin,
+} from 'lucide-react'
 
 const MOCK_CATEGORIES = [
-  { id: 1, name: 'Familia', icon: FluentEmoji.familia, color: '#ec4899' },
-  { id: 2, name: 'Libros y Lectura', icon: FluentEmoji.libros, color: '#eab308' },
-  { id: 3, name: 'Juegos', icon: FluentEmoji.juegos, color: '#f59e0b' },
-  { id: 4, name: 'Tecnología e IA', icon: FluentEmoji.tecnologia, color: '#3b82f6' },
-  { id: 5, name: 'Arte y Cultura', icon: FluentEmoji.arte, color: '#eab308' },
-  { id: 6, name: 'Deporte y Fitness', icon: FluentEmoji.deporte, color: '#14b8a6' },
-  { id: 7, name: 'Bienestar', icon: FluentEmoji.bienestar, color: '#06b6d4' },
-  { id: 8, name: 'Talleres', icon: FluentEmoji.talleres, color: '#8b5cf6' },
+  { id: 1, name: 'Familia', icon: Users, color: '#ec4899' },
+  { id: 2, name: 'Libros y Lectura', icon: BookOpen, color: '#eab308' },
+  { id: 3, name: 'Juegos', icon: Gamepad2, color: '#f59e0b' },
+  { id: 4, name: 'Tecnología e IA', icon: Bot, color: '#3b82f6' },
+  { id: 5, name: 'Arte y Cultura', icon: Palette, color: '#ec4899' },
+  { id: 6, name: 'Deporte y Fitness', icon: Trophy, color: '#14b8a6' },
+  { id: 7, name: 'Bienestar', icon: HeartPulse, color: '#06b6d4' },
+  { id: 8, name: 'Talleres', icon: Wrench, color: '#8b5cf6' },
 ]
 
 const MOCK_REGIONS = ['América del Norte', 'América del Sur', 'Europa', 'Online']
@@ -55,34 +64,39 @@ export function EventsDiscovery() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           gap: 16
         }}>
-          {MOCK_CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              className="card-hover"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '16px 20px',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {(() => {
-                  const IconComp = cat.icon;
-                  return IconComp ? <IconComp size={32} /> : null;
-                })()}
-              </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>
-                  {cat.name}
+          {MOCK_CATEGORIES.map(cat => {
+            const IconComp = cat.icon
+            return (
+              <button
+                key={cat.id}
+                className="card-hover"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '16px 20px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%'
+                }}
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: `${cat.color}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <IconComp size={22} color={cat.color} />
                 </div>
-              </div>
-            </button>
-          ))}
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>
+                    {cat.name}
+                  </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -142,12 +156,9 @@ export function EventsDiscovery() {
                 width: 40, height: 40, borderRadius: '50%',
                 background: city.bg, color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, fontWeight: 700, flexShrink: 0
+                flexShrink: 0
               }}>
-                {(() => {
-                  const IconComp = FluentEmoji.ubicacion;
-                  return IconComp ? <IconComp size={20} /> : null;
-                })()}
+                <MapPin size={20} color="#fff" />
               </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>

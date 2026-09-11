@@ -462,14 +462,14 @@ export default function SocialPage() {
   const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const uploadMedia = useUploadMultimedia()
-  const [mainTab, setMainTab] = useState<'conectemos'>('conectemos')
+  const [mainTab, setMainTab] = useState<'comunidad' | 'eventos' | 'acerca'>('comunidad')
   const [conectemosCategoria, setConectemosCategoria] = useState<string | null>(null)
   const [conectemosBuscarInput, setConectemosBuscarInput] = useState('')
   const [conectemosBuscar, setConectemosBuscar] = useState('')
   const { data: conectemosData } = useConectemos({
     categoriaCreativa: conectemosCategoria ?? undefined,
     buscar: conectemosBuscar,
-    enabled: mainTab === 'conectemos',
+    enabled: mainTab === 'comunidad',
   })
   const conectemosPosts = conectemosData?.posts ?? []
   const [showCreateGroup, setShowCreateGroup] = useState(false)
@@ -537,15 +537,82 @@ export default function SocialPage() {
       <main className="responsive-main" style={{ '--main-max-width': '1060px' } as CSSProperties}>
 
         {/* Header */}
-        <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
+        <div className="animate-fade-in-up" style={{ marginBottom: 20 }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Conectemos</h1>
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Conecta, comparte y crece junto a otros</p>
         </div>
 
-        {/* iOS-style Segmented Control (Removed as Conectemos is the only tab) */}
+        {/* Segmented Control Tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, background: 'var(--bg-warm)', padding: 4, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', width: 'fit-content' }}>
+          <button
+            type="button"
+            onClick={() => setMainTab('comunidad')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              background: mainTab === 'comunidad' ? 'var(--bg-surface)' : 'transparent',
+              color: mainTab === 'comunidad' ? 'var(--primary)' : 'var(--fg2)',
+              fontWeight: mainTab === 'comunidad' ? 700 : 500,
+              boxShadow: mainTab === 'comunidad' ? 'var(--shadow-sm)' : 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {Icons.message({ s: 16 })} Publicaciones
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('eventos')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              background: mainTab === 'eventos' ? 'var(--bg-surface)' : 'transparent',
+              color: mainTab === 'eventos' ? 'var(--primary)' : 'var(--fg2)',
+              fontWeight: mainTab === 'eventos' ? 700 : 500,
+              boxShadow: mainTab === 'eventos' ? 'var(--shadow-sm)' : 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {Icons.calendar({ s: 16 })} Eventos
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('acerca')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              background: mainTab === 'acerca' ? 'var(--bg-surface)' : 'transparent',
+              color: mainTab === 'acerca' ? 'var(--primary)' : 'var(--fg2)',
+              fontWeight: mainTab === 'acerca' ? 700 : 500,
+              boxShadow: mainTab === 'acerca' ? 'var(--shadow-sm)' : 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {Icons.users({ s: 16 })} Acerca de la comunidad
+          </button>
+        </div>
 
-        {mainTab === 'conectemos' ? (
+        {mainTab === 'eventos' ? (
           <EventsDiscovery />
+        ) : mainTab === 'acerca' ? (
+          <AboutCommunity />
         ) : (
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
             {/* ── Main column ── */}
