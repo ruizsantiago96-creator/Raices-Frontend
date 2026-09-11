@@ -46,6 +46,13 @@ vi.mock('@features/notifications', () => ({
   resumeStream: vi.fn(),
 }))
 
+// lookupPostalCode hace dynamic import de catálogos JSON — en tests lo reemplazamos
+// para que responda inmediatamente con no_encontrado (activa fallback manual).
+vi.mock('@shared/lib/postalCodeLookup', () => ({
+  lookupPostalCode: () => Promise.resolve({ status: 'no_encontrado' }),
+  validatePostalCodeFormat: () => null, // null = sin error de formato
+}))
+
 /* ── Datos de prueba ────────────────────────────────────────────── */
 
 const EMAIL = 'ana@example.com'
