@@ -4,6 +4,7 @@ import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
+import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
@@ -402,7 +403,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       const userObj = {
         id: String(authResult.usuario?.id ?? ''),
         email: authResult.usuario?.email || generalForm.email,
-        role: 'tutor',
+        role: 'tutor' as UserRole,
         full_name: nombreCompleto,
       }
       setRememberMe(true)
