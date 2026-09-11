@@ -6,6 +6,7 @@ import { useA11yStore } from '@features/a11y/store/a11yStore'
 import { useNotifications, useMarkRead } from '@features/notifications'
 import { useUiStore } from '@shared/stores/uiStore'
 import { LordIcon } from '@shared/components/LordIcon'
+import ConfirmDialog from '../../tutor/components/ConfirmDialog'
 import type { User } from '@/types/auth'
 
 function formatTimeAgo(dateString: string): string {
@@ -274,6 +275,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isLogoutModalOpen, setLogoutModalOpen] = useState(false)
 
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const notifDropdownRef = useRef<HTMLDivElement>(null)
@@ -573,9 +575,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                     <button
                       onClick={() => {
                         setDropdownOpen(false)
-                        const estaConfirmado = window.confirm('¿Estás seguro de cerrar sesión?')
-                        if (!estaConfirmado) return
-                        onLogout()
+                        setLogoutModalOpen(true)
                       }}
                       className="dropdown-item dropdown-logout"
                     >
@@ -601,6 +601,19 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
           </div>
         )}
       </div>
+      {/* ── Modal: Confirmar Cierre de Sesión ── */}
+      {isLogoutModalOpen && (
+        <ConfirmDialog
+          title="Cerrar sesión"
+          message="¿Estás seguro de cerrar sesión?"
+          onConfirm={() => {
+            setLogoutModalOpen(false)
+            onLogout?.()
+          }}
+          onCancel={() => setLogoutModalOpen(false)}
+          confirmLabel="Cerrar sesión"
+        />
+      )}
     </header>
   )
 }

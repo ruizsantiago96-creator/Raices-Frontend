@@ -13,6 +13,7 @@ import { LocationInputs } from '../../auth/components/WizardUI'
 import { ProfileIdentitySection } from '../components/ProfileIdentitySection'
 import { DocumentoIdentidadEstado } from '@/types/profile'
 import api from '@shared/lib/api'
+import ConfirmDialog from '../../tutor/components/ConfirmDialog'
 
 export default function MiIdentidadPage() {
   const { data: status, isLoading, isError } = useEstadoValidacion()
@@ -33,9 +34,11 @@ const usuarioActual = useAuthStore((s) => s.user) ?? null as User | null
 
   // ─── Estado para Cerrar Sesión Global ──────────────────────────
   const [closingAllSessions, setClosingAllSessions] = useState(false)
+  const [isGlobalLogoutModalOpen, setGlobalLogoutModalOpen] = useState(false)
 
   // ─── Estado para Eliminar Cuenta ───────────────────────────────
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [isDeleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false)
 
   const estado: DocumentoIdentidadEstado = (status?.estado ?? 'sin_documentos') as DocumentoIdentidadEstado
 
@@ -101,10 +104,12 @@ const handleChangePassword = useCallback(async () => {
 }, [addToast, usuarioActual])
 
 // ─── Cerrar Sesión en Todos los Dispositivos ──────────────────
-const handleCerrarSesionGlobal = useCallback(async () => {
-  const estaConfirmado = window.confirm('¿Estás seguro que quieres cerrar sesión en todos los dispositivos?')
-  if (!estaConfirmado) return
+const handleCerrarSesionGlobal = useCallback(() => {
+  setGlobalLogoutModalOpen(true)
+}, [])
 
+const confirmGlobalLogout = useCallback(async () => {
+  setGlobalLogoutModalOpen(false)
   setClosingAllSessions(true)
   try {
     await api.post('/autenticacion/cerrar-sesion-global')
@@ -117,12 +122,12 @@ const handleCerrarSesionGlobal = useCallback(async () => {
 }, [logout])
 
   // ─── Eliminar Cuenta ───────────────────────────────────────────
-  const handleEliminarCuenta = useCallback(async () => {
-    const confirmado = window.confirm(
-      '¿Estás seguro? Esta acción es irreversible y borrará todos tus datos.',
-    )
-    if (!confirmado) return
+  const handleEliminarCuenta = useCallback(() => {
+    setDeleteAccountModalOpen(true)
+  }, [])
 
+  const confirmDeleteAccount = useCallback(async () => {
+    setDeleteAccountModalOpen(false)
     setDeletingAccount(true)
     try {
       // Llamada al futuro endpoint que eliminará la cuenta y datos en cascada
@@ -503,6 +508,28 @@ const handleCerrarSesionGlobal = useCallback(async () => {
           </div>
         )}
       </div>
+
+      {/* ── Modal: Cerrar Sesión Global ── */}
+      {isGlobalLogoutModalOpen && (
+        <ConfirmDialog
+          title="Cerrar sesión global"
+          message="¿Estás seguro que quieres cerrar sesión en todos los dispositivos?"
+          onConfirm={confirmGlobalLogout}
+          onCancel={() => setGlobalLogoutModalOpen(false)}
+          confirmLabel="Cerrar sesión"
+        />
+      )}
+
+      {/* ── Modal: Eliminar Cuenta ── */}
+      {isDeleteAccountModalOpen && (
+        <ConfirmDialog
+          title="Eliminar cuenta"
+          message="Tu cuenta será desactivada y programada para eliminación definitiva en 60 días. ¿Deseas continuar?"
+          onConfirm={confirmDeleteAccount}
+          onCancel={() => setDeleteAccountModalOpen(false)}
+          confirmLabel="Eliminar cuenta"
+        />
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
