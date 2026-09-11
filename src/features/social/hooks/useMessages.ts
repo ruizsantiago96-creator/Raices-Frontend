@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { decodeAvatarUrl } from '../../../shared/lib/urlUtils'
 import type {
   Conversation,
   DirectMessage,
@@ -71,7 +72,7 @@ function mapConversation(conv: RawConversation): Conversation {
     role: socio.rol ?? socio.role,
     city: socio.ciudad ?? socio.city,
     state: socio.estado ?? socio.state,
-    avatar_url: socio.urlAvatar ?? socio.avatar_url ?? null,
+    avatar_url: decodeAvatarUrl(socio.urlAvatar ?? socio.avatar_url ?? null),
     is_active: socio.activo ?? socio.is_active,
     is_verified: socio.verificado ?? socio.is_verified,
   }

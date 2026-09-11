@@ -12,7 +12,11 @@
  *
  * Los catálogos idénticos se exportan una sola vez; los que difieren,
  * con sufijo `_TUTOR`.
+ *
+ * Los `icon` de FORMATOS son componentes Fluent Emoji (estilo Modern);
+ * el render define el tamaño (`size`). Ver ./fluentEmojis.ts.
  */
+import { FluentEmoji } from './fluentEmojis'
 
 // ── LISTA DE ACOMPAÑAMIENTO (PCD) ─────────────────────────────────
 export const LIST_ACOMPANAMIENTO = [
@@ -162,20 +166,20 @@ export const ESCALAS_OPCIONES_TUTOR = {
 
 // ── FORMATOS (PCD) ─────────────────────────────────────────────────
 export const LIST_FORMATOS = [
-  { id: 'texto', label: 'Leyendo textos', icon: '📖' },
-  { id: 'imagenes', label: 'Con imágenes', icon: '🖼️' },
-  { id: 'audio', label: 'Con audio', icon: '🎧' },
-  { id: 'video', label: 'Con videos', icon: '🎬' },
-  { id: 'persona', label: 'Con apoyo de otra persona', icon: '🤝' },
+  { id: 'texto', label: 'Leyendo textos', icon: FluentEmoji.formatoTexto },
+  { id: 'imagenes', label: 'Con imágenes', icon: FluentEmoji.formatoImagenes },
+  { id: 'audio', label: 'Con audio', icon: FluentEmoji.formatoAudio },
+  { id: 'video', label: 'Con videos', icon: FluentEmoji.formatoVideo },
+  { id: 'persona', label: 'Con apoyo de otra persona', icon: FluentEmoji.apoyo },
 ]
 
 // ── FORMATOS (TUTOR) ───────────────────────────────────────────────
 export const LIST_FORMATOS_TUTOR = [
-  { id: 'texto', label: 'Leyendo textos', icon: '📖' },
-  { id: 'imagenes', label: 'Con imágenes y pictogramas', icon: '🖼️' },
-  { id: 'audio', label: 'Con explicaciones en audio', icon: '🎧' },
-  { id: 'video', label: 'Con videos demostrativos', icon: '🎬' },
-  { id: 'persona', label: 'Con apoyo y mediación de otra persona', icon: '🤝' },
+  { id: 'texto', label: 'Leyendo textos', icon: FluentEmoji.formatoTexto },
+  { id: 'imagenes', label: 'Con imágenes y pictogramas', icon: FluentEmoji.formatoImagenes },
+  { id: 'audio', label: 'Con explicaciones en audio', icon: FluentEmoji.formatoAudio },
+  { id: 'video', label: 'Con videos demostrativos', icon: FluentEmoji.formatoVideo },
+  { id: 'persona', label: 'Con apoyo y mediación de otra persona', icon: FluentEmoji.apoyo },
 ]
 
 // ── SECCIONES DE INTERÉS (PCD) ─────────────────────────────────────

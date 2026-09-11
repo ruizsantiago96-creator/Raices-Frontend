@@ -84,8 +84,22 @@ export function useOnboardingStatus() {
   return useQuery({
     queryKey: ['onboarding-status'],
     queryFn: async () => {
-      const r = await api.get('/usuarios/onboarding')
-      return r.data
+      // Obtenemos ambos estados en paralelo
+      const [onboardingRes, identidadRes] = await Promise.all([
+        api.get('/usuarios/onboarding').catch(() => ({ data: { onboardingCompleto: false } })),
+        api.get('/usuarios/estado-validacion-identidad').catch(() => ({ data: { estado: 'no_subido' } }))
+      ])
+
+      const data = onboardingRes.data
+      const estado = identidadRes.data?.estado
+
+      // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
+      // para desbloquear todas las vistas (rutas, foros, etc.) globalmente.
+      if (estado === 'aprobado' || estado === 'pendiente') {
+        data.onboardingCompleto = true
+      }
+
+      return data
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
   })

@@ -57,7 +57,8 @@ export function useSessionVerify() {
           // Actualizamos el store con la información fresca del servidor
           // Normalizar el rol: el backend puede retornar 'institucion' (español) en vez de 'institution' (inglés)
           const role = normalizeRole(raw.rol)
-          useAuthStore.setState({
+          useAuthStore.setState(state => ({
+            ...state,
             user: {
               id: raw.id,
               email: raw.email,
@@ -69,7 +70,7 @@ export function useSessionVerify() {
               is_verified: raw.verificado,
               features: raw.features ?? {},
             },
-          })
+          }))
 
           console.log('[SessionVerify] Session valid:', raw.email)
           setIsVerified(true)

@@ -39,6 +39,11 @@ export type TutorWizardStep =
   | 'location'
   | 'email'
   | 'password'
+  | 'relationship_type'
+  | 'relationship_name'
+  | 'relationship_birthdate'
+  | 'accommodation'
+  | 'condition'
 
 interface TutorGeneralFormData {
   nombres: string
@@ -414,154 +419,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     scrollTop()
   }
 
-  const handleConditionSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (conditionData.conditions.length === 0) {
-      setError('Selecciona al menos una opción que describa la condición o "Prefiero no responder".')
-      return
-    }
-    if (conditionData.conditions.includes('Neurodivergencia (especificar)')) {
-      setWizardStep('neurodivergence')
-    } else {
-      setWizardStep('diagnosis')
-    }
-    scrollTop()
-  }
-
-  const handleNeurodivergenceSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (conditionData.neurodivergencias.length === 0) {
-      setError('Por favor, selecciona al menos un tipo de neurodivergencia.')
-      return
-    }
-    setWizardStep('diagnosis')
-    scrollTop()
-  }
-
-  const handleDiagnosisSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('history_edu')
-    scrollTop()
-  }
-
-  const handleHistoryEduSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('history_therapy')
-    scrollTop()
-  }
-
-  const handleHistoryTherapySubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('support_zones')
-    scrollTop()
-  }
-
-  const handleSupportZonesSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('support_needs')
-    scrollTop()
-  }
-
-  const handleSupportNeedsSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('support_areas')
-    scrollTop()
-  }
-
-  const handleSupportAreasSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('scales1')
-    scrollTop()
-  }
-
-  const handleSupportSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setWizardStep('scales1')
-    scrollTop()
-  }
-
-  const handleScales1Submit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!scales.autonomia || !scales.independencia || !scales.comunicacion || !scales.comprension) {
-      setError('Por favor, responde las 4 escalas de esta sección.')
-      return
-    }
-    setWizardStep('scales2')
-    scrollTop()
-  }
-
-  const handleScales2Submit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!scales.energia || !scales.movilidad || !scales.social || !scales.emocional) {
-      setError('Por favor, responde las 4 escalas de esta sección.')
-      return
-    }
-    setWizardStep('formats')
-    scrollTop()
-  }
-
-  const handleFormatsSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (formatos.length === 0) {
-      setError('Selecciona al menos un formato en el que se comprenda mejor la información.')
-      return
-    }
-    setWizardStep('interests')
-    scrollTop()
-  }
-
-  const handleInterestsSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (selectedInterests.length === 0) {
-      setError('Por favor, selecciona al menos un interés o actividad.')
-      return
-    }
-    setWizardStep('viability')
-    scrollTop()
-  }
-
-  // ── Generación de narrativa con IA ──────────────────────────────
-  const generateNarrative = () => {
-    const name = nombreDependiente.trim() || 'tu ser querido'
-    const condList = conditionData.conditions.filter(c => c !== 'Prefiero no responder').join(', ') || 'diversidad de fortalezas'
-    const neuroList = conditionData.neurodivergencias.length > 0 ? ` con rasgos de ${conditionData.neurodivergencias.join(', ')}` : ''
-    const quienEres = `Como tutor/a y cuidador/a de ${name}, reconoces su valor integral (${condList}${neuroList}) y buscas los mejores caminos para su autonomía y bienestar. Tu acompañamiento y dedicación son el pilar de su desarrollo.`
-
-    const tempoMap: Record<string, string> = {
-      nacimiento: 'desde su nacimiento', infancia: 'durante su infancia',
-      adolescencia: 'durante su adolescencia', vida_adulta: 'en su vida adulta',
-      progresiva: 'de forma evolutiva a lo largo del tiempo',
-      en_evaluacion: 'en un proceso activo de exploración y evaluación',
-    }
-    const temporalidadTxt = tempoMap[conditionData.temporalidad] || 'en su recorrido de vida'
-    const diagnosticoTxt = conditionData.tieneDiagnostico === 'si' && conditionData.diagnosticoEspecifico
-      ? `${name} cuenta con un diagnóstico específico (${conditionData.diagnosticoEspecifico}) que orienta sus apoyos.`
-      : `están en un momento de búsqueda donde conectar con especialistas clave abrirá nuevas oportunidades.`
-    const contexto = `La vivencia de ${name} se ha forjado ${temporalidadTxt}. En su día a día, se equilibra su independencia con los apoyos necesarios, y ${diagnosticoTxt} Adaptamos cada interacción para que reciban la información de la forma más accesible y oportuna.`
-
-    const interesesTxt = selectedInterests.length > 0
-      ? `${name} muestra gran entusiasmo por áreas como ${selectedInterests.slice(0, 4).join(', ')}${selectedInterests.length > 4 ? ` y otras ${selectedInterests.length - 4} actividades más` : ''}.`
-      : `${name} tiene una mente curiosa lista para descubrir nuevas experiencias y pasiones.`
-    const loQueTeGusta = `${interesesTxt} En Raíces te acompañaremos a ti y a ${name} con opciones útiles, dignas y a la medida para alcanzar cada meta de su plan de vida.`
-
-    return { quienEres, contexto, loQueTeGusta }
-  }
-
-  // ── Envío final ─────────────────────────────────────────────────
-  const handleFinalSubmit = async (e: FormEvent) => {
+  const handleConditionSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSending(true)
     setError('')
@@ -619,7 +477,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
       {/* ── Progress bar ── */}
-      {wizardStep !== 'thanks' && wizardStep !== 'summary' && (
+      {(
+
         <div style={{ marginBottom: 20, flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#7C3AED', textTransform: 'uppercase' }}>
@@ -671,7 +530,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Nombre(s) (como tutor/cuidador) <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="text" className="auth-input" required placeholder="Ej. Ana Laura"
               value={generalForm.nombres}
-              onChange={e => setGeneralForm({ ...generalForm, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+              onChange={e => setGeneralForm(prev => ({ ...prev, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') }))} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
@@ -679,13 +538,13 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Primer apellido (como tutor/cuidador) <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" className="auth-input" required placeholder="Ej. García"
                 value={generalForm.apellidoPaterno}
-                onChange={e => setGeneralForm({ ...generalForm, apellidoPaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+                onChange={e => setGeneralForm(prev => ({ ...prev, apellidoPaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') }))} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Segundo apellido (como tutor/cuidador) <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span></label>
               <input type="text" className="auth-input" placeholder="Ej. López"
                 value={generalForm.apellidoMaterno}
-                onChange={e => setGeneralForm({ ...generalForm, apellidoMaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') })} />
+                onChange={e => setGeneralForm(prev => ({ ...prev, apellidoMaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') }))} />
             </div>
           </div>
 
@@ -720,7 +579,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
               max={getMaxBirthDate()}
               min={MIN_BIRTH_DATE}
               value={generalForm.birth_date}
-              onChange={e => setGeneralForm({ ...generalForm, birth_date: e.target.value })} />
+              onChange={e => setGeneralForm(prev => ({ ...prev, birth_date: e.target.value }))} />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('name'); scrollTop() }} submitLabel="Continuar" />
@@ -774,7 +633,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="email" className="auth-input" required placeholder="correo@ejemplo.com"
               value={generalForm.email}
-              onChange={e => setGeneralForm({ ...generalForm, email: e.target.value })} />
+              onChange={e => setGeneralForm(prev => ({ ...prev, email: e.target.value }))} />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('location'); scrollTop() }} submitLabel="Continuar" />
@@ -799,7 +658,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
             <PasswordField
               value={generalForm.password}
-              onChange={v => setGeneralForm({ ...generalForm, password: v })}
+              onChange={v => setGeneralForm(prev => ({ ...prev, password: v }))}
               showPass={showPass}
               onToggleShow={() => setShowPass(!showPass)}
               strength={passStrength}
@@ -947,7 +806,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             {LIST_ACOMPANAMIENTO.map(opt => {
               const isSelected = generalForm.acompanamiento === opt.id
               return (
-                <button key={opt.id} type="button" onClick={() => setGeneralForm({ ...generalForm, acompanamiento: opt.id })}
+                <button key={opt.id} type="button" onClick={() => setGeneralForm(prev => ({ ...prev, acompanamiento: opt.id }))}
                   style={{
                     padding: '14px 16px', borderRadius: 12,
                     border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
@@ -1001,651 +860,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         </form>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 11: NEURODIVERGENCIA (Condicional)
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'neurodivergence' && (
-        <form onSubmit={handleNeurodivergenceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          <div style={{ marginBottom: 0 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Especificar neurodivergencia
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Qué tipo de neurodivergencia describe a {personName}?
-            </p>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
-            {NEURODIVERGENCIAS_LIST.map(nd => {
-              const isChecked = conditionData.neurodivergencias.includes(nd)
-              return (
-                <button key={nd} type="button" onClick={() => toggleNeuro(nd)}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isChecked ? 'var(--primary)' : '#E5DCD2'}`, background: isChecked ? 'var(--primary)' : 'var(--bg-surface)', color: isChecked ? '#ffffff' : 'var(--fg1)', fontWeight: 600, fontSize: 12, cursor: 'pointer', textAlign: 'left' }}>
-                  {nd}
-                </button>
-              )
-            })}
-          </div>
-          {conditionData.neurodivergencias.includes('Otro') && (
-            <input type="text" className="auth-input" placeholder="¿Cuál neurodivergencia?" style={{ marginTop: 10 }}
-              value={conditionData.neuroOtro} onChange={e => setConditionData({ ...conditionData, neuroOtro: e.target.value })} />
-          )}
-
-          <NavButtons onBack={() => { setWizardStep('condition'); scrollTop() }} submitLabel="Continuar" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 12: DIAGNÓSTICO Y TEMPORALIDAD
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'diagnosis' && (
-        <form onSubmit={handleDiagnosisSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          <div style={{ marginBottom: 0 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Diagnóstico de {personName}
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Esta información nos ayuda a sugerir especialistas, programas y recursos adaptados.
-            </p>
-          </div>
-
-          {/* Diagnóstico */}
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 8 }}>¿Cuenta {personName} con algún diagnóstico formal o clínico?</label>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-              <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'si', redFlagDiagnostico: false })}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'si' ? '#229B58' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'si' ? 'rgba(34,155,88,0.08)' : 'var(--bg-surface)', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
-                Sí (especificar)
-              </button>
-              <button type="button" onClick={() => setConditionData({ ...conditionData, tieneDiagnostico: 'no', diagnosticoEspecifico: '', redFlagDiagnostico: true })}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${conditionData.tieneDiagnostico === 'no' ? '#FF4D68' : '#E5DCD2'}`, background: conditionData.tieneDiagnostico === 'no' ? 'rgba(255,77,104,0.08)' : 'var(--bg-surface)', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
-                No
-              </button>
-            </div>
-            {conditionData.tieneDiagnostico === 'si' ? (
-              <input type="text" className="auth-input" placeholder="Escribe el diagnóstico formal o clínico"
-                value={conditionData.diagnosticoEspecifico}
-                onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })} />
-            ) : conditionData.tieneDiagnostico === 'no' ? (
-              <div style={{ background: 'rgba(255,77,104,0.08)', border: '1px solid rgba(255,77,104,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--fg1)', lineHeight: 1.5 }}>
-                💡 <strong>Nota:</strong> Al no contar con un diagnóstico formal, te abriremos un camino especializado para conectar con profesionales de evaluación.
-              </div>
-            ) : null}
-          </div>
-
-          {/* Temporalidad */}
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 8 }}>¿En qué momento comenzó o se identificó la condición?</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
-              {LIST_TEMPORALIDAD.map(t => {
-                const isSelected = conditionData.temporalidad === t.id
-                return (
-                  <button key={t.id} type="button" onClick={() => setConditionData({ ...conditionData, temporalidad: t.id })}
-                    style={{
-                      padding: '9px 12px', borderRadius: 8,
-                      border: `1.5px solid ${isSelected ? 'var(--primary)' : '#E5DCD2'}`,
-                      background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
-                      color: isSelected ? '#ffffff' : 'var(--fg1)',
-                      fontWeight: isSelected ? 700 : 500, fontSize: 12, cursor: 'pointer', textAlign: 'left',
-                      display: 'flex', alignItems: 'center', gap: 8,
-                    }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffffff' }} />}
-                    </div>
-                    <span>{t.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <NavButtons
-            onBack={() => {
-              if (conditionData.conditions.includes('Neurodivergencia (especificar)')) {
-                setWizardStep('neurodivergence')
-              } else {
-                setWizardStep('condition')
-              }
-              scrollTop()
-            }}
-            submitLabel="Continuar a historial"
-          />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 13: HISTORIAL EDUCATIVO
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'history_edu' && (
-        <form onSubmit={handleHistoryEduSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Historial educativo
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Qué tipo de escuela o modalidad ha cursado {personName}? (Opcional, puedes elegir varias)
-            </p>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
-              {LIST_EDUCACION.map(op => (
-                <CheckChip key={op} label={op} selected={educacionHistory.includes(op)} onToggle={() => toggleEducacionHistory(op)} />
-              ))}
-            </div>
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('diagnosis'); scrollTop() }} submitLabel="Continuar" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 14: HISTORIAL DE TERAPIAS
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'history_therapy' && (
-        <form onSubmit={handleHistoryTherapySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Terapias recibidas
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Con qué terapias cuenta o ha contado {personName}? (Opcional, puedes elegir varias)
-            </p>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
-              {LIST_TERAPIAS.map(op => (
-                <CheckChip key={op} label={op} selected={terapiaHistory.includes(op)} onToggle={() => toggleTerapiaHistory(op)} />
-              ))}
-            </div>
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('history_edu'); scrollTop() }} submitLabel="Continuar a zonas" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 15: ZONAS DE PREFERENCIA
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'support_zones' && (
-        <form onSubmit={handleSupportZonesSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Zonas de preferencia
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Agrega las zonas donde les sea más fácil acudir a actividades, terapias o servicios para {personName}. (Opcional)
-            </p>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {generalForm.ciudad === 'Mérida' && (
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>
-                  Sugerencias frecuentes en Mérida:
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 7 }}>
-                  {MERIDA_ZONAS_SUGERIDAS.map(sug => {
-                    const isSelected = preferredZones.includes(sug)
-                    return (
-                      <button
-                        key={sug}
-                        type="button"
-                        onClick={() => toggleSuggestedZone(sug)}
-                        style={{
-                          padding: '9px 12px',
-                          borderRadius: 8,
-                          border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                          background: isSelected ? 'color-mix(in oklch, #229B58 8%, white)' : 'var(--bg-surface)',
-                          color: isSelected ? 'var(--primary)' : 'var(--fg1)',
-                          fontSize: 12.5,
-                          fontWeight: isSelected ? 700 : 500,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 9,
-                          fontFamily: 'var(--font-body)',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{
-                          width: 16, height: 16, borderRadius: 4,
-                          border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`,
-                          background: isSelected ? '#229B58' : 'var(--bg-surface)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', flexShrink: 0
-                        }}>
-                          {isSelected && Icons.check({ s: 10 })}
-                        </div>
-                        <span>{sug}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-              {/* Agregar otra zona manualmente */}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  className="auth-input"
-                  placeholder="Escribe otra zona, distrito o vecindario"
-                  value={zonaInput}
-                  onChange={e => setZonaInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addManualZone() } }}
-                  style={{ flex: 1, fontSize: 13 }}
-                />
-                <button
-                  type="button"
-                  onClick={addManualZone}
-                  style={{
-                    padding: '8px 16px', borderRadius: 8,
-                    background: '#229B58', color: '#fff', border: 'none',
-                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                  }}
-                >
-                  Agregar
-                </button>
-              </div>
-
-              {/* Zonas seleccionadas */}
-              {preferredZones.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-                  {preferredZones.map(z => (
-                    <span key={z} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'rgba(34, 155, 88, 0.12)', color: 'var(--fg1)',
-                      border: '1.5px solid #229B58', borderRadius: 8,
-                      padding: '4px 10px', fontSize: 12, fontWeight: 700,
-                    }}>
-                      📍 {z}
-                      <button
-                        type="button"
-                        onClick={() => removePreferredZone(z)}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          padding: 0, color: '#6b7280', fontSize: 14, lineHeight: 1,
-                          fontWeight: 700, display: 'flex', alignItems: 'center',
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-          <NavButtons onBack={() => { setWizardStep('history_therapy'); scrollTop() }} submitLabel="Continuar a necesidades" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 16: NECESIDADES A CUBRIR
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'support_needs' && (
-        <form onSubmit={handleSupportNeedsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Necesidades a cubrir
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿Cuáles son los apoyos más importantes para ustedes hoy? (Opcional, puedes elegir varias)
-            </p>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
-              {LIST_NECESIDADES.map(op => (
-                <CheckChip key={op} label={op} selected={needsList.includes(op)} onToggle={() => toggleNeedsList(op)} />
-              ))}
-            </div>
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('support_zones'); scrollTop() }} submitLabel="Continuar a áreas de apoyo" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 17: ÁREAS DE APOYO
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'support_areas' && (
-        <form onSubmit={handleSupportAreasSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Áreas donde {personName} requiere apoyo
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿En qué aspectos de la vida diaria les gustaría contar con más acompañamiento? (Opcional, puedes elegir varias)
-            </p>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 7 }}>
-              {LIST_AREAS_APOYO.map(op => (
-                <CheckChip key={op} label={op} selected={supportAreas.includes(op)} onToggle={() => toggleSupportAreas(op)} />
-              ))}
-            </div>
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('support_needs'); scrollTop() }} submitLabel="Continuar a escalas" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 9: ESCALAS A-D (1/2)
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'scales1' && (
-        <form onSubmit={handleScales1Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Escalas de Vida de {personName} (1/2)
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Selecciona la opción que mejor represente la situación actual de {personName}.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="A. Autonomía" desc="¿Qué tanto participa en decisiones?" options={ESCALAS_OPCIONES.autonomia} value={scales.autonomia} onChange={v => setScales({ ...scales, autonomia: Number(v) })} />
-            <ScaleCard title="B. Independencia" desc="¿Qué nivel de apoyo necesita?" options={ESCALAS_OPCIONES.independencia} value={scales.independencia} onChange={v => setScales({ ...scales, independencia: Number(v) })} />
-            <ScaleCard title="C. Comunicación" desc="¿Cómo expresa sus necesidades?" options={ESCALAS_OPCIONES.comunicacion} value={scales.comunicacion} onChange={v => setScales({ ...scales, comunicacion: Number(v) })} />
-            <ScaleCard title="D. Comprensión" desc="¿Sigue instrucciones o decisiones?" options={ESCALAS_OPCIONES.comprension} value={scales.comprension} onChange={v => setScales({ ...scales, comprension: Number(v) })} />
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('support_areas'); scrollTop() }} submitLabel="Continuar" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 10: ESCALAS E-H (2/2)
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'scales2' && (
-        <form onSubmit={handleScales2Submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Escalas de Vida de {personName} (2/2)
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Continúa evaluando el desenvolvimiento de {personName} en estas áreas.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <ScaleCard title="E. Energía / Resistencia" desc="¿Cómo impactan su energía y regulación?" options={ESCALAS_OPCIONES.energia} value={scales.energia} onChange={v => setScales({ ...scales, energia: Number(v) })} />
-            <ScaleCard title="F. Movilidad" desc="¿Cómo interactúa físicamente con su entorno?" options={ESCALAS_OPCIONES.movilidad} value={scales.movilidad} onChange={v => setScales({ ...scales, movilidad: Number(v) })} />
-            <ScaleCard title="G. Social" desc="¿Cómo participa con otras personas o grupos?" options={ESCALAS_OPCIONES.social} value={scales.social} onChange={v => setScales({ ...scales, social: Number(v) })} />
-            <ScaleCard title="H. Emocional" desc="¿Qué tanta estabilidad y regulación emocional vive?" options={ESCALAS_OPCIONES.emocional} value={scales.emocional} onChange={v => setScales({ ...scales, emocional: Number(v) })} />
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('scales1'); scrollTop() }} submitLabel="Continuar" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 11: FORMATOS DE INFORMACIÓN
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'formats' && (
-        <form onSubmit={handleFormatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Formatos de información para {personName}
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              ¿En qué formatos comprende mejor o le resulta más cómodo recibir información?
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {LIST_FORMATOS.map(fmt => {
-              const isChecked = formatos.includes(fmt.id)
-              return (
-                <button key={fmt.id} type="button" onClick={() => toggleFormato(fmt.id)}
-                  style={{
-                    padding: '12px 14px', borderRadius: 10,
-                    border: `1.5px solid ${isChecked ? '#229B58' : '#E5DCD2'}`,
-                    background: isChecked ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
-                    color: isChecked ? 'var(--primary)' : 'var(--fg1)',
-                    fontWeight: isChecked ? 700 : 500, fontSize: 13,
-                    cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
-                    transition: 'all 0.15s ease',
-                  }}>
-                  <span style={{ fontSize: 18 }}>{fmt.icon}</span>
-                  <span style={{ flex: 1 }}>{fmt.label}</span>
-                  <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isChecked ? '#229B58' : '#9ca3af'}`, background: isChecked ? '#229B58' : 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-                    {isChecked && Icons.check({ s: 10 })}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          <NavButtons onBack={() => { setWizardStep('scales2'); scrollTop() }} submitLabel="Continuar a intereses" />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 12: INTERESES
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'interests' && (
-        <form onSubmit={handleInterestsSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 12, flexShrink: 0 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Intereses y actividades de {personName}
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Selecciona las áreas y temas que más le apasionan o en las que busca nuevas oportunidades.
-            </p>
-          </div>
-
-          {/* Scrollable interest tags */}
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {INTEREST_SECTIONS.map((sec) => (
-                <div key={sec.title} style={{
-                  background: 'var(--bg-surface)',
-                  border: '1.5px solid var(--border-color)',
-                  borderRadius: 14,
-                  padding: '12px 14px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: sec.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: sec.color, letterSpacing: '0.07em' }}>
-                      {sec.title}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {sec.items.map((item) => {
-                      const isSelected = selectedInterests.includes(item)
-                      return (
-                        <button key={item} type="button" onClick={() => toggleInterest(item)}
-                          style={{
-                            padding: '7px 13px', borderRadius: 8,
-                            border: isSelected ? `2px solid ${sec.color}` : '1.5px solid #E5DCD2',
-                            background: isSelected ? sec.color : 'var(--bg-surface)',
-                            color: isSelected ? '#ffffff' : 'var(--fg1)',
-                            fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
-                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-                            transition: 'all 0.15s ease',
-                          }}>
-                          <span>{item}</span>
-                          {isSelected && Icons.check({ s: 11 })}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ height: 16 }} />
-          </div>
-
-          {/* Fixed nav at bottom */}
-          <div style={{ display: 'flex', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5DCD2', flexShrink: 0 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setError(''); setWizardStep('formats'); scrollTop() }} style={{ flex: 1 }}>
-              {Icons.arrowLeft({ s: 16 })} Volver
-            </button>
-            <button className="auth-btn-primary" type="submit" style={{ flex: 2 }}>
-              Continuar {Icons.arrowRight({ s: 18 })}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           STEP 13: VIABILIDAD ECONÓMICA
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'viability' && (
-        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
-              Viabilidad económica familiar
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Esto nos ayuda a recomendarles opciones acordes a su presupuesto familiar.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: '16px' }}>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', marginBottom: 10 }}>¿Qué tipo de opciones son más viables para su familia hoy?</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-              {LIST_VIABILIDAD.map((v) => {
-                const isSelected = viabilidad === v.id
-                return (
-                  <button key={v.id} type="button" onClick={() => setViabilidad(v.id)}
-                    style={{
-                      padding: '12px 14px', borderRadius: 10,
-                      border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
-                      background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
-                      color: isSelected ? 'var(--primary)' : 'var(--fg1)',
-                      fontWeight: isSelected ? 700 : 500, fontSize: 12.5,
-                      cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
-                      transition: 'all 0.15s ease',
-                    }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#229B58' }} />}
-                    </div>
-                    <span>{v.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Otros temas o actividades que le gustaría explorar a {personName}</label>
-            <input type="text" className="auth-input" placeholder="Ej. Arte terapia, natación adaptada, música, robótica..."
-              value={otrosIntereses}
-              onChange={e => setOtrosIntereses(e.target.value)} />
-          </div>
-
-          <NavButtons
-            onBack={() => { setWizardStep('interests'); scrollTop() }}
-            submitLabel={sending ? 'Completando registro...' : 'Finalizar registro'}
-            submitDisabled={sending}
-            submitIcon={Icons.sparkles({ s: 18 })}
-          />
-        </form>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           THANKS SCREEN (Confirmación)
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'thanks' && (
-        <div style={{
-          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 24,
-          padding: '36px 28px', textAlign: 'center', boxShadow: 'var(--shadow-lg)',
-          animation: 'fadeInUp 0.4s ease both',
-        }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #7C3AED 0%, #3A86FF 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 32, boxShadow: '0 8px 24px rgba(124, 58, 237, 0.3)' }}>
-            🎉
-          </div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px' }}>
-            ¡Gracias por ser el apoyo de {personName}!
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.6, margin: '0 auto 24px', maxWidth: 360 }}>
-            Hemos registrado tu perfil de tutor/a y las necesidades de {personName}. Estamos listos para acompañarlos con las mejores oportunidades.
-          </p>
-          <div style={{ background: 'var(--bg-cool)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '16px 20px', marginBottom: 28, textAlign: 'left', fontSize: 13, color: 'var(--fg2)', lineHeight: 1.6 }}>
-            <p style={{ margin: '0 0 8px', fontWeight: 700, color: 'var(--fg1)' }}>
-              🔒 Tu información está protegida
-            </p>
-            <p style={{ margin: 0, fontWeight: 500, color: 'var(--fg1)' }}>
-              Cada dato ingresado nos permite conectar a {personName} con instituciones seguras, actividades accesibles y una comunidad confiable.
-            </p>
-          </div>
-          <button className="auth-btn-primary" type="button"
-            onClick={() => { setWizardStep('summary'); scrollTop() }}
-            style={{ minWidth: 240, padding: '14px 24px', fontSize: 15 }}>
-            Ver mi Resumen de Bienvenida {Icons.sparkles({ s: 18 })}
-          </button>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-           SUMMARY / BIENVENIDA GENERADO POR IA
-           ═══════════════════════════════════════════════════════════ */}
-      {wizardStep === 'summary' && (
-        <div style={{
-          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 24,
-          padding: '30px 26px', boxShadow: 'var(--shadow-lg)',
-          animation: 'fadeInUp 0.4s ease both', overflowY: 'auto',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-            <div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--color-coral)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Narrativa de Identidad</span>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '4px 0 0' }}>Bienvenido a Raíces</h2>
-            </div>
-            <div style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#ffffff', padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
-              {Icons.sparkles({ s: 13 })} Generado por IA
-            </div>
-          </div>
-
-          <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '0 0 20px', lineHeight: 1.5 }}>
-            A través de nuestra inteligencia artificial hemos captado la esencia y necesidades de {personName} para acompañarlos:
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--primary)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🌟</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>1. Su identidad y fortalezas</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.quienEres || `Como tutor/a de ${personName}, buscas los mejores caminos para su desarrollo y bienestar.`}
-              </p>
-            </div>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-amarillo)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🧭</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>2. Su contexto</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.contexto || `Su entorno y experiencia marcan el rumbo para adaptar cada herramienta y apoyo.`}
-              </p>
-            </div>
-            <div style={{ background: 'var(--bg-cool)', border: '1.5px solid var(--color-coral)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🎯</span>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--fg1)', margin: 0 }}>3. Sus intereses y metas</h3>
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.6 }}>
-                {aiNarrative?.loQueTeGusta || `Sus pasiones guían el camino hacia nuevas conexiones y oportunidades.`}
-              </p>
-            </div>
-          </div>
-
-          <button className="auth-btn-primary" type="button" onClick={handleFinishToLogin}
-            style={{ width: '100%', padding: '14px 20px', fontSize: 15 }}>
-            Comencemos su camino en Raíces   {Icons.arrowRight({ s: 18 })}
-          </button>
-        </div>
-      )}
     </div>
   )
 }

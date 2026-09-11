@@ -1,5 +1,7 @@
 import React from 'react'
 import { checkPasswordCriteria } from '../lib/passwordStrength'
+import { CatalogIcon } from './CatalogIcon'
+import { FluentEmoji } from '../constants/fluentEmojis'
 
 export interface PasswordRequirementsProps {
   password?: string
@@ -32,7 +34,7 @@ export default function PasswordRequirements({ password = '' }: PasswordRequirem
       aria-live="polite"
     >
       <span style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-        ⚠️ Te falta:
+        <CatalogIcon icon={FluentEmoji.teFalta} size={13} /> Te falta:
       </span>
       {missing.map(m => (
         <span

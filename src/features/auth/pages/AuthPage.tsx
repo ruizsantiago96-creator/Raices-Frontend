@@ -14,6 +14,8 @@ import InstitutionRegistrationWizard from '../components/InstitutionRegistration
 import EnterpriseRegistrationWizard from '../components/EnterpriseRegistrationWizard'
 import { ROLES } from '../constants/roles'
 import { mapErrorMessage } from '../lib/mapErrorMessage'
+import { CatalogIcon } from '../components/CatalogIcon'
+import { FluentEmoji } from '../constants/fluentEmojis'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -397,7 +399,7 @@ export default function AuthPage() {
                           const RoleIcon = r.icon
                           return (
                             <button key={r.id} type="button" onClick={() => setForm(f => ({ ...f, role: r.id }))} aria-pressed={form.role === r.id} style={s.roleBtn(form.role === r.id)}>
-                              <span style={s.avatar(form.role === r.id)}><RoleIcon active={false} /></span>
+                              <span style={s.avatar(form.role === r.id)}><RoleIcon size={32} /></span>
                               <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 14, width: 'calc(100% - 100px)' }}>
                                 <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--fg1)' }}>{r.title}</span>
                                 <span style={{ display: 'block', fontSize: 12, color: 'var(--fg2)', marginTop: 2 }}>{r.desc}</span>
@@ -417,7 +419,7 @@ export default function AuthPage() {
                       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 14px', textAlign: 'center', lineHeight: 1.3 }}>Verificamos y protegemos tu identidad para un camino seguro y confidencial.</h1>
                       <div style={{ background: 'var(--bg-cool)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24, color: 'var(--fg2)', fontSize: 14, lineHeight: 1.5 }}>
                         <p style={{ margin: 0 }}>Tu registro nos permite confirmar tu identidad, proteger tu seguridad y ofrecerte caminos más confiables, personalizados y dignos dentro de la plataforma.</p>
-                        <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg1)' }}>🔒 Tus datos son confidenciales, están protegidos y nunca serán compartidos sin tu autorización.</p>
+                        <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.privacidad} size={14} /> Tus datos son confidenciales, están protegidos y nunca serán compartidos sin tu autorización.</p>
                       </div>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 20, fontSize: 14, color: 'var(--fg1)', userSelect: 'none', padding: '4px 8px' }}>
                         <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }} />

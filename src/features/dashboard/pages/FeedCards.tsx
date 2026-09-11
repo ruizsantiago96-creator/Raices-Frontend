@@ -31,9 +31,37 @@ const avatarStyle = (extra = {}) => ({
 })
 
 /* ═══════════════════════════════════════════════════════════
+   Helper: Extract image from content
+   ═══════════════════════════════════════════════════════════ */
+function decodeAndExtract(content: string) {
+  if (!content) return { text: '', imageUrl: null }
+  let decoded = content
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+
+  const urlRegex = /(https:\/\/firebasestorage\.googleapis\.com[^\s]+)/
+  const match = decoded.match(urlRegex)
+  
+  if (match) {
+    const imageUrl = match[1]
+    const text = decoded.replace(imageUrl, '').trim()
+    return { text, imageUrl }
+  }
+  
+  return { text: decoded, imageUrl: null }
+}
+
+/* ═══════════════════════════════════════════════════════════
    CommunityPostCard — Reddit-style post card
    ═══════════════════════════════════════════════════════════ */
 export function CommunityPostCard({ post }: { post: CommunityPost }) {
+  const { text, imageUrl } = decodeAndExtract(post.content)
+
   return (
     <article
       className="card-hover"
@@ -94,12 +122,20 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
               {post.title}
             </h3>
           )}
-          <p style={{
-            fontSize: 15, color: 'var(--fg2)', margin: 0, lineHeight: 1.55,
-            display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>
-            {post.content}
-          </p>
+          {text && (
+            <p style={{
+              fontSize: 15, color: 'var(--fg2)', margin: 0, lineHeight: 1.55,
+              display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {text}
+            </p>
+          )}
+          {imageUrl && (
+            <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', background: 'var(--bg-cool)', display: 'flex', justifyContent: 'center' }}>
+              <img src={imageUrl} alt="" style={{ maxWidth: '100%', maxHeight: 350, objectFit: 'contain', display: 'block' }} loading="lazy" />
+            </div>
+          )}
         </div>
       </Link>
 

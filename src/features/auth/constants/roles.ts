@@ -1,14 +1,11 @@
-import type { ComponentType } from 'react'
-import PcdDoodle from '../components/doodles/PcdDoodle'
-import TutorDoodle from '../components/doodles/TutorDoodle'
-import InstitutionDoodle from '../components/doodles/InstitutionDoodle'
-import EnterpriseDoodle, { type DoodleProps } from '../components/doodles/EnterpriseDoodle'
+import type { FluentEmojiComponent } from './fluentEmojis'
+import { FluentEmoji } from './fluentEmojis'
 
 export interface RoleOption {
   id: string
   title: string
   desc: string
-  icon: ComponentType<DoodleProps>
+  icon: FluentEmojiComponent
 }
 
 export const ROLES: RoleOption[] = [
@@ -16,24 +13,24 @@ export const ROLES: RoleOption[] = [
     id: 'pcd',
     title: 'Persona con discapacidad',
     desc: 'Accede a servicios, empleo y recursos personalizados',
-    icon: PcdDoodle,
+    icon: FluentEmoji.pcdRole,
   },
   {
     id: 'tutor',
     title: 'Tutor o cuidador',
     desc: 'Gestiona el camino de una persona bajo tu cuidado',
-    icon: TutorDoodle,
+    icon: FluentEmoji.tutorRole,
   },
   {
     id: 'institution',
     title: 'Institución',
     desc: 'Ofrece servicios, empleo y apoyo a la comunidad',
-    icon: InstitutionDoodle,
+    icon: FluentEmoji.gobierno,
   },
   {
     id: 'empresa',
     title: 'Empresa inclusiva',
     desc: 'Publica vacantes y promueve la inclusión laboral',
-    icon: EnterpriseDoodle,
+    icon: FluentEmoji.laboral,
   },
 ]

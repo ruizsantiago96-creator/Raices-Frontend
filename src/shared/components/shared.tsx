@@ -246,3 +246,5 @@ export const AppFooter: React.FC = () => (
     </div>
   </footer>
 )
+
+export * from './RestrictedUI'
