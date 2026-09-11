@@ -462,7 +462,7 @@ export default function SocialPage() {
   const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const uploadMedia = useUploadMultimedia()
-  const [mainTab, setMainTab] = useState<'community' | 'conectemos' | 'about'>('community')
+  const [mainTab, setMainTab] = useState<'conectemos'>('conectemos')
   const [conectemosCategoria, setConectemosCategoria] = useState<string | null>(null)
   const [conectemosBuscarInput, setConectemosBuscarInput] = useState('')
   const [conectemosBuscar, setConectemosBuscar] = useState('')
@@ -542,22 +542,9 @@ export default function SocialPage() {
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Conecta, comparte y crece junto a otros</p>
         </div>
 
-        {/* iOS-style Segmented Control */}
-        <div className="animate-fade-in-up delay-1" style={{ display: 'inline-flex', background: 'var(--bg-cool)', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24 }}>
-          {[
-            { key: 'community' as const, label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
-            { key: 'conectemos' as const, label: 'Conectemos', icon: Icons.sparkles },
-          ].map(t => (
-            <button key={t.key} onClick={() => setMainTab(t.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: mainTab === t.key ? 'var(--bg-surface)' : 'transparent', boxShadow: mainTab === t.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: mainTab === t.key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: mainTab === t.key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease' }}>
-              {t.icon({ s: 15 })} <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* iOS-style Segmented Control (Removed as Conectemos is the only tab) */}
 
-        {mainTab === 'about' ? (
-          <AboutCommunity />
-        ) : mainTab === 'conectemos' ? (
+        {mainTab === 'conectemos' ? (
           <EventsDiscovery />
         ) : (
           <div style={{ maxWidth: 700, margin: '0 auto' }}>

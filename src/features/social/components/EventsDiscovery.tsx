@@ -71,7 +71,10 @@ export function EventsDiscovery() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {<cat.icon size={32} />}
+                {(() => {
+                  const IconComp = cat.icon;
+                  return IconComp ? <IconComp size={32} /> : null;
+                })()}
               </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>
@@ -141,7 +144,10 @@ export function EventsDiscovery() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 16, fontWeight: 700, flexShrink: 0
               }}>
-                {city.name.charAt(0)}
+                {(() => {
+                  const IconComp = FluentEmoji.ubicacion;
+                  return IconComp ? <IconComp size={20} /> : null;
+                })()}
               </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg1)' }}>
