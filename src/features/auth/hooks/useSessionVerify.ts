@@ -3,6 +3,7 @@ import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
 import { getToken } from '@shared/lib/storage'
 import { normalizeRole } from './useAuth'
+import { decodeAvatarUrl } from '@shared/lib/urlUtils'
 
 /**
  * Hook que verifica la sesión del usuario al montar la aplicación.
@@ -66,7 +67,7 @@ export function useSessionVerify() {
               full_name: raw.nombreCompleto,
               city: raw.ciudad,
               state: raw.estado,
-              avatar_url: raw.urlAvatar,
+              avatar_url: decodeAvatarUrl(raw.urlAvatar),
               is_verified: raw.verificado,
               features: raw.features ?? {},
             },

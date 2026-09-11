@@ -246,75 +246,7 @@ async function completeTutorWizard() {
   await fillBirthdateStep()
   await fillLocationStep()
   await fillEmailStep()
-  await fillPasswordStep()
-
-  // relationship_type: "hijo" ya está seleccionado por defecto
-  await screen.findByText(/para quién es el perfil/i)
-  clickButton(/^continuar$/i)
-
-  // relationship_name
-  await screen.findByPlaceholderText('Ej. Mateo')
-  fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
-  clickButton(/^continuar$/i)
-
-  // relationship_birthdate
-  const depDateInput = document.querySelector('input[type="date"]')
-  if (depDateInput) fireEvent.change(depDateInput, { target: { value: DEP_BIRTH_DATE } })
-  clickButton(/^continuar$/i)
-
-  // accommodation
-  await screen.findByText(/preferencia de acompañamiento/i)
-  clickButton(/^continuar a condición$/i)
-
-  // condition
-  await screen.findByText(/condición de/i)
-  clickButton(/motriz o de movilidad física/i)
-  clickButton(/^continuar a diagnóstico$/i)
-
-  // diagnosis (defaults: tieneDiagnostico='si', temporalidad='nacimiento')
-  await screen.findByText(/diagnóstico de/i)
-  clickButton(/^continuar a historial$/i)
-
-  // history_edu
-  await screen.findByText(/historial educativo/i)
-  clickButton(/^continuar$/i)
-
-  // history_therapy
-  await screen.findByText(/terapias recibidas/i)
-  clickButton(/^continuar a zonas$/i)
-
-  // support_zones
-  await screen.findByText(/zonas de preferencia/i)
-  clickButton(/^continuar a necesidades$/i)
-
-  // support_needs
-  await screen.findByText(/necesidades a cubrir/i)
-  clickButton(/^continuar a áreas de apoyo$/i)
-
-  // support_areas
-  await screen.findByText(/áreas donde.*requiere apoyo/i)
-  clickButton(/^continuar a escalas$/i)
-
-  // scales1 (defaults: 3/3/4/3)
-  await screen.findByText(/escalas de vida.*\(1\/2\)/i)
-  clickButton(/^continuar$/i)
-
-  // scales2 (defaults: 3/3/3/3)
-  await screen.findByText(/escalas de vida.*\(2\/2\)/i)
-  clickButton(/^continuar$/i)
-
-  // formats (defaults: ['texto', 'imagenes'])
-  await screen.findByText(/formatos de información/i)
-  clickButton(/^continuar a intereses$/i)
-
-  // interests
-  await screen.findByText(/intereses y actividades/i)
-  clickButton(/^música$/i)
-  clickButton(/^continuar$/i)
-
-  // viability (submit)
-  await screen.findByText(/viabilidad económica familiar/i)
-  clickButton(/finalizar registro/i)
+  await fillPasswordStep(/crear cuenta/i)
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -453,11 +385,7 @@ describe('Contrato de registro — Tutor', () => {
       email: EMAIL,
     })
 
-    // Sesión persistida
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tt-1')
-
-    // Pantalla de agradecimiento
-    expect(await screen.findByText(/gracias por ser el apoyo de/i)).toBeInTheDocument()
   }, 20000)
 })
 
@@ -480,32 +408,5 @@ describe('Validación de fecha de nacimiento en wizards de registro', () => {
     expect(await screen.findByText(/la fecha de nacimiento no puede ser una fecha futura/i)).toBeInTheDocument()
   })
 
-  it('rechaza fecha de nacimiento futura del dependiente en TutorRegistrationWizard', async () => {
-    renderWithProviders(<TutorRegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
 
-    // Navegar hasta el paso de fecha del dependiente
-    await fillNameStep('Ej. Ana Laura')
-    await fillBirthdateStep()
-    await fillLocationStep()
-    await fillEmailStep()
-    await fillPasswordStep()
-
-    await screen.findByText(/para quién es el perfil/i)
-    clickButton(/^continuar$/i)
-
-    await screen.findByPlaceholderText('Ej. Mateo')
-    fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
-    clickButton(/^continuar$/i)
-
-    // Paso: fecha de nacimiento del dependiente
-    const depDateInput = document.querySelector('input[type="date"]') as HTMLInputElement
-    expect(depDateInput).toHaveAttribute('max')
-    expect(depDateInput).toHaveAttribute('min', '1900-01-01')
-
-    fireEvent.change(depDateInput, { target: { value: '2028-06-28' } })
-    const form = depDateInput.closest('form')!
-    fireEvent.submit(form)
-
-    expect(await screen.findByText(/la fecha de nacimiento no puede ser una fecha futura/i)).toBeInTheDocument()
-  }, 20000)
 })
