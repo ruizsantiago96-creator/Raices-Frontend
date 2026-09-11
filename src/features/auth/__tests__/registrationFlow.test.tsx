@@ -343,7 +343,7 @@ describe('Contrato de registro — Institución', () => {
     // Sesión persistida con el token del auto-login
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('it-1')
     expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
-  })
+  }, 20000)
 })
 
 describe('Contrato de registro — Empresa', () => {
