@@ -6,13 +6,15 @@ import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useRegistrarInteraccion, useInteraccionesPesos } from '@features/institutions/hooks/useInteractions'
 import { usePosts, useForos } from '@features/social'
-import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
+import { Icons, CATEGORY_COLORS, RestrictedOverlay } from '@shared/components/shared'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
 import ProfileCompletionModal from '../components/ProfileCompletionModal'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import type { CommunityPost } from '@/types/social'
+import { CatalogIcon } from '@features/auth/components/CatalogIcon'
+import { FluentEmoji } from '@features/auth/constants/fluentEmojis'
 
 /* ═══════════════════════════════════════════════════════════
    Contracts & Interfaces
@@ -416,11 +418,11 @@ function BehaviorWeightsCard() {
   if (isLoading) return null
   if (!hasAny) return null
 
-  const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-    funcional: { label: 'Salud', color: '#FF4D68', icon: '❤️' },
-    educativo: { label: 'Educación', color: '#3A86FF', icon: '📚' },
-    laboral: { label: 'Empleo', color: '#FB8500', icon: '💼' },
-    social: { label: 'Comunidad', color: '#FDE674', icon: '🤝' },
+  const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    funcional: { label: 'Salud', color: '#FF4D68', icon: <CatalogIcon icon={FluentEmoji.funcional} size={16} /> },
+    educativo: { label: 'Educación', color: '#3A86FF', icon: <CatalogIcon icon={FluentEmoji.educativo} size={16} /> },
+    laboral: { label: 'Empleo', color: '#FB8500', icon: <CatalogIcon icon={FluentEmoji.laboral} size={16} /> },
+    social: { label: 'Comunidad', color: '#FDE674', icon: <CatalogIcon icon={FluentEmoji.apoyo} size={16} /> },
   }
 
   const maxWeight = Math.max(...Object.values(pesos), 1)
@@ -497,9 +499,9 @@ function BehaviorWeightsCard() {
    Sort tabs configuration
    ═══════════════════════════════════════════════════════════ */
 const SORT_TABS = [
-  { key: 'relevantes', label: '🔥 Relevantes' },
-  { key: 'recientes', label: '🕐 Recientes' },
-  { key: 'populares', label: '⭐ Populares' },
+  { key: 'relevantes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.fuego} size={16} /> Relevantes</span> },
+  { key: 'recientes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.reloj} size={16} /> Recientes</span> },
+  { key: 'populares', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.estrella} size={16} /> Populares</span> },
 ]
 
 function sortFeed(items: UnifiedFeedItem[], mode: string): UnifiedFeedItem[] {
@@ -562,10 +564,14 @@ export default function FeedPage() {
   const identidadStatus = rawIdentidadStatus as { estado?: string } | undefined
 
   // Verificación y validación de identidad
-  const isVerified = Boolean(user?.is_verified || identidadStatus?.estado === 'aprobado')
+  const isPendingDocs = identidadStatus?.estado === 'pendiente'
+  const isApproved = identidadStatus?.estado === 'aprobado'
+  const isVerified = Boolean(user?.is_verified || isApproved || isPendingDocs)
   const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
   const isOnboardingComplete = Boolean((onboardingStatus as { onboardingCompleto?: boolean } | undefined)?.onboardingCompleto)
-  const isIncomplete = Boolean(onboardingStatus && !isOnboardingComplete)
+  
+  // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
+  const isIncomplete = Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
 
   // Debe salir si fue rechazado por el admin, o si aún no está verificado y su perfil está incompleto.
   const [modalDismissed, setModalDismissed] = useState<boolean>(false)
@@ -696,6 +702,27 @@ export default function FeedPage() {
     <main className="responsive-main" style={{ '--main-max-width': '800px' } as React.CSSProperties}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
 
+        {/* ── Progress Bar ── */}
+        {isIncomplete && !isRejected && (
+          <div className="animate-fade-in-up" style={{
+            background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
+            border: '1px solid rgba(34,155,88,0.15)',
+            borderRadius: 16, padding: '16px 20px', marginBottom: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
+          }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Tu perfil está al {(onboardingStatus as { porcentaje?: number })?.porcentaje ?? 20}%</h3>
+              <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.</p>
+              <div style={{ height: 6, background: 'rgba(34,155,88,0.15)', borderRadius: 3, marginTop: 12, overflow: 'hidden' }}>
+                <div style={{ width: `${(onboardingStatus as { porcentaje?: number })?.porcentaje ?? 20}%`, height: '100%', background: '#229B58', borderRadius: 3, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
+            <Link to="/completar-perfil" style={{ padding: '10px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              Completar ahora
+            </Link>
+          </div>
+        )}
+
         {/* ── Sort Tabs ── */}
         {!isLoading && hasAnyContent && (
           <div className="animate-fade-in-up" style={{
@@ -724,9 +751,15 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* ── AI Cards ── */}
+        {/* 🤖 AI Cards 🤖 */}
         {!isLoading && (
-          <div style={{ marginBottom: 4 }}>
+          <div style={{ marginBottom: 4, position: 'relative' }}>
+            {isIncomplete && (
+              <RestrictedOverlay 
+                title="Desbloquea el Matchmaking" 
+                message="Completa tu perfil para recibir recomendaciones."
+              />
+            )}
             <NextStepsCard />
             <ProfileSummaryCard />
             <BehaviorWeightsCard />
@@ -744,7 +777,15 @@ export default function FeedPage() {
 
         {/* ── Especialistas Recomendados ── */}
         {!especialistasLoading && especialistas.length > 0 && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 24, position: 'relative' }}>
+            {isIncomplete && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
+                <div style={{ fontSize: 32, marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>🔒</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', maxWidth: 280 }}>Desbloquea recomendaciones</div>
+                <div style={{ fontSize: 13, color: 'var(--fg2)', textAlign: 'center', maxWidth: 280, marginTop: 4, fontWeight: 500 }}>Completa tu perfil para ver especialistas adaptados a ti</div>
+                <Link to="/completar-perfil" style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 20, fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>Completar perfil</Link>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>

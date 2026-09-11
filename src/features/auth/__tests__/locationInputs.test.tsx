@@ -78,8 +78,8 @@ describe('LocationInputs — autocompletado exitoso', () => {
     fireEvent.change(cp, { target: { value: '97113' } })
     fireEvent.blur(cp)
 
-    // Chip de éxito con la etiqueta "Ciudad, Estado"
-    const chip = await screen.findByText(/📍 Mérida, Yucatán/)
+    // Chip de éxito con la etiqueta "Ciudad, Estado" (el pin ahora es un SVG Fluent Emoji)
+    const chip = await screen.findByText('Mérida, Yucatán')
     expect(chip).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /editar/i })).toBeInTheDocument()
 
@@ -97,7 +97,7 @@ describe('LocationInputs — autocompletado exitoso', () => {
 
     fireEvent.change(cp, { target: { value: '97113' } })
     fireEvent.blur(cp)
-    await screen.findByText(/📍 Mérida, Yucatán/)
+    await screen.findByText('Mérida, Yucatán')
 
     fireEvent.click(screen.getByRole('button', { name: /editar/i }))
 
@@ -115,7 +115,7 @@ describe('LocationInputs — autocompletado exitoso', () => {
     fireEvent.change(cp, { target: { value: '45100' } })
 
     await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('MX', '45100'), { timeout: 2500 })
-    await screen.findByText(/📍 Zapopan, Jalisco/)
+    await screen.findByText('Zapopan, Jalisco')
     expect(captured.at(-1)).toMatchObject({ state: 'Jalisco', city: 'Zapopan' })
   })
 })

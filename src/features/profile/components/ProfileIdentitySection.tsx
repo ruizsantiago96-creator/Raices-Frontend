@@ -24,7 +24,10 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
   estado,
   onUploaded,
 }) => {
-  if (estado !== 'sin_documentos' && estado !== 'rechazado') return null
+  const [localCurp, setLocalCurp] = useState(status?.numeroCurp ?? '')
+
+  if (estado === 'aprobado') return null
+  if (estado === 'pendiente' && status?.tieneCurp && status?.tieneIdentificacion) return null
 
   return (
     <div
@@ -57,10 +60,11 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
           type="text"
           className="onboarding-input"
           style={{ ...inputStyle, marginTop: 6, fontFamily: 'monospace', letterSpacing: '0.05em' }}
-          value={status?.numeroCurp ?? ''}
+          value={localCurp}
+          onChange={(e) => setLocalCurp(e.target.value.toUpperCase())}
           placeholder="GAPL800101HMCYRL09"
           maxLength={18}
-          readOnly
+          readOnly={Boolean(status?.tieneCurp && estado !== 'rechazado')}
         />
         <div style={{ fontSize: 11.5, color: 'var(--fg3)', marginTop: 4 }}>
           Ingresa las 18 letras de tu Clave Única de Registro de Población
@@ -70,7 +74,7 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
       <div style={{ marginBottom: 16 }}>
         <IdentityDocumentUploader
           tipo="curp"
-          numeroCurp={status?.numeroCurp}
+          numeroCurp={localCurp}
           isUploaded={Boolean(status?.tieneCurp && estado !== 'rechazado')}
           onUploadSuccess={onUploaded}
         />
@@ -239,7 +243,7 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
+        accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
         onChange={handleFileSelect}
         style={{ display: 'none' }}
         aria-label={`Seleccionar archivo de ${tipoLabel}`}
@@ -414,9 +418,9 @@ export const ProfileIdentitySection: React.FC<ProfileIdentitySectionProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <IdentityStatusCard status={status} />
 
-      <IdentityUploadSection status={status} estado={estado} />
+      <IdentityUploadSection status={status} estado={estado} onUploaded={() => {}} />
 
-      {estado === 'pendiente' && (
+      {estado === 'pendiente' && status?.tieneCurp && status?.tieneIdentificacion && (
         <div
           className="animate-fade-in-up delay-2"
           style={{

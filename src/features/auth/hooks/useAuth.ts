@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useAuthStore } from '../store/authStore'
 import { setRememberMe, saveUser, getRememberMe } from '@shared/lib/storage'
+import { decodeAvatarUrl } from '@shared/lib/urlUtils'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 import type { User, UserRole, BackendUser } from '../../../types/auth'
 
@@ -226,7 +227,7 @@ export function useMe(): UseQueryResult<MeResponse, Error> {
         state: d.estado,
         country: d.pais,
         codigoPostal: d.codigoPostal,
-        avatar_url: d.urlAvatar,
+        avatar_url: decodeAvatarUrl(d.urlAvatar),
         is_verified: d.verificado,
         features: d.features ?? {},
         destinatarioRegistro: d.destinatarioRegistro ?? null,
@@ -295,7 +296,7 @@ function mapUsuarioBackendToFrontend(d: BackendUser): User {
     country: d.pais,
     codigoPostal: d.codigoPostal,
     role: normalizeRole(d.rol),
-    avatar_url: d.urlAvatar,
+    avatar_url: decodeAvatarUrl(d.urlAvatar),
     is_active: d.activo,
     is_verified: d.verificado,
     created_at: d.fechaCreacion,
@@ -462,7 +463,7 @@ export function useActualizarAvatar(): UseMutationResult<ActualizarAvatarRespons
     },
     onSuccess: (data: ActualizarAvatarResponse) => {
       if (data.urlAvatar && user) {
-        const updatedUser: User = { ...user, avatar_url: data.urlAvatar }
+        const updatedUser: User = { ...user, avatar_url: decodeAvatarUrl(data.urlAvatar) }
         useAuthStore.setState({ user: updatedUser })
         saveUser(updatedUser, getRememberMe())
       }

@@ -12,12 +12,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSubmitReview } from '../hooks/useReviews'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, RestrictedBlock } from '@shared/components/shared'
 import StarRow from './StarRow'
 import ReviewActions from './ReviewActions'
 import Skeleton from './Skeleton'
 import type { Review } from '@/types/institutions'
 import type { User } from '@/types/auth'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 
 const AVATAR_COLORS = [
   '#C4789A', '#8B6BAE', '#D4944C', '#7BA05B',
@@ -42,6 +43,8 @@ export default function InstitutionReviews({ institutionId, reviews, reviewsLoad
   const [comment, setComment] = useState('')
   const submitReview = useSubmitReview(String(institutionId))
   const { addToast } = useUiStore()
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,69 +84,79 @@ export default function InstitutionReviews({ institutionId, reviews, reviewsLoad
       </h2>
 
       {/* Review form */}
-      <form
-        onSubmit={handleSubmitReview}
-        style={{
-          marginBottom: 28,
-          paddingBottom: 28,
-          borderBottom: '1px solid var(--border-color)',
-        }}
-      >
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 8 }}>
-            Tu calificación
-          </label>
-          <StarRow
-            rating={rating}
-            size={28}
-            interactive
-            hover={starHover}
-            onPick={setRating}
-            onHover={setStarHover}
+      {isIncomplete ? (
+        <div style={{ marginBottom: 28, paddingBottom: 28, borderBottom: '1px solid var(--border-color)' }}>
+          <RestrictedBlock 
+            title="Reseñas restringidas" 
+            message="Completa tu perfil para publicar tu reseña." 
+            height={160} 
           />
         </div>
-
-        <textarea
-          rows={3}
-          placeholder="Comparte tu experiencia con esta institución (opcional)"
-          value={comment}
-          onChange={e => setComment(e.target.value)}
+      ) : (
+        <form
+          onSubmit={handleSubmitReview}
           style={{
-            width: '100%',
-            padding: '12px 16px',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 14,
-            boxSizing: 'border-box',
-            resize: 'vertical',
-            fontFamily: 'var(--font-body)',
-            color: 'var(--fg1)',
-            outline: 'none',
-            background: 'var(--bg-surface)',
-            lineHeight: 1.55,
+            marginBottom: 28,
+            paddingBottom: 28,
+            borderBottom: '1px solid var(--border-color)',
           }}
-        />
+        >
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 8 }}>
+              Tu calificación
+            </label>
+            <StarRow
+              rating={rating}
+              size={28}
+              interactive
+              hover={starHover}
+              onPick={setRating}
+              onHover={setStarHover}
+            />
+          </div>
 
-        {!user && (
-          <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fg3)' }}>
-            <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-              Inicia sesión
-            </Link>{' '}
-            para publicar una reseña.
-          </p>
-        )}
+          <textarea
+            rows={3}
+            placeholder="Comparte tu experiencia con esta institución (opcional)"
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 14,
+              boxSizing: 'border-box',
+              resize: 'vertical',
+              fontFamily: 'var(--font-body)',
+              color: 'var(--fg1)',
+              outline: 'none',
+              background: 'var(--bg-surface)',
+              lineHeight: 1.55,
+            }}
+          />
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-          <button
-            type="submit"
-            className="btn-primary"
-            style={{ fontSize: 15, padding: '10px 24px' }}
-            disabled={submitReview.isPending || !user}
-          >
-            {submitReview.isPending ? 'Publicando...' : 'Publicar reseña'}
-          </button>
-        </div>
-      </form>
+          {!user && (
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fg3)' }}>
+              <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                Inicia sesión
+              </Link>{' '}
+              para publicar una reseña.
+            </p>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ fontSize: 15, padding: '10px 24px' }}
+              disabled={submitReview.isPending || !user}
+            >
+              {submitReview.isPending ? 'Publicando...' : 'Publicar reseña'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Review list */}
       {reviewsLoading ? (

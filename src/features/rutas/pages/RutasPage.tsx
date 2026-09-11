@@ -12,7 +12,8 @@ import {
 } from '../hooks/useRutas'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons, labelStyle } from '@shared/components/shared'
+import { Icons, labelStyle, RestrictedBlock } from '@shared/components/shared'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type {
   CreateRutaPayload,
   PasoRuta,
@@ -48,6 +49,8 @@ interface AreaItem {
 export default function RutasPage() {
   const { addToast } = useUiStore()
   const { data: catalogos } = useCatalogos()
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   // State filters
   const [filterEstado, setFilterEstado] = useState<string>('')
@@ -128,12 +131,22 @@ export default function RutasPage() {
             </h1>
             <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0' }}>Planifica tus metas y haz un seguimiento paso a paso</p>
           </div>
-          <button onClick={() => setCreateOpen(true)} className="auth-btn-primary" style={{ width: 'auto', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            {Icons.plus({ s: 18 })} Nueva Ruta
-          </button>
+          {!isIncomplete && (
+            <button onClick={() => setCreateOpen(true)} className="auth-btn-primary" style={{ width: 'auto', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {Icons.plus({ s: 18 })} Nueva Ruta
+            </button>
+          )}
         </div>
 
-        {/* Stats Summary Panel */}
+        {isIncomplete ? (
+          <RestrictedBlock
+            title="Rutas restringidas"
+            message="Completa tu perfil desde el panel principal (dashboard) para comenzar a planificar tus metas y rutas de desarrollo."
+            height={360}
+          />
+        ) : (
+          <>
+            {/* Stats Summary Panel */}
         {summary && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
@@ -323,6 +336,8 @@ export default function RutasPage() {
           />
         )}
 
+        </>
+        )}
       </div>
     </main>
   )

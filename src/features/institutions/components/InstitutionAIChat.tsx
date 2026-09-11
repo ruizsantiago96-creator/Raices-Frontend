@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useChat } from '../../tutor/hooks/useAI'
-import { Icons } from '@shared/components/shared'
+import { Icons, RestrictedBlock } from '@shared/components/shared'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 
 export interface InstitutionAIChatProps {
   institutionName: string
@@ -23,6 +24,9 @@ export default function InstitutionAIChat({ institutionName }: InstitutionAIChat
     isPending: boolean
     error?: { response?: { status?: number } }
   }
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
+
   const [aiInput, setAiInput] = useState('')
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [lastSimulado, setLastSimulado] = useState(false)
@@ -191,34 +195,42 @@ export default function InstitutionAIChat({ institutionName }: InstitutionAIChat
       )}
 
       {/* Input */}
-      <form onSubmit={handleSendAi} style={{ display: 'flex', gap: 10 }}>
-        <input
-          value={aiInput}
-          onChange={e => setAiInput(e.target.value)}
-          placeholder={isRateLimited ? 'Espera un momento...' : 'Escribe tu pregunta...'}
-          disabled={isRateLimited}
-          style={{
-            flex: 1, height: 44,
-            padding: '0 16px',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-pill)',
-            fontSize: 15,
-            fontFamily: 'var(--font-body)',
-            color: 'var(--fg1)',
-            outline: 'none',
-            background: isRateLimited ? 'var(--bg-cool)' : 'var(--bg-surface)',
-            opacity: isRateLimited ? 0.6 : 1,
-          }}
+      {isIncomplete ? (
+        <RestrictedBlock 
+          title="Chat restringido" 
+          message="Completa tu perfil en el dashboard para hablar con el especialista IA." 
+          height={160} 
         />
-        <button
-          type="submit"
-          className="btn-primary"
-          style={{ padding: '0 20px', fontSize: 15, display: 'flex', alignItems: 'center' }}
-          disabled={chat.isPending || !aiInput.trim() || isRateLimited}
-        >
-          {Icons.send({ s: 18 })}
-        </button>
-      </form>
+      ) : (
+        <form onSubmit={handleSendAi} style={{ display: 'flex', gap: 10 }}>
+          <input
+            value={aiInput}
+            onChange={e => setAiInput(e.target.value)}
+            placeholder={isRateLimited ? 'Espera un momento...' : 'Escribe tu pregunta...'}
+            disabled={isRateLimited}
+            style={{
+              flex: 1, height: 44,
+              padding: '0 16px',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-pill)',
+              fontSize: 15,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--fg1)',
+              outline: 'none',
+              background: isRateLimited ? 'var(--bg-cool)' : 'var(--bg-surface)',
+              opacity: isRateLimited ? 0.6 : 1,
+            }}
+          />
+          <button
+            type="submit"
+            className="btn-primary"
+            style={{ padding: '0 20px', fontSize: 15, display: 'flex', alignItems: 'center' }}
+            disabled={chat.isPending || !aiInput.trim() || isRateLimited}
+          >
+            {Icons.send({ s: 18 })}
+          </button>
+        </form>
+      )}
     </div>
   )
 }

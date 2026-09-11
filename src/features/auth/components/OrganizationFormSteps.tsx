@@ -1,6 +1,8 @@
 import React from 'react'
 import { Icons } from '@shared/components/shared'
 import { WizardNavButtons, PasswordField, LocationInputs } from './WizardUI'
+import { CatalogIcon } from './CatalogIcon'
+import { FluentEmoji, type FluentEmojiComponent } from '../constants/fluentEmojis'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import { isValidCurp } from '../lib/validators'
 
@@ -104,7 +106,7 @@ export interface OrgSubtypeItem {
   id: string
   label: string
   desc: string
-  icon: React.ReactNode
+  icon: FluentEmojiComponent | string
 }
 
 export interface OrganizationSubtypeStepProps {
@@ -169,7 +171,6 @@ export function OrganizationSubtypeStep({
             >
               <div
                 style={{
-                  fontSize: 28,
                   width: 44,
                   height: 44,
                   borderRadius: '50%',
@@ -180,7 +181,7 @@ export function OrganizationSubtypeStep({
                   flexShrink: 0,
                 }}
               >
-                {st.icon}
+                <CatalogIcon icon={st.icon} size={28} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: selectedSubtype === st.id ? '#073B4C' : 'var(--fg1)' }}>
@@ -227,7 +228,7 @@ export function OrganizationSubtypeStep({
                 transition: 'all 0.2s ease',
               }}
             >
-              <div style={{ fontSize: 24 }}>{st.icon}</div>
+              <CatalogIcon icon={st.icon} size={24} />
               <div style={{ fontSize: 14, fontWeight: 700, color: selectedSubtype === st.id ? '#073B4C' : 'var(--fg1)' }}>
                 {st.label}
               </div>
@@ -257,7 +258,7 @@ export function OrganizationSubtypeStep({
                 transition: 'all 0.2s ease',
               }}
             >
-              <div style={{ fontSize: 24 }}>{st.icon}</div>
+              <CatalogIcon icon={st.icon} size={24} />
               <div style={{ fontSize: 14, fontWeight: 700, color: selectedSubtype === st.id ? '#073B4C' : 'var(--fg1)' }}>
                 {st.label}
               </div>
@@ -540,7 +541,7 @@ export interface OrgCommunityItem {
   id: string
   label: string
   desc: string
-  icon: React.ReactNode
+  icon: FluentEmojiComponent | string
 }
 
 export interface OrganizationCommunityStepProps {
@@ -599,22 +600,20 @@ export function OrganizationCommunityStep({
               gap: 14,
               transition: 'all 0.2s ease',
             }}
-          >
-            <div
-              style={{
-                fontSize: 28,
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: selectedCommunity === c.id ? `rgba(${hexToRgb(accentColor)}, 0.12)` : 'var(--bg-cool)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {c.icon}
-            </div>
+          >              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: selectedCommunity === c.id ? `rgba(${hexToRgb(accentColor)}, 0.12)` : 'var(--bg-cool)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <CatalogIcon icon={c.icon} size={28} />
+              </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: selectedCommunity === c.id ? '#073B4C' : 'var(--fg1)' }}>
                 {c.label}
@@ -739,7 +738,7 @@ export function OrganizationAccountStep({
 
 export interface OrganizationThanksStepProps {
   subtypeLabel: string
-  icon?: React.ReactNode
+  icon?: FluentEmojiComponent | string
   onContinue: () => void
   continueLabel?: string
   continueHref?: string
@@ -747,13 +746,13 @@ export interface OrganizationThanksStepProps {
 
 export function OrganizationThanksStep({
   subtypeLabel,
-  icon = '🎉',
+  icon = FluentEmoji.exito,
   onContinue,
   continueLabel = 'Ir a mi panel',
 }: OrganizationThanksStepProps): React.JSX.Element {
   return (
     <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-      <div style={{ fontSize: 48 }}>{icon}</div>
+      <CatalogIcon icon={icon} size={48} />
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#073B4C', margin: 0 }}>
         ¡Bienvenido/a, {subtypeLabel}!
       </h2>

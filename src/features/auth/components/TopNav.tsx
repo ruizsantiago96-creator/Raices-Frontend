@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, FC, MouseEvent as ReactMouseEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Icons, BrandMark } from '@shared/components/shared'
+import { FluentEmoji } from '../constants/fluentEmojis'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
 import { useNotifications, useMarkRead } from '@features/notifications'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -352,16 +353,9 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
             className="topnav-icon-btn"
           >
             {darkMode ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="5" fill="#FFB703" stroke="#0C3B4B" strokeWidth="2.5" />
-                <path d="M12 2 L12 4 M12 20 L12 22 M2 12 L4 12 M20 12 L22 12 M5 5 L6.5 6.5 M17.5 17.5 L19 19 M5 19 L6.5 17.5 M17.5 6.5 L19 5" stroke="#0C3B4B" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M20 4 L20.5 5.5 L22 6 L20.5 6.5 L20 8 L19.5 6.5 L18 6 L19.5 5.5 Z" fill="#FDE674" stroke="#0C3B4B" strokeWidth="1.2" strokeLinejoin="round" />
-              </svg>
+              <FluentEmoji.estrella size={24} />
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 3a7.5 7.5 0 0 0 7.5 7.5 7.5 7.5 0 1 1-7.5-7.5Z" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
-                <path d="M21 3 L21.6 4.8 L23.5 5.5 L21.6 6.2 L21 8 L20.4 6.2 L18.5 5.5 L20.4 4.8 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="1.2" strokeLinejoin="round" />
-              </svg>
+              <FluentEmoji.luna size={24} />
             )}
           </button>
         )}
@@ -377,11 +371,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
             title="Mensajes"
             className="topnav-icon-btn"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M 17 14.5 C 19 14.5, 20.5 13, 20.5 11 L 20.5 6.5 C 20.5 4.5, 19 3, 17 3 L 7 3 C 5 3, 3.5 4.5, 3.5 6.5 L 3.5 11 C 3.5 13, 5 14.5, 7 14.5 L 8 14.5 L 5.5 18.5 L 9.5 14.5 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
-              <circle cx="9" cy="8.5" r="1.5" fill="#fff" />
-              <circle cx="15" cy="8.5" r="1.5" fill="#fff" />
-            </svg>
+            <FluentEmoji.chat size={24} />
           </button>
         )}
 
@@ -395,11 +385,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
               className="topnav-icon-btn"
               style={{ position: 'relative' }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 4 A 2.2 2.2 0 0 1 12 1" stroke="#0C3B4B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                <circle cx="12" cy="18" r="2.8" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2.2" />
-                <path d="M12 3.5 C9 3.5, 7 5.5, 7 9.5 L7 13.5 C7 14.5, 5 15.5, 5 15.5 L19 15.5 C19 15.5, 17 14.5, 17 13.5 L17 9.5 C17 5.5, 15 3.5, 12 3.5 Z" fill="#F4C84A" stroke="#0C3B4B" strokeWidth="2.5" strokeLinejoin="round" />
-              </svg>
+              <FluentEmoji.campana size={24} />
               {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute', top: 10, right: 10,

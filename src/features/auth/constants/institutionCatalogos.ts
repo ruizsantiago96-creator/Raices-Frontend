@@ -1,14 +1,18 @@
 /**
  * CATÁLOGOS DE REGISTRO INSTITUCIONAL (Fase 1 · Extracción pasiva)
  * Única fuente de verdad de los catálogos de InstitutionRegistrationWizard.jsx.
+ *
+ * Los `icon` son componentes Fluent Emoji (estilo Modern); el render define el
+ * tamaño (`size`) según la variante de tarjeta. Ver ./fluentEmojis.ts.
  */
+import { FluentEmoji } from './fluentEmojis'
 
 // ── SUBTIPOS INSTITUCIONALES ──────────────────────────────────────
 export const INSTITUTION_SUBTYPES = [
-  { id: 'gobierno', label: 'Gobierno', desc: 'Dependencias o programas públicos de atención', icon: '🏛️' },
-  { id: 'ong', label: 'ONG', desc: 'Organizaciones sin fines de lucro dedicadas a la inclusión', icon: '💚' },
-  { id: 'fundacion', label: 'Fundación', desc: 'Fundaciones que apoyan a personas con discapacidad', icon: '🌟' },
-  { id: 'donante', label: 'Donante', desc: 'Personas o entidades que apoyan económicamente', icon: '💝' },
+  { id: 'gobierno', label: 'Gobierno', desc: 'Dependencias o programas públicos de atención', icon: FluentEmoji.gobierno },
+  { id: 'ong', label: 'ONG', desc: 'Organizaciones sin fines de lucro dedicadas a la inclusión', icon: FluentEmoji.ong },
+  { id: 'fundacion', label: 'Fundación', desc: 'Fundaciones que apoyan a personas con discapacidad', icon: FluentEmoji.fundacion },
+  { id: 'donante', label: 'Donante', desc: 'Personas o entidades que apoyan económicamente', icon: FluentEmoji.donante },
 ]
 
 // ── CATEGORÍAS DE SERVICIO ────────────────────────────────────────
@@ -47,16 +51,16 @@ export const SERVICE_CATEGORIES = [
 
 // ── CATEGORÍAS PRINCIPALES (backend: funcional|educativo|laboral|social) ─
 export const INSTITUTION_CATEGORIES = [
-  { id: 'funcional', label: 'Funcional', desc: 'Rehabilitación, terapias e independencia', icon: '💪' },
-  { id: 'educativo', label: 'Educativo', desc: 'Educación, formación y capacitación', icon: '📚' },
-  { id: 'laboral', label: 'Laboral', desc: 'Empleo y reinserción laboral', icon: '💼' },
-  { id: 'social', label: 'Social', desc: 'Arte, cultura, deporte y vida social', icon: '🤝' },
+  { id: 'funcional', label: 'Funcional', desc: 'Rehabilitación, terapias e independencia', icon: FluentEmoji.funcional },
+  { id: 'educativo', label: 'Educativo', desc: 'Educación, formación y capacitación', icon: FluentEmoji.educativo },
+  { id: 'laboral', label: 'Laboral', desc: 'Empleo y reinserción laboral', icon: FluentEmoji.laboral },
+  { id: 'social', label: 'Social', desc: 'Arte, cultura, deporte y vida social', icon: FluentEmoji.apoyo },
 ]
 
 // ── COMUNIDADES A CONECTAR ────────────────────────────────────────
 export const COMMUNITIES = [
-  { id: 'pcd', label: 'Personas con discapacidad', desc: 'Conectar directamente con personas que buscan apoyo', icon: '♿' },
+  { id: 'pcd', label: 'Personas con discapacidad', desc: 'Conectar directamente con personas que buscan apoyo', icon: FluentEmoji.pcd },
   { id: 'familias', label: 'Familias y cuidadores', desc: 'Apoyar a las familias que acompañan a una persona PCD', icon: '👨‍👩‍👧‍👦' },
-  { id: 'profesionales', label: 'Profesionales y especialistas', desc: 'Conectar con terapeutas, doctores y expertos', icon: '👩‍⚕️' },
-  { id: 'todos', label: 'Toda la comunidad', desc: 'Estar disponible para todos los que necesiten apoyo', icon: '🌍' },
+  { id: 'profesionales', label: 'Profesionales y especialistas', desc: 'Conectar con terapeutas, doctores y expertos', icon: FluentEmoji.especialista },
+  { id: 'todos', label: 'Toda la comunidad', desc: 'Estar disponible para todos los que necesiten apoyo', icon: FluentEmoji.comunidadGlobal },
 ]

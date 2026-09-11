@@ -15,6 +15,7 @@ import { useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { CategoryTag, Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import StarRow from './StarRow'
 import type { Institution } from '@/types/institutions'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 
 export interface InstitutionHeaderProps {
   institution: Institution
@@ -23,7 +24,9 @@ export interface InstitutionHeaderProps {
 
 export default function InstitutionHeader({ institution, isFav = false }: InstitutionHeaderProps) {
   const toggle = useToggleFavorite()
+  const { data: onboardingStatus } = useOnboardingStatus()
   const categoryColor = CATEGORY_COLORS[institution.category ?? ''] ?? 'var(--primary)'
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   return (
     <div className="animate-fade-in-up delay-1" style={{
@@ -50,16 +53,23 @@ export default function InstitutionHeader({ institution, isFav = false }: Instit
           )}
         </div>
         <button
-          onClick={() => toggle.mutate(institution)}
+          onClick={() => {
+            if (isIncomplete) {
+              alert('Completa tu perfil en el dashboard para guardar en favoritos.')
+              return
+            }
+            toggle.mutate(institution)
+          }}
           disabled={toggle.isPending}
+          title={isIncomplete ? 'Completa tu perfil para guardar en favoritos' : ''}
           style={{
             background: isFav
               ? 'color-mix(in oklch, #C4789A 12%, transparent)'
-              : 'var(--bg-warm)',
+              : (isIncomplete ? '#f0f0f0' : 'var(--bg-warm)'),
             border: `1px solid ${isFav ? '#C4789A' : 'var(--border-color)'}`,
             borderRadius: 'var(--radius-pill)',
-            cursor: toggle.isPending ? 'wait' : 'pointer',
-            color: isFav ? '#C4789A' : 'var(--fg3)',
+            cursor: toggle.isPending ? 'wait' : (isIncomplete ? 'not-allowed' : 'pointer'),
+            color: isFav ? '#C4789A' : (isIncomplete ? 'var(--fg4)' : 'var(--fg3)'),
             padding: '8px 18px',
             fontSize: 14,
             fontWeight: 600,
@@ -70,7 +80,11 @@ export default function InstitutionHeader({ institution, isFav = false }: Instit
             transition: 'all 0.15s ease',
           }}
         >
-          {Icons.heart({ s: 16, filled: isFav })}
+          {isIncomplete ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15V17M6 11V7C6 3.68629 8.68629 1 12 1C15.3137 1 18 3.68629 18 7V11M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : Icons.heart({ s: 16, filled: isFav })}
           {isFav ? 'Guardado' : 'Guardar'}
         </button>
       </div>
@@ -128,31 +142,49 @@ export default function InstitutionHeader({ institution, isFav = false }: Instit
       )}
 
       {/* Contact info */}
-      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        {institution.phone && (
-          <a href={`tel:${institution.phone}`} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 14, color: 'var(--fg2)', textDecoration: 'none',
+      <div style={{ position: 'relative' }}>
+        {isIncomplete && (
+          <div style={{ 
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(3px)', zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8,
+            fontWeight: 700, color: '#073B4C', gap: 6, fontSize: 13
           }}>
-            {Icons.phone({ s: 16 })} {institution.phone}
-          </a>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15V17M6 11V7C6 3.68629 8.68629 1 12 1C15.3137 1 18 3.68629 18 7V11M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Completa tu perfil para contactar
+          </div>
         )}
-        {institution.email && (
-          <a href={`mailto:${institution.email}`} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 14, color: 'var(--fg2)', textDecoration: 'none',
-          }}>
-            {Icons.mail({ s: 16 })} {institution.email}
-          </a>
-        )}
-        {institution.website && (
-          <a href={institution.website} target="_blank" rel="noreferrer" style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 14, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none',
-          }}>
-            {Icons.globe({ s: 16 })} Sitio web
-          </a>
-        )}
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+          {institution.phone && (
+            <a href={`tel:${institution.phone}`} onClick={e => isIncomplete && e.preventDefault()} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 14, color: 'var(--fg2)', textDecoration: 'none',
+              pointerEvents: isIncomplete ? 'none' : 'auto'
+            }}>
+              {Icons.phone({ s: 16 })} {institution.phone}
+            </a>
+          )}
+          {institution.email && (
+            <a href={`mailto:${institution.email}`} onClick={e => isIncomplete && e.preventDefault()} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 14, color: 'var(--fg2)', textDecoration: 'none',
+              pointerEvents: isIncomplete ? 'none' : 'auto'
+            }}>
+              {Icons.mail({ s: 16 })} {institution.email}
+            </a>
+          )}
+          {institution.website && (
+            <a href={institution.website} target="_blank" rel="noreferrer" onClick={e => isIncomplete && e.preventDefault()} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 14, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none',
+              pointerEvents: isIncomplete ? 'none' : 'auto'
+            }}>
+              {Icons.globe({ s: 16 })} Sitio web
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Mapa y cómo llegar */}

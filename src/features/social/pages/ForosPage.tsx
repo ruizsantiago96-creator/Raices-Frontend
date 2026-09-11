@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, RestrictedBlock } from '@shared/components/shared'
 import { useForos, useForoDetail, useCreateForo, useCreateForoRespuesta, useDeleteForo } from '../hooks/useCommunity'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type { ForoItem, ForoRespuesta } from '@/types/social'
 
 const PAGE_SIZE = 10
@@ -129,6 +130,8 @@ function RespuestaForm({ preguntaIndex, pregunta, foroId }: { preguntaIndex: num
   const { addToast } = useUiStore()
   const createRespuesta = useCreateForoRespuesta(foroId)
   const [respuesta, setRespuesta] = useState('')
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -149,24 +152,40 @@ function RespuestaForm({ preguntaIndex, pregunta, foroId }: { preguntaIndex: num
         value={respuesta}
         onChange={e => setRespuesta(e.target.value)}
         placeholder={`Responde a: ${pregunta}`}
+        disabled={isIncomplete}
         style={{
           width: '100%', padding: '12px 14px',
           border: '1px solid var(--border-color)', borderRadius: 10,
           fontSize: 14, resize: 'vertical', boxSizing: 'border-box',
           fontFamily: 'var(--font-body)', color: 'var(--fg1)',
           background: 'var(--bg-warm)', outline: 'none',
+          opacity: isIncomplete ? 0.6 : 1,
         }}
       />
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-        <button
-          type="submit"
-          disabled={!respuesta.trim() || createRespuesta.isPending}
-          className="btn-primary"
-          style={{ padding: '8px 20px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
-        >
-          {createRespuesta.isPending ? 'Enviando...' : 'Responder'}
-          {Icons.send({ s: 14 })}
-        </button>
+        {isIncomplete ? (
+          <div style={{
+            background: 'color-mix(in oklch, var(--bg-cool) 70%, transparent)',
+            padding: '8px 16px', borderRadius: 'var(--radius-md)',
+            fontSize: 13, color: 'var(--fg2)', display: 'flex',
+            alignItems: 'center', gap: 8, border: '1px solid var(--border-color)',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15V17M6 11V7C6 3.68629 8.68629 1 12 1C15.3137 1 18 3.68629 18 7V11M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Completa tu perfil para responder
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={!respuesta.trim() || createRespuesta.isPending}
+            className="btn-primary"
+            style={{ padding: '8px 20px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            {createRespuesta.isPending ? 'Enviando...' : 'Responder'}
+            {Icons.send({ s: 14 })}
+          </button>
+        )}
       </div>
     </form>
   )
@@ -445,6 +464,9 @@ function CreateForumModal({ onClose }: { onClose: () => void }) {
 
 export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
   const { user } = useAuthStore()
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
+
   const [selectedForoId, setSelectedForoId] = useState<string | number | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [buscarInput, setBuscarInput] = useState('')
@@ -476,7 +498,7 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
               Espacio de discusión para compartir experiencias y consejos
             </p>
           </div>
-          {isInstitutionOrAdmin && !selectedForoId && (
+          {isInstitutionOrAdmin && !selectedForoId && !isIncomplete && (
             <button
               onClick={() => setShowCreate(true)}
               className="btn-primary"
@@ -488,7 +510,13 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
         </div>
       )}
 
-      {selectedForoId ? (
+      {isIncomplete ? (
+        <RestrictedBlock
+          title="Foros restringidos"
+          message="Completa tu perfil desde el panel principal (dashboard) para acceder a los foros de discusión y compartir experiencias."
+          height={320}
+        />
+      ) : selectedForoId ? (
         <div className="animate-fade-in-up">
           <ForumDetail forumId={selectedForoId} onBack={() => setSelectedForoId(null)} />
         </div>

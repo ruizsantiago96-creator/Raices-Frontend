@@ -18,12 +18,14 @@ import {
 } from '../hooks/useCommunity'
 
 import { useAuthStore } from '@features/auth'
+import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
-import { Icons } from '@shared/components/shared'
+import { Icons, RestrictedBlock } from '@shared/components/shared'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
 import type { CommunityPost } from '@/types/social'
+import { EventsDiscovery } from '../components/EventsDiscovery'
 
 const relativeDate = (d: string | number | Date) => {
   const diff = Date.now() - new Date(d).getTime()
@@ -51,17 +53,21 @@ const avatarStyle = (extra: CSSProperties = {}): CSSProperties => ({
 interface AvatarProps {
   name?: string | null
   src?: string | null
+  size?: number
 }
 
-function Avatar({ name, src }: AvatarProps) {
-  if (src) {
+function Avatar({ name, src, size }: AvatarProps) {
+  const style = size ? avatarStyle({ width: size, height: size, fontSize: size * 0.4 }) : avatarStyle()
+  const decodedSrc = src ? src.replace(/&#x2F;/g, '/').replace(/&#x3D;/g, '=').replace(/&#x26;/g, '&').replace(/&amp;/g, '&') : null;
+  
+  if (decodedSrc) {
     return (
-      <div style={avatarStyle()}>
-        <img src={src} alt={name ?? 'Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={style}>
+        <img src={decodedSrc} alt={name ?? 'Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
     )
   }
-  return <div style={avatarStyle()}>{(name?.[0] ?? '?').toUpperCase()}</div>
+  return <div style={style}>{(name?.[0] ?? '?').toUpperCase()}</div>
 }
 
 function SkeletonCard() {
@@ -122,16 +128,7 @@ function CommentSection({ postId, currentUser }: CommentSectionProps) {
       ) : (
         comments.map((c) => (
           <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <div
-              style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: 'var(--primary-subtle)', color: 'var(--primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700, flexShrink: 0,
-              }}
-            >
-              {(c.author_name?.[0] ?? '?').toUpperCase()}
-            </div>
+            <Avatar name={c.author_name} src={c.author_avatar} size={28} />
             <div style={{ background: 'var(--bg-warm)', borderRadius: 10, padding: '6px 10px', flex: 1 }}>
               <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--fg1)' }}>{c.author_name} </span>
               <span style={{ fontSize: 13, color: 'var(--fg2)' }}>{c.content}</span>
@@ -165,10 +162,34 @@ interface PostCardProps {
   currentUserName?: string
 }
 
+function decodeAndExtract(content: string) {
+  if (!content) return { text: '', imageUrl: null, originalDecoded: '' }
+  let decoded = content
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+
+  const urlRegex = /(https:\/\/firebasestorage\.googleapis\.com[^\s]+)/
+  const match = decoded.match(urlRegex)
+  
+  if (match) {
+    const imageUrl = match[1]
+    const text = decoded.replace(imageUrl, '').trim()
+    return { text, imageUrl, originalDecoded: decoded }
+  }
+  
+  return { text: decoded, imageUrl: null, originalDecoded: decoded }
+}
+
 function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [editContent, setEditContent] = useState(post.content)
+  const { text, imageUrl, originalDecoded } = decodeAndExtract(post.content)
+  const [editContent, setEditContent] = useState(originalDecoded)
   const [liked, setLiked] = useState(!!post.liked_by_me)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const updatePost = useUpdatePost(post.id)
@@ -231,14 +252,23 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
           <textarea rows={3} value={editContent} onChange={e => setEditContent(e.target.value)}
             style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button onClick={() => { setEditing(false); setEditContent(post.content) }} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-body)' }}>{SOCIAL_UI.CANCEL_BUTTON}</button>
+            <button onClick={() => { setEditing(false); setEditContent(originalDecoded) }} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-body)' }}>{SOCIAL_UI.CANCEL_BUTTON}</button>
             <button onClick={handleSaveEdit} disabled={updatePost.isPending} className="btn-primary" style={{ padding: '6px 14px', fontSize: 13 }}>{updatePost.isPending ? SOCIAL_UI.EDIT_BUTTON_LOADING : SOCIAL_UI.EDIT_BUTTON}</button>
           </div>
         </div>
       ) : (
-        <p style={{ fontSize: 15, color: 'var(--fg1)', lineHeight: 1.6, margin: '0 0 16px', whiteSpace: 'pre-wrap' }}>
-          {post.content}
-        </p>
+        <>
+          {text && (
+            <p style={{ fontSize: 15, color: 'var(--fg1)', lineHeight: 1.6, margin: '0 0 16px', whiteSpace: 'pre-wrap' }}>
+              {text}
+            </p>
+          )}
+          {imageUrl && (
+            <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-cool)', display: 'flex', justifyContent: 'center' }}>
+              <img src={imageUrl} alt="" style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', display: 'block' }} loading="lazy" />
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
@@ -427,6 +457,10 @@ export default function SocialPage() {
   const [newPost, setNewPost] = useState('')
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
+
   const uploadMedia = useUploadMultimedia()
   const [mainTab, setMainTab] = useState<'community' | 'conectemos' | 'about'>('community')
   const [conectemosCategoria, setConectemosCategoria] = useState<string | null>(null)
@@ -513,7 +547,6 @@ export default function SocialPage() {
           {[
             { key: 'community' as const, label: SOCIAL_UI.TAB_COMMUNITY, icon: Icons.users },
             { key: 'conectemos' as const, label: 'Conectemos', icon: Icons.sparkles },
-            { key: 'about' as const, label: SOCIAL_UI.TAB_ABOUT, icon: Icons.heart },
           ].map(t => (
             <button key={t.key} onClick={() => setMainTab(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: mainTab === t.key ? 'var(--bg-surface)' : 'transparent', boxShadow: mainTab === t.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', color: mainTab === t.key ? 'var(--fg1)' : 'var(--fg3)', cursor: 'pointer', fontWeight: mainTab === t.key ? 600 : 500, fontSize: 13.5, fontFamily: 'var(--font-body)', transition: 'all 0.2s ease' }}>
@@ -525,132 +558,20 @@ export default function SocialPage() {
         {mainTab === 'about' ? (
           <AboutCommunity />
         ) : mainTab === 'conectemos' ? (
-          <div>
-            {/* Búsqueda */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                setConectemosBuscar(conectemosBuscarInput.trim())
-              }}
-              style={{ display: 'flex', gap: 8, marginBottom: 14 }}
-            >
-              <input
-                value={conectemosBuscarInput}
-                onChange={e => setConectemosBuscarInput(e.target.value)}
-                placeholder="Buscar creaciones..."
-                style={{
-                  flex: 1, padding: '10px 14px', border: '1px solid var(--border-color)',
-                  borderRadius: 10, fontSize: 14, fontFamily: 'var(--font-body)',
-                  color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                className="btn-primary"
-                style={{ padding: '10px 18px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
-              >
-                {Icons.search({ s: 14 })} Buscar
-              </button>
-            </form>
-
-            {/* Category filter */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-              {[null, 'arte', 'dibujo', 'historia', 'general'].map(cat => (
-                <button
-                  key={cat ?? 'all'}
-                  onClick={() => setConectemosCategoria(cat)}
-                  style={{
-                    padding: '7px 16px', borderRadius: 20, border: '1px solid',
-                    borderColor: conectemosCategoria === cat ? 'var(--primary)' : 'var(--border-color)',
-                    background: conectemosCategoria === cat ? 'var(--primary-subtle)' : 'transparent',
-                    color: conectemosCategoria === cat ? 'var(--primary)' : 'var(--fg2)',
-                    cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Todos'}
-                </button>
-              ))}
-            </div>
-            {conectemosPosts.length === 0 ? (
-              <div style={{
-                background: 'var(--bg-surface)', border: '1px dashed var(--border-color)',
-                borderRadius: 14, padding: 48, textAlign: 'center',
-              }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  {Icons.sparkles({ s: 24 })}
-                </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Aún no hay creaciones</h3>
-                <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>Las creaciones de la comunidad aparecerán aquí.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                {conectemosPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={user?.id} currentUserName={user?.full_name} />
-                ))}
-              </div>
-            )}
-          </div>
+          <EventsDiscovery />
         ) : (
-          <div className="grid-sidebar-main">
-            {/* ── Sidebar ── */}
-            {groupsError ? (
-              <BackendFallback method={COMMUNITY_ENDPOINTS.GET_GROUPS.method} endpoint={COMMUNITY_ENDPOINTS.GET_GROUPS.path} onRetry={() => refetchGroups()} />
-            ) : (
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', position: 'sticky', top: 24, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                {SOCIAL_UI.GROUPS_TITLE} <span style={{ fontWeight: 400, fontSize: 12 }}>({groups.length})</span>
-              </div>
-
-              <button onClick={() => setShowCreateGroup(true)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px dashed var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
-                {Icons.plus({ s: 14 })} {SOCIAL_UI.CREATE_GROUP}
-              </button>
-
-              <button onClick={() => setActiveGroupId(null)}
-                style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: 'none', background: activeGroupId === null ? 'var(--primary-subtle)' : 'transparent', color: activeGroupId === null ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: activeGroupId === null ? 700 : 400, marginBottom: 4, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {Icons.users({ s: 16 })} {SOCIAL_UI.ALL_GROUPS}
-              </button>
-
-              {groups.map((g) => (
-                <button key={g.id} onClick={() => setActiveGroupId(g.id)} title={g.description}
-                  style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: 'none', background: activeGroupId === g.id ? 'var(--primary-subtle)' : 'transparent', color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-body)' }}>
-                  <div style={{ fontSize: 14, fontWeight: activeGroupId === g.id ? 700 : 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {g.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: activeGroupId === g.id ? 'var(--primary)' : 'var(--fg3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.85 }}>
-                    {g.member_count} miembro{g.member_count !== 1 ? 's' : ''}
-                  </div>
-                </button>
-              ))}
-
-              {activeGroupId && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-color)' }}>
-                  <button
-                    onClick={() => {
-                      const group = groups.find(g => g.id === activeGroupId)
-                      if (group?.is_member) {
-                        leaveGroup.mutate(activeGroupId, {
-                          onSuccess: () => { addToast(SOCIAL_TOAST.GROUP_LEFT, 'success'); setActiveGroupId(null) },
-                          onError: () => addToast(SOCIAL_TOAST.GROUP_LEAVE_FAILED, 'error'),
-                        })
-                      } else {
-                        joinGroup.mutate(activeGroupId, {
-                          onSuccess: () => addToast(SOCIAL_TOAST.GROUP_JOINED, 'success'),
-                          onError: () => addToast(SOCIAL_TOAST.GROUP_JOIN_FAILED, 'error'),
-                        })
-                      }
-                    }}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: 'none', background: groups.find(g => g.id === activeGroupId)?.is_member ? 'color-mix(in oklch, #D46A6A 10%, transparent)' : 'var(--primary-subtle)', color: groups.find(g => g.id === activeGroupId)?.is_member ? '#D46A6A' : 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}>
-                    {groups.find(g => g.id === activeGroupId)?.is_member ? SOCIAL_UI.LEAVE_GROUP : SOCIAL_UI.JOIN_GROUP}
-                  </button>
-                </div>
-              )}
-            </div>
-            )}
-
+          <div style={{ maxWidth: 700, margin: '0 auto' }}>
             {/* ── Main column ── */}
             <div>
+              {isIncomplete ? (
+                <div style={{ marginBottom: 20 }}>
+                  <RestrictedBlock
+                    title="Comunidad restringida"
+                    message="Completa tu perfil para poder publicar y compartir experiencias con la comunidad."
+                    height={160}
+                  />
+                </div>
+              ) : (
               <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <Avatar name={user?.full_name} src={user?.avatar_url} />
@@ -691,6 +612,7 @@ export default function SocialPage() {
                   </form>
                 </div>
               </div>
+              )}
 
               {postsError ? (
                 <BackendFallback method={COMMUNITY_ENDPOINTS.GET_POSTS.method} endpoint={COMMUNITY_ENDPOINTS.GET_POSTS.path} onRetry={() => refetchPosts()} />

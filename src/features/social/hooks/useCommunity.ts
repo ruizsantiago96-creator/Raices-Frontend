@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
+import { decodeAvatarUrl } from '../../../shared/lib/urlUtils'
 import type {
   CommunityGroup,
   CommunityPost,
@@ -104,7 +105,7 @@ function mapPost(p: RawPost): CommunityPost {
     content: p.content ?? p.contenido ?? '',
     author_id: p.author_id ?? p.autorId ?? p.autor_id,
     author_name: p.author_name ?? p.nombreCompleto ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
-    author_avatar: p.author_avatar ?? p.urlAvatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
+    author_avatar: decodeAvatarUrl(p.author_avatar ?? p.urlAvatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null),
     created_at: p.created_at ?? p.fechaCreacion ?? new Date().toISOString(),
     group_name: p.group_name ?? p.nombreGrupo,
     like_count: p.like_count ?? p.cantidadMeGustas ?? p.likesCount ?? 0,
@@ -120,7 +121,7 @@ function mapComment(c: RawComment): CommunityComment {
     content: c.content ?? c.contenido ?? '',
     author_id: c.author_id ?? c.autorId ?? c.autor_id,
     author_name: c.author_name ?? c.nombreCompleto ?? c.nombreAutor ?? c.autorNombre ?? 'Anónimo',
-    author_avatar: c.urlAvatar ?? c.autorAvatar ?? c.autor_avatar ?? null,
+    author_avatar: decodeAvatarUrl(c.urlAvatar ?? c.autorAvatar ?? c.autor_avatar ?? null),
     created_at: c.created_at ?? c.fechaCreacion ?? new Date().toISOString(),
   }
 }
@@ -144,7 +145,7 @@ function mapPostFromBackend(p: RawPost): CommunityPost {
     content: p.contenido ?? p.content ?? '',
     author_id: p.author_id ?? p.autorId ?? p.autor_id,
     author_name: p.nombreCompleto ?? p.author_name ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
-    author_avatar: p.urlAvatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null,
+    author_avatar: decodeAvatarUrl(p.urlAvatar ?? p.author_avatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null),
     like_count: p.cantidadMeGustas ?? p.likesCount ?? p.like_count ?? 0,
     liked_by_me: p.usuarioMeGusta ?? p.likedByMe ?? p.liked_by_me ?? false,
     created_at: p.fechaCreacion ?? p.created_at ?? new Date().toISOString(),
@@ -361,7 +362,7 @@ export function useMiembrosDestacados(limite = 6) {
         rol: m.rol ?? m.role ?? '',
         ciudad: m.ciudad ?? m.city ?? '',
         estado: m.estado ?? m.state ?? '',
-        urlAvatar: m.urlAvatar ?? m.url_avatar ?? m.avatar_url ?? null,
+        urlAvatar: decodeAvatarUrl(m.urlAvatar ?? m.url_avatar ?? m.avatar_url ?? null),
         biografia: m.bio ?? m.biografia ?? '',
       }))
     }),

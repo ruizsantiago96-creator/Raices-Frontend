@@ -4,6 +4,7 @@ import api from '@shared/lib/api'
 import { Icons } from '@shared/components/shared'
 import { ENTERPRISE_SUBTYPES, ECOSYSTEM_SERVICES, COMMUNITIES } from '../constants/enterpriseCatalogos'
 import { WizardNavButtons, LocationInputs } from './WizardUI'
+import { FluentEmoji } from '../constants/fluentEmojis'
 import {
   OrganizationProgress,
   OrganizationSubtypeStep,
@@ -22,11 +23,7 @@ export interface EnterpriseRegistrationWizardProps {
   onBackToRoles?: () => void
 }
 
-export type EnterpriseWizardStep =
-  | 'org_name'
-  | 'account_email'
-  | 'account_password'
-  | 'account_location'
+export type EnterpriseWizardStep = 'subtype' | 'org_name' | 'account_email' | 'account_password' | 'account_location' | 'thanks'
 
 const STEP_ORDER: EnterpriseWizardStep[] = [
   'org_name',
@@ -134,59 +131,6 @@ export default function EnterpriseRegistrationWizard({
     scrollTop()
   }
 
-  const handleOrgDescSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (!orgForm.descripcion.trim()) {
-      setError('La descripción es obligatoria.')
-      return
-    }
-    setWizardStep('org_specialties')
-    scrollTop()
-  }
-
-  const handleOrgSpecialtiesSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    setWizardStep('org_contact')
-    scrollTop()
-  }
-
-  const handleOrgContactSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    setWizardStep('org_website')
-    scrollTop()
-  }
-
-  const handleOrgWebsiteSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    setWizardStep('services')
-    scrollTop()
-  }
-
-  const handleServicesSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (selectedServices.length === 0) {
-      setError('Selecciona al menos un servicio.')
-      return
-    }
-    setWizardStep('community')
-    scrollTop()
-  }
-
-  const handleCommunitySubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (!selectedCommunity) {
-      setError('Selecciona la comunidad con la que quieres conectar.')
-      return
-    }
-    setWizardStep('account_email')
-    scrollTop()
-  }
 
   const handleAccountEmailSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
@@ -317,10 +261,10 @@ export default function EnterpriseRegistrationWizard({
               required
               placeholder="contacto@organizacion.com"
               value={accountForm.email}
-              onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+              onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
             />
           </div>
-          <WizardNavButtons onBack={() => { setWizardStep('community'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={() => { setWizardStep('org_name'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
@@ -342,7 +286,7 @@ export default function EnterpriseRegistrationWizard({
               required
               placeholder="Mínimo 8 caracteres"
               value={accountForm.password}
-              onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+              onChange={(e) => setAccountForm(prev => ({ ...prev, password: e.target.value }))}
             />
           </div>
           <WizardNavButtons onBack={() => { setWizardStep('account_email'); scrollTop() }} submitLabel="Continuar" />
@@ -365,10 +309,10 @@ export default function EnterpriseRegistrationWizard({
             postalCode={accountForm.postalCode}
             state={accountForm.state}
             city={accountForm.city}
-            onCountryChange={(p) => setAccountForm({ ...accountForm, country: p })}
-            onPostalCodeChange={(cp) => setAccountForm({ ...accountForm, postalCode: cp })}
-            onStateChange={(st) => setAccountForm({ ...accountForm, state: st })}
-            onCityChange={(c) => setAccountForm({ ...accountForm, city: c })}
+            onCountryChange={(p) => setAccountForm(prev => ({ ...prev, country: p }))}
+            onPostalCodeChange={(cp) => setAccountForm(prev => ({ ...prev, postalCode: cp }))}
+            onStateChange={(st) => setAccountForm(prev => ({ ...prev, state: st }))}
+            onCityChange={(c) => setAccountForm(prev => ({ ...prev, city: c }))}
           />
           <WizardNavButtons
             onBack={() => { setWizardStep('account_password'); scrollTop() }}
@@ -382,7 +326,7 @@ export default function EnterpriseRegistrationWizard({
       {wizardStep === 'thanks' && (
         <OrganizationThanksStep
           subtypeLabel={selectedLabel}
-          icon="🚀"
+          icon={FluentEmoji.lanzamiento}
           onContinue={() => nav('/dashboard')}
           continueLabel="Ir a mi panel"
           continueHref="/dashboard"

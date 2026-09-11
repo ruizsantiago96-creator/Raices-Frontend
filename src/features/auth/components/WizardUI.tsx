@@ -3,6 +3,8 @@ import { Icons } from '@shared/components/shared'
 import { lookupPostalCode, validatePostalCodeFormat } from '@shared/lib/postalCodeLookup'
 import { COUNTRIES, DEFAULT_COUNTRY } from '@shared/constants/countries'
 import PasswordRequirements from './PasswordRequirements'
+import { CatalogIcon } from './CatalogIcon'
+import { FluentEmoji } from '../constants/fluentEmojis'
 
 /**
  * PRIMITIVAS UI COMPARTIDAS DE LOS WIZARDS DE REGISTRO (Fase 2 · Migración TSX)
@@ -24,11 +26,66 @@ export function WizardNavButtons({
   submitIcon,
 }: WizardNavButtonsProps): React.JSX.Element {
   return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 14, flexShrink: 0 }}>
-      <button className="auth-btn-secondary" type="button" onClick={onBack} style={{ flex: 1 }}>
-        {Icons.arrowLeft({ s: 16 })} Volver
-      </button>
-      <button className="auth-btn-primary" type="submit" disabled={submitDisabled} style={{ flex: 2 }}>
+    <div style={{ display: 'flex', gap: 12, marginTop: 24, flexShrink: 0 }}>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            borderRadius: 24,
+            background: '#F1F5F9',
+            color: '#475569',
+            border: '1px solid #E2E8F0',
+            fontWeight: 600,
+            fontSize: 14.5,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E2E8F0'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
+        >
+          {Icons.arrowLeft({ s: 16 })} Volver
+        </button>
+      )}
+      <button
+        type="submit"
+        disabled={submitDisabled}
+        style={{
+          flex: onBack ? 2 : 1,
+          padding: '12px 24px',
+          borderRadius: 24,
+          background: submitDisabled ? '#CBD5E1' : 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
+          color: '#ffffff',
+          border: 'none',
+          fontWeight: 700,
+          fontSize: 14.5,
+          cursor: submitDisabled ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          boxShadow: submitDisabled ? 'none' : '0 4px 14px rgba(34, 155, 88, 0.35)',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          if (!submitDisabled) {
+            e.currentTarget.style.filter = 'brightness(1.08)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!submitDisabled) {
+            e.currentTarget.style.filter = 'none'
+            e.currentTarget.style.transform = 'none'
+          }
+        }}
+      >
         {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
       </button>
     </div>
@@ -489,7 +546,10 @@ export function LocationInputs({
               padding: '4px 10px',
             }}
           >
-            📍 {status.etiqueta}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <CatalogIcon icon={FluentEmoji.ubicacion} size={12} />
+              {status.etiqueta}
+            </span>
           </span>
           <button
             type="button"
