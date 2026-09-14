@@ -11,7 +11,6 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Cómo funciona', id: 'como-funciona' },
   { label: 'Conócerte', id: 'conocerte' },
   { label: 'Comunidad', id: 'comunidad' },
 ]
@@ -20,7 +19,8 @@ export default function LandingPage() {
   const nav = useNavigate()
   const token = useAuthStore(state => state.token)
   const user = useAuthStore(state => state.user)
-  const [activeNav, setActiveNav] = useState<string>('como-funciona')
+  const [activeNav, setActiveNav] = useState<string>('conocerte')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id)
@@ -34,6 +34,24 @@ export default function LandingPage() {
       else nav('/dashboard', { replace: true })
     }
   }, [token, user, nav])
+
+  // Cerrar menú móvil al redimensionar a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setIsMobileMenuOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Cerrar menú móvil al hacer scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isMobileMenuOpen) setIsMobileMenuOpen(false)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isMobileMenuOpen])
 
   // Redireccionar de inmediato en el render si ya hay sesión activa
   if (token) {
@@ -118,17 +136,260 @@ export default function LandingPage() {
         .feature-card:hover .feat-icon-anim-5 {
           animation: networkEcosystemSpin 1.1s ease-in-out infinite;
         }
+
+        /* ── Topbar responsive ── */
+        .landing-topbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 50;
+          background: var(--landing-bg-topbar);
+          border-bottom: 1px solid var(--landing-border-topbar);
+          backdrop-filter: blur(25px) saturate(180%);
+          -webkit-backdrop-filter: blur(25px) saturate(180%);
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          box-sizing: border-box;
+          transition: all 0.3s ease;
+          box-shadow: inset 0 -1px 0 0 rgba(255, 255, 255, 0.3), 0 4px 20px 0 rgba(31, 38, 135, 0.04);
+        }
+        @media (min-width: 768px) {
+          .landing-topbar {
+            padding: 0 32px;
+          }
+        }
+
+        .landing-nav-desktop {
+          display: none;
+        }
+        @media (min-width: 768px) {
+          .landing-nav-desktop {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+          }
+        }
+
+        .landing-hamburger-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          border-radius: var(--radius-sm);
+          transition: background 0.2s;
+        }
+        .landing-hamburger-btn:hover {
+          background: rgba(7, 59, 76, 0.06);
+        }
+        @media (min-width: 768px) {
+          .landing-hamburger-btn {
+            display: none;
+          }
+        }
+
+        .landing-auth-desktop {
+          display: none;
+        }
+        @media (min-width: 768px) {
+          .landing-auth-desktop {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+          }
+        }
+
+        /* ── Mobile menu overlay ── */
+        .landing-mobile-menu {
+          position: fixed;
+          top: 60px;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 49;
+          background: var(--landing-bg-topbar);
+          border-top: 1px solid var(--landing-border-topbar);
+          display: flex;
+          flex-direction: column;
+          padding: 24px 16px;
+          gap: 8px;
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 0.3s ease, transform 0.3s ease;
+          pointer-events: auto;
+        }
+        .landing-mobile-menu--closed {
+          opacity: 0;
+          transform: translateY(-12px);
+          pointer-events: none;
+        }
+        .landing-mobile-menu--open .landing-mobile-link,
+        .landing-mobile-menu--open .landing-mobile-auth-btn {
+          animation: mobileMenuItemFadeIn 0.3s ease-out both;
+        }
+        .landing-mobile-menu--open .landing-mobile-link:nth-child(1) { animation-delay: 0.05s; }
+        .landing-mobile-menu--open .landing-mobile-link:nth-child(2) { animation-delay: 0.1s; }
+        .landing-mobile-menu--open .landing-mobile-auth-btn { animation-delay: 0.15s; }
+        @keyframes mobileMenuItemFadeIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .landing-mobile-link {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          padding: 14px 16px;
+          border-radius: 12px;
+          background: transparent;
+          border: none;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--landing-text-topbar);
+          cursor: pointer;
+          font-family: var(--font-body);
+          transition: background 0.2s;
+          text-align: left;
+        }
+        .landing-mobile-link:hover {
+          background: rgba(7, 59, 76, 0.06);
+        }
+        .landing-mobile-link.active {
+          background: var(--landing-title);
+          color: var(--bg-warm);
+        }
+        .landing-mobile-auth-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          padding: 14px 24px;
+          border-radius: 20px;
+          background: #FF4D68;
+          color: #fff;
+          border: none;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: var(--font-body);
+          margin-top: 12px;
+          transition: background 0.2s, transform 0.2s;
+        }
+        .landing-mobile-auth-btn:hover {
+          background: #FF3352;
+          transform: scale(1.02);
+        }
+
+        /* ── Hero responsive ── */
+        .landing-hero-title {
+          font-family: var(--font-display);
+          font-weight: 800;
+          color: var(--landing-title);
+          line-height: 1.15;
+          margin: 0 0 20px;
+          max-width: 760px;
+          position: relative;
+          z-index: 2;
+          font-size: 28px;
+        }
+        @media (min-width: 768px) {
+          .landing-hero-title {
+            font-size: 44px;
+          }
+        }
+        @media (min-width: 1024px) {
+          .landing-hero-title {
+            font-size: 58px;
+          }
+        }
+
+        .landing-hero-subtitle {
+          color: var(--landing-text-muted);
+          line-height: 1.6;
+          max-width: 600px;
+          margin: 0;
+          position: relative;
+          z-index: 2;
+          font-size: 15px;
+        }
+        @media (min-width: 768px) {
+          .landing-hero-subtitle {
+            font-size: 18px;
+          }
+        }
+
+        /* ── Section heading responsive ── */
+        .landing-section-title {
+          font-family: var(--font-display);
+          font-weight: 800;
+          color: var(--landing-title);
+          margin: 0 0 12px;
+          line-height: 1.2;
+          max-width: 560px;
+          font-size: 22px;
+        }
+        @media (min-width: 768px) {
+          .landing-section-title {
+            font-size: 30px;
+          }
+        }
+        @media (min-width: 1024px) {
+          .landing-section-title {
+            font-size: 36px;
+          }
+        }
+
+        /* ── Features grid responsive ── */
+        .landing-features-grid-3 {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        @media (min-width: 768px) {
+          .landing-features-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+          }
+        }
+
+        .landing-features-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+          max-width: 680px;
+          margin: 16px auto 0;
+        }
+        @media (min-width: 768px) {
+          .landing-features-grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px auto 0;
+          }
+        }
+
+        /* ── Steps grid responsive ── */
+        .landing-steps-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        @media (min-width: 768px) {
+          .landing-steps-grid {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+          }
+        }
       `}</style>
+
       {/* ── TOPBAR ── */}
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        background: 'var(--landing-bg-topbar)', borderBottom: '1px solid var(--landing-border-topbar)',
-        backdropFilter: 'blur(25px) saturate(180%)', WebkitBackdropFilter: 'blur(25px) saturate(180%)',
-        height: 60, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '0 32px', boxSizing: 'border-box',
-        transition: 'all 0.3s ease',
-        boxShadow: 'inset 0 -1px 0 0 rgba(255, 255, 255, 0.3), 0 4px 20px 0 rgba(31, 38, 135, 0.04)',
-      }}>
+      <header className="landing-topbar">
         {/* Logo */}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -139,8 +400,8 @@ export default function LandingPage() {
           </span>
         </button>
 
-        {/* Nav pills */}
-        <nav style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Desktop nav pills */}
+        <nav className="landing-nav-desktop">
           {NAV_LINKS.map(link => (
             <button
               key={link.id}
@@ -160,8 +421,8 @@ export default function LandingPage() {
           ))}
         </nav>
 
-        {/* Auth button */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        {/* Desktop auth buttons */}
+        <div className="landing-auth-desktop">
           {token ? (
             <button
               onClick={() => {
@@ -195,24 +456,90 @@ export default function LandingPage() {
             </button>
           )}
         </div>
+
+        {/* Mobile hamburger button */}
+        <button
+          className="landing-hamburger-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+        >
+          {isMobileMenuOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" x2="20" y1="6" y2="6" />
+              <line x1="4" x2="20" y1="12" y2="12" />
+              <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+          )}
+        </button>
       </header>
+
+      {/* ── MOBILE MENU DROPDOWN ── */}
+      <div className={`landing-mobile-menu${isMobileMenuOpen ? ' landing-mobile-menu--open' : ' landing-mobile-menu--closed'}`}>
+        {NAV_LINKS.map(link => (
+          <button
+            key={link.id}
+            className={`landing-mobile-link${activeNav === link.id ? ' active' : ''}`}
+            onClick={() => {
+              setActiveNav(link.id)
+              setIsMobileMenuOpen(false)
+              scrollToSection(link.id)
+            }}
+          >
+            {link.label}
+          </button>
+        ))}
+        {token ? (
+          <button
+            className="landing-mobile-auth-btn"
+            onClick={() => {
+              setIsMobileMenuOpen(false)
+              if (user?.role === 'admin') nav('/admin')
+              else if (user?.role === 'institution') nav('/institution-portal')
+              else nav('/dashboard')
+            }}
+          >
+            Ir a mi panel
+          </button>
+        ) : (
+          <button
+            className="landing-mobile-auth-btn"
+            onClick={() => {
+              setIsMobileMenuOpen(false)
+              nav('/auth')
+            }}
+          >
+            Entrar
+          </button>
+        )}
+      </div>
 
       {/* ── HERO ── */}
       <div style={{ background: 'var(--landing-hero-bg, #f6eddf)', transition: 'background-color 0.3s ease' }}>
       <section
-        id="como-funciona"
         style={{
           maxWidth: 1140,
           margin: '0 auto',
-          padding: '130px 32px 85px',
+          padding: '120px 16px 60px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
           position: 'relative',
         }}
+        className="landing-hero-section"
       >
         <style>{`
+          @media (min-width: 768px) {
+            .landing-hero-section {
+              padding: 160px 32px 85px !important;
+            }
+          }
+
           @keyframes heroSunFloat {
             0% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-8px) rotate(6deg); }
@@ -238,7 +565,7 @@ export default function LandingPage() {
             cursor: pointer;
             user-select: none;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
-            z-index: 2;
+            z-index: 0;
           }
           .hero-doodle:hover {
             filter: drop-shadow(0 12px 20px rgba(7, 59, 76, 0.18));
@@ -285,12 +612,16 @@ export default function LandingPage() {
             .hero-doodle-star { right: 1%; top: 80px; }
             .hero-doodle-flower { right: 1%; bottom: 10px; }
           }
+          @media (max-width: 480px) {
+            .hero-doodle {
+              transform: scale(0.6);
+            }
+          }
         `}</style>
 
         {/* ── DOODLE 1: SOL RADIANTE (Top-Left) ── */}
         <div className="hero-doodle hero-doodle-sun" title="¡Hola sol!">
           <svg width="76" height="76" viewBox="0 0 74 74" fill="none">
-            {/* Sun rays */}
             <g stroke="#0C3B4B" strokeWidth="2.8" strokeLinecap="round">
               <line x1="37" y1="6" x2="37" y2="12" />
               <line x1="37" y1="62" x2="37" y2="68" />
@@ -301,13 +632,10 @@ export default function LandingPage() {
               <line x1="15" y1="59" x2="19.5" y2="54.5" />
               <line x1="54.5" y1="19.5" x2="59" y2="15" />
             </g>
-            {/* Sun circle */}
             <circle cx="37" cy="37" r="18" fill="#FDE674" stroke="#0C3B4B" strokeWidth="3.2" />
-            {/* Cute face */}
             <circle cx="31.5" cy="34.5" r="2" fill="#0C3B4B" />
             <circle cx="42.5" cy="34.5" r="2" fill="#0C3B4B" />
             <path d="M32 41 C34.5 44.5, 39.5 44.5, 42 41" fill="none" stroke="#0C3B4B" strokeWidth="2.4" strokeLinecap="round" />
-            {/* Rosy cheeks */}
             <ellipse cx="28" cy="38" rx="2.5" ry="1.5" fill="#FF4D68" opacity="0.45" />
             <ellipse cx="46" cy="38" rx="2.5" ry="1.5" fill="#FF4D68" opacity="0.45" />
           </svg>
@@ -316,20 +644,14 @@ export default function LandingPage() {
         {/* ── DOODLE 2: PLANTA TIERNA (Bottom-Left) ── */}
         <div className="hero-doodle hero-doodle-plant" title="¡Creciendo juntos!">
           <svg width="72" height="78" viewBox="0 0 72 78" fill="none">
-            {/* Pot */}
             <path d="M22 47 L25 69 C25.5 71, 46.5 71, 47 69 L50 47 Z" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3.2" strokeLinejoin="round" />
             <rect x="20" y="42" width="32" height="6" rx="3" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3" />
-            {/* Pot Face */}
             <circle cx="32" cy="57" r="1.5" fill="#0C3B4B" />
             <circle cx="40" cy="57" r="1.5" fill="#0C3B4B" />
             <path d="M34 61 Q36 63 38 61" stroke="#0C3B4B" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-            {/* Stem */}
             <path d="M36 42 C36 30, 36 22, 36 15" stroke="#0C3B4B" strokeWidth="3.2" strokeLinecap="round" />
-            {/* Left Leaf */}
             <path d="M36 30 C24 30, 18 20, 24 14 C32 14, 36 24, 36 30 Z" fill="#229B58" stroke="#0C3B4B" strokeWidth="3" strokeLinejoin="round" />
-            {/* Right Leaf */}
             <path d="M36 22 C46 22, 52 14, 48 8 C40 8, 36 16, 36 22 Z" fill="#A8B86B" stroke="#0C3B4B" strokeWidth="3" strokeLinejoin="round" />
-            {/* Little flower bud top */}
             <circle cx="36" cy="13" r="3.5" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" />
           </svg>
         </div>
@@ -337,11 +659,8 @@ export default function LandingPage() {
         {/* ── DOODLE 3: ESTRELLA MÁGICA (Top-Right) ── */}
         <div className="hero-doodle hero-doodle-star" title="¡Brilla!">
           <svg width="72" height="72" viewBox="0 0 70 70" fill="none">
-            {/* Main star */}
             <path d="M35 12 L38.5 27.5 L54 31 L38.5 34.5 L35 50 L31.5 34.5 L16 31 L31.5 27.5 Z" fill="#FFB703" stroke="#0C3B4B" strokeWidth="3" strokeLinejoin="round" />
-            {/* Small secondary pink star */}
             <path d="M52 10 L53.5 16.5 L60 18 L53.5 19.5 L52 26 L50.5 19.5 L44 18 L50.5 16.5 Z" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2" strokeLinejoin="round" />
-            {/* Orbit sparkle dots */}
             <circle cx="16" cy="18" r="3.5" fill="#3A86FF" stroke="#0C3B4B" strokeWidth="1.8" />
             <circle cx="48" cy="52" r="3" fill="#10B981" stroke="#0C3B4B" strokeWidth="1.6" />
           </svg>
@@ -350,10 +669,8 @@ export default function LandingPage() {
         {/* ── DOODLE 4: FLOR SONRIENTE (Bottom-Right) ── */}
         <div className="hero-doodle hero-doodle-flower" title="¡Florecer!">
           <svg width="74" height="76" viewBox="0 0 72 74" fill="none">
-            {/* Stem & leaf */}
             <path d="M36 44 C36 55, 34 68, 36 70" stroke="#0C3B4B" strokeWidth="3.2" strokeLinecap="round" />
             <path d="M36 56 C46 54, 52 62, 48 66 C40 68, 36 62, 36 56 Z" fill="#229B58" stroke="#0C3B4B" strokeWidth="2.5" />
-            {/* Petals */}
             <g fill="#FF4D68" stroke="#0C3B4B" strokeWidth="2.8">
               <circle cx="36" cy="18" r="10" />
               <circle cx="48" cy="27" r="10" />
@@ -361,9 +678,7 @@ export default function LandingPage() {
               <circle cx="28" cy="41" r="10" />
               <circle cx="24" cy="27" r="10" />
             </g>
-            {/* Center */}
             <circle cx="36" cy="31" r="11" fill="#FDE674" stroke="#0C3B4B" strokeWidth="3" />
-            {/* Face */}
             <circle cx="32" cy="29" r="1.5" fill="#0C3B4B" />
             <circle cx="40" cy="29" r="1.5" fill="#0C3B4B" />
             <path d="M33 34 C34.5 36.5, 37.5 36.5, 39 34" fill="none" stroke="#0C3B4B" strokeWidth="2" strokeLinecap="round" />
@@ -371,32 +686,16 @@ export default function LandingPage() {
         </div>
 
         {/* ── HERO TEXT (Centered) ── */}
-        <h1 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(36px, 5.5vw, 58px)',
-          fontWeight: 800,
-          color: 'var(--landing-title)',
-          lineHeight: 1.15,
-          margin: '0 0 20px',
-          maxWidth: 760,
-          position: 'relative',
-          zIndex: 2,
-        }}>
-          Tu historia abre{' '}
-          <span style={{ color: '#FF4D68' }}>nuevos caminos.</span>
-        </h1>
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', maxWidth: 672, margin: '0 auto', padding: '32px 16px', background: 'transparent' }}>
+          <h1 className="landing-hero-title">
+            Tu historia abre{' '}
+            <span style={{ color: '#FF4D68' }}>nuevos caminos.</span>
+          </h1>
 
-        <p style={{
-          fontSize: 18,
-          color: 'var(--landing-text-muted)',
-          lineHeight: 1.6,
-          maxWidth: 600,
-          margin: 0,
-          position: 'relative',
-          zIndex: 2,
-        }}>
-          Un espacio para conocerte, descubrir posibilidades y conectar con personas con quienes puedas compartir lo que te importa.
-        </p>
+          <p className="landing-hero-subtitle">
+            Un espacio para conocerte, descubrir posibilidades y conectar con personas con quienes puedas compartir lo que te importa.
+          </p>
+        </div>
       </section>
       </div>
 
@@ -420,10 +719,18 @@ export default function LandingPage() {
         <section
           style={{
             background: 'var(--landing-sec1-bg)',
-            padding: '40px 32px 48px',
+            padding: '32px 16px 40px',
             transition: 'background-color 0.3s ease',
           }}
+          className="landing-sec1-section"
         >
+          <style>{`
+            @media (min-width: 768px) {
+              .landing-sec1-section {
+                padding: 40px 32px 48px !important;
+              }
+            }
+          `}</style>
           <div style={{ maxWidth: 1000, margin: '0 auto' }}>
             <p style={{
               fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
@@ -431,20 +738,11 @@ export default function LandingPage() {
             }}>
               PRIMERO, TE CONOCEMOS
             </p>
-            <h2 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(24px, 4vw, 36px)',
-              fontWeight: 800, color: 'var(--landing-title)',
-              margin: '0 0 48px', lineHeight: 1.2, maxWidth: 560,
-            }}>
+            <h2 className="landing-section-title">
               Tres pasos para comprender qué es importante para ti
             </h2>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: 24,
-            }}>
+            <div className="landing-steps-grid">
               {STEPS.map((step) => (
                 <div
                   key={step.num}
@@ -452,7 +750,7 @@ export default function LandingPage() {
                   style={{
                     background: 'var(--landing-card-bg)',
                     borderRadius: 16,
-                    padding: '28px 24px',
+                    padding: '28px 20px',
                     boxShadow: 'var(--landing-card-shadow)',
                     border: '1px solid var(--landing-card-border)',
                     display: 'flex',
@@ -464,7 +762,6 @@ export default function LandingPage() {
                 >
                   {/* Number badge above icon */}
                   <div style={{ position: 'relative', display: 'inline-block' }}>
-                    {/* Number circle floating top-center */}
                     <div style={{
                       position: 'absolute',
                       top: -12,
@@ -480,7 +777,6 @@ export default function LandingPage() {
                     }}>
                       {step.num}
                     </div>
-                    {/* Icon wrapper with jump bounce on hover */}
                     <div className="step-icon-wrapper" style={{ marginTop: 8, display: 'inline-block', transformOrigin: 'bottom center' }}>
                       {step.icon}
                     </div>
@@ -521,8 +817,16 @@ export default function LandingPage() {
       {/* ── SECTION 2: DESPUÉS AVANZAMOS ── */}
       <section
         id="comunidad"
-        style={{ background: 'var(--landing-sec2-bg, #fff9f2)', padding: '72px 32px', transition: 'background-color 0.3s ease' }}
+        style={{ background: 'var(--landing-sec2-bg, #fff9f2)', padding: '48px 16px', transition: 'background-color 0.3s ease' }}
+        className="landing-sec2-section"
       >
+        <style>{`
+          @media (min-width: 768px) {
+            .landing-sec2-section {
+              padding: 72px 32px !important;
+            }
+          }
+        `}</style>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <p style={{
             fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
@@ -530,23 +834,22 @@ export default function LandingPage() {
           }}>
             DESPUÉS, AVANZAMOS CONTIGO
           </p>
-          <h2 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(24px, 4vw, 36px)',
-            fontWeight: 800, color: 'var(--landing-title)',
-            margin: '0 0 12px', lineHeight: 1.2, maxWidth: 560,
-          }}>
+          <h2 className="landing-section-title">
             Lo que recibes para seguir tu camino
           </h2>
-          <p style={{ fontSize: 16, color: 'var(--landing-text-muted)', margin: '0 0 48px', maxWidth: 520, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: 'var(--landing-text-muted)', margin: '0 0 32px', maxWidth: 520, lineHeight: 1.6 }} className="landing-sec2-desc">
             A partir de lo que conocemos de ti, acercamos opciones, acompañamiento y conexiones que pueden crecer y cambiar contigo.
           </p>
+          <style>{`
+            @media (min-width: 768px) {
+              .landing-sec2-desc {
+                font-size: 16px !important;
+                margin-bottom: 48px !important;
+              }
+            }
+          `}</style>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 20,
-          }}>
+          <div className="landing-features-grid-3">
             {FEATURES.slice(0, 3).map((feat) => (
               <div
                 key={feat.title}
@@ -555,7 +858,7 @@ export default function LandingPage() {
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',
                   borderRadius: 20,
-                  padding: '32px 24px 28px',
+                  padding: '28px 20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -565,7 +868,7 @@ export default function LandingPage() {
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 88 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 72 }}>
                   {feat.icon}
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--landing-title)', margin: 0, lineHeight: 1.3 }}>
@@ -579,13 +882,7 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom row - 2 centered cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 20,
-            maxWidth: 680,
-            margin: '20px auto 0',
-          }}>
+          <div className="landing-features-grid-2">
             {FEATURES.slice(3).map((feat) => (
               <div
                 key={feat.title}
@@ -594,7 +891,7 @@ export default function LandingPage() {
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',
                   borderRadius: 20,
-                  padding: '32px 24px 28px',
+                  padding: '28px 20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -604,7 +901,7 @@ export default function LandingPage() {
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 88 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 72 }}>
                   {feat.icon}
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--landing-title)', margin: 0, lineHeight: 1.3 }}>
