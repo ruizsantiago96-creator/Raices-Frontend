@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import PcdProfileWizard from '../components/PcdProfileWizard'
 import TutorProfileWizard from '../components/TutorProfileWizard'
+import InstitutionProfileWizard from '../components/InstitutionProfileWizard'
+import EnterpriseProfileWizard from '../components/EnterpriseProfileWizard'
 
 /**
  * Página `/completar-perfil` — renderiza el wizard de completar perfil
@@ -119,18 +121,12 @@ export default function CompleteProfilePage() {
         <TutorProfileWizard onDone={() => setIsDone(true)} />
       )}
 
-      {(userRole === 'institucion' || userRole === 'empresa' || userRole === 'institution' || userRole === 'enterprise') && (
-        <div style={{
-          textAlign: 'center',
-          padding: '40px 20px',
-          color: 'var(--fg2)',
-          fontSize: 14,
-        }}>
-          <p>La completación de perfil para instituciones y empresas estará disponible pronto.</p>
-          <p style={{ fontSize: 12.5, color: 'var(--fg3)', marginTop: 8 }}>
-            Por ahora, puedes configurar tu institución desde el Portal Institucional.
-          </p>
-        </div>
+      {(userRole === 'institucion' || userRole === 'institution') && (
+        <InstitutionProfileWizard onDone={() => setIsDone(true)} />
+      )}
+
+      {(userRole === 'empresa' || userRole === 'enterprise') && (
+        <EnterpriseProfileWizard onDone={() => setIsDone(true)} />
       )}
         </div>
       </div>

@@ -4,7 +4,6 @@ import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
-import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
@@ -150,7 +149,6 @@ function resolveParentesco(parentescos: string[], destinatario: string): string 
   return destinatario === 'hijo' ? 'Hijo/a' : destinatario === 'familiar' ? 'Familiar' : 'Persona a mi cuidado'
 }
 
-// ── STEP ORDER (13 pasos homologados con PCD) ─────────────────────
 const STEP_ORDER: TutorWizardStep[] = [
   'name',
   'birthdate',
@@ -158,7 +156,7 @@ const STEP_ORDER: TutorWizardStep[] = [
   'email',
   'password',
 ]
-const TOTAL_STEPS = STEP_ORDER.length
+const TOTAL_STEPS = 5
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: TutorRegistrationWizardProps) {
@@ -366,14 +364,12 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
 
   const handlePasswordSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setSending(true)
     setError('')
     if (!checkPasswordCriteria(generalForm.password)) {
       setError('La contraseña no cumple con los requisitos de seguridad.')
-      setSending(false)
       return
     }
-
+    setSending(true)
     try {
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
       const registerPayload = {
@@ -400,16 +396,140 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
 
       if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
 
-      const userObj = {
+      const userObj: User = {
         id: String(authResult.usuario?.id ?? ''),
         email: authResult.usuario?.email || generalForm.email,
-        role: 'tutor' as UserRole,
+        role: 'tutor',
         full_name: nombreCompleto,
       }
       setRememberMe(true)
       setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
       saveUser(userObj, true)
-      
+
+      addToast('¡Cuenta creada exitosamente! Vamos a completar tu perfil.', 'success')
+      nav('/completar-perfil', { replace: true })
+    } catch (err: any) {
+       const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
+       setError(msg)
+       addToast(msg, 'error')
+    } finally {
+       setSending(false)
+    }
+  }
+
+  const handleRelationshipTypeSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!destinatario) {
+      setError('Por favor, selecciona una opción.')
+      return
+    }
+    setWizardStep('relationship_name')
+    scrollTop()
+  }
+
+  const handleRelationshipNameSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!nombreDependiente.trim()) {
+      setError('Por favor, ingresa el nombre de la persona a tu cuidado.')
+      return
+    }
+    setWizardStep('relationship_birthdate')
+    scrollTop()
+  }
+
+  const handleRelationshipBirthdateSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    const depBirthValidation = validateBirthDate(fechaNacimientoDependiente)
+    if (!depBirthValidation.valid) {
+      setError(depBirthValidation.error || 'Por favor, ingresa la fecha de nacimiento de la persona a tu cuidado.')
+      return
+    }
+    setWizardStep('accommodation')
+    scrollTop()
+  }
+
+  const handleAccommodationSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!generalForm.acompanamiento) {
+      setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.')
+      return
+    }
+    setWizardStep('condition')
+    scrollTop()
+  }
+
+  const handleConditionSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setSending(true)
+    setError('')
+    try {
+      const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
+      const registerPayload = {
+        nombreCompleto,
+        email: generalForm.email,
+        password: generalForm.password,
+        rol: 'padre_tutor',
+        ...(generalForm.curp ? { curp: generalForm.curp } : {}),
+        fechaNacimiento: generalForm.birth_date,
+        ciudad: generalForm.ciudad,
+        estado: generalForm.estado,
+        ...(generalForm.pais ? { pais: generalForm.pais } : {}),
+        ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
+      }
+
+      const regRes = await api.post('/autenticacion/registro', registerPayload)
+      const authResult = regRes.data
+
+      if (authResult?.requiereInicioSesion) {
+         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
+         nav('/auth?mode=login', { replace: true })
+         return
+      }
+
+      if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
+
+      const userObj: User = {
+        id: String(authResult.usuario?.id ?? ''),
+        email: authResult.usuario?.email || generalForm.email,
+        role: 'tutor',
+        full_name: nombreCompleto,
+      }
+      setRememberMe(true)
+      setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
+      saveUser(userObj, true)
+
+      // Registrar a la persona a cargo / dependiente si se ingresó su nombre
+      if (nombreDependiente.trim()) {
+        try {
+          let catParentescos: string[] = []
+          try {
+            const catRes = await api.get('/catalogos')
+            catParentescos = catRes?.data?.parentescos ?? []
+          } catch { }
+
+          const dependienteEtapaDep = fechaNacimientoDependiente ? calcEtapaDependiente(fechaNacimientoDependiente) : undefined
+          const depPayload = {
+            nombreCompleto: nombreDependiente.trim(),
+            parentesco: resolveParentesco(catParentescos, destinatario),
+            tiposDiscapacidad: wizardConditionsToCodes(conditionData.conditions, conditionData.neurodivergencias),
+            ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
+            ...(fechaNacimientoDependiente ? { fechaNacimiento: fechaNacimientoDependiente, birth_date: fechaNacimientoDependiente } : {}),
+            notas: conditionData.diagnosticoEspecifico || null,
+          }
+          const depRes = await api.post('/usuarios/dependientes', depPayload)
+          if (depRes?.data?.id && fechaNacimientoDependiente) {
+            localStorage.setItem(`raices_dep_birth_date_${depRes.data.id}`, fechaNacimientoDependiente)
+          }
+        } catch (err) {
+          console.warn('Error al registrar dependiente en onboarding tutor:', err)
+          addToast(`Cuenta creada, pero no se pudo vincular automáticamente a ${nombreDependiente.trim()}. Podrás agregarlo desde "Mis personas".`, 'warning')
+        }
+      }
+
       addToast('¡Cuenta creada exitosamente!', 'success')
       nav('/dashboard', { replace: true })
     } catch (err: any) {
@@ -419,7 +539,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     } finally {
        setSending(false)
     }
-  }
+  }
 
   const passStrength = getPasswordStrength(generalForm.password)
 
@@ -616,8 +736,199 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             />
           </div>
 
+          <NavButtons onBack={() => { setWizardStep('email'); scrollTop() }} submitLabel={sending ? 'Creando cuenta...' : 'Crear cuenta'} submitDisabled={sending} />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: RELACIÓN / ¿Para quién es el perfil?
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_type' && (
+        <form onSubmit={handleRelationshipTypeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              ¿Para quién es el perfil?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Esto nos ayudará a personalizar cada recomendación y el acompañamiento para tu ser querido.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {DESTINATARIOS.map(opt => {
+              const isSelected = destinatario === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setDestinatario(opt.id)}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.15s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--primary)' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('password'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 7: NOMBRE DE LA PERSONA A CARGO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_name' && (
+        <form onSubmit={handleRelationshipNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Nombre de la persona con discapacidad
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Indica el nombre de la persona a tu cuidado.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Nombre de {destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado'} <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input type="text" className="auth-input" required
+              placeholder={destinatario === 'hijo' ? 'Ej. Mateo' : destinatario === 'familiar' ? 'Ej. Sofía' : 'Ej. Carlos'}
+              value={nombreDependiente}
+              onChange={e => setNombreDependiente(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''))} />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_type'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 8: FECHA DE NACIMIENTO DE LA PERSONA A CARGO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_birthdate' && (
+        <form onSubmit={handleRelationshipBirthdateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Fecha de nacimiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Indica la fecha de nacimiento de {personName}.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Fecha de nacimiento de {personName} <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              type="date"
+              className="auth-input"
+              required
+              max={getMaxBirthDate()}
+              min={MIN_BIRTH_DATE}
+              value={fechaNacimientoDependiente}
+              onChange={e => setFechaNacimientoDependiente(e.target.value)}
+            />
+            {fechaNacimientoDependiente && (() => {
+              const edad = calcEdad(fechaNacimientoDependiente)
+              const etapaId = calcEtapaDependiente(fechaNacimientoDependiente)
+              if (edad === null) return null
+              const etapaLabel = etapaId
+                ? ({
+                    infancia: 'Infancia', adolescencia: 'Adolescencia',
+                    adultoJoven: 'Adulto joven', adulto: 'Adulto', mayor: 'Adulto mayor',
+                  } as Record<string, string>)[etapaId]
+                : null
+              return (
+                <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '5px 0 0' }}>
+                  {edad} años{etapaLabel ? ` · ${etapaLabel}` : ''} — lo usaremos para personalizar sus recomendaciones
+                </p>
+              )
+            })()}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_name'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: ACOMPAÑAMIENTO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'accommodation' && (
+        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Preferencia de acompañamiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Cómo prefieres que Raíces te acompañe en el camino de {personName}?
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {LIST_ACOMPANAMIENTO.map(opt => {
+              const isSelected = generalForm.acompanamiento === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setGeneralForm(prev => ({ ...prev, acompanamiento: opt.id }))}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.15s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--primary)' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_birthdate'); scrollTop() }} submitLabel="Continuar a condición" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 5: CONDICIÓN PCD (de la persona a cargo)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'condition' && (
+        <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Condición de {personName}
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Qué condición o situación describe mejor a {personName}? (Puedes seleccionar más de una.)
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+            {CONDICIONES_PCD.map(cond => (
+              <CheckChip
+                key={cond}
+                label={cond}
+                selected={conditionData.conditions.includes(cond)}
+                onToggle={() => toggleCondition(cond)}
+                accent="#229B58"
+              />
+            ))}
+          </div>
+
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('email'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('accommodation'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="submit" style={{ flex: 2 }} disabled={sending}>

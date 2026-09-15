@@ -28,6 +28,7 @@ import InstitutionPortalPage from '@features/institutions/pages/InstitutionPorta
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import MiIdentidadPage from '@features/profile/pages/MiIdentidadPage'
 import CompleteProfilePage from '@features/profile/pages/CompleteProfilePage'
+import IdentityVerificationPage from '@features/profile/pages/IdentityVerificationPage'
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
@@ -179,6 +180,7 @@ export default function App() {
                   <Route path="/institution/:id" element={<InstitutionPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/mi-identidad" element={<MiIdentidadPage />} />
+                  <Route path="/verificacion-identidad" element={<IdentityVerificationPage />} />
                   <Route path="/completar-perfil" element={<CompleteProfilePage />} />
                   <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                   <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />

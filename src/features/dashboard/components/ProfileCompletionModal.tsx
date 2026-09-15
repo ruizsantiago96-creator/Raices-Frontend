@@ -37,12 +37,7 @@ export default function ProfileCompletionModal({
 
   const handleComplete = () => {
     onClose()
-    const isProfileComplete = onboardingStatus?.camposFaltantes && !onboardingStatus.camposFaltantes.includes('perfilNecesidades')
-    if (isRejected || isProfileComplete) {
-      nav('/mi-identidad')
-    } else {
-      nav('/completar-perfil')
-    }
+    nav('/completar-perfil')
   }
 
   return (
