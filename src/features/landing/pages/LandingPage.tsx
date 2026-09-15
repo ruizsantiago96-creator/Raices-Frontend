@@ -27,22 +27,11 @@ export default function LandingPage() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  useEffect(() => {
-    if (token && user) {
-      if (user.role === 'admin') nav('/admin', { replace: true })
-      else if (user.role === 'institution') nav('/institution-portal', { replace: true })
-      else nav('/dashboard', { replace: true })
-    }
-  }, [token, user, nav])
-
   // Redireccionar de inmediato en el render si ya hay sesión activa
-  if (token) {
-    if (user) {
-      if (user.role === 'admin') return <Navigate to="/admin" replace />
-      if (user.role === 'institution') return <Navigate to="/institution-portal" replace />
-      return <Navigate to="/dashboard" replace />
-    }
-    return null
+  if (token && user) {
+    if (user.role === 'admin') return <Navigate to="/admin" replace />
+    if (user.role === 'institution') return <Navigate to="/institution-portal" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return (

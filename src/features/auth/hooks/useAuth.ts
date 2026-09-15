@@ -382,6 +382,7 @@ export interface UpdateProfileVariables {
   state?: string
   country?: string
   postalCode?: string
+  curp?: string
   profiling?: Partial<ProfilingFrontend>
 }
 
@@ -397,6 +398,7 @@ export function useUpdateProfile(): UseMutationResult<BackendUser, Error, Update
       if (data.state !== undefined) body.estado = data.state
       if (data.country !== undefined) body.pais = data.country
       if (data.postalCode !== undefined) body.codigoPostal = data.postalCode
+      if (data.curp !== undefined) body.curp = data.curp
       if (Object.keys(body).length > 0) {
         const res = await api.put('/usuarios/perfil', body)
         resultUser = res.data

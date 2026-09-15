@@ -42,6 +42,7 @@ type ProfileStep =
   | 'formats'
   | 'interests'
   | 'viability'
+  | 'identity_curp'
   | 'done'
 
 const STEP_ORDER: ProfileStep[] = [
@@ -58,6 +59,7 @@ const STEP_ORDER: ProfileStep[] = [
   'formats',
   'interests',
   'viability',
+  'identity_curp',
 ]
 const TOTAL_STEPS = STEP_ORDER.length
 
@@ -101,6 +103,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const [error, setError] = useState('')
 
   // ── State ─────────────────────────────────────────────────────
+  const [curpInput, setCurpInput] = useState('')
   const [acompanamiento, setAcompanamiento] = useState('recomendaciones_paso')
   const [conditionData, setConditionData] = useState<ConditionData>({
     conditions: [], neurodivergencias: [], neuroOtro: '',
@@ -271,7 +274,9 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
 
       // 2. Save profile and needs
       try {
-        await updateProfile.mutateAsync({})
+        await updateProfile.mutateAsync({
+          ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
+        })
         await updateNeedsProfile.mutateAsync({
           profiling: {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
@@ -512,8 +517,11 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
 
       {/* ── STEP: VIABILIDAD ── */}
       {step === 'viability' && (
-        <form onSubmit={handleFinalSubmit} style={formStyle}>
-          <div><h2 style={headingStyle}>Viabilidad económica</h2><p style={descStyle}>Esto nos ayuda a sugerirte opciones accesibles.</p></div>
+        <form onSubmit={(e) => { e.preventDefault(); goNext('identity_curp') }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <h2 style={headingStyle}>Viabilidad económica de apoyos</h2>
+            <p style={descStyle}>Esto nos ayuda a priorizar programas, subsidios o servicios acordes a tus posibilidades.</p>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {LIST_VIABILIDAD.map(opt => (
               <label key={opt.id} style={{
