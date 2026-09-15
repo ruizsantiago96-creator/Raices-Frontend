@@ -71,6 +71,7 @@ export interface InstitutionFormData {
   subtipo?: string
   selectedServices?: string[]
   selectedCommunity?: string
+  csfFile?: File | null
 }
 
 export interface EnterpriseFormData {
@@ -98,6 +99,7 @@ export interface EnterpriseFormData {
   subtipo?: string
   selectedServices?: string[]
   selectedCommunity?: string
+  csfFile?: File | null
 }
 
 export interface RawRegisterResponse {
@@ -288,6 +290,12 @@ export interface CreateAccountOptions<TForm = Record<string, unknown>, TExtra = 
   buildPayload: (formData: TForm, extra?: TExtra) => RegisterPayload
   postSteps?: PostStep[]
   extra?: TExtra
+  /**
+   * Si `false`, el hook NO navega automáticamente al home del rol tras el éxito.
+   * El wizard que lo invoca gestiona su propia redirección (p. ej. /inicio).
+   * Por defecto `true` para no alterar los flujos existentes.
+   */
+  navigateOnSuccess?: boolean
 }
 
 /**
@@ -298,6 +306,7 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
   buildPayload,
   postSteps = [],
   extra,
+  navigateOnSuccess = true,
 }: CreateAccountOptions<TForm, TExtra>): UseMutationResult<CreateAccountResult, Error, TForm> {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
@@ -308,7 +317,10 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       // 1. Construir el payload según el rol
       const registerPayload = buildPayload(formData, extra)
 
-      // 2. Registrar la cuenta
+      // 2. Registrar la cuenta (JSON).
+      //    La CSF se incorporará cuando el backend en GCP acepte el archivo
+      //    (multipart) o se defina VITE_FIREBASE_STORAGE_BUCKET para subirla
+      //    client-side. Por ahora el archivo se ignora y el registro es JSON.
       const regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, registerPayload)
       const authResult: RawRegisterResponse = regRes.data
 
@@ -414,12 +426,6 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       }
     },
     onSuccess: (result: CreateAccountResult) => {
-      if (result.requiresLogin) {
-        addToast(result.message || 'Registro exitoso. Inicia sesión para continuar.', 'success')
-        nav('/auth?mode=login', { replace: true })
-        return
-      }
-
       if (!result.success) {
         addToast(result.message || 'Error en el registro.', 'error')
         return
@@ -430,8 +436,12 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
                        role === 'institution' ? 'Institución' : 'Empresa'
       addToast(`¡${roleName} registrada exitosamente!`, 'success')
 
-      // Navegación según rol
-      nav(getHomePathByRole(role), { replace: true })
+      // La sesión ya fue creada por el registro → ir directo al panel.
+      // Los wizards de orgs (institución/empresa) gestionan su propia
+      // redirección a /inicio pasando navigateOnSuccess: false.
+      if (navigateOnSuccess) {
+        nav(getHomePathByRole(role), { replace: true })
+      }
     },
     onError: (error: Error) => {
       addToast(error.message || 'No pudimos completar el registro. Intenta de nuevo.', 'error')

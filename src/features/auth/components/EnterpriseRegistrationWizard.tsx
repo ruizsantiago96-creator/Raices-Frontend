@@ -1,45 +1,47 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { Icons } from '@shared/components/shared'
-import { ENTERPRISE_SUBTYPES, ECOSYSTEM_SERVICES, COMMUNITIES } from '../constants/enterpriseCatalogos'
-import { WizardNavButtons, LocationInputs } from './WizardUI'
-import { FluentEmoji } from '../constants/fluentEmojis'
+import { useUiStore } from '@shared/stores/uiStore'
+import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
 import {
   OrganizationProgress,
-  OrganizationSubtypeStep,
-  OrganizationInfoStep,
-  OrganizationServicesStep,
-  OrganizationCommunityStep,
   OrganizationThanksStep,
-  validateOrgForm,
   validateAccountForm,
   type OrgFormData,
   type AccountFormData,
 } from './OrganizationFormSteps'
 import { useCreateAccount, payloadBuilders, type EnterpriseFormData } from '../hooks/useCreateAccount'
+import { getPasswordStrength } from '../lib/passwordStrength'
+import { FluentEmoji } from '../constants/fluentEmojis'
 
 export interface EnterpriseRegistrationWizardProps {
   onBackToRoles?: () => void
 }
 
-export type EnterpriseWizardStep = 'subtype' | 'org_name' | 'account_email' | 'account_password' | 'account_location' | 'thanks'
+export type EnterpriseWizardStep = 'account_location' | 'org_name' | 'account_email' | 'account_password' | 'csf' | 'thanks'
 
 const STEP_ORDER: EnterpriseWizardStep[] = [
   'org_name',
   'account_email',
   'account_password',
   'account_location',
+  'csf',
 ]
+
+const TOTAL_STEPS = 5
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function EnterpriseRegistrationWizard({
   onBackToRoles = () => {},
 }: EnterpriseRegistrationWizardProps): React.JSX.Element {
   const nav = useNavigate()
+  const { addToast } = useUiStore()
   const createAccount = useCreateAccount<EnterpriseFormData>({
     role: 'empresa',
     buildPayload: (formData: EnterpriseFormData) => payloadBuilders.empresa(formData),
+    // El wizard controla la redirección a /inicio tras el éxito
+    navigateOnSuccess: false,
     postSteps: [
       {
         name: 'perfil-ecosistema',
@@ -47,15 +49,12 @@ export default function EnterpriseRegistrationWizard({
         execute: async () => {
           await api.put('/usuarios/perfil', {
             perfilEcosistema: {
-              tipoEcosistema: subtipo,
               nombreOrganizacion: orgForm.nombre,
               descripcion: orgForm.descripcion,
               especialidades: orgForm.especialidades,
               nombreContacto: orgForm.contactName,
               telefonoContacto: orgForm.phone,
               sitioWeb: orgForm.website,
-              serviciosOfrecidos: selectedServices,
-              comunidadConectada: selectedCommunity,
             },
           })
         },
@@ -63,12 +62,14 @@ export default function EnterpriseRegistrationWizard({
     ],
   })
 
-  const [wizardStep, setWizardStep] = useState<EnterpriseWizardStep>('subtype')
+  const [wizardStep, setWizardStep] = useState<EnterpriseWizardStep>('org_name')
   const [sending, setSending] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
+  const [showPass, setShowPass] = useState<boolean>(false)
 
-  // Step 1: Subtipo
-  const [subtipo, setSubtipo] = useState<string>('')
+  // CSF
+  const [csfFile, setCsfFile] = useState<File | null>(null)
+  const csfInputRef = useRef<HTMLInputElement>(null)
 
   // Info de la organización
   const [orgForm, setOrgForm] = useState<OrgFormData>({
@@ -79,12 +80,6 @@ export default function EnterpriseRegistrationWizard({
     phone: '',
     website: '',
   })
-
-  // Servicios
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
-
-  // Comunidad a conectar
-  const [selectedCommunity, setSelectedCommunity] = useState<string>('')
 
   // Cuenta y ubicación
   const [accountForm, setAccountForm] = useState<AccountFormData>({
@@ -101,25 +96,10 @@ export default function EnterpriseRegistrationWizard({
     if (col) col.scrollTop = 0
   }
 
-  const TOTAL_STEPS = 11
   const stepIndex = STEP_ORDER.indexOf(wizardStep)
+  const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
 
-  const toggleService = (item: string): void => {
-    setSelectedServices(prev => (prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]))
-  }
-
-  // ── Navigation handlers ─────────────────────────────────────────
-  const handleSubtypeSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (!subtipo) {
-      setError('Selecciona el tipo de organización.')
-      return
-    }
-    setWizardStep('org_name')
-    scrollTop()
-  }
-
+  // ── Step handlers ───────────────────────────────────────────────
   const handleOrgNameSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
     setError('')
@@ -130,7 +110,6 @@ export default function EnterpriseRegistrationWizard({
     setWizardStep('account_email')
     scrollTop()
   }
-
 
   const handleAccountEmailSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
@@ -154,9 +133,21 @@ export default function EnterpriseRegistrationWizard({
     scrollTop()
   }
 
-  // ── Final submit ────────────────────────────────────────────────
-  const handleFinalSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault()
+  const handleLocationSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!accountForm.country || !accountForm.postalCode || !accountForm.state || !accountForm.city) {
+      setError('Por favor, ingresa un código postal válido, estado y ciudad.')
+      return
+    }
+    setWizardStep('csf')
+    scrollTop()
+  }
+
+  // ── Final submit (triggered from CSF step) ─────────────────────
+  const handleFinalSubmit = async (): Promise<void> => {
+    setError('')
+
     const validation = validateAccountForm(accountForm)
     if (!validation.isValid) {
       setError(validation.errors[0])
@@ -168,32 +159,50 @@ export default function EnterpriseRegistrationWizard({
       const result = await createAccount.mutateAsync({
         orgForm,
         accountForm,
-        subtipo,
-        selectedServices,
-        selectedCommunity,
+        csfFile,
       })
 
       if (result.requiresLogin) {
         setWizardStep('thanks')
         scrollTop()
+      } else {
+        // Auto-login completado → directo al dashboard con UI restringida (soft-lock)
+        nav('/inicio')
       }
     } catch (err: unknown) {
       console.error('Enterprise registration error:', err)
       const errorMsg = err instanceof Error ? err.message : 'No pudimos crear tu cuenta. Intenta de nuevo.'
       setError(errorMsg)
+      addToast(errorMsg, 'error')
     } finally {
       setSending(false)
     }
   }
-
-  const selectedLabel = ENTERPRISE_SUBTYPES.find(s => s.id === subtipo)?.label || ''
 
   // ── RENDER ──────────────────────────────────────────────────────
   return (
     <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* ── Progress bar ── */}
       {wizardStep !== 'thanks' && (
-        <OrganizationProgress accent="#D4944C" title="Registro Ecosistema" stepIndex={stepIndex} totalSteps={TOTAL_STEPS} />
+        <div style={{ marginBottom: 20, flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#D4944C', textTransform: 'uppercase' }}>
+              Registro Ecosistema
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)' }}>
+              {stepIndex >= 0 ? `Paso ${stepIndex + 1} de ${TOTAL_STEPS}` : 'Completado ✓'}
+            </span>
+          </div>
+          <div style={{ height: 5, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: 'linear-gradient(90deg, #D4944C 0%, #073B4C 100%)',
+              borderRadius: 3,
+              transition: 'width 0.4s ease',
+              width: `${progressPct}%`,
+            }} />
+          </div>
+        </div>
       )}
 
       {/* ── Error ── */}
@@ -203,30 +212,17 @@ export default function EnterpriseRegistrationWizard({
         </div>
       )}
 
-      {/* STEP 1: TIPO DE ORGANIZACIÓN */}
-      {wizardStep === 'subtype' && (
-        <OrganizationSubtypeStep
-          subtypes={ENTERPRISE_SUBTYPES}
-          selectedSubtype={subtipo}
-          onSelectSubtype={setSubtipo}
-          onBack={onBackToRoles}
-          onContinue={() => { handleSubtypeSubmit() }}
-          title="¿Qué tipo de organización representas?"
-          description="Conecta tu experiencia con las personas que más la necesitan."
-          accentColor="#D4944C"
-          variant="horizontal"
-        />
-      )}
-
-      {/* STEP 2: NOMBRE DE LA ORGANIZACIÓN */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 1: NOMBRE DE LA ORGANIZACIÓN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'org_name' && (
         <form onSubmit={handleOrgNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              ¿Cómo se llama tu {selectedLabel.toLowerCase()}?
+              ¿Cómo se llama tu organización?
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Ingresa el nombre público de tu organización o tu nombre como especialista.
+              Ingresa el nombre público de tu organización.
             </p>
           </div>
           <div>
@@ -234,16 +230,18 @@ export default function EnterpriseRegistrationWizard({
               type="text"
               className="auth-input"
               required
-              placeholder={subtipo === 'especialista' ? 'Ej. Dra. María López' : 'Ej. Centro Terapéutico Raíces'}
+              placeholder="Ej. Centro Terapéutico Raíces"
               value={orgForm.nombre}
               onChange={(e) => setOrgForm({ ...orgForm, nombre: e.target.value })}
             />
           </div>
-          <WizardNavButtons onBack={() => { setWizardStep('subtype'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={onBackToRoles} submitLabel="Continuar" />
         </form>
       )}
 
-      {/* STEP 9: CUENTA - EMAIL */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 2: CORREO ELECTRÓNICO
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_email' && (
         <form onSubmit={handleAccountEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
@@ -268,7 +266,9 @@ export default function EnterpriseRegistrationWizard({
         </form>
       )}
 
-      {/* STEP 10: CUENTA - PASSWORD */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 3: CONTRASEÑA
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_password' && (
         <form onSubmit={handleAccountPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
@@ -276,26 +276,28 @@ export default function EnterpriseRegistrationWizard({
               Contraseña segura
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Crea una contraseña segura para tu cuenta.
+              Crea una contraseña segura para proteger la información de tu organización.
             </p>
           </div>
           <div>
-            <input
-              type={accountForm.showPass ? 'text' : 'password'}
-              className="auth-input"
-              required
-              placeholder="Mínimo 8 caracteres"
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
+            <PasswordField
               value={accountForm.password}
-              onChange={(e) => setAccountForm(prev => ({ ...prev, password: e.target.value }))}
+              onChange={(v) => setAccountForm(prev => ({ ...prev, password: v }))}
+              showPass={showPass}
+              onToggleShow={() => setShowPass(!showPass)}
+              strength={getPasswordStrength(accountForm.password)}
             />
           </div>
           <WizardNavButtons onBack={() => { setWizardStep('account_email'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
-      {/* STEP 11: UBICACIÓN */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: UBICACIÓN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_location' && (
-        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+        <form onSubmit={handleLocationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
               ¿Dónde se encuentran?
@@ -316,16 +318,74 @@ export default function EnterpriseRegistrationWizard({
           />
           <WizardNavButtons
             onBack={() => { setWizardStep('account_password'); scrollTop() }}
-            submitLabel={sending ? 'Creando cuenta...' : 'Finalizar registro'}
-            submitDisabled={sending}
+            submitLabel="Continuar"
           />
         </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 5: CSF (último paso)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'csf' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Constancia de Situación Fiscal (CSF)
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Sube tu CSF; se adjuntará a tu registro y será revisada durante la verificación de tu organización.
+            </p>
+          </div>
+          <input
+            ref={csfInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) setCsfFile(file)
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => csfInputRef.current?.click()}
+              style={{
+                padding: '10px 16px', borderRadius: 10,
+                border: '1px solid var(--border-color)', background: 'var(--bg-warm)',
+                color: 'var(--fg1)', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {Icons.upload({ s: 14 })} {csfFile ? 'Cambiar archivo' : 'Seleccionar CSF'}
+            </button>
+            {csfFile && (
+              <span style={{ fontSize: 13, color: 'var(--fg2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {csfFile.name}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('account_password'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
+              {Icons.arrowLeft({ s: 16 })} Volver
+            </button>
+            <button
+              className="auth-btn-primary"
+              type="button"
+              onClick={handleFinalSubmit}
+              style={{ flex: 2 }}
+              disabled={sending}
+            >
+              {sending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.check({ s: 18 })}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* THANKS STEP */}
       {wizardStep === 'thanks' && (
         <OrganizationThanksStep
-          subtypeLabel={selectedLabel}
+          subtypeLabel="organización"
           icon={FluentEmoji.lanzamiento}
           onContinue={() => nav('/dashboard')}
           continueLabel="Ir a mi panel"

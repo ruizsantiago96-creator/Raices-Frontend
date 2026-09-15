@@ -392,12 +392,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      if (authResult?.requiereInicioSesion) {
-         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
-         nav('/auth?mode=login', { replace: true })
-         return
-      }
-
       if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
 
       const userObj = {

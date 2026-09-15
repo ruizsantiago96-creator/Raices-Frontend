@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons } from '@shared/components/shared'
+import { Icons, RestrictedOverlay } from '@shared/components/shared'
 import { useAllJobApplicants, useMyJobPostings } from '../hooks/useInstitutionJobs'
 import { useMiInstitucion } from '../hooks/useInstitutions'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
@@ -152,6 +152,14 @@ export default function InstitutionPortalPage() {
             </div>
           )}
 
+          <div style={{ position: 'relative' }}>
+            {!institution.is_verified && (
+              <RestrictedOverlay
+                title="Cuenta en revisión"
+                message="Estamos verificando tu Constancia de Situación Fiscal. Pronto un administrador habilitará todas las funciones de tu cuenta."
+              />
+            )}
+
           <h1 key={tab} className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', marginBottom: 28, letterSpacing: '-0.02em' }}>
             {TAB_TITLES[tab]}
           </h1>
@@ -200,6 +208,8 @@ export default function InstitutionPortalPage() {
             {tab === 'postulaciones' && <PostulacionesTab onViewCandidates={handleViewCandidates} />}
             {tab === 'candidatos' && <CandidatosTab />}
             {tab === 'foros' && <ForosExplorer showHeader={false} />}
+          </div>
+
           </div>
         </>
       )}

@@ -3,8 +3,18 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { getToken, getRefreshToken, getRememberMe, clearAllAuth, saveToken, saveRefreshToken } from './storage'
 import { useAuthStore } from '@features/auth/store/authStore'
 
+// Permite que peticiones concretas (p. ej. validar CSF durante el registro,
+// cuando el usuario aún no tiene sesión) no adjunten el header Authorization
+// aunque exista un token residual en localStorage.
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipAuth?: boolean
+  }
+}
+
 interface CustomRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
+  skipAuth?: boolean
 }
 
 interface EtagCacheEntry {
@@ -85,7 +95,13 @@ api.interceptors.request.use((cfg: InternalAxiosRequestConfig) => {
     return Promise.reject(new Error('Storage cleared, session invalidated'))
   }
 
-  if (storageToken) {
+  // Propósito general: adjuntar el token por defecto.
+  // skipAuth=true (p. ej. validar CSF durante el registro, sin sesión):
+  //   no se inyecta Authorization y se elimina cualquiera residual.
+  const customCfg = cfg as CustomRequestConfig
+  if (customCfg.skipAuth) {
+    delete cfg.headers.Authorization
+  } else if (storageToken) {
     cfg.headers.Authorization = `Bearer ${storageToken}`
   }
 
