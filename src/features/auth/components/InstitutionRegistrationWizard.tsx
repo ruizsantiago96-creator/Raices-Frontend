@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
-import { Icons } from '@shared/components/shared'
+import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
 import {
@@ -11,6 +11,7 @@ import {
   type OrgFormData,
   type AccountFormData,
 } from './OrganizationFormSteps'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useCreateAccount, payloadBuilders, type InstitutionFormData } from '../hooks/useCreateAccount'
 import { getPasswordStrength } from '../lib/passwordStrength'
 import { FluentEmoji } from '../constants/fluentEmojis'
@@ -19,17 +20,18 @@ export interface InstitutionRegistrationWizardProps {
   onBackToRoles?: () => void
 }
 
-export type InstitutionWizardStep = 'account_location' | 'org_name' | 'account_email' | 'account_password' | 'csf' | 'thanks'
+export type InstitutionWizardStep = 'account_location' | 'org_name' | 'account_email' | 'account_password' | 'category' | 'csf' | 'thanks'
 
 const STEP_ORDER: InstitutionWizardStep[] = [
   'org_name',
   'account_email',
   'account_password',
   'account_location',
+  'category',
   'csf',
 ]
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function InstitutionRegistrationWizard({
@@ -67,6 +69,10 @@ export default function InstitutionRegistrationWizard({
   const [sending, setSending] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [showPass, setShowPass] = useState<boolean>(false)
+
+  // Categoría
+  const [categoria, setCategoria] = useState<string>('')
+  const { data: catalogos } = useCatalogos()
 
   // CSF
   const [csfFile, setCsfFile] = useState<File | null>(null)
@@ -142,6 +148,17 @@ export default function InstitutionRegistrationWizard({
       setError('Por favor, ingresa un código postal válido, estado y ciudad.')
       return
     }
+    setWizardStep('category')
+    scrollTop()
+  }
+
+  const handleCategorySubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!categoria) {
+      setError('Selecciona una categoría para tu institución.')
+      return
+    }
     setWizardStep('csf')
     scrollTop()
   }
@@ -162,6 +179,7 @@ export default function InstitutionRegistrationWizard({
         orgForm,
         accountForm,
         csfFile,
+        categoria,
       })
 
       if (result.requiresLogin) {
@@ -228,6 +246,9 @@ export default function InstitutionRegistrationWizard({
             </p>
           </div>
           <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Nombre <span style={{ color: '#ef4444' }}>*</span>
+            </label>
             <input
               type="text"
               className="auth-input"
@@ -326,7 +347,56 @@ export default function InstitutionRegistrationWizard({
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-           STEP 5: CSF (último paso)
+           STEP 5: CATEGORÍA
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'category' && (
+        <form onSubmit={handleCategorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              ¿Qué tipo de institución eres?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Selecciona la categoría que mejor describe tu organización.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {(catalogos?.categoriasInstitucion ?? []).map((cat) => {
+              const catValue = typeof cat === 'string' ? cat : (cat.value ?? cat.id ?? '')
+              const catLabel = typeof cat === 'string' ? cat : (cat.label ?? catValue)
+              const active = categoria === catValue
+              const color = (CATEGORY_COLORS as Record<string, string>)[catValue] ?? 'var(--primary)'
+              return (
+                <button
+                  key={catValue}
+                  type="button"
+                  onClick={() => setCategoria(active ? '' : catValue)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 9999,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    border: active ? 'none' : '1px solid var(--border-color)',
+                    background: active ? color : 'var(--bg-warm)',
+                    color: active ? 'white' : 'var(--fg3)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {catLabel}
+                </button>
+              )
+            })}
+          </div>
+          <WizardNavButtons
+            onBack={() => { setWizardStep('account_location'); scrollTop() }}
+            submitLabel="Continuar"
+          />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: CSF (último paso)
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'csf' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
@@ -368,7 +438,7 @@ export default function InstitutionRegistrationWizard({
             )}
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('account_password'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('category'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button

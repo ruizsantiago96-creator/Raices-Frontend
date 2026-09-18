@@ -317,11 +317,29 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       // 1. Construir el payload según el rol
       const registerPayload = buildPayload(formData, extra)
 
-      // 2. Registrar la cuenta (JSON).
-      //    La CSF se incorporará cuando el backend en GCP acepte el archivo
-      //    (multipart) o se defina VITE_FIREBASE_STORAGE_BUCKET para subirla
-      //    client-side. Por ahora el archivo se ignora y el registro es JSON.
-      const regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, registerPayload)
+      // 2. Registrar la cuenta.
+      //    Institución con CSF: multipart/form-data con el campo "csf" (el
+      //    backend la sube a Storage y la guarda como documentoCsf para
+      //    verificación del admin — sustituye la CURP del alta).
+      //    Resto de roles / sin archivo: JSON puro.
+      //    SIN header Content-Type manual: el navegador genera el boundary.
+      const maybeFile = (formData as Record<string, unknown>)?.csfFile
+      let regRes
+      if (role === 'institution' && maybeFile instanceof File) {
+        const fd = new FormData()
+        for (const [key, value] of Object.entries(registerPayload)) {
+          if (value === undefined || value === null || value === '') continue
+          if (Array.isArray(value)) {
+            fd.append(key, JSON.stringify(value))
+          } else {
+            fd.append(key, String(value))
+          }
+        }
+        fd.append('csf', maybeFile)
+        regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, fd)
+      } else {
+        regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, registerPayload)
+      }
       const authResult: RawRegisterResponse = regRes.data
 
       // 3. Procesar el resultado

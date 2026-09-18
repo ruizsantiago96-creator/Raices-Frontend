@@ -17,9 +17,7 @@ import { STORAGE_KEYS } from '@shared/lib/storageKeys'
    Contratos cubiertos:
      1. PCD con tokenAcceso      → escalas + perfil + perfil-necesidades
                                   + persistencia de sesión y onboarding.
-     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.
-     3. Institución sin token    → registro JSON directo (sin validar CSF)
-                                  + auto-login + redirect a /inicio.
+     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.     3. Institución sin token    → registro multipart con CSF (sin validar CSF)                                  + auto-login + redirect a /inicio.
      3b. Sin archivo CSF         → registro JSON directo, SIN /validar-csf-qr.
      4. Empresa sin token        → registro JSON directo (sin validar CSF)
                                   + auto-login + redirect a /inicio.
@@ -140,7 +138,7 @@ async function fillNameStep(nombrePlaceholder: string) {
 
 // ── Step: Fecha de nacimiento ─────────────────────────────────────
 async function fillBirthdateStep(dateValue = BIRTH_DATE) {
-  const dateInput = document.querySelector('input[type="date"]')
+  const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
   fireEvent.change(dateInput, { target: { value: dateValue } })
   clickButton(/^continuar$/i)
 }
@@ -219,7 +217,7 @@ async function completePcdWizard() {
 }
 
 /* Institución: org_name → account_email → account_password →
-   account_location → CSF (subir + finalizar).
+   account_location → category → CSF (subir + finalizar).
    Con stopAtCsf:true se detiene en el paso CSF sin subir nada. */
 async function completeInstitutionWizard(opts: { stopAtCsf?: boolean } = {}) {
   // Step 1: org_name
@@ -232,7 +230,14 @@ async function completeInstitutionWizard(opts: { stopAtCsf?: boolean } = {}) {
   await fillAccountPasswordStep()
   await fillAccountLocationStep()
 
-  // Step 5: CSF — subir archivo y finalizar (opcional)
+  // Step 5: category — seleccionar la primera categoría del catálogo
+  await screen.findByText(/Qué tipo de institución eres/i)
+  const categoryButtons = screen.getAllByRole('button')
+  const funcionalBtn = categoryButtons.find(btn => btn.textContent?.includes('Funcional'))
+  if (funcionalBtn) fireEvent.click(funcionalBtn)
+  clickButton(/^continuar$/i)
+
+  // Step 6: CSF — subir archivo y finalizar (opcional)
   if (opts.stopAtCsf) return
   await uploadCsf()
   clickButton(/finalizar registro/i)
@@ -284,9 +289,7 @@ describe('Contrato de registro — PCD', () => {
     renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
     await completePcdWizard()
 
-    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
-
-    // Payload de registro con el contrato de rol PCD
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))    // Payload de registro con el contrato de rol PCD
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
       nombreCompleto: NOMBRE_COMPLETO,
       email: EMAIL,
@@ -327,7 +330,7 @@ describe('Contrato de registro — PCD', () => {
 })
 
 describe('Contrato de registro — Institución', () => {
-  it('3) sin token en registro: registra en JSON y auto-login + /inicio', async () => {
+  it('3) sin token en registro: registra con CSF en multipart y auto-login + /inicio', async () => {
     stubApi({
       'post /autenticacion/registro': { mensaje: 'ok', requiereInicioSesion: true },
       'post /autenticacion/inicio-sesion': INSTITUCION_LOGIN_RESPONSE,
@@ -340,12 +343,16 @@ describe('Contrato de registro — Institución', () => {
     // 1) NO debe existir validación síncrona de CSF en el wizard
     expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
 
-    // 2) Registro en JSON (la CSF aún no se adjunta: el backend en GCP es JSON-only)
+    // 2) Registro: multipart/form-data con la CSF adjunta (el backend la
+    //    sube a Storage → documentoCsf; la revisa el admin, no hay CURP).
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     const payload = lastCallFor('post', '/autenticacion/registro')
-    expect(payload).not.toBeInstanceOf(FormData)
-    expect(payload).toMatchObject({ rol: 'institucion', email: EMAIL, password: PASSWORD })
-    expect((payload as Record<string, unknown>).documentoCsf).toBeUndefined()
+    expect(payload).toBeInstanceOf(FormData)
+    const fd = payload as FormData
+    expect(fd.get('rol')).toBe('institucion')
+    expect(fd.get('email')).toBe(EMAIL)
+    expect(fd.get('password')).toBe(PASSWORD)
+    expect(fd.has('csf')).toBe(true)
 
     // Auto-login exactamente una vez, con las mismas credenciales
     expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
@@ -378,9 +385,7 @@ describe('Contrato de registro — Institución', () => {
     expect(screen.getByRole('button', { name: /finalizar registro/i })).toBeEnabled()
     clickButton(/finalizar registro/i)
 
-    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
-
-    // Sin archivo → payload JSON (no FormData), sin validar-csf-qr
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))    // Sin archivo → payload JSON (no FormData), sin validar-csf-qr
     const payload = lastCallFor('post', '/autenticacion/registro')
     expect(payload).not.toBeInstanceOf(FormData)
     expect(payload).toMatchObject({ rol: 'institucion', email: EMAIL })
@@ -405,9 +410,7 @@ describe('Contrato de registro — Empresa', () => {
     await completeEnterpriseWizard()
 
     // NO debe existir validación síncrona de CSF en el wizard
-    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
-
-    // Registro en JSON (la CSF aún no se adjunta)
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)    // Registro en JSON (la CSF aún no se adjunta)
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     const payload = lastCallFor('post', '/autenticacion/registro')
     expect(payload).not.toBeInstanceOf(FormData)

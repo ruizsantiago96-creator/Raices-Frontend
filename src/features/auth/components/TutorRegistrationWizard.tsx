@@ -389,6 +389,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
       }
 
+      // El backend parsea el registro como application/json (JSON puro, sin
+      // multer en esta ruta): enviar multipart deja el body sin parsear → 400.
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 

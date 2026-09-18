@@ -170,6 +170,8 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
         estado: state,
         ...(country ? { pais: country } : {}),
       }
+      // El backend parsea el registro como application/json (JSON puro, sin
+      // multer en esta ruta): enviar multipart deja el body sin parsear → 400.
       return api.post('/autenticacion/registro', body).then(r => r.data)
     },
     onSuccess: (raw: RegisterApiResponse, variables: RegisterVariables) => {
