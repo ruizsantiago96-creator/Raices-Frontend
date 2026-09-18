@@ -578,52 +578,6 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         </form>
       )}
 
-      {/* ── STEP: DONE ── */}
-      {step === 'done' && (
-        <div style={{ textAlign: 'center', padding: '20px 0', animation: 'fadeIn 0.4s ease-out' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <h2 style={headingStyle}>¡Tu perfil está completo!</h2>
-          <p style={descStyle}>Raíces ha analizado tus preferencias y personalizado tu experiencia.</p>
-          
-          <div style={{ marginTop: 24, textAlign: 'left' }}>
-            <ProfileSummaryCard />
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
-            <button
-              type="button"
-              onClick={() => nav('/feed')}
-              style={{
-                flex: 1,
-                padding: '12px 24px',
-                borderRadius: 24,
-                background: 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: 14.5,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 4px 14px rgba(34, 155, 88, 0.35)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.filter = 'brightness(1.08)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.filter = 'none'
-                e.currentTarget.style.transform = 'none'
-              }}
-            >
-              Ir a mi Dashboard {Icons.arrowRight({ s: 18 })}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
