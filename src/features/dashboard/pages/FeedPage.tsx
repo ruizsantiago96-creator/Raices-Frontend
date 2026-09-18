@@ -10,6 +10,7 @@ import { Icons, CATEGORY_COLORS, RestrictedOverlay } from '@shared/components/sh
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
+import VerificationBadgeCard from '../components/VerificationBadgeCard'
 import ProfileCompletionModal from '../components/ProfileCompletionModal'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import type { CommunityPost } from '@/types/social'
@@ -761,6 +762,9 @@ export default function FeedPage() {
               />
             )}
             <NextStepsCard />
+            <div style={{ marginBottom: 14 }}>
+              <VerificationBadgeCard compact />
+            </div>
             <ProfileSummaryCard />
             <BehaviorWeightsCard />
           </div>

@@ -89,12 +89,12 @@ type TutorProfileStep =
   | 'formats'
   | 'interests'
   | 'viability'
-  | 'done'
+  | 'identity_curp'
   | 'done'
 
 const STEP_ORDER: TutorProfileStep[] = [
   'relationship', 'accommodation', 'condition', 'neurodivergence', 'diagnosis', 'history_edu', 'history_therapy',
-  'support_zones', 'support_needs', 'support_areas', 'scales1', 'scales2', 'formats', 'interests', 'viability'
+  'support_zones', 'support_needs', 'support_areas', 'scales1', 'scales2', 'formats', 'interests', 'viability', 'identity_curp'
 ]
 const TOTAL_STEPS = STEP_ORDER.length
 
@@ -119,9 +119,14 @@ interface ScalesState {
   emocional: number
 }
 
-export default function TutorProfileWizard() {
+export interface TutorProfileWizardProps {
+  onDone?: () => void
+}
+
+export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) {
   const { addToast } = useUiStore()
   const nav = useNavigate()
+  const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
   const qc = useQueryClient()
 
@@ -130,6 +135,7 @@ export default function TutorProfileWizard() {
   const [error, setError] = useState('')
 
   // ── State ─────────────────────────────────────────────────────
+  const [curpInput, setCurpInput] = useState('')
   const [destinatario, setDestinatario] = useState('hijo')
   const [nombreDependiente, setNombreDependiente] = useState('')
   const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState('')
@@ -252,8 +258,11 @@ export default function TutorProfileWizard() {
       }
       try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (err) { console.warn('Scales err:', err) }
 
-      // 2. Guardar perfil (con datos del dependiente)
+      // 2. Actualizar perfil y necesidades del tutor
       try {
+        if (curpInput.trim()) {
+          await updateProfile.mutateAsync({ curp: curpInput.trim() })
+        }
         await updateNeedsProfile.mutateAsync({
           profiling: {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
@@ -304,6 +313,7 @@ export default function TutorProfileWizard() {
       saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
 
       addToast('¡Perfil completado! Tienes acceso completo a Raíces.', 'success')
+      if (onDone) onDone()
       nav('/feed', { replace: true })
     } catch (err) {
       console.error('Final submit error:', err)
@@ -518,7 +528,7 @@ export default function TutorProfileWizard() {
 
       {/* ── STEP: VIABILITY ── */}
       {step === 'viability' && (
-        <form onSubmit={handleFinalSubmit} style={formStyle}>
+        <form onSubmit={(e) => { e.preventDefault(); goNext('identity_curp') }} style={formStyle}>
           <div><h2 style={headingStyle}>Viabilidad económica</h2></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {LIST_VIABILIDAD.map(opt => (
@@ -530,7 +540,38 @@ export default function TutorProfileWizard() {
           </div>
           <WizardNavButtons
             onBack={goBack}
-            submitLabel={sending ? 'Guardando...' : '¡Completar perfil!'}
+            submitLabel="Continuar a Verificación (CURP)"
+          />
+        </form>
+      )}
+
+      {/* ── STEP: IDENTIDAD Y CURP ── */}
+      {step === 'identity_curp' && (
+        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <h2 style={headingStyle}>Verificación de Identidad del Tutor (CURP)</h2>
+            <p style={descStyle}>Ingresa tu CURP para validar tu cuenta de tutor y alcanzar el 100% de tu perfil.</p>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Clave Única de Registro de Población (CURP) <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(18 caracteres)</span>
+            </label>
+            <input
+              type="text"
+              className="auth-input"
+              maxLength={18}
+              placeholder="Ej. GAPL800101HMCYRL09"
+              value={curpInput}
+              onChange={e => setCurpInput(e.target.value.toUpperCase())}
+              style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}
+            />
+            <p style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 5 }}>
+              Tu CURP valida tu identidad como tutor/a ante la comunidad e instituciones.
+            </p>
+          </div>
+          <WizardNavButtons
+            onBack={goBack}
+            submitLabel={sending ? 'Guardando...' : '¡Finalizar perfil al 100%!'}
             submitIcon={sending ? null : <CatalogIcon icon={FluentEmoji.destello} size={14} />}
             submitDisabled={sending}
           />

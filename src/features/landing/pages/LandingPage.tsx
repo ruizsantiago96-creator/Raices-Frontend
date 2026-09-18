@@ -50,17 +50,15 @@ export default function LandingPage() {
       if (isMobileMenuOpen) setIsMobileMenuOpen(false)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () =>  window.removeEventListener('scroll', handleScroll)
   }, [isMobileMenuOpen])
 
+
   // Redireccionar de inmediato en el render si ya hay sesión activa
-  if (token) {
-    if (user) {
-      if (user.role === 'admin') return <Navigate to="/admin" replace />
-      if (user.role === 'institution') return <Navigate to="/institution-portal" replace />
-      return <Navigate to="/dashboard" replace />
-    }
-    return null
+  if (token && user) {
+    if (user.role === 'admin') return <Navigate to="/admin" replace />
+    if (user.role === 'institution') return <Navigate to="/institution-portal" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return (
