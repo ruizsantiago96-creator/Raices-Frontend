@@ -44,14 +44,13 @@ export function useSpeechRecognition(lang = 'es-MX') {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
+  const [isSupported] = useState(() => typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition))
   
   const recognitionRef = useRef<ISpeechRecognition | null>(null)
 
   useEffect(() => {
     const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognitionClass) {
-      setIsSupported(true)
       const instance = new SpeechRecognitionClass()
       instance.continuous = true
       instance.interimResults = true
@@ -75,8 +74,6 @@ export function useSpeechRecognition(lang = 'es-MX') {
       }
 
       recognitionRef.current = instance
-    } else {
-      setIsSupported(false)
     }
   }, [lang])
 

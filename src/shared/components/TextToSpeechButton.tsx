@@ -14,13 +14,7 @@ export const TextToSpeechButton: React.FC<TextToSpeechButtonProps> = ({
   style,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false)
-  const [supported, setSupported] = useState(false)
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      setSupported(true)
-    }
-  }, [])
+  const [supported] = useState(() => typeof window !== 'undefined' && 'speechSynthesis' in window)
 
   useEffect(() => {
     return () => {

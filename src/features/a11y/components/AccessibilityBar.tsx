@@ -256,31 +256,7 @@ export default function AccessibilityBar() {
     if (main) speak((main as HTMLElement).innerText || main.textContent || '')
   }
 
-  const handleDragStart = (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-    isDraggingRef.current = true
-    wasDraggingRef.current = false
-    setIsDragging(true)
-    
-    dragStartRef.current = {
-      startX: clientX,
-      startY: clientY,
-      startRight: position.right,
-      startBottom: position.bottom
-    }
-
-    if ('touches' in e) {
-      document.addEventListener('touchmove', handleDragMove, { passive: false })
-      document.addEventListener('touchend', handleDragEnd)
-    } else {
-      document.addEventListener('mousemove', handleDragMove)
-      document.addEventListener('mouseup', handleDragEnd)
-    }
-  }
-
-  const handleDragMove = (e: globalThis.MouseEvent | globalThis.TouchEvent) => {
+  const handleDragMove = useCallback((e: globalThis.MouseEvent | globalThis.TouchEvent) => {
     if (!isDraggingRef.current) return
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
@@ -306,32 +282,66 @@ export default function AccessibilityBar() {
     if (e.cancelable) {
       e.preventDefault()
     }
-  }
+  }, [])
 
-  const handleDragEnd = () => {
+  const handleDragEndRef = useRef<(() => void) | undefined>(undefined)
+
+  const handleDragEnd = useCallback(() => {
     isDraggingRef.current = false
     setIsDragging(false)
     
     document.removeEventListener('mousemove', handleDragMove)
-    document.removeEventListener('mouseup', handleDragEnd)
+    if (handleDragEndRef.current) {
+      document.removeEventListener('mouseup', handleDragEndRef.current)
+      document.removeEventListener('touchend', handleDragEndRef.current)
+    }
     document.removeEventListener('touchmove', handleDragMove)
-    document.removeEventListener('touchend', handleDragEnd)
 
     if (wasDraggingRef.current) {
       setTimeout(() => {
         wasDraggingRef.current = false
       }, 50)
     }
+  }, [handleDragMove])
+
+  useEffect(() => {
+    handleDragEndRef.current = handleDragEnd
+  }, [handleDragEnd])
+
+  const handleDragStart = (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+
+    isDraggingRef.current = true
+    wasDraggingRef.current = false
+    setIsDragging(true)
+    
+    dragStartRef.current = {
+      startX: clientX,
+      startY: clientY,
+      startRight: position.right,
+      startBottom: position.bottom
+    }
+
+    if ('touches' in e) {
+      document.addEventListener('touchmove', handleDragMove, { passive: false })
+      document.addEventListener('touchend', handleDragEnd)
+    } else {
+      document.addEventListener('mousemove', handleDragMove)
+      document.addEventListener('mouseup', handleDragEnd)
+    }
   }
 
   useEffect(() => {
     return () => {
       document.removeEventListener('mousemove', handleDragMove)
-      document.removeEventListener('mouseup', handleDragEnd)
+      if (handleDragEndRef.current) {
+        document.removeEventListener('mouseup', handleDragEndRef.current)
+        document.removeEventListener('touchend', handleDragEndRef.current)
+      }
       document.removeEventListener('touchmove', handleDragMove)
-      document.removeEventListener('touchend', handleDragEnd)
     }
-  }, [])
+  }, [handleDragMove])
 
   const getPanelStyle = (): CSSProperties => {
     const isTopHalf = position.bottom > window.innerHeight / 2

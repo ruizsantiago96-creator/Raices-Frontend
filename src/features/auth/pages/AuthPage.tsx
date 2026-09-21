@@ -65,10 +65,7 @@ export default function AuthPage() {
     nav('/auth?mode=login', { replace: true })
   }
 
-  const didLoginRef = useRef(false)
-  useEffect(() => { return () => { didLoginRef.current = false } }, [])
-
-  if (token && !login.isPending && !didLoginRef.current) {
+  if (token && !login.isPending) {
     return <Navigate to={getHomePathByRole(user?.role)} replace />
   }
 
@@ -94,13 +91,11 @@ export default function AuthPage() {
       return
     }
     try {
-      didLoginRef.current = true
       const result = await login.mutateAsync({ email: form.email, password: form.password, _rememberMe: rememberMe })
       addToast(AUTH_MESSAGES.LOGIN_SUCCESS, 'success')
       const role = result?.data?.user?.role
       nav(getHomePathByRole(role), { replace: true })
     } catch (err: unknown) {
-      didLoginRef.current = false
       const apiErr = err as { response?: { data?: { message?: string } } }
       const msg = apiErr.response?.data?.message ?? AUTH_MESSAGES.LOGIN_INVALID_CREDENTIALS
       const translatedMsg = mapErrorMessage(msg)

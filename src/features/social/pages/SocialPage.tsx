@@ -164,7 +164,7 @@ interface PostCardProps {
 
 function decodeAndExtract(content: string) {
   if (!content) return { text: '', imageUrl: null, originalDecoded: '' }
-  let decoded = content
+  const decoded = content
     .replace(/&#x2F;/g, '/')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')

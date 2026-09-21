@@ -49,6 +49,13 @@ const ETIQUETAS_ACCESIBILIDAD = [
   'Baños adaptados',
 ]
 
+let serviceIdCounter = 100
+
+function generateServiceId(): string {
+  serviceIdCounter += 1
+  return `s-${serviceIdCounter}`
+}
+
 export default function ServiciosTab() {
   const { data: institution } = useMiInstitucion()
   const updateMutation = useUpdateMiInstitucion()
@@ -140,7 +147,7 @@ export default function ServiciosTab() {
       addToast('Servicio actualizado correctamente', 'success')
     } else {
       const newService: ServicioItem = {
-        id: `s-${Date.now()}`,
+        id: generateServiceId(),
         nombre: formNombre.trim(),
         categoria: formCategoria,
         descripcion: formDescripcion.trim(),
