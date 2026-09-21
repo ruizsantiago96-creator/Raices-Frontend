@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Icons } from '@shared/components/shared'
+import { Icons, TextToSpeechButton } from '@shared/components/shared'
 import type { CommunityPost } from '@/types/social'
 
 /* ═══════════════════════════════════════════════════════════
@@ -166,6 +166,8 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
           {Icons.message({ s: 14 })}
           {post.comment_count ?? 0}
         </Link>
+
+        {text && <TextToSpeechButton text={`${post.title ? post.title + '. ' : ''}${text}`} size="sm" />}
 
         <Link
           to="/social"

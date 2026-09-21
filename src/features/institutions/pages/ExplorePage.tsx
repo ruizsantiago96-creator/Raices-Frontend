@@ -168,7 +168,7 @@ export default function ExplorePage() {
   /* ── Guest view ────────────────────────────────────────────── */
   if (!isAuthenticated) {
     return (
-      <main className="responsive-main" style={{ '--main-max-width': '1200px', margin: '0 auto', padding: '40px 32px' } as Record<string, string>}>
+      <main className="responsive-main" style={{ '--main-max-width': '1200px' } as Record<string, string>}>
         <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Explorar</h1>
           <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Instituciones que valoran la diversidad</p>

@@ -157,8 +157,13 @@ const STEP_ORDER: TutorWizardStep[] = [
   'location',
   'email',
   'password',
+  'relationship_type',
+  'relationship_name',
+  'relationship_birthdate',
+  'accommodation',
+  'condition',
 ]
-const TOTAL_STEPS = STEP_ORDER.length
+const TOTAL_STEPS = 10
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: TutorRegistrationWizardProps) {
@@ -172,7 +177,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [aiNarrative, setAiNarrative] = useState<AiNarrativeData | null>(null)
 
   // Step 1–2: Datos personales del tutor
   const [generalForm, setGeneralForm] = useState<TutorGeneralFormData>({
@@ -185,8 +189,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
   // Step 3: ¿Para quién es el perfil?
   const [destinatario, setDestinatario] = useState('hijo')
   const [nombreDependiente, setNombreDependiente] = useState('')
-  // Fecha de nacimiento de la persona a cargo (para calcular su edad y etapa
-  // reales en lugar de usar las del tutor)
   const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState('')
 
   // Step 5–6: Condición y diagnóstico de la persona a cargo
@@ -195,30 +197,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     tieneDiagnostico: 'si', diagnosticoEspecifico: '',
     redFlagDiagnostico: false, temporalidad: 'nacimiento',
   })
-
-  // Step 9–10: Escalas de vida de la persona a cargo
-  const [scales, setScales] = useState<TutorScalesState>({
-    autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
-    energia: 3, movilidad: 3, social: 3, emocional: 3,
-  })
-
-  // Step 11: Formatos
-  const [formatos, setFormatos] = useState<string[]>(['texto', 'imagenes'])
-
-  // Step 12–13: Intereses y viabilidad
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
-  const [otrosIntereses, setOtrosIntereses] = useState('')
-  const [viabilidad, setViabilidad] = useState('sin_restricciones')
-
-  // Step 7: Historial educativo y terapias
-  const [educacionHistory, setEducacionHistory] = useState<string[]>([])
-  const [terapiaHistory, setTerapiaHistory] = useState<string[]>([])
-
-  // Step 8: Zonas de preferencia, necesidades y áreas de apoyo
-  const [preferredZones, setPreferredZones] = useState<string[]>([])
-  const [zonaInput, setZonaInput] = useState('')
-  const [needsList, setNeedsList] = useState<string[]>([])
-  const [supportAreas, setSupportAreas] = useState<string[]>([])
 
   // Nombre de referencia para títulos y preguntas
   const personName = nombreDependiente.trim() || (destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado')
@@ -273,47 +251,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     }))
   }
 
-  const toggleFormato = (id: string) => {
-    setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  const toggleInterest = (item: string) => {
-    setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleEducacionHistory = (item: string) => {
-    setEducacionHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleTerapiaHistory = (item: string) => {
-    setTerapiaHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleSuggestedZone = (zone: string) => {
-    setPreferredZones(prev => prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone])
-  }
-
-  const addManualZone = () => {
-    const val = zonaInput.trim()
-    if (!val) return
-    if (!preferredZones.includes(val)) {
-      setPreferredZones(prev => [...prev, val])
-    }
-    setZonaInput('')
-  }
-
-  const removePreferredZone = (zone: string) => {
-    setPreferredZones(prev => prev.filter(z => z !== zone))
-  }
-
-  const toggleNeedsList = (item: string) => {
-    setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleSupportAreas = (item: string) => {
-    setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
   // ── Step validation & transitions ────────────────────────────────
   const handleNameSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -364,13 +301,57 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     scrollTop()
   }
 
-  const handlePasswordSubmit = async (e: FormEvent) => {
+  const handlePasswordSubmit = (e: FormEvent) => {
     e.preventDefault()
     setSending(true)
     setError('')
     if (!checkPasswordCriteria(generalForm.password)) {
       setError('La contraseña no cumple con los requisitos de seguridad.')
-      setSending(false)
+      return
+    }
+    setWizardStep('relationship_type')
+    scrollTop()
+  }
+
+  const handleRelationshipTypeSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!destinatario) {
+      setError('Por favor, selecciona una opción.')
+      return
+    }
+    setWizardStep('relationship_name')
+    scrollTop()
+  }
+
+  const handleRelationshipNameSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!nombreDependiente.trim()) {
+      setError('Por favor, ingresa el nombre de la persona a tu cuidado.')
+      return
+    }
+    setWizardStep('relationship_birthdate')
+    scrollTop()
+  }
+
+  const handleRelationshipBirthdateSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    const depBirthValidation = validateBirthDate(fechaNacimientoDependiente)
+    if (!depBirthValidation.valid) {
+      setError(depBirthValidation.error || 'Por favor, ingresa la fecha de nacimiento de la persona a tu cuidado.')
+      return
+    }
+    setWizardStep('accommodation')
+    scrollTop()
+  }
+
+  const handleAccommodationSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!generalForm.acompanamiento) {
+      setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.')
       return
     }
 
@@ -415,7 +396,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     } finally {
        setSending(false)
     }
-  }
+  }
+
 
   const passStrength = getPasswordStrength(generalForm.password)
 
@@ -610,6 +592,197 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
               onToggleShow={() => setShowPass(!showPass)}
               strength={passStrength}
             />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('email'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: RELACIÓN / ¿Para quién es el perfil?
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_type' && (
+        <form onSubmit={handleRelationshipTypeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              ¿Para quién es el perfil?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Esto nos ayudará a personalizar cada recomendación y el acompañamiento para tu ser querido.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {DESTINATARIOS.map(opt => {
+              const isSelected = destinatario === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setDestinatario(opt.id)}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.15s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--primary)' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('password'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 7: NOMBRE DE LA PERSONA A CARGO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_name' && (
+        <form onSubmit={handleRelationshipNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Nombre de la persona con discapacidad
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Indica el nombre de la persona a tu cuidado.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Nombre de {destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado'} <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input type="text" className="auth-input" required
+              placeholder={destinatario === 'hijo' ? 'Ej. Mateo' : destinatario === 'familiar' ? 'Ej. Sofía' : 'Ej. Carlos'}
+              value={nombreDependiente}
+              onChange={e => setNombreDependiente(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''))} />
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_type'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 8: FECHA DE NACIMIENTO DE LA PERSONA A CARGO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'relationship_birthdate' && (
+        <form onSubmit={handleRelationshipBirthdateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Fecha de nacimiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Indica la fecha de nacimiento de {personName}.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Fecha de nacimiento de {personName} <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              type="date"
+              className="auth-input"
+              required
+              max={getMaxBirthDate()}
+              min={MIN_BIRTH_DATE}
+              value={fechaNacimientoDependiente}
+              onChange={e => setFechaNacimientoDependiente(e.target.value)}
+            />
+            {fechaNacimientoDependiente && (() => {
+              const edad = calcEdad(fechaNacimientoDependiente)
+              const etapaId = calcEtapaDependiente(fechaNacimientoDependiente)
+              if (edad === null) return null
+              const etapaLabel = etapaId
+                ? ({
+                    infancia: 'Infancia', adolescencia: 'Adolescencia',
+                    adultoJoven: 'Adulto joven', adulto: 'Adulto', mayor: 'Adulto mayor',
+                  } as Record<string, string>)[etapaId]
+                : null
+              return (
+                <p style={{ fontSize: 12, color: 'var(--fg3)', margin: '5px 0 0' }}>
+                  {edad} años{etapaLabel ? ` · ${etapaLabel}` : ''} — lo usaremos para personalizar sus recomendaciones
+                </p>
+              )
+            })()}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_name'); scrollTop() }} submitLabel="Continuar" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: ACOMPAÑAMIENTO
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'accommodation' && (
+        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Preferencia de acompañamiento
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Cómo prefieres que Raíces te acompañe en el camino de {personName}?
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {LIST_ACOMPANAMIENTO.map(opt => {
+              const isSelected = generalForm.acompanamiento === opt.id
+              return (
+                <button key={opt.id} type="button" onClick={() => setGeneralForm(prev => ({ ...prev, acompanamiento: opt.id }))}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    border: `1.5px solid ${isSelected ? '#229B58' : '#E5DCD2'}`,
+                    background: isSelected ? 'rgba(34, 155, 88, 0.08)' : 'var(--bg-surface)',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.15s ease',
+                  }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${isSelected ? '#229B58' : '#9ca3af'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isSelected && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#229B58' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--primary)' : 'var(--fg1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <NavButtons onBack={() => { setWizardStep('relationship_birthdate'); scrollTop() }} submitLabel="Continuar a condición" />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 5: CONDICIÓN PCD (de la persona a cargo)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'condition' && (
+        <form onSubmit={handleConditionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
+              Condición de {personName}
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              ¿Qué condición o situación describe mejor a {personName}? (Puedes seleccionar más de una.)
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+            {CONDICIONES_PCD.map(cond => (
+              <CheckChip
+                key={cond}
+                label={cond}
+                selected={conditionData.conditions.includes(cond)}
+                onToggle={() => toggleCondition(cond)}
+                accent="#229B58"
+              />
+            ))}
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>

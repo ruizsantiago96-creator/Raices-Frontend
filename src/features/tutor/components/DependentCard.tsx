@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Icons, hashColor } from '@shared/components/shared'
+import { Icons, hashColor, SupportCardModal } from '@shared/components/shared'
 import { useAIForDependent } from '../hooks/useAI'
 import { TUTOR_UI } from '../constants/tutorMessages'
 import { normalizeAIRecommendations } from '../utils/aiHelpers'
@@ -53,6 +53,7 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
   }
 
   const [showAI, setShowAI] = useState(false)
+  const [showSupportModal, setShowSupportModal] = useState(false)
   const aiRec = useAIForDependent()
 
   const handleAIToggle = () => {
@@ -91,7 +92,11 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>{nombre}</h3>
             {isLinked && <span style={{ ...minimalBadge, fontSize: 10, padding: '2px 6px' }}>{TUTOR_UI.LINKED_BADGE}</span>}
           </div>
-          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '2px 0 0' }}>{dep?.parentesco || TUTOR_UI.FAMILY_RELATION}{stage ? ` · ${stage.label}` : ''}{dependentAge ? ` · ${dependentAge}` : ''}</p>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '2px 0 0' }}>
+            {(dep?.parentesco || TUTOR_UI.FAMILY_RELATION).replace(/&#x2F;/g, '/').replace(/&amp;/g, '&')}
+            {stage ? ` · ${stage.label}` : ''}
+            {dependentAge ? ` · ${dependentAge}` : ''}
+          </p>
         </div>
         <div style={{ position: 'absolute', top: 16, right: 16 }}>
           <button type="button" onClick={handleMenuClick} aria-label="Acciones de persona" style={{ background: 'transparent', border: 'none', color: 'var(--fg3)', cursor: 'pointer', width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}
@@ -100,8 +105,9 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
             <EllipsisHorizontalIcon s={16} />
           </button>
           {isMenuOpen && (
-            <div style={{ position: 'absolute', top: 34, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', padding: '4px', zIndex: 100, width: 200, animation: 'fade-in 0.1s ease-out' }} onClick={e => e.stopPropagation()}>
-              <button type="button" className="tutor-dropdown-item" onClick={() => { handleAIToggle(); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.sparkles({ s: 14 })}</span><span>{showAI ? 'Ocultar recomendaciones' : 'Recomendaciones IA'}</span></button>
+            <div style={{ position: 'absolute', top: 34, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', padding: '4px', zIndex: 100, width: 220, animation: 'fade-in 0.1s ease-out' }} onClick={e => e.stopPropagation()}>
+              <button type="button" className="tutor-dropdown-item" onClick={() => { setShowSupportModal(true); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.shieldAlert({ s: 14 })}</span><span>Ficha de Apoyo y Emergencia</span></button>
+              <button type="button" className="tutor-dropdown-item" onClick={() => { handleAIToggle(); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.sparkles({ s: 14 })}</span><span>{showAI ? 'Ocultar sugerencias' : 'Recomendaciones IA'}</span></button>
               <button type="button" className="tutor-dropdown-item" onClick={() => { onConfigureFeatures?.(); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.shield({ s: 14 })}</span><span>Opciones</span></button>
               <button type="button" className="tutor-dropdown-item" onClick={() => { onPermissions?.({ id: dep?.id, nombreCompleto: dep?.nombreCompleto || dep?.nombre }); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.shieldCheck({ s: 14 })}</span><span>Permisos</span></button>
               <button type="button" className="tutor-dropdown-item" onClick={() => { onEdit?.(); setActiveMenuId?.(null) }}><span style={{ display: 'flex', alignItems: 'center', width: 16 }}>{Icons.edit({ s: 14 })}</span><span>Editar</span></button>
@@ -115,8 +121,30 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
       {dep?.tiposDiscapacidad && dep.tiposDiscapacidad.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{dep.tiposDiscapacidad.map((d: string, i: number) => <span key={i} style={{ ...minimalBadge, fontSize: 11, padding: '3px 8px' }}>{d}</span>)}</div>}
       {dep?.notas && <p style={{ fontSize: 13, color: 'var(--fg3)', margin: 0, lineHeight: 1.5, background: 'var(--bg-cool)', padding: '10px 12px', borderRadius: 8 }}>{dep.notas}</p>}
 
-      {/* Botón de acceso directo a sugerencias en la tarjeta */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+      {/* Botones de acción directa en la tarjeta */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+        <button
+          type="button"
+          onClick={() => setShowSupportModal(true)}
+          style={{
+            background: 'var(--primary-subtle)',
+            border: '1px solid var(--primary)',
+            borderRadius: 8,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--primary)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {Icons.shieldAlert({ s: 13 })}
+          <span>Ficha de Apoyo</span>
+        </button>
+
         <button
           type="button"
           onClick={handleAIToggle}
@@ -261,6 +289,12 @@ export default function DependentCard({ dep, lifeStages = [], isLinked = false, 
           )}
         </div>
       )}
+
+      <SupportCardModal
+        isOpen={showSupportModal}
+        onClose={() => setShowSupportModal(false)}
+        dependiente={dep}
+      />
     </div>
   )
 }

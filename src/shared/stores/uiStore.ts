@@ -46,7 +46,7 @@ export const useUiStore = create<UiState>((set) => ({
     localStorage.setItem('admin-tab', tab)
     set({ adminTab: tab })
   },
-  instPortalTab: localStorage.getItem('inst-portal-tab') ?? 'postulaciones',
+  instPortalTab: localStorage.getItem('inst-portal-tab') ?? 'servicios',
   setInstPortalTab: (tab: string) => {
     localStorage.setItem('inst-portal-tab', tab)
     set({ instPortalTab: tab })
