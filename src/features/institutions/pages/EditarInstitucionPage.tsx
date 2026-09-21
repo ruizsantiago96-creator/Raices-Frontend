@@ -93,34 +93,35 @@ export default function EditarInstitucionPage() {
   const validarCsf = useValidarCsfQr()
   const { data: identidadStatus } = useEstadoValidacion()
 
-  // Populate form when institution data loads
-  useEffect(() => {
-    if (institution) {
-      setForm({
-        nombre: institution.nombre ?? institution.name ?? '',
-        descripcion: institution.descripcion ?? institution.description ?? '',
-        categoria: institution.categoria ?? institution.category ?? '',
-        subcategoria: institution.subcategoria ?? '',
-        direccion: institution.direccion ?? institution.address ?? '',
-        ciudad: institution.ciudad ?? institution.city ?? '',
-        estado: institution.estado ?? institution.state ?? '',
-        lat: institution.lat ?? '',
-        lng: institution.lng ?? '',
-        telefono: institution.telefono ?? institution.phone ?? '',
-        whatsapp: institution.whatsapp ?? '',
-        email: institution.email ?? '',
-        sitioWeb: institution.sitioWeb ?? institution.website ?? '',
-        urlLogo: institution.urlLogo ?? '',
-        urlPortada: institution.urlPortada ?? '',
-        tiposDiscapacidad: institution.tiposDiscapacidad ?? institution.disability_types ?? [],
-        edadMinima: institution.edadMinima ?? 0,
-        edadMaxima: institution.edadMaxima ?? 99,
-        horarioAtencion: institution.horarioAtencion ?? '',
-        tipoPlan: institution.tipoPlan ?? 'gratuito',
-        servicios: (institution.servicios ?? []).map(s => typeof s === 'string' ? s : (s.nombre ?? '')).filter(Boolean),
-      })
-    }
-  }, [institution])
+  const [prevInstId, setPrevInstId] = useState<string | number | null>(null)
+
+  // Populate form when institution data loads (derived during render)
+  if (institution && institution.id !== prevInstId) {
+    setPrevInstId(institution.id)
+    setForm({
+      nombre: institution.nombre ?? institution.name ?? '',
+      descripcion: institution.descripcion ?? institution.description ?? '',
+      categoria: institution.categoria ?? institution.category ?? '',
+      subcategoria: institution.subcategoria ?? '',
+      direccion: institution.direccion ?? institution.address ?? '',
+      ciudad: institution.ciudad ?? institution.city ?? '',
+      estado: institution.estado ?? institution.state ?? '',
+      lat: institution.lat ?? '',
+      lng: institution.lng ?? '',
+      telefono: institution.telefono ?? institution.phone ?? '',
+      whatsapp: institution.whatsapp ?? '',
+      email: institution.email ?? '',
+      sitioWeb: institution.sitioWeb ?? institution.website ?? '',
+      urlLogo: institution.urlLogo ?? '',
+      urlPortada: institution.urlPortada ?? '',
+      tiposDiscapacidad: institution.tiposDiscapacidad ?? institution.disability_types ?? [],
+      edadMinima: institution.edadMinima ?? 0,
+      edadMaxima: institution.edadMaxima ?? 99,
+      horarioAtencion: institution.horarioAtencion ?? '',
+      tipoPlan: institution.tipoPlan ?? 'gratuito',
+      servicios: (institution.servicios ?? []).map(s => typeof s === 'string' ? s : (s.nombre ?? '')).filter(Boolean),
+    })
+  }
 
   const updateField = <K extends keyof EditarFormState>(key: K, value: EditarFormState[K]) => {
     setForm(prev => ({ ...prev, [key]: value }))

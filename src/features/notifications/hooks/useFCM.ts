@@ -171,7 +171,8 @@ export function useFCM() {
       if (unsubscribe) unsubscribe()
       initRef.current = false
     }
-  }, [authToken]) // Solo depender de authToken — addToast y requestPermission son estables
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken])
 
   return {
     fcmToken,

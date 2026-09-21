@@ -108,9 +108,9 @@ export default function ExplorePage() {
   }
 
   const filterKey = JSON.stringify(filters)
-  const prevFilterKeyRef = useRef(filterKey)
-  if (prevFilterKeyRef.current !== filterKey) {
-    prevFilterKeyRef.current = filterKey
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey)
     setVisibleCount(PAGE_SIZE)
   }
 
