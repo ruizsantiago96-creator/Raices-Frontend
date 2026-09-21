@@ -4,6 +4,7 @@ import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
+import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
@@ -149,6 +150,7 @@ function resolveParentesco(parentescos: string[], destinatario: string): string 
   return destinatario === 'hijo' ? 'Hijo/a' : destinatario === 'familiar' ? 'Familiar' : 'Persona a mi cuidado'
 }
 
+// ── STEP ORDER (13 pasos homologados con PCD) ─────────────────────
 const STEP_ORDER: TutorWizardStep[] = [
   'name',
   'birthdate',
@@ -344,7 +346,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     scrollTop()
   }
 
-  const handleAccommodationSubmit = (e: FormEvent) => {
+  const handleAccommodationStepSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.acompanamiento) {
@@ -359,6 +361,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     e.preventDefault()
     setSending(true)
     setError('')
+
     try {
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
       const registerPayload = {
@@ -374,55 +377,23 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
       }
 
+      // El backend parsea el registro como application/json (JSON puro, sin
+      // multer en esta ruta): enviar multipart deja el body sin parsear → 400.
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      if (authResult?.requiereInicioSesion) {
-         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
-         nav('/auth?mode=login', { replace: true })
-         return
-      }
-
       if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
 
-      const userObj: User = {
+      const userObj = {
         id: String(authResult.usuario?.id ?? ''),
         email: authResult.usuario?.email || generalForm.email,
-        role: 'tutor',
+        role: 'tutor' as UserRole,
         full_name: nombreCompleto,
       }
       setRememberMe(true)
       setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
       saveUser(userObj, true)
-
-      // Registrar a la persona a cargo / dependiente si se ingresó su nombre
-      if (nombreDependiente.trim()) {
-        try {
-          let catParentescos: string[] = []
-          try {
-            const catRes = await api.get('/catalogos')
-            catParentescos = catRes?.data?.parentescos ?? []
-          } catch { }
-
-          const dependienteEtapaDep = fechaNacimientoDependiente ? calcEtapaDependiente(fechaNacimientoDependiente) : undefined
-          const depPayload = {
-            nombreCompleto: nombreDependiente.trim(),
-            parentesco: resolveParentesco(catParentescos, destinatario),
-            tiposDiscapacidad: wizardConditionsToCodes(conditionData.conditions, conditionData.neurodivergencias),
-            ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
-            ...(fechaNacimientoDependiente ? { fechaNacimiento: fechaNacimientoDependiente, birth_date: fechaNacimientoDependiente } : {}),
-            notas: conditionData.diagnosticoEspecifico || null,
-          }
-          const depRes = await api.post('/usuarios/dependientes', depPayload)
-          if (depRes?.data?.id && fechaNacimientoDependiente) {
-            localStorage.setItem(`raices_dep_birth_date_${depRes.data.id}`, fechaNacimientoDependiente)
-          }
-        } catch (err) {
-          console.warn('Error al registrar dependiente en onboarding tutor:', err)
-          addToast(`Cuenta creada, pero no se pudo vincular automáticamente a ${nombreDependiente.trim()}. Podrás agregarlo desde "Mis personas".`, 'warning')
-        }
-      }
-
+      
       addToast('¡Cuenta creada exitosamente!', 'success')
       nav('/dashboard', { replace: true })
     } catch (err: any) {
@@ -433,6 +404,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
        setSending(false)
     }
   }
+
 
   const passStrength = getPasswordStrength(generalForm.password)
 
@@ -756,7 +728,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
            STEP 4: ACOMPAÑAMIENTO
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'accommodation' && (
-        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+        <form onSubmit={handleAccommodationStepSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Preferencia de acompañamiento
@@ -821,7 +793,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('accommodation'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('email'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
               {Icons.arrowLeft({ s: 16 })} Volver
             </button>
             <button className="auth-btn-primary" type="submit" style={{ flex: 2 }} disabled={sending}>

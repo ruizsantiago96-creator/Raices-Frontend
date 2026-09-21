@@ -17,7 +17,8 @@ import { STORAGE_KEYS } from '@shared/lib/storageKeys'
    Contratos cubiertos:
      1. PCD con tokenAcceso      → escalas + perfil + perfil-necesidades
                                   + persistencia de sesión y onboarding.
-     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.     3. Institución sin token    → registro multipart con CSF (sin validar CSF)                                  + auto-login + redirect a /inicio.
+     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.     3. Institución sin token    → registro multipart con CSF (sin validar CSF)
+                                  + auto-login + redirect a /inicio.
      3b. Sin archivo CSF         → registro JSON directo, SIN /validar-csf-qr.
      4. Empresa sin token        → registro JSON directo (sin validar CSF)
                                   + auto-login + redirect a /inicio.
@@ -138,8 +139,8 @@ async function fillNameStep(nombrePlaceholder: string) {
 
 // ── Step: Fecha de nacimiento ─────────────────────────────────────
 async function fillBirthdateStep(dateValue = BIRTH_DATE) {
-  const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
-  fireEvent.change(dateInput, { target: { value: dateValue } })
+  const dateInput = document.querySelector('input[type="date"]')
+  fireEvent.change(dateInput!, { target: { value: dateValue } })
   clickButton(/^continuar$/i)
 }
 
