@@ -246,12 +246,59 @@ export default function EditarInstitucionPage() {
         {Icons.arrowLeft({ s: 16 })} Volver al portal
       </button>
 
-      <h1 className="animate-title" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--fg1)', marginBottom: 8, letterSpacing: '-0.02em' }}>
-        Editar mi institución
-      </h1>
-      <p style={{ fontSize: 15, color: 'var(--fg3)', margin: '0 0 32px', lineHeight: 1.5 }}>
-        Actualiza la información de tu institución. Los campos marcados con * son obligatorios.
-      </p>
+      {/* Verification checklist — shown if institution is not verified */}
+      {!institution.is_verified && (
+        <div className="animate-fade-in-up" style={{
+          background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)',
+          borderRadius: 16, padding: 24, marginBottom: 28,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {Icons.shieldCheck({ s: 20 })} Pasos para verificar tu institución
+          </h3>
+          <p style={{ fontSize: 13.5, color: 'var(--fg3)', margin: '0 0 20px', lineHeight: 1.5 }}>
+            Completa estos tres pasos para obtener la insignia de <strong>Institución Verificada ✓</strong> en el catálogo público:
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Step 1: Identity */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: identidadStatus?.estado === 'aprobado' ? 'rgba(16,185,129,0.06)' : 'var(--bg-warm)', borderRadius: 10, border: '1px solid', borderColor: identidadStatus?.estado === 'aprobado' ? 'rgba(16,185,129,0.2)' : 'var(--border-color)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: identidadStatus?.estado === 'aprobado' ? '#10B981' : 'var(--border-color)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                {identidadStatus?.estado === 'aprobado' ? Icons.check({ s: 14 }) : '1'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--fg1)' }}>1. Verificación de Identidad (CURP e Identificación)</div>
+                <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                  {identidadStatus?.estado === 'aprobado' ? 'Documentos de identidad aprobados ✓' : identidadStatus?.estado === 'pendiente' ? 'Documentos en revisión por el administrador...' : 'Requiere subir CURP e identificación oficial'}
+                </div>
+              </div>
+              {identidadStatus?.estado !== 'aprobado' && identidadStatus?.estado !== 'pendiente' && (
+                <button onClick={() => navigate('/configuracion?tab=verificacion')} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Ir a Verificación
+                </button>
+              )}
+            </div>
+
+            {/* Step 2: CSF */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border-color)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--fg1)' }}>2. Constancia de Situación Fiscal (CSF)</div>
+                <div style={{ fontSize: 12, color: 'var(--fg3)' }}>Sube tu archivo PDF o código QR fiscal en la sección inferior de este formulario.</div>
+              </div>
+            </div>
+
+            {/* Step 3: Admin Approval */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border-color)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--fg1)' }}>3. Aprobación Final del Administrador</div>
+                <div style={{ fontSize: 12, color: 'var(--fg3)' }}>Una vez cargados tus datos, el equipo revisa y activa la insignia verificada.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {apiError && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>

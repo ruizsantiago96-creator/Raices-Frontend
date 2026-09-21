@@ -1,6 +1,60 @@
-/* Raíces para Florecer — Shared Components (React module version) */
 import React from 'react'
+import { motion } from 'motion/react'
 import { VERSION } from '../../../version'
+import {
+  Home,
+  Search,
+  Heart,
+  MessageSquare,
+  User,
+  Sparkles,
+  Shield,
+  Users,
+  Activity,
+  MapPin,
+  Star,
+  ArrowRight,
+  ArrowLeft,
+  Building2,
+  Brain,
+  Send,
+  X,
+  Check,
+  Filter,
+  Bookmark,
+  Calendar,
+  Info,
+  RefreshCw,
+  Phone,
+  Mail,
+  Globe,
+  Upload,
+  Target,
+  LogOut,
+  Plus,
+  Pencil,
+  ShieldAlert,
+  ShieldCheck,
+  BarChart3,
+  Compass,
+  Milestone,
+  HeartPulse,
+  Bell,
+  Briefcase,
+  GraduationCap,
+  LayoutGrid,
+  List,
+  Loader2,
+  Camera,
+  Sliders,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Link as LinkIcon,
+  Trash2,
+  BadgeCheck,
+  Sprout,
+} from 'lucide-react'
 
 export interface LeafIconProps {
   size?: number
@@ -21,65 +75,73 @@ export interface IconProps {
   style?: React.CSSProperties
 }
 
+export const IconWrapper: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
+  <motion.span
+    whileHover={{ scale: 1.16, rotate: 2 }}
+    whileTap={{ scale: 0.92 }}
+    transition={{ type: 'spring', stiffness: 350, damping: 15 }}
+    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...style }}
+  >
+    {children}
+  </motion.span>
+)
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const Icons: Record<string, (p?: IconProps) => React.JSX.Element> = {
-  home: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  search: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
-  heart: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill={p?.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
-  message: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>,
-  user: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>,
-  sparkles: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
-  shield: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>,
-  users: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  activity: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-  mapPin: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>,
-  star: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill={p?.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-  arrowRight: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
-  arrowLeft: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>,
-  building: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>,
-  brain: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>,
-  send: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>,
-  x: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-  check: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M20 6 9 17l-5-5"/></svg>,
-  filter: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-  bookmark: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill={p?.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>,
-  calendar: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>,
-  close: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-  info: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
-  refresh: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
-  phone: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-  mail: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
-  globe: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>,
-  upload: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
-  target: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-  logout: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
-  plus: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-  edit: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>,
-  shieldAlert: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>,
-  shieldCheck: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>,
-  barChart: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
-  compass: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
-  milestone: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z"/><path d="M12 13v8"/><path d="M12 3v3"/></svg>,
-  heartPulse: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>,
-  bell: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
-  briefcase: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>,
-  graduationCap: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>,
-  grid: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
-  list: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
-  loader: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
-  camera: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
-  sliders: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><line x1="21" y1="4" x2="14" y2="4" /><line x1="10" y1="4" x2="3" y2="4" /><line x1="21" y1="12" x2="12" y2="12" /><line x1="8" y1="12" x2="3" y2="12" /><line x1="21" y1="20" x2="16" y2="20" /><line x1="12" y1="20" x2="3" y2="20" /><line x1="14" y1="2" x2="14" y2="6" /><line x1="8" y1="10" x2="8" y2="14" /><line x1="12" y1="18" x2="12" y2="22" /></svg>,
-  chevronDown: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><polyline points="6 9 12 15 18 9"/></svg>,
-  eye: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
-  eyeOff: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>,
-  link: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={p?.style}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-  trash: (p) => <svg aria-hidden="true" focusable="false" width={p?.s || 20} height={p?.s || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={p?.style}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-  verifiedBadge: (p) => (
-    <svg aria-hidden="true" focusable="false" width={p?.s || 16} height={p?.s || 16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', ...p?.style }}>
-      <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.75z" fill="currentColor" stroke="none" />
-      <path d="m9 12 2 2 4-4" stroke="#fff" strokeWidth="2.5" />
-    </svg>
-  ),
+  home: (p) => <IconWrapper style={p?.style}><Home size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  search: (p) => <IconWrapper style={p?.style}><Search size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  heart: (p) => <IconWrapper style={p?.style}><Heart size={p?.s || 20} fill={p?.filled ? 'currentColor' : 'none'} color={p?.color || 'currentColor'} /></IconWrapper>,
+  message: (p) => <IconWrapper style={p?.style}><MessageSquare size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  user: (p) => <IconWrapper style={p?.style}><User size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  sparkles: (p) => <IconWrapper style={p?.style}><Sparkles size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  shield: (p) => <IconWrapper style={p?.style}><Shield size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  users: (p) => <IconWrapper style={p?.style}><Users size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  activity: (p) => <IconWrapper style={p?.style}><Activity size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  mapPin: (p) => <IconWrapper style={p?.style}><MapPin size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  star: (p) => <IconWrapper style={p?.style}><Star size={p?.s || 20} fill={p?.filled ? 'currentColor' : 'none'} color={p?.color || 'currentColor'} /></IconWrapper>,
+  arrowRight: (p) => <IconWrapper style={p?.style}><ArrowRight size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  arrowLeft: (p) => <IconWrapper style={p?.style}><ArrowLeft size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  building: (p) => <IconWrapper style={p?.style}><Building2 size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  brain: (p) => <IconWrapper style={p?.style}><Brain size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  send: (p) => <IconWrapper style={p?.style}><Send size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  x: (p) => <IconWrapper style={p?.style}><X size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  check: (p) => <IconWrapper style={p?.style}><Check size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  filter: (p) => <IconWrapper style={p?.style}><Filter size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  bookmark: (p) => <IconWrapper style={p?.style}><Bookmark size={p?.s || 20} fill={p?.filled ? 'currentColor' : 'none'} color={p?.color || 'currentColor'} /></IconWrapper>,
+  calendar: (p) => <IconWrapper style={p?.style}><Calendar size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  close: (p) => <IconWrapper style={p?.style}><X size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  info: (p) => <IconWrapper style={p?.style}><Info size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  refresh: (p) => <IconWrapper style={p?.style}><RefreshCw size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  phone: (p) => <IconWrapper style={p?.style}><Phone size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  mail: (p) => <IconWrapper style={p?.style}><Mail size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  globe: (p) => <IconWrapper style={p?.style}><Globe size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  upload: (p) => <IconWrapper style={p?.style}><Upload size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  target: (p) => <IconWrapper style={p?.style}><Target size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  logout: (p) => <IconWrapper style={p?.style}><LogOut size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  plus: (p) => <IconWrapper style={p?.style}><Plus size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  edit: (p) => <IconWrapper style={p?.style}><Pencil size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  shieldAlert: (p) => <IconWrapper style={p?.style}><ShieldAlert size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  shieldCheck: (p) => <IconWrapper style={p?.style}><ShieldCheck size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  barChart: (p) => <IconWrapper style={p?.style}><BarChart3 size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  compass: (p) => <IconWrapper style={p?.style}><Compass size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  milestone: (p) => <IconWrapper style={p?.style}><Milestone size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  heartPulse: (p) => <IconWrapper style={p?.style}><HeartPulse size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  bell: (p) => <IconWrapper style={p?.style}><Bell size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  briefcase: (p) => <IconWrapper style={p?.style}><Briefcase size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  graduationCap: (p) => <IconWrapper style={p?.style}><GraduationCap size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  grid: (p) => <IconWrapper style={p?.style}><LayoutGrid size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  list: (p) => <IconWrapper style={p?.style}><List size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  loader: (p) => <IconWrapper style={p?.style}><Loader2 size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  camera: (p) => <IconWrapper style={p?.style}><Camera size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  sliders: (p) => <IconWrapper style={p?.style}><Sliders size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  chevronDown: (p) => <IconWrapper style={p?.style}><ChevronDown size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  eye: (p) => <IconWrapper style={p?.style}><Eye size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  accessibility: (p) => <IconWrapper style={p?.style}><Eye size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  eyeOff: (p) => <IconWrapper style={p?.style}><EyeOff size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  link: (p) => <IconWrapper style={p?.style}><LinkIcon size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  trash: (p) => <IconWrapper style={p?.style}><Trash2 size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  plant: (p) => <IconWrapper style={p?.style}><Sprout size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  verifiedBadge: (p) => <IconWrapper style={p?.style}><BadgeCheck size={p?.s || 16} color={p?.color || 'currentColor'} /></IconWrapper>,
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -252,3 +314,7 @@ export const AppFooter: React.FC = () => (
 )
 
 export * from './RestrictedUI'
+export * from './EmptyState'
+export * from './TextToSpeechButton'
+export * from './Breadcrumbs'
+export * from './SupportCardModal'

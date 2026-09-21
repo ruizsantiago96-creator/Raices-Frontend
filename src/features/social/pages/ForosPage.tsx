@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { Icons, RestrictedBlock } from '@shared/components/shared'
+import { Icons, RestrictedBlock, EmptyState, TextToSpeechButton } from '@shared/components/shared'
 import { useForos, useForoDetail, useCreateForo, useCreateForoRespuesta, useDeleteForo } from '../hooks/useCommunity'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type { ForoItem, ForoRespuesta } from '@/types/social'
@@ -126,12 +126,10 @@ function RespuestaCard({ r }: { r: ForoRespuesta }) {
 }
 
 /* ── Formulario de respuesta por pregunta ────────────────── */
-function RespuestaForm({ preguntaIndex, pregunta, foroId }: { preguntaIndex: number; pregunta: string; foroId: string | number }) {
+function RespuestaForm({ preguntaIndex, pregunta, foroId, isIncomplete }: { preguntaIndex: number; pregunta: string; foroId: string | number; isIncomplete?: boolean }) {
   const { addToast } = useUiStore()
   const createRespuesta = useCreateForoRespuesta(foroId)
   const [respuesta, setRespuesta] = useState('')
-  const { data: onboardingStatus } = useOnboardingStatus()
-  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -195,6 +193,8 @@ function RespuestaForm({ preguntaIndex, pregunta, foroId }: { preguntaIndex: num
 function ForumDetail({ forumId, onBack }: { forumId: string | number; onBack: () => void }) {
   const { user } = useAuthStore()
   const { data: forum, isLoading } = useForoDetail(forumId)
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const puedeResponder = !forum?.exclusivoPadres || user?.role === 'tutor' || user?.role === 'admin'
 
@@ -232,6 +232,7 @@ function ForumDetail({ forumId, onBack }: { forumId: string | number; onBack: ()
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                 {forum.titulo}
               </h2>
+              <TextToSpeechButton text={`${forum.titulo}. ${forum.descripcion || ''}`} size="sm" />
               {forum.exclusivoPadres && (
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 8,
@@ -287,7 +288,7 @@ function ForumDetail({ forumId, onBack }: { forumId: string | number; onBack: ()
                   )}
 
                   {puedeResponder ? (
-                    <RespuestaForm preguntaIndex={idx} pregunta={pcr.pregunta} foroId={forumId} />
+                    <RespuestaForm preguntaIndex={idx} pregunta={pcr.pregunta} foroId={forumId} isIncomplete={isIncomplete} />
                   ) : (
                     <div style={{
                       padding: '14px 16px', borderRadius: 10, fontSize: 13, color: 'var(--fg2)',
@@ -567,22 +568,29 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
               ))}
             </div>
           ) : foros.length === 0 ? (
-            <div style={{
-              background: 'var(--bg-surface)', border: '1px dashed var(--border-color)',
-              borderRadius: 14, padding: 48, textAlign: 'center',
-            }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                {Icons.message({ s: 24 })}
-              </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
-                {buscar ? 'Sin resultados' : 'No hay foros aún'}
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0 }}>
-                {buscar
+            <EmptyState
+              icon={Icons.message({ s: 24 })}
+              title={buscar ? 'Sin resultados' : 'No hay foros aún'}
+              description={
+                buscar
                   ? 'No encontramos foros con ese término. Prueba con otra búsqueda.'
-                  : (isInstitutionOrAdmin ? 'Sé el primero en crear un foro de discusión.' : 'Pronto habrá foros de discusión disponibles.')}
-              </p>
-            </div>
+                  : (isInstitutionOrAdmin ? 'Sé el primero en crear un foro de discusión.' : 'Pronto habrá foros de discusión disponibles.')
+              }
+              action={
+                !buscar && isInstitutionOrAdmin ? (
+                  <button
+                    onClick={() => setShowCreate(true)}
+                    style={{
+                      background: 'var(--primary)', color: '#fff', border: 'none',
+                      borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                      cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, margin: '8px 0 0'
+                    }}
+                  >
+                    {Icons.plus({ s: 16 })} Crear nuevo foro
+                  </button>
+                ) : undefined
+              }
+            />
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }} className="stagger-children">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNotifications, useMarkRead, useMarkAllRead } from '../hooks/useNotifications'
-import { Icons } from '@shared/components/shared'
+import { Icons, EmptyState } from '@shared/components/shared'
 import BackendFallback from '@shared/components/BackendFallback'
 import { NOTIFICATION_UI } from '../constants/notificationMessages'
 
@@ -94,12 +94,11 @@ export default function NotificationsPage() {
           {Icons.loader({ s: 20 })} {NOTIFICATION_UI.LOADING}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="animate-fade-in-up delay-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '48px 24px', textAlign: 'center', color: 'var(--fg3)', fontSize: 14.5 }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-cool)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--fg3)' }}>
-            {Icons.bell({ s: 20 })}
-          </div>
-          {NOTIFICATION_UI.EMPTY}
-        </div>
+        <EmptyState
+          icon={Icons.bell({ s: 24 })}
+          title="Sin notificaciones por ahora"
+          description={NOTIFICATION_UI.EMPTY}
+        />
       ) : (
         <div className="animate-fade-in-up delay-2" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map((n: { id: string | number; type: string; created_at: string | number; is_read: boolean; body?: string; title?: string }) => {

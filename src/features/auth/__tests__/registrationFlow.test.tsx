@@ -273,7 +273,30 @@ async function completeTutorWizard() {
   await fillBirthdateStep()
   await fillLocationStep()
   await fillEmailStep()
-  await fillPasswordStep(/crear cuenta/i)
+  await fillPasswordStep(/^continuar$/i)
+
+  // Step 6: relationship_type
+  await screen.findByText(/para quién es el perfil/i)
+  clickButton(/^continuar$/i)
+
+  // Step 7: relationship_name
+  await screen.findByPlaceholderText('Ej. Mateo')
+  fireEvent.change(screen.getByPlaceholderText('Ej. Mateo'), { target: { value: 'Mateo' } })
+  clickButton(/^continuar$/i)
+
+  // Step 8: relationship_birthdate
+  await screen.findByText(/indica la fecha de nacimiento/i)
+  const depDateInput = document.querySelector('input[type="date"]')
+  fireEvent.change(depDateInput!, { target: { value: DEP_BIRTH_DATE } })
+  clickButton(/^continuar$/i)
+
+  // Step 9: accommodation
+  await screen.findByText(/preferencia de acompañamiento/i)
+  clickButton(/continuar/i)
+
+  // Step 10: condition
+  await screen.findByText(/condición de mateo/i)
+  clickButton(/crear cuenta/i)
 }
 
 /* ═══════════════════════════════════════════════════════════════════

@@ -65,17 +65,18 @@ input::-ms-clear {
    DESIGN TOKENS (CSS Custom Properties)
    ═══════════════════════════════════════════════════════════ */
 :root {
-  /* Liquid Glass Custom Properties */
-  --glass-bg: rgba(255, 255, 255, 0.88);
-  --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 12px 40px 0 rgba(7, 59, 76, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
-  --glass-blur: blur(24px) saturate(190%);
-  --modal-backdrop: rgba(0, 0, 0, 0.2);
+  /* Flat Solid Custom Properties (Clean Solid Design) */
+  --glass-bg: #FFFFFF;
+  --glass-border: #E5DCD2;
+  --glass-shadow: 0 2px 8px rgba(7, 59, 76, 0.05);
+  --glass-blur: none;
+  --modal-backdrop: rgba(15, 23, 42, 0.4);
   --modal-card-bg: var(--bg-surface);
   --modal-input-bg: #ffffff;
 
   /* Layout */
   --sidebar-width: 220px;
+  --topnav-height: 64px;
   --main-max-width: 100%;
   --sidebar-bg: #213052;
   --sidebar-fg: rgba(255, 255, 255, 0.55);
@@ -493,12 +494,10 @@ html[data-theme="dark"] .btn-secondary:hover {
    CARD COMPONENT
    ═══════════════════════════════════════════════════════════ */
 .card, .glass-card {
-  background: var(--glass-bg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
-  border: 1px solid var(--glass-border) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: var(--glass-shadow) !important;
+  box-shadow: var(--shadow-sm) !important;
   transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease !important;
 }
 
@@ -507,12 +506,13 @@ html[data-theme="dark"] .btn-secondary:hover {
   inset: 0;
   z-index: 9999;
   background: var(--modal-backdrop);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 32px 20px;
+  overflow-y: auto;
 }
 
 @media (hover: hover) {
@@ -736,9 +736,7 @@ html[data-theme="dark"] .btn-secondary:hover {
   width: var(--sidebar-width);
   z-index: 100;
   background: var(--sidebar-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-right: none;
+  border-right: 1px solid var(--sidebar-border);
   transition: width 0.25s ease, background-color 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
@@ -849,7 +847,7 @@ html[data-theme="dark"] .btn-secondary:hover {
 .responsive-main {
   margin-left: max(var(--sidebar-width), calc(var(--sidebar-width) + (100% - var(--sidebar-width) - var(--main-max-width)) / 2));
   margin-right: auto;
-  padding: 28px 32px;
+  padding: calc(var(--topnav-height, 64px) + 28px) 32px 32px;
   width: auto;
   max-width: var(--main-max-width);
   box-sizing: border-box;
@@ -868,11 +866,9 @@ html[data-theme="dark"] .btn-secondary:hover {
   padding: 0 32px;
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(7, 59, 76, 0.05);
   font-family: var(--font-body);
   box-sizing: border-box;
   transition: background-color 0.3s ease, margin-left 0.25s ease, width 0.25s ease;
@@ -964,7 +960,7 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ── Desktop Large (≥1400px) ─────────────────────────── */
 @media (min-width: 1400px) {
   .responsive-main {
-    padding: 32px 48px;
+    padding: calc(var(--topnav-height, 64px) + 32px) 48px 32px;
     --main-max-width: 1200px;
   }
   .responsive-topnav {
@@ -975,7 +971,7 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ── Desktop (≥1200px) ──────────────────────────────── */
 @media (min-width: 1200px) and (max-width: 1399px) {
   .responsive-main {
-    padding: 28px 40px;
+    padding: calc(var(--topnav-height, 64px) + 28px) 40px 28px;
     --main-max-width: 1100px;
   }
 }
@@ -983,7 +979,7 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ── Laptop (≥992px) ───────────────────────────────── */
 @media (min-width: 992px) and (max-width: 1199px) {
   .responsive-main {
-    padding: 24px 28px;
+    padding: calc(var(--topnav-height, 64px) + 24px) 28px 24px;
     --main-max-width: 100%;
   }
   .responsive-topnav {
@@ -1002,9 +998,10 @@ html.sidebar-collapsed .sidebar-user-container a {
 @media (min-width: 768px) and (max-width: 991px) {
   :root {
     --sidebar-width: 200px;
+    --topnav-height: 56px;
   }
   .responsive-main {
-    padding: 20px 20px;
+    padding: calc(var(--topnav-height, 56px) + 20px) 20px 20px;
     --main-max-width: 100%;
   }
   .responsive-topnav {
@@ -1025,6 +1022,9 @@ html.sidebar-collapsed .sidebar-user-container a {
    MOBILE (< 768px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
+  :root {
+    --topnav-height: 56px;
+  }
   /* Sidebar: hidden on mobile */
   .responsive-sidebar {
     display: none !important;
@@ -1033,7 +1033,7 @@ html.sidebar-collapsed .sidebar-user-container a {
   .responsive-main {
     margin-left: 0 !important;
     margin-right: 0 !important;
-    padding: 24px 16px 40px !important;
+    padding: calc(var(--topnav-height, 56px) + 24px) 16px 40px !important;
     max-width: 100% !important;
   }
 
@@ -1639,23 +1639,53 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ═══════════════════════════════════════════════════════════
    SCROLL REVEAL ANIMATIONS
    ═══════════════════════════════════════════════════════════ */
-.scroll-reveal {
+.scroll-reveal,
+.scroll-reveal-up {
   opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(36px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
-.scroll-reveal.revealed {
+.scroll-reveal.revealed,
+.scroll-reveal-up.revealed {
   opacity: 1;
   transform: translateY(0);
 }
 
+.scroll-reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .scroll-reveal-scale {
   opacity: 0;
-  transform: scale(0.85);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.92);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 .scroll-reveal-scale.revealed {
@@ -1919,17 +1949,13 @@ html[data-theme="dark"] .btn-secondary:hover {
 }
 
 html[data-theme="dark"] .card {
-  background: var(--glass-bg) !important;
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 html[data-theme="dark"] .responsive-topnav {
-  background: rgba(20, 32, 32, 0.95);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  background: #0F172A;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }

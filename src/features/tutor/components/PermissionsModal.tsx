@@ -35,20 +35,23 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
   const togglePermiso = (key: PermisoKey) => {
     if (isSaving) return // Evitar race conditions con toggles rápidos
     
-    const newValue = !permisos[key]
-    const newPermisos = { ...permisos, [key]: newValue }
-    setPermisos(newPermisos)
+    setPermisos(prevPermisos => {
+      const previousValue = prevPermisos[key]
+      const newValue = !previousValue
+      const updatedPermisos = { ...prevPermisos, [key]: newValue }
 
-    // Guardar automáticamente
-    updatePermisos.mutate(
-      { id: dependienteId, permisos: newPermisos } as unknown as Parameters<typeof updatePermisos.mutate>[0],
-      {
-        onError: () => {
-          // Revertir en caso de error
-          setPermisos(prev => ({ ...prev, [key]: permisos[key] }))
-        },
-      }
-    )
+      updatePermisos.mutate(
+        { id: dependienteId, permisos: updatedPermisos } as unknown as Parameters<typeof updatePermisos.mutate>[0],
+        {
+          onError: () => {
+            // Revertir atómicamente con el valor previo capturado
+            setPermisos(current => ({ ...current, [key]: previousValue }))
+          },
+        }
+      )
+
+      return updatedPermisos
+    })
   }
 
   const isSaving = updatePermisos.isPending
