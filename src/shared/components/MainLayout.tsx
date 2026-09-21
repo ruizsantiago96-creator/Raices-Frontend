@@ -45,11 +45,14 @@ export default function MainLayout() {
   const setAdminTab = useUiStore(s => s.setAdminTab)
   const instPortalTab = useUiStore(s => s.instPortalTab)
   const setInstPortalTab = useUiStore(s => s.setInstPortalTab)
+  const empresaPortalTab = useUiStore(s => s.empresaPortalTab)
+  const setEmpresaPortalTab = useUiStore(s => s.setEmpresaPortalTab)
 
   // Determinar el modo según la ruta
   const isAdmin = location.pathname.startsWith('/admin')
   const isInstPortal = location.pathname.startsWith('/institution-portal')
-  const sidebarMode: 'admin' | 'institution' | 'app' = isAdmin ? 'admin' : isInstPortal ? 'institution' : 'app'
+  const isEmpresaPortal = location.pathname.startsWith('/empresa-portal')
+  const sidebarMode: 'admin' | 'institution' | 'empresa' | 'app' = isAdmin ? 'admin' : isInstPortal ? 'institution' : isEmpresaPortal ? 'empresa' : 'app'
 
   // Consultas de React Query para los contadores de la barra lateral (seguras según el modo)
   const { data: pendingInsts = [] } = usePendingInstitutions({ enabled: isAdmin })
@@ -82,8 +85,8 @@ export default function MainLayout() {
   }
 
   // Resolver props de pestañas según el modo
-  const activeTab = sidebarMode === 'admin' ? adminTab : sidebarMode === 'institution' ? instPortalTab : undefined
-  const handleTabChange = sidebarMode === 'admin' ? setAdminTab : sidebarMode === 'institution' ? setInstPortalTab : undefined
+  const activeTab = sidebarMode === 'admin' ? adminTab : sidebarMode === 'institution' ? instPortalTab : sidebarMode === 'empresa' ? empresaPortalTab : undefined
+  const handleTabChange = sidebarMode === 'admin' ? setAdminTab : sidebarMode === 'institution' ? setInstPortalTab : sidebarMode === 'empresa' ? setEmpresaPortalTab : undefined
 
   // Floating chat states
   const floatingChatOpen = useUiStore(s => s.floatingChatOpen)

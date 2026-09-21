@@ -25,6 +25,8 @@ import CrearInstitucionPage from '@features/institutions/pages/CrearInstitucionP
 import EditarInstitucionPage from '@features/institutions/pages/EditarInstitucionPage'
 import AdminPage from '@features/admin/pages/AdminPage'
 import InstitutionPortalPage from '@features/institutions/pages/InstitutionPortalPage'
+import EmpresaDashboard from '@features/empresa/pages/EmpresaDashboard'
+import EditarEmpresaPage from '@features/empresa/pages/EditarEmpresaPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import MiIdentidadPage from '@features/profile/pages/MiIdentidadPage'
 import CompleteProfilePage from '@features/profile/pages/CompleteProfilePage'
@@ -200,6 +202,8 @@ export default function App() {
                   <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/registro" element={<ProtectedRoute role="institution"><CrearInstitucionPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
+                  <Route path="/empresa-portal" element={<ProtectedRoute role="empresa"><EmpresaDashboard /></ProtectedRoute>} />
+                  <Route path="/empresa-portal/editar" element={<ProtectedRoute role="empresa"><EditarEmpresaPage /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                   <Route path="/rutas" element={<RutasPage />} />
                   <Route path="/escalas-vida" element={<EscalasVidaPage />} />

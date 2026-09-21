@@ -17,6 +17,8 @@ export interface UiState {
   setAdminTab: (tab: string) => void
   instPortalTab: string
   setInstPortalTab: (tab: string) => void
+  empresaPortalTab: string
+  setEmpresaPortalTab: (tab: string) => void
   floatingChatOpen: boolean
   setFloatingChatOpen: (open: boolean) => void
   toggleFloatingChat: () => void
@@ -50,6 +52,11 @@ export const useUiStore = create<UiState>((set) => ({
   setInstPortalTab: (tab: string) => {
     localStorage.setItem('inst-portal-tab', tab)
     set({ instPortalTab: tab })
+  },
+  empresaPortalTab: localStorage.getItem('empresa-portal-tab') ?? 'bolsa',
+  setEmpresaPortalTab: (tab: string) => {
+    localStorage.setItem('empresa-portal-tab', tab)
+    set({ empresaPortalTab: tab })
   },
 
   // Floating chat states

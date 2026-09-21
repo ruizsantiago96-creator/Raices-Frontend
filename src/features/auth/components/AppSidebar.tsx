@@ -32,7 +32,7 @@ export interface AppSidebarStats {
 
 export interface AppSidebarProps {
   currentPage?: string
-  mode?: 'app' | 'admin' | 'institution'
+  mode?: 'app' | 'admin' | 'institution' | 'empresa'
   tab?: string
   onTab?: (tabId: string) => void
   pendingCount?: number
@@ -109,6 +109,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
       { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
     ]
+  } else if (mode === 'empresa') {
+    logoIcon = Icons.briefcase({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    title = 'Panel'
+    items = [
+      { id: 'bolsa', label: 'Bolsa de Trabajo', icon: Icons.briefcase },
+      { id: 'postulantes', label: 'Postulantes', icon: Icons.users },
+      { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
+      { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: '/empresa-portal/editar' },
+    ]
   } else {
     logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
                user?.role === 'institution' ? Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
@@ -137,6 +146,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     }
     if (user?.role === 'institution') {
       items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
+    }
+    if (user?.role === 'empresa') {
+      items.push({ id: 'empresa-portal', label: 'Panel', icon: Icons.briefcase, path: '/empresa-portal' })
     }
     if (user?.role === 'admin') {
       items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
@@ -199,6 +211,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               } else {
                 isActive = location.pathname === '/institution-portal' && tab === item.id
               }
+            } else if (mode === 'empresa') {
+              if (item.id === 'editar') {
+                isActive = location.pathname === '/empresa-portal/editar'
+              } else {
+                isActive = location.pathname === '/empresa-portal' && tab === item.id
+              }
             }
             const isLink = !!item.path
 
@@ -227,6 +245,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onTab?.(item.id)
                   if (mode === 'institution' && location.pathname !== '/institution-portal') {
                     navigate('/institution-portal')
+                  }
+                  if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
+                    navigate('/empresa-portal')
                   }
                 }}
                 aria-current={isActive ? 'page' : undefined}
@@ -442,6 +463,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     setSidebarOpen(false)
                     if (mode === 'institution' && location.pathname !== '/institution-portal') {
                       navigate('/institution-portal')
+                    }
+                    if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
+                      navigate('/empresa-portal')
                     }
                   }}
                   aria-current={isActive ? 'page' : undefined}

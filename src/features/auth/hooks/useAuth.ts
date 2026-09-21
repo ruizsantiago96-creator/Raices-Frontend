@@ -34,6 +34,7 @@ export function getHomePathByRole(rawRole?: string | null): string {
   const role = normalizeRole(rawRole)
   if (role === 'admin') return '/admin'
   if (role === 'institution') return '/institution-portal'
+  if (role === 'empresa') return '/empresa-portal'
   return '/feed'
 }
 
