@@ -138,7 +138,7 @@ async function fillNameStep(nombrePlaceholder: string) {
 // ── Step: Fecha de nacimiento ─────────────────────────────────────
 async function fillBirthdateStep(dateValue = BIRTH_DATE) {
   const dateInput = document.querySelector('input[type="date"]')
-  fireEvent.change(dateInput, { target: { value: dateValue } })
+  fireEvent.change(dateInput!, { target: { value: dateValue } })
   clickButton(/^continuar$/i)
 }
 
@@ -267,7 +267,7 @@ async function completeTutorWizard() {
   // Step 8: relationship_birthdate
   await screen.findByText(/indica la fecha de nacimiento/i)
   const depDateInput = document.querySelector('input[type="date"]')
-  fireEvent.change(depDateInput, { target: { value: DEP_BIRTH_DATE } })
+  fireEvent.change(depDateInput!, { target: { value: DEP_BIRTH_DATE } })
   clickButton(/^continuar$/i)
 
   // Step 9: accommodation

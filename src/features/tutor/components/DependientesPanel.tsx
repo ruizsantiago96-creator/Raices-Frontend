@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useDependientes } from '../hooks/useDependientes'
-import { Icons } from '@shared/components/shared'
+import { Icons, EmptyState, SupportCardModal } from '@shared/components/shared'
 import type { Dependiente } from '@/types/tutor'
 
 /**
@@ -13,6 +14,7 @@ import type { Dependiente } from '@/types/tutor'
  */
 export default function DependientesPanel() {
   const { data, isLoading, isError, error } = useDependientes()
+  const [selectedDep, setSelectedDep] = useState<Dependiente | null>(null)
 
   /* ── Loading ── */
   if (isLoading) {
@@ -51,30 +53,34 @@ export default function DependientesPanel() {
   /* ── Empty State ── */
   if (data?.length === 0) {
     return (
-      <div style={emptyBox}>
-        <div style={{ width: 64, height: 64, borderRadius: '50% 50% 50% 18%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-          {Icons.users({ s: 30 })}
-        </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>No hay dependientes registrados</h2>
-        <p style={{ fontSize: 15, color: 'var(--fg2)', marginBottom: 0, maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>
-          Registra a las personas que cuidas para guardar sus necesidades y encontrar las mejores instituciones para cada una.
-        </p>
-      </div>
+      <EmptyState
+        icon={Icons.users({ s: 28 })}
+        title="No hay dependientes registrados"
+        description="Registra a las personas que cuidas para guardar sus necesidades y encontrar las mejores instituciones para cada una."
+      />
     )
   }
 
   /* ── Data ── */
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-      {data?.map((dep: Dependiente, i: number) => (
-        <DependienteCard key={dep?.id ?? `dep-${i}`} dep={dep} />
-      ))}
-    </div>
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+        {data?.map((dep: Dependiente, i: number) => (
+          <DependienteCard key={dep?.id ?? `dep-${i}`} dep={dep} onOpenSupportCard={() => setSelectedDep(dep)} />
+        ))}
+      </div>
+
+      <SupportCardModal
+        isOpen={!!selectedDep}
+        onClose={() => setSelectedDep(null)}
+        dependiente={selectedDep}
+      />
+    </>
   )
 }
 
 /* ── Tarjeta individual ── */
-function DependienteCard({ dep }: { dep: Dependiente }) {
+function DependienteCard({ dep, onOpenSupportCard }: { dep: Dependiente; onOpenSupportCard: () => void }) {
   const nombre = String(dep?.nombreCompleto || dep?.full_name || dep?.nombre || 'Sin nombre')
   const relacion = String(dep?.parentesco || dep?.relationship || dep?.relacion || '')
   const rawDiscapacidades = dep?.tiposDiscapacidad ?? dep?.disability_types ?? dep?.discapacidades
@@ -110,6 +116,28 @@ function DependienteCard({ dep }: { dep: Dependiente }) {
           {notas}
         </p>
       )}
+
+      <button
+        onClick={onOpenSupportCard}
+        style={{
+          marginTop: 'auto',
+          padding: '9px 14px',
+          borderRadius: 10,
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-cool)',
+          color: 'var(--primary)',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          transition: 'all 0.15s ease'
+        }}
+      >
+        {Icons.shieldAlert({ s: 16 })} Ficha de Apoyo y Emergencia
+      </button>
     </div>
   )
 }

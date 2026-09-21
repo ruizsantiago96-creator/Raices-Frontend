@@ -155,8 +155,13 @@ const STEP_ORDER: TutorWizardStep[] = [
   'location',
   'email',
   'password',
+  'relationship_type',
+  'relationship_name',
+  'relationship_birthdate',
+  'accommodation',
+  'condition',
 ]
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 10
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: TutorRegistrationWizardProps) {
@@ -170,7 +175,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [aiNarrative, setAiNarrative] = useState<AiNarrativeData | null>(null)
 
   // Step 1–2: Datos personales del tutor
   const [generalForm, setGeneralForm] = useState<TutorGeneralFormData>({
@@ -183,8 +187,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
   // Step 3: ¿Para quién es el perfil?
   const [destinatario, setDestinatario] = useState('hijo')
   const [nombreDependiente, setNombreDependiente] = useState('')
-  // Fecha de nacimiento de la persona a cargo (para calcular su edad y etapa
-  // reales en lugar de usar las del tutor)
   const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState('')
 
   // Step 5–6: Condición y diagnóstico de la persona a cargo
@@ -193,30 +195,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     tieneDiagnostico: 'si', diagnosticoEspecifico: '',
     redFlagDiagnostico: false, temporalidad: 'nacimiento',
   })
-
-  // Step 9–10: Escalas de vida de la persona a cargo
-  const [scales, setScales] = useState<TutorScalesState>({
-    autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
-    energia: 3, movilidad: 3, social: 3, emocional: 3,
-  })
-
-  // Step 11: Formatos
-  const [formatos, setFormatos] = useState<string[]>(['texto', 'imagenes'])
-
-  // Step 12–13: Intereses y viabilidad
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
-  const [otrosIntereses, setOtrosIntereses] = useState('')
-  const [viabilidad, setViabilidad] = useState('sin_restricciones')
-
-  // Step 7: Historial educativo y terapias
-  const [educacionHistory, setEducacionHistory] = useState<string[]>([])
-  const [terapiaHistory, setTerapiaHistory] = useState<string[]>([])
-
-  // Step 8: Zonas de preferencia, necesidades y áreas de apoyo
-  const [preferredZones, setPreferredZones] = useState<string[]>([])
-  const [zonaInput, setZonaInput] = useState('')
-  const [needsList, setNeedsList] = useState<string[]>([])
-  const [supportAreas, setSupportAreas] = useState<string[]>([])
 
   // Nombre de referencia para títulos y preguntas
   const personName = nombreDependiente.trim() || (destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado')
@@ -271,47 +249,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     }))
   }
 
-  const toggleFormato = (id: string) => {
-    setFormatos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  const toggleInterest = (item: string) => {
-    setSelectedInterests(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleEducacionHistory = (item: string) => {
-    setEducacionHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleTerapiaHistory = (item: string) => {
-    setTerapiaHistory(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleSuggestedZone = (zone: string) => {
-    setPreferredZones(prev => prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone])
-  }
-
-  const addManualZone = () => {
-    const val = zonaInput.trim()
-    if (!val) return
-    if (!preferredZones.includes(val)) {
-      setPreferredZones(prev => [...prev, val])
-    }
-    setZonaInput('')
-  }
-
-  const removePreferredZone = (zone: string) => {
-    setPreferredZones(prev => prev.filter(z => z !== zone))
-  }
-
-  const toggleNeedsList = (item: string) => {
-    setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
-  const toggleSupportAreas = (item: string) => {
-    setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
-  }
-
   // ── Step validation & transitions ────────────────────────────────
   const handleNameSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -362,59 +299,15 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     scrollTop()
   }
 
-  const handlePasswordSubmit = async (e: FormEvent) => {
+  const handlePasswordSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!checkPasswordCriteria(generalForm.password)) {
       setError('La contraseña no cumple con los requisitos de seguridad.')
       return
     }
-    setSending(true)
-    try {
-      const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
-      const registerPayload = {
-        nombreCompleto,
-        email: generalForm.email,
-        password: generalForm.password,
-        rol: 'padre_tutor',
-        ...(generalForm.curp ? { curp: generalForm.curp } : {}),
-        fechaNacimiento: generalForm.birth_date,
-        ciudad: generalForm.ciudad,
-        estado: generalForm.estado,
-        ...(generalForm.pais ? { pais: generalForm.pais } : {}),
-        ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
-      }
-
-      const regRes = await api.post('/autenticacion/registro', registerPayload)
-      const authResult = regRes.data
-
-      if (authResult?.requiereInicioSesion) {
-         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
-         nav('/auth?mode=login', { replace: true })
-         return
-      }
-
-      if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
-
-      const userObj: User = {
-        id: String(authResult.usuario?.id ?? ''),
-        email: authResult.usuario?.email || generalForm.email,
-        role: 'tutor',
-        full_name: nombreCompleto,
-      }
-      setRememberMe(true)
-      setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
-      saveUser(userObj, true)
-
-      addToast('¡Cuenta creada exitosamente! Vamos a completar tu perfil.', 'success')
-      nav('/completar-perfil', { replace: true })
-    } catch (err: any) {
-       const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
-       setError(msg)
-       addToast(msg, 'error')
-    } finally {
-       setSending(false)
-    }
+    setWizardStep('relationship_type')
+    scrollTop()
   }
 
   const handleRelationshipTypeSubmit = (e: FormEvent) => {
@@ -736,7 +629,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             />
           </div>
 
-          <NavButtons onBack={() => { setWizardStep('email'); scrollTop() }} submitLabel={sending ? 'Creando cuenta...' : 'Crear cuenta'} submitDisabled={sending} />
+          <NavButtons onBack={() => { setWizardStep('email'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 

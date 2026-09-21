@@ -617,25 +617,15 @@ export default function AccessibilityBar() {
         }
         
         .liquid-glass-panel {
-          background: rgba(255, 255, 255, 0.45);
-          backdrop-filter: blur(25px) saturate(180%);
-          -webkit-backdrop-filter: blur(25px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.45);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
-            0 12px 40px 0 rgba(31, 38, 135, 0.08),
-            0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          background: var(--bg-surface);
+          border: 1px solid var(--border-color);
+          box-shadow: 0 4px 20px rgba(7, 59, 76, 0.12);
         }
         
         html[data-theme="dark"] .liquid-glass-panel {
-          background: rgba(20, 32, 32, 0.65);
-          backdrop-filter: blur(25px) saturate(180%);
-          -webkit-backdrop-filter: blur(25px) saturate(180%);
+          background: #0F172A;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
-            0 12px 40px 0 rgba(0, 0, 0, 0.45),
-            0 1px 2px 0 rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
         }
         
         .glass-button {
@@ -703,11 +693,7 @@ export default function AccessibilityBar() {
         .liquid-glass-trigger {
           background: #4d7e55 !important;
           border: 1px solid rgba(255, 255, 255, 0.25) !important;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          box-shadow: 
-            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.3),
-            0 8px 30px rgba(77, 126, 85, 0.25);
+          box-shadow: 0 4px 14px rgba(77, 126, 85, 0.25);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 

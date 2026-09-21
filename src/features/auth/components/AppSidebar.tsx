@@ -104,9 +104,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     logoIcon = Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Panel'
     items = [
-      { id: 'postulaciones', label: 'Mis Postulaciones', icon: Icons.briefcase, badge: stats?.activeJobs, badgeColor: 'var(--color-artes)' },
-      { id: 'candidatos', label: 'Candidatos', icon: Icons.users, badge: stats?.pendingApplicants, badgeColor: 'var(--color-empleo)' },
-      { id: 'foros', label: 'Foros', icon: Icons.message },
+      { id: 'servicios', label: 'Servicios y Programas', icon: Icons.briefcase },
+      { id: 'resenas', label: 'Reseñas y Opiniones', icon: Icons.star },
+      { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
       { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
     ]
   } else {
@@ -116,9 +116,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                <PlantEmoji />
     title = 'Raíces'
     // ── Filtrar items según features del usuario ────────────────────
-    const features = user?.features ?? {}
+    const features = user?.features
     const hasFeature = (name: string) => {
-      if (Array.isArray(features)) return features.includes(name)
+      if (!features) return true
+      if (Array.isArray(features)) {
+        return features.length === 0 || features.includes(name)
+      }
       return (features as Record<string, boolean>)[name] !== false
     }
 
@@ -127,10 +130,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
       { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
+      { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas') },
     ].filter(item => !item.hidden)
-    if (user?.role === 'pcd') {
-      items.push({ id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas' })
-    }
     if (user?.role === 'tutor') {
       items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
     }
@@ -335,7 +336,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
             zIndex: 999,
             opacity: sidebarOpen ? 1 : 0,
             visibility: sidebarOpen ? 'visible' : 'hidden',

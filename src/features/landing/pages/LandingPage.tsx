@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { AppFooter } from '@shared/components/shared'
 import { useAuthStore } from '@features/auth'
+import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { STEPS } from '../data/steps'
 import { FEATURES } from '../data/features'
 
@@ -52,6 +53,12 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () =>  window.removeEventListener('scroll', handleScroll)
   }, [isMobileMenuOpen])
+
+  // Inicializar animaciones de scroll al bajar o subir
+  useEffect(() => {
+    const cleanup = initScrollReveal()
+    return () => cleanup?.()
+  }, [])
 
 
   // Redireccionar de inmediato en el render si ya hay sesión activa
@@ -144,8 +151,6 @@ export default function LandingPage() {
           z-index: 50;
           background: var(--landing-bg-topbar);
           border-bottom: 1px solid var(--landing-border-topbar);
-          backdrop-filter: blur(25px) saturate(180%);
-          -webkit-backdrop-filter: blur(25px) saturate(180%);
           height: 60px;
           display: flex;
           align-items: center;
@@ -684,13 +689,13 @@ export default function LandingPage() {
         </div>
 
         {/* ── HERO TEXT (Centered) ── */}
-        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', maxWidth: 672, margin: '0 auto', padding: '32px 16px', background: 'transparent' }}>
-          <h1 className="landing-hero-title">
+        <div className="scroll-reveal-scale" style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', maxWidth: 672, margin: '0 auto', padding: '32px 16px', background: 'transparent' }}>
+          <h1 className="landing-hero-title scroll-reveal scroll-reveal-up">
             Tu historia abre{' '}
             <span style={{ color: '#FF4D68' }}>nuevos caminos.</span>
           </h1>
 
-          <p className="landing-hero-subtitle">
+          <p className="landing-hero-subtitle scroll-reveal scroll-reveal-up scroll-reveal-delay-1">
             Un espacio para conocerte, descubrir posibilidades y conectar con personas con quienes puedas compartir lo que te importa.
           </p>
         </div>
@@ -730,21 +735,21 @@ export default function LandingPage() {
             }
           `}</style>
           <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-            <p style={{
+            <p className="scroll-reveal scroll-reveal-up" style={{
               fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
               color: 'var(--landing-text-topbar)', textTransform: 'uppercase', marginBottom: 12,
             }}>
               PRIMERO, TE CONOCEMOS
             </p>
-            <h2 className="landing-section-title">
+            <h2 className="landing-section-title scroll-reveal scroll-reveal-up scroll-reveal-delay-1">
               Tres pasos para comprender qué es importante para ti
             </h2>
 
             <div className="landing-steps-grid">
-              {STEPS.map((step) => (
+              {STEPS.map((step, idx) => (
                 <div
                   key={step.num}
-                  className="step-card"
+                  className={`step-card scroll-reveal scroll-reveal-up scroll-reveal-delay-${idx + 1}`}
                   style={{
                     background: 'var(--landing-card-bg)',
                     borderRadius: 16,
@@ -826,16 +831,16 @@ export default function LandingPage() {
           }
         `}</style>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <p style={{
+          <p className="scroll-reveal scroll-reveal-up" style={{
             fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
             color: '#CA918E', textTransform: 'uppercase', marginBottom: 12,
           }}>
             DESPUÉS, AVANZAMOS CONTIGO
           </p>
-          <h2 className="landing-section-title">
+          <h2 className="landing-section-title scroll-reveal scroll-reveal-up scroll-reveal-delay-1">
             Lo que recibes para seguir tu camino
           </h2>
-          <p style={{ fontSize: 15, color: 'var(--landing-text-muted)', margin: '0 0 32px', maxWidth: 520, lineHeight: 1.6 }} className="landing-sec2-desc">
+          <p style={{ fontSize: 15, color: 'var(--landing-text-muted)', margin: '0 0 32px', maxWidth: 520, lineHeight: 1.6 }} className="landing-sec2-desc scroll-reveal scroll-reveal-up scroll-reveal-delay-2">
             A partir de lo que conocemos de ti, acercamos opciones, acompañamiento y conexiones que pueden crecer y cambiar contigo.
           </p>
           <style>{`
@@ -848,10 +853,10 @@ export default function LandingPage() {
           `}</style>
 
           <div className="landing-features-grid-3">
-            {FEATURES.slice(0, 3).map((feat) => (
+            {FEATURES.slice(0, 3).map((feat, idx) => (
               <div
                 key={feat.title}
-                className="feature-card"
+                className={`feature-card scroll-reveal scroll-reveal-scale scroll-reveal-delay-${idx + 1}`}
                 style={{
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',
@@ -881,10 +886,10 @@ export default function LandingPage() {
 
           {/* Bottom row - 2 centered cards */}
           <div className="landing-features-grid-2">
-            {FEATURES.slice(3).map((feat) => (
+            {FEATURES.slice(3).map((feat, idx) => (
               <div
                 key={feat.title}
-                className="feature-card"
+                className={`feature-card scroll-reveal scroll-reveal-scale scroll-reveal-delay-${idx + 4}`}
                 style={{
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',

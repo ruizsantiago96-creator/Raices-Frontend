@@ -579,7 +579,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       )}
 
       {/* ── STEP: DONE ── */}
-      {step === 'done' && (
+      {(step as string) === 'done' && (
         <div style={{ textAlign: 'center', padding: '20px 0', animation: 'fadeIn 0.4s ease-out' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
           <h2 style={headingStyle}>¡Tu perfil está completo!</h2>
