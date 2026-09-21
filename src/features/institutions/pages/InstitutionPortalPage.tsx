@@ -79,6 +79,8 @@ export default function InstitutionPortalPage() {
             {currentTab === 'resenas' && <ResenasTab />}
             {currentTab === 'foros' && <ForosExplorer showHeader={false} />}
           </div>
+
+          </div>
         </>
       )}
     </main>

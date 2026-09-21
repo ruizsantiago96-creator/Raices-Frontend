@@ -17,9 +17,11 @@ import { STORAGE_KEYS } from '@shared/lib/storageKeys'
    Contratos cubiertos:
      1. PCD con tokenAcceso      → escalas + perfil + perfil-necesidades
                                   + persistencia de sesión y onboarding.
-     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.
-     3. Institución sin token    → intento de auto-login + PUT perfil.
-     4. Empresa sin token        → intento de auto-login + PUT perfil.
+     2. PCD con requiereInicioSesion:true → thanks SIN auto-login.     3. Institución sin token    → registro multipart con CSF (sin validar CSF)
+                                  + auto-login + redirect a /inicio.
+     3b. Sin archivo CSF         → registro JSON directo, SIN /validar-csf-qr.
+     4. Empresa sin token        → registro JSON directo (sin validar CSF)
+                                  + auto-login + redirect a /inicio.
      5. Tutor sin token          → auto-login + alta de dependiente.
 
    Estos tests DEBEN quedar verdes sin cambios al final de cada fase de
@@ -190,7 +192,20 @@ async function fillAccountPasswordStep() {
 // ── Step: Ubicación de cuenta (institución / empresa) ─────────────
 async function fillAccountLocationStep() {
   await fillLocation()
-  clickButton(/finalizar registro/i)
+  clickButton(/^continuar$/i)
+}
+
+// ── Step: CSF (institución / empresa) — carga el archivo (sin validación) ──
+function createCsfFile(): File {
+  return new File(['%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF'], 'csf-constancia.pdf', {
+    type: 'application/pdf',
+  })
+}
+
+async function uploadCsf(): Promise<void> {
+  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+  fireEvent.change(fileInput, { target: { files: [createCsfFile()] } })
+  await screen.findByText('csf-constancia.pdf')
 }
 
 /* PCD: name → birthdate → location → email → password (submit) */
@@ -202,45 +217,51 @@ async function completePcdWizard() {
   await fillPasswordStep(/crear cuenta/i)
 }
 
-/* Institución: subtype → category → org_name → account_email →
-   account_password → account_location (submit) */
-async function completeInstitutionWizard() {
-  // Step 1: subtype
-  clickButton(/ong/i)
-  clickButton(/^continuar$/i)
-
-  // Step 2: category
-  await screen.findByText(/cuál es la categoría principal/i)
-  clickButton(/educativo/i)
-  clickButton(/^continuar$/i)
-
-  // Step 3: org_name
+/* Institución: org_name → account_email → account_password →
+   account_location → category → CSF (subir + finalizar).
+   Con stopAtCsf:true se detiene en el paso CSF sin subir nada. */
+async function completeInstitutionWizard(opts: { stopAtCsf?: boolean } = {}) {
+  // Step 1: org_name
   await screen.findByPlaceholderText('Ej. Fundación Inclusión México')
   fireEvent.change(screen.getByPlaceholderText('Ej. Fundación Inclusión México'), { target: { value: 'Fundación Inclusión México' } })
   clickButton(/^continuar$/i)
 
-  // Step 4–6: account (email → password → location)
+  // Step 2–4: account (email → password → location)
   await fillAccountEmailStep('contacto@institucion.org')
   await fillAccountPasswordStep()
   await fillAccountLocationStep()
-}
 
-/* Empresa: subtype → org_name → account_email → account_password →
-   account_location (submit) */
-async function completeEnterpriseWizard() {
-  // Step 1: subtype
-  clickButton(/centro terapéutico/i)
+  // Step 5: category — seleccionar la primera categoría del catálogo
+  await screen.findByText(/Qué tipo de institución eres/i)
+  const categoryButtons = screen.getAllByRole('button')
+  const funcionalBtn = categoryButtons.find(btn => btn.textContent?.includes('Funcional'))
+  if (funcionalBtn) fireEvent.click(funcionalBtn)
   clickButton(/^continuar$/i)
 
-  // Step 2: org_name
+  // Step 6: CSF — subir archivo y finalizar (opcional)
+  if (opts.stopAtCsf) return
+  await uploadCsf()
+  clickButton(/finalizar registro/i)
+}
+
+/* Empresa: org_name → account_email → account_password →
+   account_location → CSF (subir + finalizar).
+   Con stopAtCsf:true se detiene en el paso CSF sin subir nada. */
+async function completeEnterpriseWizard(opts: { stopAtCsf?: boolean } = {}) {
+  // Step 1: org_name
   await screen.findByPlaceholderText('Ej. Centro Terapéutico Raíces')
   fireEvent.change(screen.getByPlaceholderText('Ej. Centro Terapéutico Raíces'), { target: { value: 'Centro Terapéutico Raíces' } })
   clickButton(/^continuar$/i)
 
-  // Step 3–5: account (email → password → location)
+  // Step 2–4: account (email → password → location)
   await fillAccountEmailStep('contacto@organizacion.com')
   await fillAccountPasswordStep()
   await fillAccountLocationStep()
+
+  // Step 5: CSF — subir archivo y finalizar (opcional)
+  if (opts.stopAtCsf) return
+  await uploadCsf()
+  clickButton(/finalizar registro/i)
 }
 
 /* Tutor: name → birthdate → location → email → password →
@@ -292,9 +313,7 @@ describe('Contrato de registro — PCD', () => {
     renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
     await completePcdWizard()
 
-    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
-
-    // Payload de registro con el contrato de rol PCD
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))    // Payload de registro con el contrato de rol PCD
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
       nombreCompleto: NOMBRE_COMPLETO,
       email: EMAIL,
@@ -335,7 +354,7 @@ describe('Contrato de registro — PCD', () => {
 })
 
 describe('Contrato de registro — Institución', () => {
-  it('3) sin token en registro: intenta auto-login y guarda el perfil institucional', async () => {
+  it('3) sin token en registro: registra con CSF en multipart y auto-login + /inicio', async () => {
     stubApi({
       'post /autenticacion/registro': { mensaje: 'ok', requiereInicioSesion: true },
       'post /autenticacion/inicio-sesion': INSTITUCION_LOGIN_RESPONSE,
@@ -345,11 +364,19 @@ describe('Contrato de registro — Institución', () => {
     renderWithProviders(<InstitutionRegistrationWizard onBackToRoles={() => {}} />)
     await completeInstitutionWizard()
 
+    // 1) NO debe existir validación síncrona de CSF en el wizard
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
+
+    // 2) Registro: multipart/form-data con la CSF adjunta (el backend la
+    //    sube a Storage → documentoCsf; la revisa el admin, no hay CURP).
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
-    expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
-      rol: 'institucion',
-      categoria: 'educativo',
-    })
+    const payload = lastCallFor('post', '/autenticacion/registro')
+    expect(payload).toBeInstanceOf(FormData)
+    const fd = payload as FormData
+    expect(fd.get('rol')).toBe('institucion')
+    expect(fd.get('email')).toBe(EMAIL)
+    expect(fd.get('password')).toBe(PASSWORD)
+    expect(fd.has('csf')).toBe(true)
 
     // Auto-login exactamente una vez, con las mismas credenciales
     expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
@@ -358,19 +385,45 @@ describe('Contrato de registro — Institución', () => {
     // Perfil institucional vía PUT directo (NO usa useUpdateProfile)
     expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
     expect(lastCallFor('put', '/usuarios/perfil').perfilInstitucional).toMatchObject({
-      tipoInstitucion: 'ong',
-      categoria: 'educativo',
       nombreInstitucion: 'Fundación Inclusión México',
     })
 
-    // Sesión persistida con el token del auto-login
+    // Sesión persistida con el token del auto-login y redirect a /inicio
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('it-1')
+    expect(window.location.pathname).toBe('/inicio')
     expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
+  }, 20000)
+
+  it('3b) sin archivo CSF: registra en JSON directo y sin /validar-csf-qr', async () => {
+    stubApi({
+      'post /autenticacion/registro': { mensaje: 'ok', requiereInicioSesion: true },
+      'post /autenticacion/inicio-sesion': INSTITUCION_LOGIN_RESPONSE,
+      'put /usuarios/perfil': { mensaje: 'ok' },
+    })
+
+    renderWithProviders(<InstitutionRegistrationWizard onBackToRoles={() => {}} />)
+    // Se avanza hasta el paso CSF sin subir nada
+    await completeInstitutionWizard({ stopAtCsf: true })
+
+    // Finalizar registro está habilitado sin archivo (no hay validación que gatear)
+    expect(screen.getByRole('button', { name: /finalizar registro/i })).toBeEnabled()
+    clickButton(/finalizar registro/i)
+
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))    // Sin archivo → payload JSON (no FormData), sin validar-csf-qr
+    const payload = lastCallFor('post', '/autenticacion/registro')
+    expect(payload).not.toBeInstanceOf(FormData)
+    expect(payload).toMatchObject({ rol: 'institucion', email: EMAIL })
+    expect((payload as Record<string, unknown>).documentoCsf).toBeUndefined()
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
+
+    // Auto-login + redirect a /inicio
+    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('it-1')
+    expect(window.location.pathname).toBe('/inicio')
   }, 20000)
 })
 
 describe('Contrato de registro — Empresa', () => {
-  it('4) sin token en registro: intenta auto-login y guarda el perfil del ecosistema', async () => {
+  it('4) sin token en registro: registra en JSON y auto-login + /inicio', async () => {
     stubApi({
       'post /autenticacion/registro': { mensaje: 'ok' },
       'post /autenticacion/inicio-sesion': EMPRESA_LOGIN_RESPONSE,
@@ -380,22 +433,24 @@ describe('Contrato de registro — Empresa', () => {
     renderWithProviders(<EnterpriseRegistrationWizard onBackToRoles={() => {}} />)
     await completeEnterpriseWizard()
 
+    // NO debe existir validación síncrona de CSF en el wizard
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)    // Registro en JSON (la CSF aún no se adjunta)
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
-    expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({
-      rol: 'empresa',
-      tipoEcosistema: 'centro_terapeutico',
-    })
+    const payload = lastCallFor('post', '/autenticacion/registro')
+    expect(payload).not.toBeInstanceOf(FormData)
+    expect(payload).toMatchObject({ rol: 'empresa', email: EMAIL })
+    expect((payload as Record<string, unknown>).documentoCsf).toBeUndefined()
 
     expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
     expect(lastCallFor('post', '/autenticacion/inicio-sesion')).toMatchObject({ email: EMAIL, password: PASSWORD })
 
     expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
     expect(lastCallFor('put', '/usuarios/perfil').perfilEcosistema).toMatchObject({
-      tipoEcosistema: 'centro_terapeutico',
       nombreOrganizacion: 'Centro Terapéutico Raíces',
     })
 
     expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('et-1')
+    expect(window.location.pathname).toBe('/inicio')
     expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
   }, 20000)
 })

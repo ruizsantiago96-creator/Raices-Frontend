@@ -1,47 +1,50 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
-import { INSTITUTION_SUBTYPES, SERVICE_CATEGORIES, INSTITUTION_CATEGORIES, COMMUNITIES } from '../constants/institutionCatalogos'
-import { WizardNavButtons, LocationInputs } from './WizardUI'
-import { CatalogIcon } from './CatalogIcon'
-import { FluentEmoji } from '../constants/fluentEmojis'
+import { useUiStore } from '@shared/stores/uiStore'
+import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
 import {
   OrganizationProgress,
-  OrganizationSubtypeStep,
-  OrganizationInfoStep,
-  OrganizationServicesStep,
-  OrganizationCommunityStep,
   OrganizationThanksStep,
-  validateOrgForm,
   validateAccountForm,
   type OrgFormData,
   type AccountFormData,
 } from './OrganizationFormSteps'
+import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useCreateAccount, payloadBuilders, type InstitutionFormData } from '../hooks/useCreateAccount'
+import { getPasswordStrength } from '../lib/passwordStrength'
+import { FluentEmoji } from '../constants/fluentEmojis'
 
 export interface InstitutionRegistrationWizardProps {
   onBackToRoles?: () => void
 }
 
-export type InstitutionWizardStep = 'subtype' | 'category' | 'org_name' | 'account_email' | 'account_password' | 'account_location' | 'thanks'
+export type InstitutionWizardStep = 'account_location' | 'org_name' | 'account_email' | 'account_password' | 'category' | 'csf' | 'thanks'
 
 const STEP_ORDER: InstitutionWizardStep[] = [
   'org_name',
   'account_email',
   'account_password',
   'account_location',
+  'category',
+  'csf',
 ]
+
+const TOTAL_STEPS = 6
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function InstitutionRegistrationWizard({
   onBackToRoles = () => {},
 }: InstitutionRegistrationWizardProps): React.JSX.Element {
   const nav = useNavigate()
+  const { addToast } = useUiStore()
 
   const createAccount = useCreateAccount<InstitutionFormData>({
     role: 'institution',
     buildPayload: (formData: InstitutionFormData) => payloadBuilders.institution(formData),
+    // El wizard controla la redirección a /inicio tras el éxito
+    navigateOnSuccess: false,
     postSteps: [
       {
         name: 'perfil-institucional',
@@ -49,16 +52,12 @@ export default function InstitutionRegistrationWizard({
         execute: async () => {
           await api.put('/usuarios/perfil', {
             perfilInstitucional: {
-              tipoInstitucion: subtipo,
-              categoria,
               nombreInstitucion: orgForm.nombre,
               descripcion: orgForm.descripcion,
               mision: orgForm.mision,
               nombreContacto: orgForm.contactName,
               telefonoContacto: orgForm.phone,
               sitioWeb: orgForm.website,
-              serviciosOfrecidos: selectedServices,
-              comunidadConectada: selectedCommunity,
             },
           })
         },
@@ -66,15 +65,18 @@ export default function InstitutionRegistrationWizard({
     ],
   })
 
-  const [wizardStep, setWizardStep] = useState<InstitutionWizardStep>('subtype')
+  const [wizardStep, setWizardStep] = useState<InstitutionWizardStep>('org_name')
   const [sending, setSending] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
+  const [showPass, setShowPass] = useState<boolean>(false)
 
-  // Step 1: Subtipo institucional
-  const [subtipo, setSubtipo] = useState<string>('')
-
-  // Step 2: Categoría principal
+  // Categoría
   const [categoria, setCategoria] = useState<string>('')
+  const { data: catalogos } = useCatalogos()
+
+  // CSF
+  const [csfFile, setCsfFile] = useState<File | null>(null)
+  const csfInputRef = useRef<HTMLInputElement>(null)
 
   // Info de la organización
   const [orgForm, setOrgForm] = useState<OrgFormData>({
@@ -86,12 +88,6 @@ export default function InstitutionRegistrationWizard({
     website: '',
     curp: '',
   })
-
-  // Servicios
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
-
-  // Comunidad a conectar
-  const [selectedCommunity, setSelectedCommunity] = useState<string>('')
 
   // Cuenta y ubicación
   const [accountForm, setAccountForm] = useState<AccountFormData>({
@@ -108,37 +104,10 @@ export default function InstitutionRegistrationWizard({
     if (col) col.scrollTop = 0
   }
 
-  const TOTAL_STEPS = 12
   const stepIndex = STEP_ORDER.indexOf(wizardStep)
+  const progressPct = stepIndex >= 0 ? ((stepIndex + 1) / TOTAL_STEPS) * 100 : 100
 
-  // ── Toggle service ──────────────────────────────────────────────
-  const toggleService = (item: string): void => {
-    setSelectedServices(prev => (prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]))
-  }
-
-  // ── Navigation handlers ─────────────────────────────────────────
-  const handleSubtypeSubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (!subtipo) {
-      setError('Selecciona el tipo de institución.')
-      return
-    }
-    setWizardStep('category')
-    scrollTop()
-  }
-
-  const handleCategorySubmit = (e?: React.FormEvent): void => {
-    if (e) e.preventDefault()
-    setError('')
-    if (!categoria) {
-      setError('Selecciona la categoría principal de tu institución.')
-      return
-    }
-    setWizardStep('org_name')
-    scrollTop()
-  }
-
+  // ── Step handlers ───────────────────────────────────────────────
   const handleOrgNameSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
     setError('')
@@ -149,7 +118,6 @@ export default function InstitutionRegistrationWizard({
     setWizardStep('account_email')
     scrollTop()
   }
-
 
   const handleAccountEmailSubmit = (e?: React.FormEvent): void => {
     if (e) e.preventDefault()
@@ -173,9 +141,32 @@ export default function InstitutionRegistrationWizard({
     scrollTop()
   }
 
-  // ── Final submit ────────────────────────────────────────────────
-  const handleFinalSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault()
+  const handleLocationSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!accountForm.country || !accountForm.postalCode || !accountForm.state || !accountForm.city) {
+      setError('Por favor, ingresa un código postal válido, estado y ciudad.')
+      return
+    }
+    setWizardStep('category')
+    scrollTop()
+  }
+
+  const handleCategorySubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault()
+    setError('')
+    if (!categoria) {
+      setError('Selecciona una categoría para tu institución.')
+      return
+    }
+    setWizardStep('csf')
+    scrollTop()
+  }
+
+  // ── Final submit (triggered from CSF step) ─────────────────────
+  const handleFinalSubmit = async (): Promise<void> => {
+    setError('')
+
     const validation = validateAccountForm(accountForm)
     if (!validation.isValid) {
       setError(validation.errors[0])
@@ -187,20 +178,22 @@ export default function InstitutionRegistrationWizard({
       const result = await createAccount.mutateAsync({
         orgForm,
         accountForm,
+        csfFile,
         categoria,
-        subtipo,
-        selectedServices,
-        selectedCommunity,
       })
 
       if (result.requiresLogin) {
         setWizardStep('thanks')
         scrollTop()
+      } else {
+        // Auto-login completado → directo al dashboard con UI restringida (soft-lock)
+        nav('/inicio')
       }
     } catch (err: unknown) {
       console.error('Institution registration error:', err)
       const errorMsg = err instanceof Error ? err.message : 'No pudimos registrar tu institución. Intenta de nuevo.'
       setError(errorMsg)
+      addToast(errorMsg, 'error')
     } finally {
       setSending(false)
     }
@@ -211,7 +204,25 @@ export default function InstitutionRegistrationWizard({
     <div style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* ── Progress bar ── */}
       {wizardStep !== 'thanks' && (
-        <OrganizationProgress accent="#2F80ED" title="Registro Institucional" stepIndex={stepIndex} totalSteps={TOTAL_STEPS} />
+        <div style={{ marginBottom: 20, flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#2F80ED', textTransform: 'uppercase' }}>
+              Registro Institucional
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)' }}>
+              {stepIndex >= 0 ? `Paso ${stepIndex + 1} de ${TOTAL_STEPS}` : 'Completado ✓'}
+            </span>
+          </div>
+          <div style={{ height: 5, background: '#E5DCD2', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: 'linear-gradient(90deg, #2F80ED 0%, #073B4C 100%)',
+              borderRadius: 3,
+              transition: 'width 0.4s ease',
+              width: `${progressPct}%`,
+            }} />
+          </div>
+        </div>
       )}
 
       {/* ── Error ── */}
@@ -221,68 +232,9 @@ export default function InstitutionRegistrationWizard({
         </div>
       )}
 
-      {/* STEP 1: TIPO DE INSTITUCIÓN */}
-      {wizardStep === 'subtype' && (
-        <OrganizationSubtypeStep
-          subtypes={INSTITUTION_SUBTYPES}
-          selectedSubtype={subtipo}
-          onSelectSubtype={setSubtipo}
-          onBack={onBackToRoles}
-          onContinue={() => { handleSubtypeSubmit() }}
-          title="¿Qué tipo de institución representas?"
-          description="Esto nos ayuda a personalizar tu experiencia en Raíces."
-          accentColor="#2F80ED"
-          variant="vertical"
-        />
-      )}
-
-      {/* STEP 2: CATEGORÍA PRINCIPAL */}
-      {wizardStep === 'category' && (
-        <form onSubmit={handleCategorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
-          <div style={{ marginBottom: 2 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
-              ¿Cuál es la categoría principal de tu institución?
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Ayuda a que las personas encuentren tu institución según el tipo de apoyo que buscan.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            {INSTITUTION_CATEGORIES.map(cat => {
-              const color = CATEGORY_COLORS[cat.id] ?? '#2F80ED'
-              const active = categoria === cat.id
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoria(cat.id)}
-                  style={{
-                    padding: '16px 14px',
-                    borderRadius: 12,
-                    border: `2px solid ${active ? color : '#E5DCD2'}`,
-                    background: active ? `${color}1a` : '#ffffff',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <CatalogIcon icon={cat.icon} size={24} />
-                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#073B4C' : 'var(--fg1)' }}>{cat.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--fg3)', lineHeight: 1.3 }}>{cat.desc}</div>
-                </button>
-              )
-            })}
-          </div>
-
-          <WizardNavButtons onBack={() => { setWizardStep('subtype'); scrollTop() }} submitLabel="Continuar" />
-        </form>
-      )}
-
-      {/* STEP 3: NOMBRE DE LA ORGANIZACIÓN */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 1: NOMBRE DE LA ORGANIZACIÓN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'org_name' && (
         <form onSubmit={handleOrgNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
@@ -294,6 +246,9 @@ export default function InstitutionRegistrationWizard({
             </p>
           </div>
           <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
+              Nombre <span style={{ color: '#ef4444' }}>*</span>
+            </label>
             <input
               type="text"
               className="auth-input"
@@ -303,11 +258,13 @@ export default function InstitutionRegistrationWizard({
               onChange={(e) => setOrgForm({ ...orgForm, nombre: e.target.value })}
             />
           </div>
-          <WizardNavButtons onBack={() => { setWizardStep('category'); scrollTop() }} submitLabel="Continuar" />
+          <WizardNavButtons onBack={onBackToRoles} submitLabel="Continuar" />
         </form>
       )}
 
-      {/* STEP 11: CUENTA - EMAIL */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 2: CORREO ELECTRÓNICO
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_email' && (
         <form onSubmit={handleAccountEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
@@ -332,7 +289,9 @@ export default function InstitutionRegistrationWizard({
         </form>
       )}
 
-      {/* STEP 12: CUENTA - PASSWORD */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 3: CONTRASEÑA
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_password' && (
         <form onSubmit={handleAccountPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
@@ -340,26 +299,28 @@ export default function InstitutionRegistrationWizard({
               Contraseña segura
             </h2>
             <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-              Crea una contraseña segura para tu cuenta.
+              Crea una contraseña segura para proteger la información de tu institución.
             </p>
           </div>
           <div>
-            <input
-              type="password"
-              className="auth-input"
-              required
-              placeholder="Mínimo 8 caracteres"
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Contraseña segura <span style={{ color: '#ef4444' }}>*</span></label>
+            <PasswordField
               value={accountForm.password}
-              onChange={(e) => setAccountForm(prev => ({ ...prev, password: e.target.value }))}
+              onChange={(v) => setAccountForm(prev => ({ ...prev, password: v }))}
+              showPass={showPass}
+              onToggleShow={() => setShowPass(!showPass)}
+              strength={getPasswordStrength(accountForm.password)}
             />
           </div>
           <WizardNavButtons onBack={() => { setWizardStep('account_email'); scrollTop() }} submitLabel="Continuar" />
         </form>
       )}
 
-      {/* STEP 13: UBICACIÓN */}
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 4: UBICACIÓN
+           ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'account_location' && (
-        <form onSubmit={handleFinalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+        <form onSubmit={handleLocationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
               ¿Dónde se encuentran?
@@ -380,16 +341,123 @@ export default function InstitutionRegistrationWizard({
           />
           <WizardNavButtons
             onBack={() => { setWizardStep('account_password'); scrollTop() }}
-            submitLabel={sending ? 'Creando cuenta...' : 'Finalizar registro'}
-            submitDisabled={sending}
+            submitLabel="Continuar"
           />
         </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 5: CATEGORÍA
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'category' && (
+        <form onSubmit={handleCategorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              ¿Qué tipo de institución eres?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Selecciona la categoría que mejor describe tu organización.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {(catalogos?.categoriasInstitucion ?? []).map((cat) => {
+              const catValue = typeof cat === 'string' ? cat : (cat.value ?? cat.id ?? '')
+              const catLabel = typeof cat === 'string' ? cat : (cat.label ?? catValue)
+              const active = categoria === catValue
+              const color = (CATEGORY_COLORS as Record<string, string>)[catValue] ?? 'var(--primary)'
+              return (
+                <button
+                  key={catValue}
+                  type="button"
+                  onClick={() => setCategoria(active ? '' : catValue)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 9999,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    border: active ? 'none' : '1px solid var(--border-color)',
+                    background: active ? color : 'var(--bg-warm)',
+                    color: active ? 'white' : 'var(--fg3)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {catLabel}
+                </button>
+              )
+            })}
+          </div>
+          <WizardNavButtons
+            onBack={() => { setWizardStep('account_location'); scrollTop() }}
+            submitLabel="Continuar"
+          />
+        </form>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+           STEP 6: CSF (último paso)
+           ═══════════════════════════════════════════════════════════ */}
+      {wizardStep === 'csf' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+          <div style={{ marginBottom: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#073B4C', margin: '0 0 4px' }}>
+              Constancia de Situación Fiscal (CSF)
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+              Sube tu CSF; se adjuntará a tu registro y será revisada durante la verificación de tu institución.
+            </p>
+          </div>
+          <input
+            ref={csfInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) setCsfFile(file)
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => csfInputRef.current?.click()}
+              style={{
+                padding: '10px 16px', borderRadius: 10,
+                border: '1px solid var(--border-color)', background: 'var(--bg-warm)',
+                color: 'var(--fg1)', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {Icons.upload({ s: 14 })} {csfFile ? 'Cambiar archivo' : 'Seleccionar CSF'}
+            </button>
+            {csfFile && (
+              <span style={{ fontSize: 13, color: 'var(--fg2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {csfFile.name}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button className="auth-btn-secondary" type="button" onClick={() => { setWizardStep('category'); scrollTop() }} style={{ flex: 1 }} disabled={sending}>
+              {Icons.arrowLeft({ s: 16 })} Volver
+            </button>
+            <button
+              className="auth-btn-primary"
+              type="button"
+              onClick={handleFinalSubmit}
+              style={{ flex: 2 }}
+              disabled={sending}
+            >
+              {sending ? 'Creando cuenta...' : 'Finalizar registro'} {Icons.check({ s: 18 })}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* THANKS STEP */}
       {wizardStep === 'thanks' && (
         <OrganizationThanksStep
-          subtypeLabel={INSTITUTION_SUBTYPES.find(s => s.id === subtipo)?.label || 'institución'}
+          subtypeLabel="institución"
           icon={FluentEmoji.exito}
           onContinue={() => nav('/institution-portal')}
           continueLabel="Ir a mi panel"

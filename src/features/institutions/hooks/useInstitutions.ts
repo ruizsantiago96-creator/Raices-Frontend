@@ -234,8 +234,10 @@ export function useValidarCsfQr(): UseMutationResult<ValidarCsfQrResponse, Error
     mutationFn: (file: File) => {
       const formData = new FormData()
       formData.append('archivo', file)
+      // skipAuth: el registro aún no tiene sesión → no adjuntar Authorization
       return api.post('/instituciones/validar-csf-qr', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        skipAuth: true,
       }).then(r => r.data)
     },
   })

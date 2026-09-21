@@ -21,7 +21,12 @@ export const AUTH_ENDPOINTS = {
   REGISTER: {
     method: 'POST',
     path: '/autenticacion/registro',
-    body: { email: 'string', password: 'string', nombreCompleto: 'string', rol: 'pcd|tutor|institution', ciudad: 'string', estado: 'string' },
+    // Acepta application/json o multipart/form-data (FileInterceptor('csf')).
+    // Institución con CSF: multipart con campo "csf" (PDF/imagen ≤10MB) → el
+    // backend la sube a Storage y guarda documentoCsf para verificación del
+    // admin (sustituye la CURP del alta). Resto: JSON puro.
+    // SIN header Content-Type manual: el navegador genera el boundary.
+    body: 'JSON | FormData (email, password, nombreCompleto, rol, ciudad, estado, ...; multipart añade campo "csf")',
     response: {
       // Con token: { tokenAcceso, tokenRefresco, usuario } â†’ login automÃ¡tico
       // Sin token: { usuario, requiereInicioSesion: true } â†’ la cuenta se creÃ³,

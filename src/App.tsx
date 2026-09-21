@@ -7,7 +7,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { queryClient } from '@shared/lib/queryClient'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
-import { ProtectedRoute } from '@features/auth'
+import { ProtectedRoute, getHomePathByRole, useAuthStore } from '@features/auth'
 import FeatureGuard from '@features/auth/components/FeatureGuard'
 import ToastContainer from '@shared/components/Toast'
 import { AccessibilityBar } from '@features/a11y'
@@ -90,7 +90,17 @@ interface SessionErrorScreenProps {
 }
 
 /**
- * Pantalla mostrada cuando la verificación de sesión falla.
+ * Home por rol: /inicio lleva al usuario a su dashboard según su rol.
+ * Para instituciones aterriza en el portal (que muestra la UI restringida
+ * / soft-lock mientras la organización está en verificación).
+ */
+function HomeRedirect() {
+  const role = useAuthStore(s => s.user?.role)
+  return <Navigate to={getHomePathByRole(role)} replace />
+}
+
+/**
+ * Pantalla de error si la verificación falló.
  * Ofrece un botón para ir al login.
  */
 function SessionErrorScreen({ error }: SessionErrorScreenProps) {
@@ -170,6 +180,7 @@ export default function App() {
 
                 {/* 🛡️ Rutas Protegidas que comparten el MainLayout Global */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                  <Route path="/inicio" element={<HomeRedirect />} />
                   <Route path="/feed" element={<FeedPage />} />
                   <Route path="/dashboard" element={<Navigate to="/feed" replace />} />
                   <Route path="/social" element={<FeatureGuard feature="comunidad"><SocialPage /></FeatureGuard>} />

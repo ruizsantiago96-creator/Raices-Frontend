@@ -71,6 +71,7 @@ export interface InstitutionFormData {
   subtipo?: string
   selectedServices?: string[]
   selectedCommunity?: string
+  csfFile?: File | null
 }
 
 export interface EnterpriseFormData {
@@ -98,6 +99,7 @@ export interface EnterpriseFormData {
   subtipo?: string
   selectedServices?: string[]
   selectedCommunity?: string
+  csfFile?: File | null
 }
 
 export interface RawRegisterResponse {
@@ -288,6 +290,12 @@ export interface CreateAccountOptions<TForm = Record<string, unknown>, TExtra = 
   buildPayload: (formData: TForm, extra?: TExtra) => RegisterPayload
   postSteps?: PostStep[]
   extra?: TExtra
+  /**
+   * Si `false`, el hook NO navega automáticamente al home del rol tras el éxito.
+   * El wizard que lo invoca gestiona su propia redirección (p. ej. /inicio).
+   * Por defecto `true` para no alterar los flujos existentes.
+   */
+  navigateOnSuccess?: boolean
 }
 
 /**
@@ -298,6 +306,7 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
   buildPayload,
   postSteps = [],
   extra,
+  navigateOnSuccess = true,
 }: CreateAccountOptions<TForm, TExtra>): UseMutationResult<CreateAccountResult, Error, TForm> {
   const { setAuth } = useAuthStore()
   const nav = useNavigate()
@@ -308,8 +317,29 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       // 1. Construir el payload según el rol
       const registerPayload = buildPayload(formData, extra)
 
-      // 2. Registrar la cuenta
-      const regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, registerPayload)
+      // 2. Registrar la cuenta.
+      //    Institución con CSF: multipart/form-data con el campo "csf" (el
+      //    backend la sube a Storage y la guarda como documentoCsf para
+      //    verificación del admin — sustituye la CURP del alta).
+      //    Resto de roles / sin archivo: JSON puro.
+      //    SIN header Content-Type manual: el navegador genera el boundary.
+      const maybeFile = (formData as Record<string, unknown>)?.csfFile
+      let regRes
+      if (role === 'institution' && maybeFile instanceof File) {
+        const fd = new FormData()
+        for (const [key, value] of Object.entries(registerPayload)) {
+          if (value === undefined || value === null || value === '') continue
+          if (Array.isArray(value)) {
+            fd.append(key, JSON.stringify(value))
+          } else {
+            fd.append(key, String(value))
+          }
+        }
+        fd.append('csf', maybeFile)
+        regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, fd)
+      } else {
+        regRes = await api.post(AUTH_ENDPOINTS.REGISTER.path, registerPayload)
+      }
       const authResult: RawRegisterResponse = regRes.data
 
       // 3. Procesar el resultado
@@ -414,12 +444,6 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       }
     },
     onSuccess: (result: CreateAccountResult) => {
-      if (result.requiresLogin) {
-        addToast(result.message || 'Registro exitoso. Inicia sesión para continuar.', 'success')
-        nav('/auth?mode=login', { replace: true })
-        return
-      }
-
       if (!result.success) {
         addToast(result.message || 'Error en el registro.', 'error')
         return
@@ -430,8 +454,12 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
                        role === 'institution' ? 'Institución' : 'Empresa'
       addToast(`¡${roleName} registrada exitosamente!`, 'success')
 
-      // Navegación según rol
-      nav(getHomePathByRole(role), { replace: true })
+      // La sesión ya fue creada por el registro → ir directo al panel.
+      // Los wizards de orgs (institución/empresa) gestionan su propia
+      // redirección a /inicio pasando navigateOnSuccess: false.
+      if (navigateOnSuccess) {
+        nav(getHomePathByRole(role), { replace: true })
+      }
     },
     onError: (error: Error) => {
       addToast(error.message || 'No pudimos completar el registro. Intenta de nuevo.', 'error')

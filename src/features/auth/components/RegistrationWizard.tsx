@@ -198,14 +198,10 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
         ...(generalForm.codigoPostal ? { codigoPostal: generalForm.codigoPostal } : {}),
       }
 
+      // El backend parsea el registro como application/json (JSON puro, sin
+      // multer en esta ruta): enviar multipart deja el body sin parsear → 400.
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
-
-      if (authResult?.requiereInicioSesion) {
-         addToast('Registro exitoso. Inicia sesión para continuar.', 'success')
-         nav('/auth?mode=login', { replace: true })
-         return
-      }
 
       if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
 
