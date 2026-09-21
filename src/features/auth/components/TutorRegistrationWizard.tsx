@@ -303,7 +303,6 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
 
   const handlePasswordSubmit = (e: FormEvent) => {
     e.preventDefault()
-    setSending(true)
     setError('')
     if (!checkPasswordCriteria(generalForm.password)) {
       setError('La contraseña no cumple con los requisitos de seguridad.')
@@ -347,13 +346,21 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     scrollTop()
   }
 
-  const handleAccommodationSubmit = (e: FormEvent) => {
+  const handleAccommodationStepSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!generalForm.acompanamiento) {
       setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.')
       return
     }
+    setWizardStep('condition')
+    scrollTop()
+  }
+
+  const handleConditionSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setSending(true)
+    setError('')
 
     try {
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
@@ -721,7 +728,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
            STEP 4: ACOMPAÑAMIENTO
            ═══════════════════════════════════════════════════════════ */}
       {wizardStep === 'accommodation' && (
-        <form onSubmit={handleAccommodationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
+        <form onSubmit={handleAccommodationStepSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 2 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 4px' }}>
               Preferencia de acompañamiento
