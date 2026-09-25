@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@features/auth/store/authStore'
+import { esEmpresa } from '@features/auth/lib/empresaRole'
 
 const FIELD_LABELS: Record<string, string> = {
   curp: 'CURP',
@@ -10,9 +11,6 @@ const FIELD_LABELS: Record<string, string> = {
   biografia: 'Biografía',
   fechaNacimiento: 'Fecha de nacimiento',
 }
-
-/** Campos que no aplican a personas morales (rol empresa): identidad vía CSF. */
-const CAMPOS_EXCLUIDOS_EMPRESA = new Set(['curp', 'fechaNacimiento'])
 
 export interface ProfileCompletionModalProps {
   isOpen: boolean
@@ -30,21 +28,22 @@ export default function ProfileCompletionModal({
   onClose,
 }: ProfileCompletionModalProps) {
   const nav = useNavigate()
-  const role = useAuthStore(s => s.user?.role)
-  const esEmpresa = role === 'empresa'
+  const user = useAuthStore(s => s.user)
+
+  // Una empresa es persona moral: no tiene CURP ni fecha de nacimiento, y su
+  // expediente se verifica con la CSF. Este modal es la bitácora de validación
+  // individual, así que no debe renderizarse para ellas en absoluto.
+  // El equivalente para empresas es EmpresaOnboardingModal.
+  if (esEmpresa(user)) {
+    return null
+  }
 
   if (!isOpen) {
     return null
   }
 
-  // Para empresas (personas morales) se omiten CURP y fecha de nacimiento:
-  // no aparecen en la lista de pendientes ni reducen el porcentaje mostrado.
-  const camposFaltantes = (onboardingStatus?.camposFaltantes || []).filter(
-    (field: string) => !esEmpresa || !CAMPOS_EXCLUIDOS_EMPRESA.has(field)
-  )
-  const porcentaje = esEmpresa && camposFaltantes.length === 0
-    ? 100
-    : (onboardingStatus?.porcentaje ?? 0)
+  const camposFaltantes = onboardingStatus?.camposFaltantes || []
+  const porcentaje = onboardingStatus?.porcentaje ?? 0
 
   const formattedMissing = camposFaltantes
     .map((field: string) => FIELD_LABELS[field] || field)

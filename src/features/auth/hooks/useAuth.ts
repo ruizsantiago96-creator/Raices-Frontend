@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { setRememberMe, saveUser, getRememberMe } from '@shared/lib/storage'
 import { decodeAvatarUrl } from '@shared/lib/urlUtils'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
+import { EMPRESA_HOME } from '../lib/empresaRole'
 import type { User, UserRole, BackendUser } from '../../../types/auth'
 
 /**
@@ -27,14 +28,15 @@ export function normalizeRole(rawRole?: string | null): UserRole {
 }
 
 /**
- * Retorna la ruta inicial según el rol del usuario.
- * Por defecto redirige al feed principal ('/feed').
+ * Retorna la ruta inicial seg��n el rol del usuario.
+ * Las empresas (personas morales) van a su portal: nunca al feed de usuario
+ * estándar, que exige CURP e identificación oficial.
  */
 export function getHomePathByRole(rawRole?: string | null): string {
   const role = normalizeRole(rawRole)
   if (role === 'admin') return '/admin'
   if (role === 'institution') return '/institution-portal'
-  if (role === 'empresa') return '/empresa-portal'
+  if (role === 'empresa') return EMPRESA_HOME
   return '/feed'
 }
 
@@ -73,6 +75,8 @@ export function useLogin(): UseMutationResult<LoginResult, Error, LoginVariables
             id: raw.usuario.id,
             email: raw.usuario.email,
             role: normalizeRole(raw.usuario.rol),
+            rol: raw.usuario.rol,
+            tipo: raw.usuario.tipo,
             full_name: raw.usuario.nombreCompleto,
             features: raw.usuario.features ?? {},
           } : undefined,
@@ -193,6 +197,8 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
         id: raw.usuario.id,
         email: raw.usuario.email,
         role: normalizeRole(raw.usuario.rol),
+        rol: raw.usuario.rol,
+        tipo: raw.usuario.tipo,
         full_name: raw.usuario.nombreCompleto || '',
         features: raw.usuario.features ?? {},
       } : undefined
@@ -225,6 +231,8 @@ export function useMe(): UseQueryResult<MeResponse, Error> {
         id: d.id,
         email: d.email,
         role: normalizeRole(d.rol),
+        rol: d.rol,
+        tipo: d.tipo,
         full_name: d.nombreCompleto,
         city: d.ciudad,
         state: d.estado,
@@ -299,6 +307,8 @@ function mapUsuarioBackendToFrontend(d: BackendUser): User {
     country: d.pais,
     codigoPostal: d.codigoPostal,
     role: normalizeRole(d.rol),
+    rol: d.rol,
+    tipo: d.tipo,
     avatar_url: decodeAvatarUrl(d.urlAvatar),
     is_active: d.activo,
     is_verified: d.verificado,

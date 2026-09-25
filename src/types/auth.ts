@@ -23,6 +23,10 @@ export interface User {
   email: string
   role: UserRole
   full_name: string
+  /** Rol crudo tal como lo emite el backend, antes de normalizar (`institucion`, `empresa`…) */
+  rol?: string
+  /** Discriminante de subtipo. En cuentas `institution` distingue una empresa de otro tipo de organización. */
+  tipo?: string
   city?: string
   state?: string
   country?: string
@@ -43,6 +47,8 @@ export interface BackendUser {
   id: string
   email: string
   rol: AuthRole | string
+  /** Discriminante de subtipo (p. ej. `empresa` dentro de una `institucion`). */
+  tipo?: string
   nombreCompleto?: string
   ciudad?: string
   estado?: string

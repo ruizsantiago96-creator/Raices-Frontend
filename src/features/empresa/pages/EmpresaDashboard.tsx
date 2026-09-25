@@ -8,6 +8,7 @@ import { useMe } from '@features/auth'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
 import PerfilPostulanteModal from '../components/PerfilPostulanteModal'
+import EmpresaOnboardingModal, { useEmpresaOnboardingPendiente } from '../components/EmpresaOnboardingModal'
 import {
   useMyJobPostings,
   useCreateJobPosting,
@@ -815,12 +816,50 @@ export default function EmpresaDashboard() {
   // cuando el backend exponga el endpoint equivalente a /instituciones/mi-institucion
   const { data: me, isLoading: loadingMe } = useMe()
 
+  // ── Onboarding de empresa (persona moral) ───────────────────────────
+  // El perfil se considera incompleto si falta la categoría o las políticas de
+  // inclusión en el registro de la institución. En ese caso se abre el modal
+  // automáticamente: es el sustituto del flujo de CURP, que no aplica aquí.
+  const { pendiente: onboardingPendiente, cargando: cargandoOnboarding } = useEmpresaOnboardingPendiente()
+  const [onboardingCerrado, setOnboardingCerrado] = useState(false)
+  const mostrarOnboarding = onboardingPendiente && !cargandoOnboarding && !onboardingCerrado
+
   const hasEmpresa = !loadingMe && !!me
 
   const currentTab = tab && TAB_TITLES[tab] ? tab : 'bolsa'
 
   return (
     <main id="main" className="responsive-main" style={{ '--main-max-width': '1100px' } as Record<string, string>}>
+      {/* Onboarding de empresa: sin CURP, se verifica con la CSF */}
+      <EmpresaOnboardingModal
+        open={mostrarOnboarding}
+        onClose={() => setOnboardingCerrado(true)}
+      />
+
+      {/* Recordatorio persistente si se aplazó el onboarding */}
+      {onboardingPendiente && !cargandoOnboarding && onboardingCerrado && (
+        <div role="status" style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          padding: '12px 16px', marginBottom: 20, borderRadius: 12,
+          border: '1.5px solid rgba(212,148,76,0.3)', background: 'rgba(212,148,76,0.08)',
+          color: 'var(--fg1)', fontSize: 13.5, lineHeight: 1.5,
+        }}>
+          <span style={{ color: '#D4944C', display: 'flex', flexShrink: 0 }}>{Icons.info({ s: 18 })}</span>
+          <span style={{ flex: 1, minWidth: 180 }}>
+            Tu registro de empresa está incompleto. Completa la categoría, tus políticas de
+            inclusión y adjunta tu Constancia de Situación Fiscal para ser verificada.
+          </span>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setOnboardingCerrado(false)}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            Completar ahora
+          </button>
+        </div>
+      )}
+
       {/* Loading */}
       {loadingMe && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', color: 'var(--fg3)', fontSize: 15, gap: 10 }}>
@@ -828,7 +867,9 @@ export default function EmpresaDashboard() {
         </div>
       )}
 
-      {/* Sin empresa registrada — invitar a completar el registro */}
+      {/* Sin empresa registrada — invitar a completar el registro.
+          Ojo: una empresa no tiene CURP, así que el flujo aplicable es el
+          EmpresaOnboardingModal, no `/completar-perfil`. */}
       {!loadingMe && !me && (
         <div className="animate-fade-in-up" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '48px 32px', maxWidth: 500, margin: '40px auto', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -836,8 +877,8 @@ export default function EmpresaDashboard() {
           </div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 12px', fontFamily: 'var(--font-display)' }}>Completa el registro de tu empresa</h2>
           <p style={{ fontSize: 15, color: 'var(--fg3)', marginBottom: 8, lineHeight: 1.6 }}>Tu cuenta de usuario fue creada correctamente, pero aún falta registrar los datos de tu empresa.</p>
-          <p style={{ fontSize: 13, color: 'var(--fg3)', marginBottom: 24, lineHeight: 1.5 }}>Este paso es necesario para publicar vacantes y participar en la comunidad.</p>
-          <button onClick={() => navigate('/completar-perfil')} className="btn-primary" style={{ padding: '12px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', marginBottom: 24, lineHeight: 1.5 }}>Como persona moral te verificamos con tu Constancia de Situación Fiscal, no con CURP.</p>
+          <button onClick={() => setOnboardingCerrado(false)} className="btn-primary" style={{ padding: '12px 28px', fontSize: 15, fontWeight: 600, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {Icons.plus({ s: 18 })} Registrar datos de mi empresa
           </button>
         </div>

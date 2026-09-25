@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { useMe } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
+import { esEmpresa, EMPRESA_HOME, EMPRESA_EDITAR } from '../lib/empresaRole'
 import { TopNavSearchBar } from './TopNavSearchBar'
 
 const PlantEmoji: React.FC = () => (
@@ -65,6 +66,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const { sidebarOpen, setSidebarOpen } = useUiStore()
   const location = useLocation()
   const navigate = useNavigate()
+
+  // Una empresa (persona moral) nunca debe ver el sidebar de usuario estándar
+  // (Inicio, Oportunidades, Guardados, Conectemos, Mis Rutas). Aunque el layout
+  // ya le pase mode='empresa', aquí se normaliza para que ningún consumidor
+  // futuro pueda reintroducir el sidebar equivocado por descuido.
+  const modoEfectivo: AppSidebarProps['mode'] =
+    (mode === 'app' && esEmpresa(user) ? 'empresa' : mode) ?? 'app'
+
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true'
   })
@@ -87,7 +96,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   let logoIcon: React.ReactNode = null
   let title = 'Raíces'
 
-  if (mode === 'admin') {
+  if (modoEfectivo === 'admin') {
     logoIcon = Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Admin'
     items = [
@@ -101,7 +110,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
       { id: 'settings',      label: 'Config',         icon: Icons.target },
     ]
-  } else if (mode === 'institution') {
+  } else if (modoEfectivo === 'institution') {
     logoIcon = Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Panel'
     items = [
@@ -110,14 +119,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
       { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
     ]
-  } else if (mode === 'empresa') {
+  } else if (modoEfectivo === 'empresa') {
     logoIcon = Icons.briefcase({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Panel'
     items = [
       { id: 'bolsa', label: 'Bolsa de Trabajo', icon: Icons.briefcase },
       { id: 'postulantes', label: 'Postulantes', icon: Icons.users },
       { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
-      { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: '/empresa-portal/editar' },
+      { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: EMPRESA_EDITAR },
     ]
   } else {
     logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
@@ -148,9 +157,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     if (user?.role === 'institution') {
       items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
     }
-    if (user?.role === 'empresa') {
-      items.push({ id: 'empresa-portal', label: 'Panel', icon: Icons.briefcase, path: '/empresa-portal' })
-    }
     if (user?.role === 'admin') {
       items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
     }
@@ -159,7 +165,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   return (
     <>
       {/* Desktop sidebar */}
-      <nav aria-label={mode === 'admin' ? "Panel de administración" : mode === 'institution' ? "Portal de institución" : "Navegación principal"} className="responsive-sidebar" style={{
+      <nav aria-label={modoEfectivo === 'admin' ? "Panel de administración" : modoEfectivo === 'institution' ? "Portal de institución" : "Navegación principal"} className="responsive-sidebar" style={{
         display: 'flex', flexDirection: 'column',
         padding: '20px 0 20px 12px', gap: 4,
       }}>
@@ -176,7 +182,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               {logoIcon}
             </div>
             {/* Indicador de sincronización cuando se refrescan permisos */}
-            {isFetching && mode === 'app' && (
+            {isFetching && modoEfectivo === 'app' && (
               <div
                 aria-label="Actualizando permisos"
                 title="Sincronizando permisos..."
@@ -202,21 +208,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflow: 'visible' }}>
           {items.map((item) => {
             let isActive = false
-            if (mode === 'app') {
+            if (modoEfectivo === 'app') {
               isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
-            } else if (mode === 'admin') {
+            } else if (modoEfectivo === 'admin') {
               isActive = tab === item.id
-            } else if (mode === 'institution') {
+            } else if (modoEfectivo === 'institution') {
               if (item.id === 'editar') {
                 isActive = location.pathname === '/institution-portal/editar'
               } else {
                 isActive = location.pathname === '/institution-portal' && tab === item.id
               }
-            } else if (mode === 'empresa') {
+            } else if (modoEfectivo === 'empresa') {
               if (item.id === 'editar') {
-                isActive = location.pathname === '/empresa-portal/editar'
+                isActive = location.pathname === EMPRESA_EDITAR
               } else {
-                isActive = location.pathname === '/empresa-portal' && tab === item.id
+                isActive = location.pathname === EMPRESA_HOME && tab === item.id
               }
             }
             const isLink = !!item.path
@@ -244,11 +250,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 type="button"
                 onClick={() => {
                   onTab?.(item.id)
-                  if (mode === 'institution' && location.pathname !== '/institution-portal') {
+                  if (modoEfectivo === 'institution' && location.pathname !== '/institution-portal') {
                     navigate('/institution-portal')
                   }
-                  if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
-                    navigate('/empresa-portal')
+                  if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME) {
+                    navigate(EMPRESA_HOME)
                   }
                 }}
                 aria-current={isActive ? 'page' : undefined}
@@ -310,7 +316,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         )}
 
         {/* User profile (only main app) */}
-        {mode === 'app' && user && (
+        {modoEfectivo === 'app' && user && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
             <Link to="/profile" className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
@@ -369,7 +375,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         />
         {/* Drawer panel */}
         <nav
-          aria-label={mode === 'admin' ? "Navegación móvil administración" : mode === 'institution' ? "Navegación móvil portal" : "Navegación móvil lateral"}
+          aria-label={modoEfectivo === 'admin' ? "Navegación móvil administración" : modoEfectivo === 'institution' ? "Navegación móvil portal" : "Navegación móvil lateral"}
           className="mobile-sidebar-drawer"
           style={{
             position: 'fixed',
@@ -415,7 +421,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
 
           {/* Buscador global — completo, sin recortes, dentro del drawer */}
-          {mode === 'app' && (
+          {modoEfectivo === 'app' && (
             <div style={{ marginBottom: 16 }}>
               <TopNavSearchBar variant="drawer" />
             </div>
@@ -425,15 +431,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflow: 'hidden' }}>
             {items.map((item) => {
               let isActive = false
-              if (mode === 'app') {
+              if (modoEfectivo === 'app') {
                 isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
-              } else if (mode === 'admin') {
+              } else if (modoEfectivo === 'admin') {
                 isActive = tab === item.id
-              } else if (mode === 'institution') {
+              } else if (modoEfectivo === 'institution') {
                 if (item.id === 'editar') {
                   isActive = location.pathname === '/institution-portal/editar'
                 } else {
                   isActive = location.pathname === '/institution-portal' && tab === item.id
+                }
+              } else if (modoEfectivo === 'empresa') {
+                if (item.id === 'editar') {
+                  isActive = location.pathname === EMPRESA_EDITAR
+                } else {
+                  isActive = location.pathname === EMPRESA_HOME && tab === item.id
                 }
               }
               const isLink = !!item.path
@@ -469,11 +481,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onClick={() => {
                     onTab?.(item.id)
                     setSidebarOpen(false)
-                    if (mode === 'institution' && location.pathname !== '/institution-portal') {
+                    if (modoEfectivo === 'institution' && location.pathname !== '/institution-portal') {
                       navigate('/institution-portal')
                     }
-                    if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
-                      navigate('/empresa-portal')
+                    if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME) {
+                      navigate(EMPRESA_HOME)
                     }
                   }}
                   aria-current={isActive ? 'page' : undefined}
@@ -507,7 +519,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
 
           {/* Bottom user / portal controls */}
-          {mode === 'app' ? (
+          {modoEfectivo === 'app' ? (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ position: 'relative', width: 32, height: 32, flexShrink: 0 }}>

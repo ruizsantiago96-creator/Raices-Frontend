@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
+import { useEsEmpresa } from '@features/auth/lib/empresaRole'
 import { Icons } from '@shared/components/shared'
 
 export interface VerificationBadgeCardProps {
@@ -10,6 +11,12 @@ export interface VerificationBadgeCardProps {
 export const VerificationBadgeCard: React.FC<VerificationBadgeCardProps> = ({ compact = false }) => {
   const nav = useNavigate()
   const { data: status } = useEstadoValidacion()
+  const isEmpresa = useEsEmpresa()
+
+  // La insignia se basa en CURP + identificación oficial, que son datos de
+  // persona física. Una empresa (persona moral) se acredita con su CSF, así que
+  // nunca debe ver este llamado a la acción.
+  if (isEmpresa) return null
 
   const estado = status?.estado || 'sin_documentos'
 
