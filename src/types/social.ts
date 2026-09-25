@@ -30,6 +30,9 @@ export interface CommunityPost {
   group_name?: string
   grupoId?: string | number
   comment_count: number
+  categoriaCreativa?: string
+  exclusivoPadres?: boolean
+  mediaUrl?: string
   [key: string]: unknown
 }
 
@@ -48,6 +51,9 @@ export interface CreatePostPayload {
   content?: string
   contenido?: string
   grupoId?: string | number
+  mediaUrl?: string
+  categoriaCreativa?: string
+  exclusivoPadres?: boolean
   [key: string]: unknown
 }
 

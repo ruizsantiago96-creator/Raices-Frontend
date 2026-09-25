@@ -21,6 +21,24 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL SCROLLBAR STYLING - HIDDEN NATIONWIDE
+   ═══════════════════════════════════════════════════════════ */
+/* Hide scrollbar for Chrome, Safari, Edge, Opera */
+*::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+/* Hide scrollbar for Firefox, IE */
+html, body, *, *::before, *::after {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 main:focus, main:focus-visible, .responsive-main:focus, .responsive-main:focus-visible {
   outline: none !important;
   box-shadow: none !important;
@@ -287,6 +305,109 @@ textarea:focus, textarea:focus-visible,
 [tabindex]:focus, [tabindex]:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL MODERN FORM CONTROLS (CUSTOM SELECT & CHECKBOX)
+   ═══════════════════════════════════════════════════════════ */
+
+/* --- Modern Select Dropdowns --- */
+select,
+.custom-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23073B4C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px 14px !important;
+  border: 1.5px solid var(--border-color, #E2E8F0) !important;
+  border-radius: 9999px !important;
+  padding: 6px 36px 6px 14px !important;
+  font-family: var(--font-body, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--fg1, #073B4C) !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 2px rgba(7, 59, 76, 0.05) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 36px !important;
+}
+
+select:hover,
+.custom-select:hover {
+  border-color: var(--primary, #073B4C) !important;
+  background-color: var(--bg-warm, #FFF9F2) !important;
+  box-shadow: 0 2px 6px rgba(7, 59, 76, 0.1) !important;
+}
+
+select:focus,
+select:focus-visible,
+.custom-select:focus {
+  border-color: var(--primary, #073B4C) !important;
+  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(7, 59, 76, 0.15)) !important;
+}
+
+select option {
+  background-color: #ffffff !important;
+  color: #073B4C !important;
+  padding: 10px 14px !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+}
+
+/* --- Modern Checkbox --- */
+input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 19px !important;
+  height: 19px !important;
+  min-width: 19px !important;
+  min-height: 19px !important;
+  border: 2px solid var(--border-color, #CBD5E1) !important;
+  border-radius: 6px !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--primary, #073B4C) !important;
+  background-color: var(--primary-subtle, rgba(7, 59, 76, 0.08)) !important;
+  transform: scale(1.06);
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary, #073B4C) !important;
+  border-color: var(--primary, #073B4C) !important;
+  box-shadow: 0 2px 5px rgba(7, 59, 76, 0.25) !important;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "" !important;
+  width: 5px !important;
+  height: 9px !important;
+  border: solid #ffffff !important;
+  border-width: 0 2.2px 2.2px 0 !important;
+  transform: rotate(45deg) translate(-0.5px, -1px) !important;
+  display: block !important;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(7, 59, 76, 0.2)) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
