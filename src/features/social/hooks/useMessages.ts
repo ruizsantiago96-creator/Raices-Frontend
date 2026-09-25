@@ -149,3 +149,18 @@ export function useSendMessage() {
     },
   })
 }
+
+/**
+ * Marca como leídos los mensajes recibidos de un socio (PATCH /mensajes/leer/:id).
+ * Se invoca al abrir una conversación; refresca no-leídos y conversaciones.
+ */
+export function useMarcarConversacionLeida() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, string | number>({
+    mutationFn: (socioId) => api.patch(`/mensajes/leer/${socioId}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['messages', 'unread'] })
+      qc.invalidateQueries({ queryKey: ['messages', 'conversations'] })
+    },
+  })
+}

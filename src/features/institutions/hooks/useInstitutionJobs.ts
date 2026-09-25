@@ -46,8 +46,8 @@ function mapApplicant(app: RawBackendJobApplicant): InstitutionJobApplicant {
     ...app,
     id: app.id ?? app._id ?? app.postulacionId ?? '',
     user_id: app.user_id ?? app.usuarioId ?? app.usuario?.id,
-    user_name: app.user_name ?? app.nombreUsuario ?? app.usuario?.nombreCompleto,
-    user_email: app.user_email ?? app.emailUsuario ?? app.usuario?.email,
+    user_name: app.user_name ?? app.nombreUsuario ?? app.nombrePostulante ?? app.usuario?.nombreCompleto,
+    user_email: app.user_email ?? app.emailUsuario ?? app.emailPostulante ?? app.usuario?.email,
     job_id: app.job_id ?? app.vacanteId ?? app.vacante?.id,
     job_title: app.job_title ?? app.tituloVacante ?? app.vacante?.titulo ?? app.titulo,
     cover_letter: app.cover_letter ?? app.cartaPresentacion ?? app.carta_presentacion,
@@ -58,8 +58,12 @@ function mapApplicant(app: RawBackendJobApplicant): InstitutionJobApplicant {
 
 /* ── Institution Job Postings ────────────────────────────── */
 
-/** Helper: returns true only if the current user has the institution role. */
-const useIsInstitution = () => useAuthStore(s => s.user?.role === 'institution')
+/**
+ * Helper: true si el usuario puede gestionar vacantes institucionales.
+ * El backend normaliza el rol 'empresa' → 'institucion' en el JWT, así que
+ * ambos roles son equivalentes para crear/editar/pausar/eliminar vacantes.
+ */
+const useIsInstitution = () => useAuthStore(s => s.user?.role === 'institution' || s.user?.role === 'empresa')
 
 export interface UseInstitutionJobsOptions {
   enabled?: boolean
@@ -68,6 +72,8 @@ export interface UseInstitutionJobsOptions {
 
 /**
  * Fetch all job postings created by the current institution.
+ * Usa GET /empleo/mis-vacantes: incluye las pausadas (activa=false) para
+ * poder reactivarlas desde el portal.
  */
 export function useMyJobPostings(opts?: UseInstitutionJobsOptions): UseQueryResult<Job[]> {
   const isInstitution = useIsInstitution()
@@ -75,7 +81,7 @@ export function useMyJobPostings(opts?: UseInstitutionJobsOptions): UseQueryResu
   return useQuery({
     queryKey: ['institution', 'job-postings'],
     queryFn: async (): Promise<Job[]> => {
-      const r = await api.get('/empleo', { params: { mias: true } })
+      const r = await api.get('/empleo/mis-vacantes')
       const res = r.data
       const data = Array.isArray(res) ? res : (res?.datos ?? [])
       return (data as RawBackendJob[]).map(mapJob)
@@ -147,8 +153,11 @@ export function useDeleteJobPosting(): UseMutationResult<unknown, Error, string 
 export function useToggleJobStatus(): UseMutationResult<unknown, Error, { id: string | number; is_active: boolean }> {
   const qc = useQueryClient()
   return useMutation({
+    // PUT /empleo/:id con { activa }: el backend no expone PATCH /estado
+    // para vacantes (solo para postulaciones). `activa` está en la whitelist
+    // de ActualizarVacanteDto.
     mutationFn: ({ id, is_active }: { id: string | number; is_active: boolean }) =>
-      api.patch(`/empleo/${id}/estado`, { activa: is_active }).then(r => r.data),
+      api.put(`/empleo/${id}`, { activa: is_active }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['institution', 'job-postings'] })
     },

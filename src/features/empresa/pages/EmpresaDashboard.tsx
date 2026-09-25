@@ -2,11 +2,49 @@ import { useState } from 'react'
 import type { FormEvent, CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Icons } from '@shared/components/shared'
+import { Icons, hashColor } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useMe } from '@features/auth'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
+import PerfilPostulanteModal from '../components/PerfilPostulanteModal'
+import {
+  useMyJobPostings,
+  useCreateJobPosting,
+  useUpdateJobPosting,
+  useDeleteJobPosting,
+  useToggleJobStatus,
+  useAllJobApplicants,
+  useUpdateApplicationStatus,
+} from '@features/institutions/hooks/useInstitutionJobs'
+import type { InstitutionJobApplicant } from '@/types/institutions'
+import type { Job } from '@/types/jobs'
+
+/* ── Mapeo entre el modelo visual (VacanteItem) y el payload del API ── */
+
+/** Convierte una vacante del backend en la tarjeta del portal. */
+function mapJobToVacante(job: Job): VacanteItem {
+  const jornada = job.schedule ?? job.horario ?? ''
+  return {
+    id: String(job.id ?? ''),
+    puesto: job.title ?? job.titulo ?? '',
+    area: job.city ? job.city : 'General',
+    descripcion: job.description ?? job.descripcion ?? '',
+    modalidad: job.modality ?? job.modalidad ?? 'presencial',
+    jornada,
+    accesibilidad: Array.isArray(job.disability_types) ? job.disability_types : (Array.isArray(job.tiposDiscapacidad) ? job.tiposDiscapacidad : []),
+    activo: (job.is_active ?? job.activa ?? true) as boolean,
+    postulantes: job.applicants_count ?? 0,
+  }
+}
+
+/** Normaliza la modalidad visual al enum del backend. */
+function modalidadToApi(modalidad: string): string {
+  const lower = modalidad.toLowerCase()
+  if (lower.includes('home') || lower.includes('remoto')) return 'remoto'
+  if (lower.includes('híbrido') || lower.includes('hibrido') || lower.includes('hibrid')) return 'híbrido'
+  return 'presencial'
+}
 
 /* ── Constantes de UI ─────────────────────────────────────── */
 
@@ -41,38 +79,6 @@ const ETIQUETAS_ACCESIBILIDAD = [
   'Estacionamiento accesible',
 ]
 
-/* Datos demo mientras se conecta el endpoint de la empresa en el backend */
-const VACANTES_DEMO: VacanteItem[] = [
-  {
-    id: 'v1',
-    puesto: 'Desarrollador Frontend',
-    area: 'Tecnología',
-    descripcion: 'Mantendrás y evolucionarás nuestra plataforma web, colaborando con diseño para crear interfaces accesibles.',
-    modalidad: 'Home Office',
-    jornada: 'Tiempo Completo',
-    accesibilidad: ['Lector de pantalla compatible', 'Horario flexible', 'Accesibilidad digital'],
-    activo: true,
-    postulantes: 12,
-  },
-  {
-    id: 'v2',
-    puesto: 'Analista de Reclutamiento',
-    area: 'Recursos Humanos',
-    descripcion: 'Gestión de procesos de selección, entrevistas iniciales y seguimiento de candidatos en la bolsa de trabajo.',
-    modalidad: 'Híbrido',
-    jornada: 'Medio Tiempo',
-    accesibilidad: ['Instalaciones adaptadas', 'Intérprete LSM'],
-    activo: true,
-    postulantes: 5,
-  },
-]
-
-let vacanteIdCounter = 100
-function generateVacanteId(): string {
-  vacanteIdCounter += 1
-  return `v-${vacanteIdCounter}`
-}
-
 /* ── Estilos compartidos del formulario (mismo patrón del portal de institución) ── */
 
 const inputStyle: CSSProperties = {
@@ -92,7 +98,14 @@ function VacantesTab() {
   const navigate = useNavigate()
   const { addToast } = useUiStore()
 
-  const [vacantes, setVacantes] = useState<VacanteItem[]>(VACANTES_DEMO)
+  // Datos reales desde GET /empleo/mis-vacantes (incluye pausadas)
+  const { data: jobs = [], isLoading: loadingVacantes, isError, refetch } = useMyJobPostings()
+  const vacantes: VacanteItem[] = jobs.map(mapJobToVacante)
+  const createVacante = useCreateJobPosting()
+  const updateVacante = useUpdateJobPosting()
+  const deleteVacante = useDeleteJobPosting()
+  const toggleStatus = useToggleJobStatus()
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingVacante, setEditingVacante] = useState<VacanteItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<VacanteItem | null>(null)
@@ -154,9 +167,30 @@ function VacantesTab() {
   }
 
   const handleToggleStatus = (id: string) => {
-    setVacantes(prev => prev.map(v => (v.id === id ? { ...v, activo: !v.activo } : v)))
-    addToast('Estado de la vacante actualizado', 'success')
+    const target = vacantes.find(v => v.id === id)
+    if (!target) return
+    toggleStatus.mutate(
+      { id, is_active: !target.activo },
+      {
+        onSuccess: () => addToast(target.activo ? 'Vacante pausada' : 'Vacante reactivada', 'success'),
+        onError: (e: unknown) => {
+          const err = e as { response?: { data?: { message?: string } } }
+          addToast(err.response?.data?.message ?? 'No se pudo cambiar el estado', 'error')
+        },
+      }
+    )
   }
+
+  /** Payload común del formulario hacia POST/PUT /empleo. */
+  const buildPayload = () => ({
+    titulo: formPuesto.trim(),
+    descripcion: formDescripcion.trim(),
+    requisitos: '',
+    modalidad: modalidadToApi(formModalidad),
+    horario: formJornada,
+    tiposDiscapacidad: formAccesibilidad,
+    inclusivaDiscapacidad: true,
+  })
 
   const handleSaveVacante = (e: FormEvent) => {
     e.preventDefault()
@@ -165,46 +199,46 @@ function VacantesTab() {
       return
     }
 
-    if (editingVacante) {
-      setVacantes(prev =>
-        prev.map(v =>
-          v.id === editingVacante.id
-            ? {
-                ...v,
-                puesto: formPuesto.trim(),
-                area: formArea,
-                descripcion: formDescripcion.trim(),
-                modalidad: formModalidad,
-                jornada: formJornada,
-                accesibilidad: formAccesibilidad,
-              }
-            : v
-        )
-      )
-      addToast('Vacante actualizada correctamente', 'success')
-    } else {
-      const nueva: VacanteItem = {
-        id: generateVacanteId(),
-        puesto: formPuesto.trim(),
-        area: formArea,
-        descripcion: formDescripcion.trim(),
-        modalidad: formModalidad,
-        jornada: formJornada,
-        accesibilidad: formAccesibilidad,
-        activo: true,
-        postulantes: 0,
-      }
-      setVacantes(prev => [nueva, ...prev])
-      addToast('Nueva vacante publicada en tu bolsa de trabajo', 'success')
+    const onError = (e: unknown) => {
+      const err = e as { response?: { data?: { message?: string } } }
+      addToast(err.response?.data?.message ?? 'No se pudo guardar la vacante', 'error')
     }
-    setIsModalOpen(false)
+
+    if (editingVacante) {
+      updateVacante.mutate(
+        { id: editingVacante.id, ...buildPayload() },
+        {
+          onSuccess: () => {
+            addToast('Vacante actualizada correctamente', 'success')
+            setIsModalOpen(false)
+          },
+          onError,
+        }
+      )
+    } else {
+      createVacante.mutate(buildPayload(), {
+        onSuccess: () => {
+          addToast('Nueva vacante publicada en tu bolsa de trabajo', 'success')
+          setIsModalOpen(false)
+        },
+        onError,
+      })
+    }
   }
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return
-    setVacantes(prev => prev.filter(v => v.id !== deleteTarget.id))
-    addToast('Vacante eliminada', 'info')
-    setDeleteTarget(null)
+    deleteVacante.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        addToast('Vacante eliminada', 'info')
+        setDeleteTarget(null)
+      },
+      onError: (e: unknown) => {
+        const err = e as { response?: { data?: { message?: string } } }
+        addToast(err.response?.data?.message ?? 'No se pudo eliminar la vacante', 'error')
+        setDeleteTarget(null)
+      },
+    })
   }
 
   return (
@@ -233,18 +267,46 @@ function VacantesTab() {
       </div>
 
       {/* Grid de tarjetas de vacantes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-        {vacantes.map(vacante => (
-          <VacanteCard
-            key={vacante.id}
-            vacante={vacante}
-            onEdit={handleOpenEdit}
-            onDelete={v => setDeleteTarget(vacantes.find(x => x.id === v) ?? null)}
-            onToggleStatus={handleToggleStatus}
-            onViewPostulantes={() => addToast('La gestión de postulantes estará disponible en la pestaña Postulantes', 'info')}
-          />
-        ))}
-      </div>
+      {loadingVacantes ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', color: 'var(--fg3)', fontSize: 15, gap: 10 }}>
+          {Icons.loader({ s: 20 })} Cargando tus vacantes...
+        </div>
+      ) : isError ? (
+        <div className="animate-fade-in-up" style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--bg-surface)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg2)', margin: '0 0 16px' }}>
+            No pudimos cargar tus vacantes. Verifica tu conexión e intenta de nuevo.
+          </p>
+          <button onClick={() => refetch()} className="btn-primary" style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700, borderRadius: 10 }}>
+            Reintentar
+          </button>
+        </div>
+      ) : vacantes.length === 0 ? (
+        <div className="animate-fade-in-up" style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--bg-surface)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            {Icons.briefcase({ s: 24 })}
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Aún no tienes vacantes publicadas</h3>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '0 0 20px', lineHeight: 1.6 }}>
+            Publica tu primera vacante para que aparezca en la bolsa de trabajo inclusiva de Raíces.
+          </p>
+          <button onClick={handleOpenAdd} className="btn-primary" style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {Icons.plus({ s: 16 })} Publicar primera vacante
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+          {vacantes.map(vacante => (
+            <VacanteCard
+              key={vacante.id}
+              vacante={vacante}
+              onEdit={handleOpenEdit}
+              onDelete={v => setDeleteTarget(vacantes.find(x => x.id === v) ?? null)}
+              onToggleStatus={handleToggleStatus}
+              onViewPostulantes={() => addToast('La gestión de postulantes estará disponible en la pestaña Postulantes', 'info')}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modal: Agregar / Editar vacante */}
       {isModalOpen && createPortal(
@@ -439,9 +501,12 @@ function VacantesTab() {
                 <button
                   type="submit"
                   className="btn-primary"
-                  style={{ padding: '10px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
+                  disabled={createVacante.isPending || updateVacante.isPending}
+                  style={{ padding: '10px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700, opacity: createVacante.isPending || updateVacante.isPending ? 0.7 : 1 }}
                 >
-                  {editingVacante ? 'Guardar Cambios' : 'Publicar Vacante'}
+                  {(createVacante.isPending || updateVacante.isPending)
+                    ? 'Guardando...'
+                    : editingVacante ? 'Guardar Cambios' : 'Publicar Vacante'}
                 </button>
               </div>
             </form>
@@ -478,23 +543,264 @@ function VacantesTab() {
   )
 }
 
-/* ── Tab: Postulantes (placeholder de la pestaña) ─────────── */
+/* ── Tab: Postulantes (conectada a /empleo/postulantes-institucion) ── */
+
+type EstadoFiltro = 'all' | 'pending' | 'accepted' | 'rejected'
+
+const POSTULANTES_FILTROS: { value: EstadoFiltro; label: string }[] = [
+  { value: 'all', label: 'Todas' },
+  { value: 'pending', label: 'Pendientes' },
+  { value: 'accepted', label: 'Aceptadas' },
+  { value: 'rejected', label: 'Rechazadas' },
+]
+
+const ESTADO_META: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Pendiente', color: 'var(--color-empleo)', bg: 'color-mix(in oklch, var(--color-empleo) 14%, transparent)' },
+  accepted: { label: 'Aceptada', color: 'var(--primary)', bg: 'color-mix(in oklch, var(--primary) 14%, transparent)' },
+  rejected: { label: 'Rechazada', color: 'var(--color-error)', bg: 'color-mix(in oklch, var(--color-error) 14%, transparent)' },
+}
 
 function PostulantesTab() {
+  const { addToast } = useUiStore()
+  const [filter, setFilter] = useState<EstadoFiltro>('all')
+  const [search, setSearch] = useState('')
+  const [cartaAbierta, setCartaAbierta] = useState<string | number | null>(null)
+  const [perfilTarget, setPerfilTarget] = useState<InstitutionJobApplicant | null>(null)
+
+  // El gate de rol (institution | empresa) vive dentro de los hooks
+  const { data: applicants = [], isLoading, isError, refetch } = useAllJobApplicants()
+  const updateStatus = useUpdateApplicationStatus()
+  const [updatingId, setUpdatingId] = useState<string | number | null>(null)
+
+  const filtered = applicants.filter(app => {
+    const matchesFilter = filter === 'all' || app.status === filter
+    if (!search.trim()) return matchesFilter
+    const q = search.toLowerCase()
+    const matchesSearch = (app.user_name ?? '').toLowerCase().includes(q) ||
+                          (app.job_title ?? '').toLowerCase().includes(q) ||
+                          (app.user_email ?? '').toLowerCase().includes(q)
+    return matchesFilter && matchesSearch
+  })
+
+  const counts: Record<EstadoFiltro, number> = {
+    all: applicants.length,
+    pending: applicants.filter(a => a.status === 'pending').length,
+    accepted: applicants.filter(a => a.status === 'accepted').length,
+    rejected: applicants.filter(a => a.status === 'rejected').length,
+  }
+
+  const handleSetStatus = (applicantId: string | number, status: 'accepted' | 'rejected') => {
+    setUpdatingId(applicantId)
+    updateStatus.mutate(
+      { applicantId, status },
+      {
+        onSuccess: () => {
+          addToast(status === 'accepted' ? 'Postulación aceptada. Se notificó a la persona.' : 'Postulación rechazada. Se notificó a la persona.', 'success')
+          setUpdatingId(null)
+        },
+        onError: (e: unknown) => {
+          const err = e as { response?: { data?: { message?: string } } }
+          addToast(err.response?.data?.message ?? 'No se pudo actualizar la postulación', 'error')
+          setUpdatingId(null)
+        },
+      }
+    )
+  }
+
   return (
-    <div className="animate-fade-in-up" style={{
-      textAlign: 'center', padding: '60px 20px',
-      background: 'var(--bg-surface)', borderRadius: 16, border: '1px solid var(--border-color)',
-    }}>
-      <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
-        {Icons.users({ s: 24 })}
+    <div className="animate-fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Toolbar: filtros + búsqueda */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {POSTULANTES_FILTROS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            style={{
+              padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s',
+              background: filter === f.value ? 'var(--primary)' : 'var(--bg-surface)',
+              color: filter === f.value ? '#fff' : 'var(--fg2)',
+            }}
+          >
+            {f.label} ({counts[f.value]})
+          </button>
+        ))}
+        <div style={{ position: 'relative', flex: 1, minWidth: 220, marginLeft: 'auto' }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg3)' }}>{Icons.search({ s: 16 })}</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre, correo o vacante..."
+            style={{
+              height: 40, padding: '0 12px 0 36px', border: '1px solid var(--border-color)',
+              borderRadius: 10, fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)',
+              outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', width: '100%',
+            }}
+          />
+        </div>
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
-        Aún no hay postulaciones
-      </h3>
-      <p style={{ color: 'var(--fg3)', fontSize: 14, margin: 0, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
-        Cuando las personas postulen a tus vacantes, podrás revisar sus CV y gestionar el proceso de selección aquí.
-      </p>
+
+      {isLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ height: 72, borderRadius: 14, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      ) : isError ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--bg-surface)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg2)', margin: '0 0 16px' }}>
+            No pudimos cargar las postulaciones. Intenta de nuevo.
+          </p>
+          <button onClick={() => refetch()} className="btn-primary" style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700, borderRadius: 10 }}>
+            Reintentar
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-surface)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
+            {Icons.users({ s: 24 })}
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
+            {applicants.length === 0 ? 'Aún no hay postulaciones' : 'Sin resultados'}
+          </h3>
+          <p style={{ color: 'var(--fg3)', fontSize: 14, margin: 0, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
+            {applicants.length === 0
+              ? 'Cuando las personas postulen a tus vacantes, podrás revisar sus cartas y gestionar el proceso de selección aquí.'
+              : 'Prueba con otro filtro o término de búsqueda.'}
+          </p>
+        </div>
+      ) : (
+        <div className="responsive-table-wrap overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-sm)', overflowX: 'auto' }}>
+          <table className="responsive-table" style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
+                {['Postulante', 'Vacante', 'Carta', 'Fecha', 'Estado', 'Perfil', 'Acciones'].map(h => (
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((app, i) => {
+                const meta = ESTADO_META[app.status] ?? ESTADO_META.pending
+                const isUpdating = updatingId === app.id
+                return (
+                  <tr key={String(app.id)} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'color-mix(in oklch, var(--primary) 2%, var(--bg-surface))'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: hashColor(app.user_name ?? ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                          {(app.user_name ?? '?')[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)' }}>{app.user_name ?? '—'}</div>
+                          {app.user_email && <div style={{ fontSize: 12, color: 'var(--fg3)' }}>{app.user_email}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>
+                      {app.job_title ?? '—'}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      {app.cover_letter ? (
+                        <button
+                          onClick={() => setCartaAbierta(cartaAbierta === app.id ? null : app.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: 13, fontWeight: 600, padding: 0, fontFamily: 'var(--font-body)' }}
+                        >
+                          {cartaAbierta === app.id ? 'Ocultar carta' : 'Ver carta'}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 13, color: 'var(--fg3)' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg3)' }}>
+                      {app.created_at ? new Date(app.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: meta.bg, color: meta.color }}>
+                        {meta.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <button
+                        onClick={() => setPerfilTarget(app)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
+                          cursor: 'pointer', border: '1.5px solid var(--border-color)',
+                          background: 'var(--bg-surface)', color: 'var(--fg2)', fontFamily: 'var(--font-body)',
+                        }}
+                        title="Ver perfil completo del postulante"
+                      >
+                        {Icons.user({ s: 13 })} Ver perfil
+                      </button>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      {app.status === 'pending' ? (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            onClick={() => handleSetStatus(app.id, 'accepted')}
+                            disabled={isUpdating}
+                            style={{
+                              padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: isUpdating ? 'wait' : 'pointer',
+                              border: '1.5px solid var(--primary)', background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+                              color: 'var(--primary)', fontFamily: 'var(--font-body)', opacity: isUpdating ? 0.6 : 1,
+                            }}
+                          >
+                            Aceptar
+                          </button>
+                          <button
+                            onClick={() => handleSetStatus(app.id, 'rejected')}
+                            disabled={isUpdating}
+                            style={{
+                              padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: isUpdating ? 'wait' : 'pointer',
+                              border: '1.5px solid var(--color-error)', background: 'color-mix(in oklch, var(--color-error) 8%, transparent)',
+                              color: 'var(--color-error)', fontFamily: 'var(--font-body)', opacity: isUpdating ? 0.6 : 1,
+                            }}
+                          >
+                            Rechazar
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 12.5, color: 'var(--fg3)' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal: perfil completo del postulante */}
+      {perfilTarget && (
+        <PerfilPostulanteModal
+          postulacion={perfilTarget}
+          onClose={() => setPerfilTarget(null)}
+        />
+      )}
+
+      {/* Panel de carta de presentación (inline, bajo la tabla) */}
+      {cartaAbierta !== null && (() => {
+        const app = applicants.find(a => a.id === cartaAbierta)
+        if (!app?.cover_letter) return null
+        return (
+          <div className="animate-fade-in-up" style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--border-color)', borderRadius: 14, padding: '18px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>
+                Carta de presentación — {app.user_name ?? 'Postulante'}
+              </span>
+              <button onClick={() => setCartaAbierta(null)} aria-label="Cerrar carta" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', padding: 4 }}>
+                {Icons.x({ s: 16 })}
+              </button>
+            </div>
+            <p style={{ fontSize: 13.5, color: 'var(--fg2)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+              {app.cover_letter}
+            </p>
+          </div>
+        )
+      })()}
     </div>
   )
 }

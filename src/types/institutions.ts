@@ -232,8 +232,11 @@ export interface RawBackendJobApplicant {
   usuarioId?: string | number
   user_name?: string
   nombreUsuario?: string
+  /** Forma del endpoint /empleo/postulantes-institucion */
+  nombrePostulante?: string | null
   user_email?: string
   emailUsuario?: string
+  emailPostulante?: string | null
   job_id?: string | number
   vacanteId?: string | number
   job_title?: string
