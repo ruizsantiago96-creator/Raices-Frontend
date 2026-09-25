@@ -26,7 +26,7 @@ import {
 import { WizardNavButtons as NavButtons, ScaleCard, CheckChip, PasswordField, LocationInputs } from './WizardUI'
 import { calcEdad, calcEtapaDependiente, calcEtapaVida as calcEtapaPerfil } from '../lib/age'
 import { saveOnboardingData } from '../lib/onboardingStorage'
-import { isValidEmail, getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '../lib/validators'
+import { isValidEmail, getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate, normalizeEmail } from '../lib/validators'
 import type { User } from '../../../types/auth'
 
 export interface TutorRegistrationWizardProps {
@@ -569,7 +569,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="email" className="auth-input" required placeholder="correo@ejemplo.com"
               value={generalForm.email}
-              onChange={e => setGeneralForm(prev => ({ ...prev, email: e.target.value }))} />
+              onChange={e => setGeneralForm(prev => ({ ...prev, email: normalizeEmail(e.target.value) }))} />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('location'); scrollTop() }} submitLabel="Continuar" />

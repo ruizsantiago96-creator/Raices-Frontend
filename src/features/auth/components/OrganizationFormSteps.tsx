@@ -4,7 +4,7 @@ import { WizardNavButtons, PasswordField, LocationInputs } from './WizardUI'
 import { CatalogIcon } from './CatalogIcon'
 import { FluentEmoji, type FluentEmojiComponent } from '../constants/fluentEmojis'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
-import { isValidCurp } from '../lib/validators'
+import { isValidCurp, normalizeEmail } from '../lib/validators'
 
 /**
  * PASOS COMPARTIDOS DE ORGANIZACIÓN (Fase 2 · Migración TSX)
@@ -697,7 +697,7 @@ export function OrganizationAccountStep({
           required
           placeholder="contacto@organizacion.com"
           value={accountForm.email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAccountChange('email', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAccountChange('email', normalizeEmail(e.target.value))}
         />
       </div>
 

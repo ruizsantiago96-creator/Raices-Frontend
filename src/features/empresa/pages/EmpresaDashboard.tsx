@@ -104,6 +104,7 @@ function VacantesTab() {
   const [formModalidad, setFormModalidad] = useState<string>('Presencial')
   const [formJornada, setFormJornada] = useState<string>('Tiempo Completo')
   const [formAccesibilidad, setFormAccesibilidad] = useState<string[]>([])
+  const [accesibilidadInput, setAccesibilidadInput] = useState('')
 
   const handleOpenAdd = () => {
     setEditingVacante(null)
@@ -113,6 +114,7 @@ function VacantesTab() {
     setFormModalidad('Presencial')
     setFormJornada('Tiempo Completo')
     setFormAccesibilidad(['Instalaciones adaptadas'])
+    setAccesibilidadInput('')
     setIsModalOpen(true)
   }
 
@@ -124,6 +126,7 @@ function VacantesTab() {
     setFormModalidad(vacante.modalidad)
     setFormJornada(vacante.jornada)
     setFormAccesibilidad(vacante.accesibilidad)
+    setAccesibilidadInput('')
     setIsModalOpen(true)
   }
 
@@ -131,6 +134,23 @@ function VacantesTab() {
     setFormAccesibilidad(prev =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     )
+  }
+
+  /** Agrega un requerimiento personalizado escrito por la empresa. */
+  const handleAddAccesibilidadCustom = () => {
+    const trimmed = accesibilidadInput.trim()
+    if (!trimmed) return
+    if (formAccesibilidad.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+      setAccesibilidadInput('')
+      return
+    }
+    setFormAccesibilidad(prev => [...prev, trimmed])
+    setAccesibilidadInput('')
+  }
+
+  /** Quita un requerimiento (predefinido o personalizado) de la selección. */
+  const handleRemoveAccesibilidad = (tag: string) => {
+    setFormAccesibilidad(prev => prev.filter(t => t !== tag))
   }
 
   const handleToggleStatus = (id: string) => {
@@ -317,13 +337,15 @@ function VacantesTab() {
                 <label style={{ ...labelStyle, marginBottom: 8 }}>
                   Requerimientos de accesibilidad del puesto
                 </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {/* Opciones predefinidas: seleccionar / deseleccionar */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                   {ETIQUETAS_ACCESIBILIDAD.map(tag => {
                     const selected = formAccesibilidad.includes(tag)
                     return (
                       <button
                         key={tag}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => handleToggleAccesibilidad(tag)}
                         style={{
                           border: '1.5px solid',
@@ -339,6 +361,69 @@ function VacantesTab() {
                     )
                   })}
                 </div>
+
+                {/* Input para requerimientos personalizados */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={accesibilidadInput}
+                    onChange={e => setAccesibilidadInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddAccesibilidadCustom()
+                      }
+                    }}
+                    placeholder="Agregar otro requerimiento no listado..."
+                    style={{
+                      flex: 1, height: 38, padding: '0 12px', borderRadius: 10,
+                      border: '1.5px solid var(--border-color)', background: 'var(--bg-warm)',
+                      fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                      color: 'var(--fg1)', fontFamily: 'var(--font-body)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddAccesibilidadCustom}
+                    disabled={!accesibilidadInput.trim()}
+                    style={{
+                      padding: '0 16px', height: 38, borderRadius: 10, fontSize: 13, fontWeight: 700,
+                      border: '1.5px solid var(--border-color)', cursor: accesibilidadInput.trim() ? 'pointer' : 'not-allowed',
+                      background: 'var(--bg-surface)', color: accesibilidadInput.trim() ? 'var(--primary)' : 'var(--fg3)',
+                      whiteSpace: 'nowrap', fontFamily: 'var(--font-body)', opacity: accesibilidadInput.trim() ? 1 : 0.7,
+                    }}
+                  >
+                    Agregar
+                  </button>
+                </div>
+
+                {/* Requerimientos seleccionados, cada uno removible */}
+                {formAccesibilidad.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {formAccesibilidad.map(tag => (
+                      <span
+                        key={tag}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '5px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+                          color: 'var(--primary)', border: '1.5px solid var(--primary)',
+                        }}
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAccesibilidad(tag)}
+                          aria-label={`Quitar ${tag}`}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, fontSize: 13, lineHeight: 1 }}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Acciones */}

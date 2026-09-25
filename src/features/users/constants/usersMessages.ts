@@ -22,6 +22,7 @@ export const USERS_UI = {
   FILTER_INSTITUTION: 'Institución',
   FILTER_TUTOR: 'Cuidador/a',
   FILTER_PCD: 'Persona c/ condición',
+  FILTER_EMPRESA: 'Empresa',
   EMPTY_STATE: 'No encontramos usuarios con esos criterios',
   TABLE_HEADERS: {
     USER: 'Usuario',
@@ -54,5 +55,6 @@ export const ROLE_LABELS = {
   institution: 'Institución',
   tutor: 'Cuidador/a',
   pcd: 'Persona c/ condición',
+  empresa: 'Empresa',
   user: 'Usuario',
 }

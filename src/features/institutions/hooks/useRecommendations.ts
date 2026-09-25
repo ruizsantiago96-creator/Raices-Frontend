@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { mapInstitucion } from './useInstitutions'
+import { useAuthStore } from '@features/auth/store/authStore'
 
 /**
  * Hook para obtener instituciones recomendadas personalizadas.
@@ -81,8 +82,13 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
  * - porcentaje: number (0–100)
  */
 export function useOnboardingStatus() {
+  // Las empresas (personas morales) no tienen CURP ni fecha de nacimiento:
+  // su identidad se valida con la CSF, así que esos campos no cuentan.
+  const rol = useAuthStore(s => s.user?.role)
+  const esEmpresa = rol === 'empresa'
+
   return useQuery({
-    queryKey: ['onboarding-status'],
+    queryKey: ['onboarding-status', esEmpresa],
     queryFn: async () => {
       // Obtenemos ambos estados en paralelo
       const [onboardingRes, identidadRes] = await Promise.all([
@@ -97,6 +103,20 @@ export function useOnboardingStatus() {
       // para desbloquear todas las vistas (rutas, foros, etc.) globalmente.
       if (estado === 'aprobado' || estado === 'pendiente') {
         data.onboardingCompleto = true
+      }
+
+      // Normalización para empresas: excluir CURP/fechaNacimiento del cálculo
+      // aunque el backend aún no lo haga (defensa en el cliente).
+      if (esEmpresa) {
+        const faltantes: string[] = Array.isArray(data?.camposFaltantes) ? data.camposFaltantes : []
+        const sinCamposFisicos = faltantes.filter(
+          f => f !== 'curp' && f !== 'fechaNacimiento'
+        )
+        data.camposFaltantes = sinCamposFisicos
+        if (sinCamposFisicos.length === 0) {
+          data.onboardingCompleto = true
+          data.porcentaje = 100
+        }
       }
 
       return data

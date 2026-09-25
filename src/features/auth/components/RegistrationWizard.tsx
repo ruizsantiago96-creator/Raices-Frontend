@@ -10,7 +10,7 @@ import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStren
 import { LIST_ACOMPANAMIENTO, CONDICIONES_PCD, NEURODIVERGENCIAS_LIST, LIST_TEMPORALIDAD, ESCALAS_OPCIONES, LIST_FORMATOS, INTEREST_SECTIONS, LIST_VIABILIDAD, LIST_NECESIDADES, LIST_AREAS_APOYO, MERIDA_ZONAS_SUGERIDAS, LIST_EDUCACION, LIST_TERAPIAS } from '../constants/registrationCatalogos'
 import { WizardNavButtons, ScaleCard, CheckChip, WizardProgress, WizardErrorBanner, PasswordField, LocationInputs } from './WizardUI'
 import { calcEdad365, calcEtapaVida365 } from '../lib/age'
-import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '../lib/validators'
+import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate, normalizeEmail } from '../lib/validators'
 import { saveOnboardingData } from '../lib/onboardingStorage'
 import type { User } from '../../../types/auth'
 
@@ -361,7 +361,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Correo electrónico <span style={{ color: '#ef4444' }}>*</span></label>
             <input type="email" className="auth-input" required placeholder="correo@ejemplo.com"
               value={generalForm.email}
-              onChange={e => setGeneralForm(prev => ({ ...prev, email: e.target.value }))} />
+              onChange={e => setGeneralForm(prev => ({ ...prev, email: normalizeEmail(e.target.value) }))} />
           </div>
 
           <WizardNavButtons onBack={() => { setWizardStep('location'); scrollTop() }} submitLabel="Continuar" />

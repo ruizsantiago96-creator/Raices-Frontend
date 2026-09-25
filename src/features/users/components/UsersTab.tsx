@@ -18,6 +18,7 @@ const ROLE_META: Record<string, RoleMetaConfig> = {
   institution: { bg: '#01ADFF', fg: '#01ADFF', label: 'Institución' },
   tutor: { bg: '#D4944C', fg: '#D4944C', label: 'Tutor' },
   pcd: { bg: '#7BA05B', fg: '#7BA05B', label: 'Persona c/ disc.' },
+  empresa: { bg: '#8B5CF6', fg: '#8B5CF6', label: 'Empresa' },
   user: { bg: '#6b7280', fg: '#6b7280', label: 'Usuario' },
 }
 
@@ -198,7 +199,9 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
   }
 
   return (
-    <div>
+    // El padding inferior evita que la paginación quede oculta detrás del
+    // botón flotante (FAB) de accesibilidad en móvil (esquina inferior derecha).
+    <div className="pb-20">
       {/* Toolbar: unified search + role filter */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
@@ -213,6 +216,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
           <option value="institution">{USERS_UI.FILTER_INSTITUTION}</option>
           <option value="tutor">{USERS_UI.FILTER_TUTOR}</option>
           <option value="pcd">{USERS_UI.FILTER_PCD}</option>
+          <option value="empresa">{USERS_UI.FILTER_EMPRESA}</option>
         </select>
       </div>
 
@@ -222,7 +226,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
         <EmptyState icon={Icons.users({ s: 32 })} title={USERS_UI.EMPTY_STATE} />
       ) : (
         <>
-          <div className="responsive-table-wrap" style={{ ...card, overflowX: 'auto' }}>
+          <div className="responsive-table-wrap overflow-x-auto" style={{ ...card, overflowX: 'auto' }}>
             <table className="responsive-table" style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
@@ -385,7 +389,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
               {USERS_UI.ROLE_CONFIRM_MESSAGE} <strong>{roleConfirm.full_name ?? roleConfirm.email}</strong>:
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-              {[{ k: 'admin', l: USERS_UI.FILTER_ADMIN, c: ROLE_META.admin.bg }, { k: 'institution', l: USERS_UI.FILTER_INSTITUTION, c: ROLE_META.institution.bg }, { k: 'tutor', l: USERS_UI.FILTER_TUTOR, c: ROLE_META.tutor.bg }, { k: 'pcd', l: USERS_UI.FILTER_PCD, c: ROLE_META.pcd.bg }].filter(r => r.k !== roleConfirm.role).map(r => (
+              {[{ k: 'admin', l: USERS_UI.FILTER_ADMIN, c: ROLE_META.admin.bg }, { k: 'institution', l: USERS_UI.FILTER_INSTITUTION, c: ROLE_META.institution.bg }, { k: 'tutor', l: USERS_UI.FILTER_TUTOR, c: ROLE_META.tutor.bg }, { k: 'pcd', l: USERS_UI.FILTER_PCD, c: ROLE_META.pcd.bg }, { k: 'empresa', l: USERS_UI.FILTER_EMPRESA, c: ROLE_META.empresa.bg }].filter(r => r.k !== roleConfirm.role).map(r => (
                 <button key={r.k} onClick={() => { onRole(roleConfirm.id, r.k); setRoleConfirm(null) }}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${r.c}`, background: `color-mix(in oklch, ${r.c} 8%, var(--bg-surface))`, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: r.c, fontFamily: 'var(--font-body)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' }}
                   onMouseEnter={e => e.currentTarget.style.background = `color-mix(in oklch, ${r.c} 14%, var(--bg-surface))`}

@@ -1071,6 +1071,29 @@ html.sidebar-collapsed .sidebar-user-container a {
   /* Topnav elements */
   .topnav-username { display: none !important; }
   .topnav-profile-link { display: none !important; }
+
+  /* ── TopNav en móvil ──
+     El buscador vive en el drawer de navegación (menú hamburguesa) para que
+     se muestre completo; en el header solo quedan marca + iconos de acción,
+     que nunca se comprimen ni desbordan. */
+  .responsive-topnav .topnav-search-wrap {
+    display: none; /* el buscador está en el drawer móvil */
+  }
+  .responsive-topnav .topnav-left-section {
+    flex-shrink: 0;
+  }
+  .responsive-topnav .topnav-actions {
+    gap: 8px;
+    flex-shrink: 0; /* los iconos nunca se comprimen ni salen del header */
+  }
+  .responsive-topnav .topnav-actions .topnav-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .responsive-topnav .topnav-profile-btn {
+    padding: 4px 2px !important;
+    gap: 4px !important;
+  }
   
   /* Brand subtitle */
   .brand-subtitle {
@@ -1551,6 +1574,22 @@ html.sidebar-collapsed .sidebar-user-container a {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+}
+
+/* Scrollbar estilizado para el desplazamiento horizontal de tablas en móvil */
+.responsive-table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.responsive-table-wrap::-webkit-scrollbar-track {
+  background: var(--bg-warm);
+  border-radius: 4px;
+}
+.responsive-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+.responsive-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--fg3);
 }
 .responsive-table {
   min-width: 750px;

@@ -4,6 +4,7 @@ import api from '@shared/lib/api'
 import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
+import { normalizeEmail } from '../lib/validators'
 import {
   OrganizationProgress,
   OrganizationThanksStep,
@@ -282,7 +283,7 @@ export default function InstitutionRegistrationWizard({
               required
               placeholder="contacto@institucion.org"
               value={accountForm.email}
-              onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => setAccountForm(prev => ({ ...prev, email: normalizeEmail(e.target.value) }))}
             />
           </div>
           <WizardNavButtons onBack={() => { setWizardStep('org_name'); scrollTop() }} submitLabel="Continuar" />

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@features/auth/store/authStore'
 
 const FIELD_LABELS: Record<string, string> = {
   curp: 'CURP',
@@ -9,6 +10,9 @@ const FIELD_LABELS: Record<string, string> = {
   biografia: 'Biografía',
   fechaNacimiento: 'Fecha de nacimiento',
 }
+
+/** Campos que no aplican a personas morales (rol empresa): identidad vía CSF. */
+const CAMPOS_EXCLUIDOS_EMPRESA = new Set(['curp', 'fechaNacimiento'])
 
 export interface ProfileCompletionModalProps {
   isOpen: boolean
@@ -26,12 +30,23 @@ export default function ProfileCompletionModal({
   onClose,
 }: ProfileCompletionModalProps) {
   const nav = useNavigate()
+  const role = useAuthStore(s => s.user?.role)
+  const esEmpresa = role === 'empresa'
 
   if (!isOpen) {
     return null
   }
 
-  const formattedMissing = (onboardingStatus?.camposFaltantes || [])
+  // Para empresas (personas morales) se omiten CURP y fecha de nacimiento:
+  // no aparecen en la lista de pendientes ni reducen el porcentaje mostrado.
+  const camposFaltantes = (onboardingStatus?.camposFaltantes || []).filter(
+    (field: string) => !esEmpresa || !CAMPOS_EXCLUIDOS_EMPRESA.has(field)
+  )
+  const porcentaje = esEmpresa && camposFaltantes.length === 0
+    ? 100
+    : (onboardingStatus?.porcentaje ?? 0)
+
+  const formattedMissing = camposFaltantes
     .map((field: string) => FIELD_LABELS[field] || field)
     .join(', ')
 
@@ -137,13 +152,13 @@ export default function ProfileCompletionModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={{ fontWeight: 700, fontSize: 13, color: '#073B4C' }}>Progreso de perfil</span>
-                <span style={{ fontWeight: 800, fontSize: 13, color: '#229B58' }}>{onboardingStatus?.porcentaje ?? 0}%</span>
+                <span style={{ fontWeight: 800, fontSize: 13, color: '#229B58' }}>{porcentaje}%</span>
               </div>
               <div style={{ height: 6, background: 'rgba(7, 59, 76, 0.08)', borderRadius: 3, overflow: 'hidden', marginBottom: 10 }}>
                 <div
                   style={{
                     height: '100%',
-                    width: `${onboardingStatus?.porcentaje ?? 0}%`,
+                    width: `${porcentaje}%`,
                     background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
                     borderRadius: 3,
                     transition: 'width 0.5s ease',

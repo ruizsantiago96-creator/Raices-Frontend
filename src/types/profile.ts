@@ -91,6 +91,11 @@ export interface UpdateProfilePayload {
   bio?: string
   interests?: string[]
   profiling?: UserProfiling
+  /** Campos corporativos (rol empresa) — soportados por PUT /usuarios/perfil */
+  sector?: string
+  sitioWeb?: string
+  emailContacto?: string
+  accesibilidadInfraestructura?: string[]
   [key: string]: unknown
 }
 
