@@ -20,7 +20,7 @@ import {
 import { useAuthStore } from '@features/auth'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
-import { Icons, RestrictedBlock } from '@shared/components/shared'
+import { Icons, RestrictedBlock, CustomSelect } from '@shared/components/shared'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
@@ -185,10 +185,25 @@ function decodeAndExtract(content: string) {
   return { text: decoded, imageUrl: null, originalDecoded: decoded }
 }
 
+const CATEGORY_MAP: Record<string, { label: string; icon: string; bg: string; color: string }> = {
+  arte: { label: 'Arte', icon: '🎨', bg: '#FEF3C7', color: '#92400E' },
+  dibujo: { label: 'Dibujo', icon: '✏️', bg: '#E0E7FF', color: '#3730A3' },
+  historia: { label: 'Historia', icon: '📖', bg: '#FCE7F3', color: '#9D174D' },
+  general: { label: 'General', icon: '💬', bg: 'var(--primary-subtle)', color: 'var(--primary)' },
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'general', label: 'General', icon: '💬' },
+  { value: 'arte', label: 'Arte', icon: '🎨' },
+  { value: 'dibujo', label: 'Dibujo', icon: '✏️' },
+  { value: 'historia', label: 'Historia', icon: '📖' },
+]
+
 function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
   const { text, imageUrl, originalDecoded } = decodeAndExtract(post.content)
+  const displayImage = post.mediaUrl || imageUrl
   const [editContent, setEditContent] = useState(originalDecoded)
   const [liked, setLiked] = useState(!!post.liked_by_me)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
@@ -196,6 +211,8 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
   const deletePost = useDeletePost(post.id)
   const { addToast } = useUiStore()
   const isAuthor = post.author_id === currentUserId
+
+  const categoryMeta = post.categoriaCreativa ? CATEGORY_MAP[post.categoriaCreativa.toLowerCase()] : null
 
   const handleLike = () => {
     const newLiked = !liked
@@ -225,10 +242,22 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
       <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
         <Avatar name={post.author_name} src={post.author_avatar} />
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)' }}>{post.author_name}</div>
-              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span>{post.author_name}</span>
+                {categoryMeta && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: categoryMeta.bg, color: categoryMeta.color }}>
+                    {categoryMeta.icon} {categoryMeta.label}
+                  </span>
+                )}
+                {post.exclusivoPadres && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: '#FEE2E2', color: '#991B1B' }}>
+                    🔒 Solo Padres/Tutores
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>
                 {relativeDate(post.created_at)}
                 {post.group_name ? <span style={{ marginLeft: 6 }}>· {post.group_name}</span> : null}
               </div>
@@ -263,9 +292,9 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
               {text}
             </p>
           )}
-          {imageUrl && (
+          {displayImage && (
             <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-cool)', display: 'flex', justifyContent: 'center' }}>
-              <img src={imageUrl} alt="" style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', display: 'block' }} loading="lazy" />
+              <img src={displayImage} alt="" style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', display: 'block' }} loading="lazy" />
             </div>
           )}
         </>
@@ -448,13 +477,221 @@ function AboutCommunity() {
   )
 }
 
+/* ─── Groups View ────────────────────────────────────────── */
+interface GroupsViewProps {
+  onSelectGroup: (groupId: string | number) => void
+  onCreateGroupClick: () => void
+}
+
+function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
+  const [search, setSearch] = useState('')
+  const { data: groups = [], isLoading, isError, refetch } = useGroups(search)
+  const joinGroup = useJoinGroup()
+  const leaveGroup = useLeaveGroup()
+  const { addToast } = useUiStore()
+
+  return (
+    <div style={{ maxWidth: 840, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Grupos de Comunidad</h2>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>Encuentra y únete a espacios de apoyo y conversación</p>
+        </div>
+        <button
+          type="button"
+          onClick={onCreateGroupClick}
+          className="btn-primary"
+          style={{ padding: '8px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          {Icons.plus({ s: 16 })} Crear Grupo
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar grupos por nombre o descripción..."
+          style={{ width: '100%', padding: '10px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', fontSize: 14 }}
+        />
+      </div>
+
+      {isError ? (
+        <BackendFallback method={COMMUNITY_ENDPOINTS.GET_GROUPS.method} endpoint={COMMUNITY_ENDPOINTS.GET_GROUPS.path} onRetry={() => refetch()} />
+      ) : isLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, height: 140, animation: 'pulse 1.4s infinite' }} />
+          ))}
+        </div>
+      ) : groups.length === 0 ? (
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: 'var(--fg3)', margin: 0 }}>No se encontraron grupos disponibles.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {groups.map(g => (
+            <div key={g.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{g.name}</h3>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: g.is_public ? 'var(--primary-subtle)' : 'var(--bg-warm)', color: g.is_public ? 'var(--primary)' : 'var(--fg3)' }}>
+                    {g.is_public ? '🌐 Público' : '🔒 Privado'}
+                  </span>
+                </div>
+                {g.description && <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '0 0 12px', lineHeight: 1.4 }}>{g.description}</p>}
+                <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <span>👥 {g.member_count} miembro{g.member_count !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
+                {g.is_member ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onSelectGroup(g.id)}
+                      style={{ flex: 1, padding: '6px 12px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                    >
+                      Ver publicaciones
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => leaveGroup.mutate(g.id, { onSuccess: () => addToast('Saliste del grupo', 'info') })}
+                      disabled={leaveGroup.isPending}
+                      style={{ padding: '6px 10px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg3)', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      Salir
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => joinGroup.mutate(g.id, { onSuccess: () => addToast('¡Te has unido al grupo!', 'success') })}
+                    disabled={joinGroup.isPending}
+                    style={{ flex: 1, padding: '6px 12px', borderRadius: 'var(--radius-pill)', border: 'none', background: 'var(--primary)', color: '#FFF', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                  >
+                    + Unirse al Grupo
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Conectemos Gallery View ────────────────────────────── */
+function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUserId?: string | number; currentUserName?: string }) {
+  const [categoria, setCategoria] = useState<string | null>(null)
+  const [buscarInput, setBuscarInput] = useState('')
+  const [buscar, setBuscar] = useState('')
+  const { data: conectemosData, isLoading, isError, refetch } = useConectemos({
+    categoriaCreativa: categoria ?? undefined,
+    buscar: buscar,
+    enabled: true,
+  })
+  const posts = conectemosData?.posts ?? []
+  const toggleLike = useToggleLike()
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault()
+    setBuscar(buscarInput)
+  }
+
+  return (
+    <div style={{ maxWidth: 840, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20, textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
+          Galería Conectemos
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
+          Explora obras de arte, dibujos e historias compartidas por la comunidad
+        </p>
+      </div>
+
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <input
+          type="text"
+          value={buscarInput}
+          onChange={e => setBuscarInput(e.target.value)}
+          placeholder="Buscar publicaciones creativas..."
+          style={{ flex: 1, padding: '10px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', fontSize: 14 }}
+        />
+        <button type="submit" className="btn-primary" style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', fontSize: 14 }}>
+          Buscar
+        </button>
+      </form>
+
+      {/* Category Pills */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, justifyContent: 'center' }}>
+        {[
+          { label: 'Todas las creaciones', icon: '🎨', value: null },
+          { label: 'Arte', icon: '🎨', value: 'arte' },
+          { label: 'Dibujo', icon: '✏️', value: 'dibujo' },
+          { label: 'Historia', icon: '📖', value: 'historia' },
+          { label: 'General', icon: '💬', value: 'general' },
+        ].map(cat => (
+          <button
+            key={cat.value ?? 'all'}
+            type="button"
+            onClick={() => setCategoria(cat.value)}
+            style={{
+              padding: '6px 16px',
+              borderRadius: 'var(--radius-pill)',
+              border: categoria === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              background: categoria === cat.value ? 'var(--primary)' : 'var(--bg-surface)',
+              color: categoria === cat.value ? '#FFF' : 'var(--fg2)',
+              fontWeight: categoria === cat.value ? 700 : 500,
+              cursor: 'pointer',
+              fontSize: 13,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cat.icon} {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {isError ? (
+        <BackendFallback method={COMMUNITY_ENDPOINTS.GET_CONECTEMOS.method} endpoint={COMMUNITY_ENDPOINTS.GET_CONECTEMOS.path} onRetry={() => refetch()} />
+      ) : isLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, height: 200, animation: 'pulse 1.4s infinite' }} />
+          ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 48, textAlign: 'center' }}>
+          <p style={{ color: 'var(--fg3)', margin: 0 }}>No hay creaciones disponibles en esta categoría.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {posts.map(post => (
+            <PostCard key={post.id} post={post} onLike={() => toggleLike.mutate(post.id)} currentUserId={currentUserId} currentUserName={currentUserName} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ═══════════════════════════════════════════════════════════ */
 /* ═══ SocialPage (main) ════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState<string | number | null>(null)
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
+
+  // Creation form state
   const [newPost, setNewPost] = useState('')
+  const [postCategory, setPostCategory] = useState<string>('general')
+  const [exclusivoPadres, setExclusivoPadres] = useState<boolean>(false)
+  const [postGroupId, setPostGroupId] = useState<string | number | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -462,28 +699,18 @@ export default function SocialPage() {
   const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const uploadMedia = useUploadMultimedia()
-  const [mainTab, setMainTab] = useState<'comunidad' | 'eventos' | 'acerca'>('comunidad')
-  const [conectemosCategoria, setConectemosCategoria] = useState<string | null>(null)
-  const [conectemosBuscarInput, setConectemosBuscarInput] = useState('')
-  const [conectemosBuscar, setConectemosBuscar] = useState('')
-  const { data: conectemosData } = useConectemos({
-    categoriaCreativa: conectemosCategoria ?? undefined,
-    buscar: conectemosBuscar,
-    enabled: mainTab === 'comunidad',
-  })
-  const conectemosPosts = conectemosData?.posts ?? []
+  const [mainTab, setMainTab] = useState<'comunidad' | 'grupos' | 'galeria' | 'eventos' | 'acerca'>('comunidad')
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const { addToast } = useUiStore()
 
   const { user } = useAuthStore()
-  const { data: groups = [], isError: groupsError, refetch: refetchGroups } = useGroups()
-  const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts(
-    activeGroupId !== null && activeGroupId !== undefined ? String(activeGroupId) : undefined
-  )
+  const { data: groups = [] } = useGroups()
+  const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts({
+    grupoId: activeGroupId ? String(activeGroupId) : undefined,
+    categoriaCreativa: activeCategoryFilter ?? undefined,
+  })
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
-  const joinGroup = useJoinGroup()
-  const leaveGroup = useLeaveGroup()
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -512,17 +739,20 @@ export default function SocialPage() {
       }
     }
 
-    const content = mediaUrl
-      ? `${newPost}${newPost.trim() ? '\n\n' : ''}${mediaUrl}`
-      : newPost
-
     createPost.mutate(
-      { content, grupoId: activeGroupId ?? undefined },
+      {
+        content: newPost,
+        grupoId: postGroupId ?? activeGroupId ?? undefined,
+        mediaUrl: mediaUrl || undefined,
+        categoriaCreativa: postCategory,
+        exclusivoPadres: exclusivoPadres,
+      },
       {
         onSuccess: () => {
           setNewPost('')
           setPendingFile(null)
           setPreviewUrl(null)
+          setExclusivoPadres(false)
           addToast(SOCIAL_TOAST.POST_CREATED, 'success')
         },
         onError: () => {
@@ -543,12 +773,12 @@ export default function SocialPage() {
         </div>
 
         {/* Segmented Control Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, background: 'var(--bg-warm)', padding: 4, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', width: 'fit-content' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, background: 'var(--bg-warm)', padding: 4, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', width: 'fit-content', overflowX: 'auto', maxWidth: '100%' }}>
           <button
             type="button"
             onClick={() => setMainTab('comunidad')}
             style={{
-              padding: '8px 20px',
+              padding: '8px 18px',
               borderRadius: 'var(--radius-pill)',
               border: 'none',
               background: mainTab === 'comunidad' ? 'var(--bg-surface)' : 'transparent',
@@ -560,6 +790,7 @@ export default function SocialPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
@@ -567,9 +798,53 @@ export default function SocialPage() {
           </button>
           <button
             type="button"
+            onClick={() => setMainTab('grupos')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              background: mainTab === 'grupos' ? 'var(--bg-surface)' : 'transparent',
+              color: mainTab === 'grupos' ? 'var(--primary)' : 'var(--fg2)',
+              fontWeight: mainTab === 'grupos' ? 700 : 500,
+              boxShadow: mainTab === 'grupos' ? 'var(--shadow-sm)' : 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {Icons.users({ s: 16 })} Grupos ({groups.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('galeria')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              background: mainTab === 'galeria' ? 'var(--bg-surface)' : 'transparent',
+              color: mainTab === 'galeria' ? 'var(--primary)' : 'var(--fg2)',
+              fontWeight: mainTab === 'galeria' ? 700 : 500,
+              boxShadow: mainTab === 'galeria' ? 'var(--shadow-sm)' : 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🎨 Galería Conectemos
+          </button>
+          <button
+            type="button"
             onClick={() => setMainTab('eventos')}
             style={{
-              padding: '8px 20px',
+              padding: '8px 18px',
               borderRadius: 'var(--radius-pill)',
               border: 'none',
               background: mainTab === 'eventos' ? 'var(--bg-surface)' : 'transparent',
@@ -581,6 +856,7 @@ export default function SocialPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
@@ -590,7 +866,7 @@ export default function SocialPage() {
             type="button"
             onClick={() => setMainTab('acerca')}
             style={{
-              padding: '8px 20px',
+              padding: '8px 18px',
               borderRadius: 'var(--radius-pill)',
               border: 'none',
               background: mainTab === 'acerca' ? 'var(--bg-surface)' : 'transparent',
@@ -602,19 +878,30 @@ export default function SocialPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
-            {Icons.users({ s: 16 })} Acerca de la comunidad
+            ℹ️ Acerca de la comunidad
           </button>
         </div>
 
-        {mainTab === 'eventos' ? (
+        {mainTab === 'grupos' ? (
+          <GroupsView
+            onSelectGroup={groupId => {
+              setActiveGroupId(groupId)
+              setMainTab('comunidad')
+            }}
+            onCreateGroupClick={() => setShowCreateGroup(true)}
+          />
+        ) : mainTab === 'galeria' ? (
+          <ConectemosGalleryView currentUserId={user?.id} currentUserName={user?.full_name} />
+        ) : mainTab === 'eventos' ? (
           <EventsDiscovery />
         ) : mainTab === 'acerca' ? (
           <AboutCommunity />
         ) : (
-          <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <div style={{ maxWidth: 740, margin: '0 auto' }}>
             {/* ── Main column ── */}
             <div>
               {isIncomplete ? (
@@ -626,10 +913,43 @@ export default function SocialPage() {
                   />
                 </div>
               ) : (
-              <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20 }}>
+              <div className="animate-fade-in-up delay-1" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 20, position: 'relative', zIndex: 20 }}>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <Avatar name={user?.full_name} src={user?.avatar_url} />
                   <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+
+                    {/* Category Selection Before Posting */}
+                    <div style={{ marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>
+                        Categoría de tu publicación:
+                      </span>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {CATEGORY_OPTIONS.map(cat => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => setPostCategory(cat.value)}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: 'var(--radius-pill)',
+                              border: postCategory === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                              background: postCategory === cat.value ? 'var(--primary-subtle)' : 'var(--bg-warm)',
+                              color: postCategory === cat.value ? 'var(--primary)' : 'var(--fg2)',
+                              fontWeight: postCategory === cat.value ? 700 : 500,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span>{cat.icon}</span> {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <textarea rows={3} value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder={SOCIAL_UI.POST_PLACEHOLDER}
                       style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 15, resize: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none' }} />
 
@@ -651,22 +971,115 @@ export default function SocialPage() {
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--fg3)', fontSize: 13, fontWeight: 600 }}>
-                        {Icons.camera({ s: 18 })}
-                        <span>Adjuntar</span>
-                        <input type="file" accept="image/*,video/*" onChange={handleFileSelect} style={{ display: 'none' }} />
-                      </label>
-                      <button type="submit" className="btn-primary" disabled={(!newPost.trim() && !pendingFile) || createPost.isPending || uploadMedia.isPending}
-                        style={{ fontSize: 15, padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {createPost.isPending || uploadMedia.isPending ? SOCIAL_UI.POST_BUTTON_LOADING : SOCIAL_UI.POST_BUTTON}
-                        {Icons.send({ s: 16 })}
-                      </button>
+                    {/* Options Bar: Group & Audience */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                        {/* Group Selection */}
+                        {groups.length > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 12, color: 'var(--fg3)', fontWeight: 600 }}>Grupo:</span>
+                            <CustomSelect
+                              options={[
+                                { value: '', label: 'General / Público' },
+                                ...groups.map(g => ({ value: String(g.id), label: g.name })),
+                              ]}
+                              value={postGroupId !== null && postGroupId !== undefined ? String(postGroupId) : ''}
+                              onChange={val => setPostGroupId(val ? val : null)}
+                              minWidth={170}
+                            />
+                          </div>
+                        )}
+
+                        {/* Exclusive Parents Checkbox */}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--fg1)', cursor: 'pointer', fontWeight: 600, userSelect: 'none' }}>
+                          <input
+                            type="checkbox"
+                            checked={exclusivoPadres}
+                            onChange={e => setExclusivoPadres(e.target.checked)}
+                          />
+                          <span>🔒 Solo para Padres/Tutores</span>
+                        </label>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--fg3)', fontSize: 13, fontWeight: 600 }}>
+                          {Icons.camera({ s: 18 })}
+                          <span>Adjuntar</span>
+                          <input type="file" accept="image/*,video/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+                        </label>
+                        <button type="submit" className="btn-primary" disabled={(!newPost.trim() && !pendingFile) || createPost.isPending || uploadMedia.isPending}
+                          style={{ fontSize: 15, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {createPost.isPending || uploadMedia.isPending ? SOCIAL_UI.POST_BUTTON_LOADING : SOCIAL_UI.POST_BUTTON}
+                          {Icons.send({ s: 16 })}
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>
               </div>
               )}
+
+              {/* ── Category Feed Filter Bar ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', whiteSpace: 'nowrap' }}>Filtrar feed:</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveCategoryFilter(null)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-pill)',
+                    border: activeCategoryFilter === null ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: activeCategoryFilter === null ? 'var(--primary)' : 'var(--bg-surface)',
+                    color: activeCategoryFilter === null ? '#FFF' : 'var(--fg2)',
+                    fontWeight: activeCategoryFilter === null ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  🌟 Todas
+                </button>
+                {CATEGORY_OPTIONS.map(cat => (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => setActiveCategoryFilter(cat.value)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-pill)',
+                      border: activeCategoryFilter === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                      background: activeCategoryFilter === cat.value ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+                      color: activeCategoryFilter === cat.value ? 'var(--primary)' : 'var(--fg2)',
+                      fontWeight: activeCategoryFilter === cat.value ? 700 : 500,
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <span>{cat.icon}</span> {cat.label}
+                  </button>
+                ))}
+
+                {/* Group Filter Pill */}
+                {groups.length > 0 && (
+                  <div style={{ marginLeft: 'auto' }}>
+                    <CustomSelect
+                      options={[
+                        { value: '', label: 'Todos los grupos' },
+                        ...groups.map(g => ({ value: String(g.id), label: `Grupo: ${g.name}` })),
+                      ]}
+                      value={activeGroupId !== null && activeGroupId !== undefined ? String(activeGroupId) : ''}
+                      onChange={val => setActiveGroupId(val ? val : null)}
+                      minWidth={180}
+                    />
+                  </div>
+                )}
+              </div>
 
               {postsError ? (
                 <BackendFallback method={COMMUNITY_ENDPOINTS.GET_POSTS.method} endpoint={COMMUNITY_ENDPOINTS.GET_POSTS.path} onRetry={() => refetchPosts()} />
@@ -682,7 +1095,9 @@ export default function SocialPage() {
                     {Icons.message({ s: 24 })}
                   </div>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{SOCIAL_UI.EMPTY_POSTS_TITLE}</h3>
-                  <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>{SOCIAL_UI.EMPTY_POSTS_DESC}</p>
+                  <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
+                    {activeCategoryFilter ? `No hay publicaciones en la categoría "${CATEGORY_MAP[activeCategoryFilter]?.label}".` : SOCIAL_UI.EMPTY_POSTS_DESC}
+                  </p>
                 </div>
               ) : (
                 <div className="stagger-children">

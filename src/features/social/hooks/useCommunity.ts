@@ -63,6 +63,9 @@ interface RawPost {
   grupoId?: string | number
   cantidadComentarios?: number
   comment_count?: number
+  categoriaCreativa?: string
+  exclusivoPadres?: boolean
+  mediaUrl?: string
   [key: string]: unknown
 }
 
@@ -111,6 +114,9 @@ function mapPost(p: RawPost): CommunityPost {
     like_count: p.like_count ?? p.cantidadMeGustas ?? p.likesCount ?? 0,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
     liked_by_me: p.liked_by_me ?? p.usuarioMeGusta ?? p.likedByMe ?? false,
+    categoriaCreativa: p.categoriaCreativa,
+    exclusivoPadres: p.exclusivoPadres ?? false,
+    mediaUrl: p.mediaUrl,
   }
 }
 
@@ -126,14 +132,18 @@ function mapComment(c: RawComment): CommunityComment {
   }
 }
 
-export function useGroups() {
+export function useGroups(buscar?: string) {
   return useQuery<CommunityGroup[]>({
-    queryKey: ['groups'],
-    queryFn: () => api.get('/comunidad/grupos').then(r => {
-      const res = r.data
-      const arr: RawGroup[] = Array.isArray(res) ? res : (res?.datos ?? [])
-      return arr.map(mapGroup)
-    }),
+    queryKey: ['groups', buscar],
+    queryFn: () => {
+      const params: Record<string, unknown> = {}
+      if (buscar?.trim()) params.buscar = buscar.trim()
+      return api.get('/comunidad/grupos', { params }).then(r => {
+        const res = r.data
+        const arr: RawGroup[] = Array.isArray(res) ? res : (res?.datos ?? [])
+        return arr.map(mapGroup)
+      })
+    },
   })
 }
 
@@ -151,6 +161,9 @@ function mapPostFromBackend(p: RawPost): CommunityPost {
     created_at: p.fechaCreacion ?? p.created_at ?? new Date().toISOString(),
     group_name: p.group_name ?? p.nombreGrupo,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
+    categoriaCreativa: p.categoriaCreativa,
+    exclusivoPadres: p.exclusivoPadres ?? false,
+    mediaUrl: p.mediaUrl,
   }
 }
 
@@ -159,6 +172,7 @@ export interface UsePostsOptions {
   pagina?: number
   limite?: number
   buscar?: string
+  categoriaCreativa?: string
 }
 
 export function usePosts(groupIdOrOptions?: string | UsePostsOptions) {
@@ -166,16 +180,17 @@ export function usePosts(groupIdOrOptions?: string | UsePostsOptions) {
     ? { grupoId: groupIdOrOptions }
     : (groupIdOrOptions ?? {})
 
-  const { grupoId, pagina = 1, limite = 10, buscar } = opts
+  const { grupoId, pagina = 1, limite = 10, buscar, categoriaCreativa } = opts
 
   return useQuery<CommunityPost[]>({
-    queryKey: ['posts', grupoId, pagina, limite, buscar],
+    queryKey: ['posts', grupoId, pagina, limite, buscar, categoriaCreativa],
     queryFn: () => {
       const params: Record<string, unknown> = {}
       if (grupoId) params.grupoId = grupoId
       if (pagina > 1) params.pagina = pagina
       if (limite !== 10) params.limite = limite
       if (buscar?.trim()) params.buscar = buscar.trim()
+      if (categoriaCreativa) params.categoriaCreativa = categoriaCreativa
       return api.get('/comunidad/publicaciones', { params }).then(r => {
         const res = r.data
         const arr: RawPost[] = Array.isArray(res) ? res : (res?.datos ?? [])
@@ -200,13 +215,19 @@ export function useCreatePost() {
   const qc = useQueryClient()
   return useMutation<unknown, Error, CreatePostPayload>({
     mutationFn: (data) => {
-      const payload = {
+      const payload: Record<string, unknown> = {
         contenido: data.content ?? data.contenido,
         grupoId: data.grupoId,
       }
+      if (data.mediaUrl) payload.mediaUrl = data.mediaUrl
+      if (data.categoriaCreativa) payload.categoriaCreativa = data.categoriaCreativa
+      if (typeof data.exclusivoPadres === 'boolean') payload.exclusivoPadres = data.exclusivoPadres
       return api.post('/comunidad/publicaciones', payload).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['posts'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['posts'] })
+      qc.invalidateQueries({ queryKey: ['conectemos'] })
+    },
   })
 }
 
