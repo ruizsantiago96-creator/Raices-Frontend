@@ -18,7 +18,7 @@ export default function AboutPage() {
 
 
       {/* Topbar — dark teal matching the hero */}
-      <header className="about-topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--primary-dark)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontFamily: 'var(--font-body)' }}>
+      <header className="about-topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'var(--primary-dark)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontFamily: 'var(--font-body)' }}>
         <BrandMark onClick={() => nav('/')} light />
         <nav className="about-nav" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>Inicio</button>

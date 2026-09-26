@@ -413,8 +413,8 @@ function scoreItem(
    ═══════════════════════════════════════════════════════════ */
 function BehaviorWeightsCard() {
   const { data, isLoading } = useInteraccionesPesos()
-  const pesos: Record<string, number> = (data as { pesos?: Record<string, number> })?.pesos ?? {}
-  const hasAny = Object.values(pesos).some(v => v > 0)
+  const pesos: Record<string, number | undefined> = (data as { pesos?: Record<string, number> })?.pesos ?? {}
+  const hasAny = Object.values(pesos).some(v => typeof v === 'number' && v > 0)
 
   if (isLoading) return null
   if (!hasAny) return null
@@ -426,7 +426,8 @@ function BehaviorWeightsCard() {
     social: { label: 'Comunidad', color: '#FDE674', icon: <CatalogIcon icon={FluentEmoji.apoyo} size={16} /> },
   }
 
-  const maxWeight = Math.max(...Object.values(pesos), 1)
+  const numericValues = Object.values(pesos).map(v => Number(v) || 0)
+  const maxWeight = Math.max(...numericValues, 1)
 
   return (
     <div
@@ -464,7 +465,7 @@ function BehaviorWeightsCard() {
       {/* Weight bars */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-          const weight = pesos[key] ?? 0
+          const weight = Number(pesos[key] ?? 0)
           const pct = Math.round((weight / maxWeight) * 100)
           return (
             <div key={key}>
@@ -537,9 +538,10 @@ export default function FeedPage() {
   // Si las recomendaciones fallan (500), usar TODAS las instituciones como fallback
   const recData = recomendacionesData as { _backendError?: boolean; instituciones?: FeedInstitution[] } | undefined
   const discoveryError = recData?._backendError === true
-  const recommendations: FeedInstitution[] = discoveryError
-    ? (allInstitutions as FeedInstitution[])
-    : (recData?.instituciones ?? [])
+  const recommendations = useMemo<FeedInstitution[]>(
+    () => (discoveryError ? (allInstitutions as FeedInstitution[]) : (recData?.instituciones ?? [])),
+    [discoveryError, allInstitutions, recData?.instituciones]
+  )
   const { data: especialistasData, isLoading: especialistasLoading } = useRecomendacionesEspecialistas()
   const espData = especialistasData as { especialistas?: Especialista[] } | undefined
   const especialistas: Especialista[] = espData?.especialistas ?? []
@@ -547,7 +549,7 @@ export default function FeedPage() {
   const posts = postsData as PostItem[]
   const { data: forosData, isLoading: forosLoading } = useForos()
   const forosList = forosData as { foros?: ForoItem[] } | undefined
-  const foros: ForoItem[] = forosList?.foros ?? []
+  const foros = useMemo<ForoItem[]>(() => forosList?.foros ?? [], [forosList?.foros])
   const { data: rawFavIds = [] } = useFavoriteIds()
   const favIds = useMemo(() => {
     const raw = rawFavIds as unknown
@@ -597,7 +599,7 @@ export default function FeedPage() {
   const interestWeights = useMemo(() => resolveCategoryWeights(userInterests), [userInterests])
 
   // ── Engagement weights (from saves/clicks tracked locally)
-  const engagementWeights = useMemo(() => getEngagementWeights(), [recommendations])
+  const engagementWeights = useMemo(() => getEngagementWeights(), [])
 
   // ── Active categories from user's registration interests
   const activeCategories = useMemo(() => {
@@ -694,14 +696,14 @@ export default function FeedPage() {
 
   // ── Track engagement when user saves
   const handleToggleFav = useCallback((inst: FeedInstitution) => {
-    trackEngagement(String(inst.id), 'save', inst.category)
-    trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category })
+    trackEngagement(String(inst.id), 'save', inst.category || '')
+    trackInteraccion.mutate({ institucionId: inst.id, tipo: 'guardar', categoria: inst.category || '' })
     toggle.mutate(inst)
   }, [trackInteraccion, toggle])
 
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '800px' } as React.CSSProperties}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <main className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         {/* ── Progress Bar ── */}
         {isIncomplete && !isRejected && (

@@ -235,6 +235,7 @@ export function useMe(): UseQueryResult<MeResponse, Error> {
         features: d.features ?? {},
         destinatarioRegistro: d.destinatarioRegistro ?? null,
         curp: d.curp ?? null,
+        curpSubida: Boolean(d.curpSubida || d.verificado || d.curp || d.documentoCsf || d.documentoCurp),
         telefonoContacto: d.telefonoContacto ?? null,
         preferenciasAcompanamiento: d.preferenciasAcompanamiento ?? null,
       }

@@ -15,6 +15,7 @@ export interface CustomSelectProps<T = string | number> {
   className?: string
   minWidth?: number | string
   placement?: 'auto' | 'up' | 'down'
+  borderRadius?: string | number
 }
 
 export function CustomSelect<T extends string | number>({
@@ -26,6 +27,7 @@ export function CustomSelect<T extends string | number>({
   className = '',
   minWidth = 180,
   placement = 'auto',
+  borderRadius = 10,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
@@ -73,6 +75,8 @@ export function CustomSelect<T extends string | number>({
         position: 'relative',
         display: 'inline-block',
         minWidth: minWidth,
+        width: '100%',
+        boxSizing: 'border-box',
         zIndex: isOpen ? 9999 : 1,
         ...style,
       }}
@@ -83,21 +87,23 @@ export function CustomSelect<T extends string | number>({
         onClick={() => setIsOpen(prev => !prev)}
         style={{
           width: '100%',
+          minHeight: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 10,
           background: 'var(--bg-surface, #FFFFFF)',
           border: isOpen ? '1.5px solid var(--primary, #073B4C)' : '1.5px solid var(--border-color, #E2E8F0)',
-          borderRadius: 'var(--radius-pill, 9999px)',
-          padding: '6px 14px',
-          fontSize: '13px',
-          fontWeight: 600,
-          color: 'var(--fg1, #073B4C)',
+          borderRadius: borderRadius,
+          padding: '10px 14px',
+          fontSize: '13.5px',
+          fontWeight: selectedOption ? 600 : 500,
+          color: selectedOption ? 'var(--fg1, #073B4C)' : 'var(--fg3, #94A3B8)',
           cursor: 'pointer',
           outline: 'none',
           boxShadow: isOpen ? '0 0 0 3px var(--primary-subtle, rgba(7,59,76,0.15))' : '0 1px 2px rgba(7, 59, 76, 0.04)',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxSizing: 'border-box',
         }}
       >
         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -136,16 +142,15 @@ export function CustomSelect<T extends string | number>({
             position: 'absolute',
             ...(openUpward ? { bottom: 'calc(100% + 6px)' } : { top: 'calc(100% + 6px)' }),
             left: 0,
-            minWidth: '100%',
-            width: 'max-content',
-            maxWidth: '280px',
+            width: '100%',
+            boxSizing: 'border-box',
             zIndex: 99999,
             background: 'var(--bg-surface, #FFFFFF)',
             border: '1px solid var(--border-color, #E2E8F0)',
             borderRadius: '14px',
             padding: '6px',
             boxShadow: '0 12px 30px -5px rgba(7, 59, 76, 0.2), 0 8px 12px -6px rgba(7, 59, 76, 0.12)',
-            maxHeight: '220px',
+            maxHeight: '240px',
             overflowY: 'auto',
           }}
         >

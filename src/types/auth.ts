@@ -34,6 +34,7 @@ export interface User {
   features?: UserFeatures
   destinatarioRegistro?: string | null
   curp?: string | null
+  curpSubida?: boolean
   telefonoContacto?: string | null
   preferenciasAcompanamiento?: string | null
 }

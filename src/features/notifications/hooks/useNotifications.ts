@@ -44,8 +44,8 @@ function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationI
 }
 
 export function useNotifications() {
-  const { token, user } = useAuthStore()
-  const userRole = user?.role
+  const token = useAuthStore(s => s.token)
+  const userRole = useAuthStore(s => s.user?.role)
 
   return useQuery<NotificationItem[]>({
     queryKey: ['notifications', userRole],

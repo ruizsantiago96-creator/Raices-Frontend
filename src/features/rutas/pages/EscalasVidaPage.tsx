@@ -9,6 +9,9 @@ import type {
   EscalasVidaValues,
 } from '@/types/rutas'
 
+import OnboardingStageCover from '@features/profile/components/OnboardingStageCover'
+import { CustomSelect } from '@shared/components/CustomSelect'
+
 interface CatalogOption {
   id: string
   label: string
@@ -145,13 +148,14 @@ export default function EscalasVidaPage() {
     nivelSocial: 3,
     nivelEmocional: 3,
     tieneDiagnostico: true,
+    diagnosticoEspecifico: '',
     temporalidadOrigen: '',
     preferenciaFormato: '',
     areasInteres: [],
     viabilidadEconomica: '',
   })
 
-  const [activeStep, setActiveStep] = useState(1) // 1: Scales, 2: Metadata
+  const [activeStep, setActiveStep] = useState(0) // 0: Cover, 1: Scales, 2: Metadata
 
   const handleToggleArea = (id: string) => {
     setForm(f => {
@@ -223,19 +227,34 @@ export default function EscalasVidaPage() {
         <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: 0, marginBottom: 16, fontFamily: 'var(--font-body)' }}>
           {Icons.arrowLeft({ s: 16 })} Volver al inicio
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          Cómo vives hoy
-        </h1>
-        <p style={{ fontSize: 16, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
-          Esta evaluación nos permite comprender tus escalas de vida para sugerir recomendaciones y rutas de desarrollo adaptadas a tu realidad.
-        </p>
+        {activeStep > 0 && (
+          <>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+              Cómo vives hoy
+            </h1>
+            <p style={{ fontSize: 16, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
+              Esta evaluación nos permite comprender tus escalas de vida para sugerir recomendaciones y rutas de desarrollo adaptadas a tu realidad.
+            </p>
+          </>
+        )}
       </div>
 
+      {activeStep === 0 && (
+        <OnboardingStageCover
+          onStart={() => setActiveStep(1)}
+          stageNumber={1}
+          stageTitle="1. Conocer quién eres."
+          subtitle="Tres pasos para conocerte mejor"
+        />
+      )}
+
       {/* Stepper progress */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <div style={{ flex: 1, height: 6, background: activeStep >= 1 ? 'var(--primary)' : 'var(--border-color)', borderRadius: 3, transition: 'all 0.3s' }} />
-        <div style={{ flex: 1, height: 6, background: activeStep >= 2 ? 'var(--primary)' : 'var(--border-color)', borderRadius: 3, transition: 'all 0.3s' }} />
-      </div>
+      {activeStep > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+          <div style={{ flex: 1, height: 6, background: activeStep >= 1 ? 'var(--primary)' : 'var(--border-color)', borderRadius: 3, transition: 'all 0.3s' }} />
+          <div style={{ flex: 1, height: 6, background: activeStep >= 2 ? 'var(--primary)' : 'var(--border-color)', borderRadius: 3, transition: 'all 0.3s' }} />
+        </div>
+      )}
 
       {activeStep === 1 && (
         <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
@@ -364,32 +383,50 @@ export default function EscalasVidaPage() {
                   background: !form.tieneDiagnostico ? 'var(--primary-subtle)' : 'transparent',
                   borderRadius: 10, cursor: 'pointer', flex: 1, fontWeight: 600, color: !form.tieneDiagnostico ? 'var(--primary)' : 'var(--fg2)'
                 }}>
-                  <input type="radio" checked={form.tieneDiagnostico === false} onChange={() => setForm(f => ({ ...f, tieneDiagnostico: false }))} style={{ accentColor: 'var(--primary)' }} />
+                  <input type="radio" checked={form.tieneDiagnostico === false} onChange={() => setForm(f => ({ ...f, tieneDiagnostico: false, diagnosticoEspecifico: '' }))} style={{ accentColor: 'var(--primary)' }} />
                   No, me encuentro en proceso o no tengo
                 </label>
               </div>
+
+              {form.tieneDiagnostico && (
+                <div style={{ marginTop: 14 }}>
+                  <label htmlFor="diagnostico-especifico-input" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+                    Diagnóstico específico <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span>
+                  </label>
+                  <input
+                    id="diagnostico-especifico-input"
+                    type="text"
+                    className="onboarding-input auth-input"
+                    placeholder="Ej. Trastorno del Espectro Autista (TEA), TDAH, etc."
+                    value={form.diagnosticoEspecifico || ''}
+                    onChange={e => setForm(f => ({ ...f, diagnosticoEspecifico: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Temporalidad */}
             <div>
-              <label htmlFor="select-temporalidad" style={labelStyle}>Origen / Temporalidad de la condición</label>
-              <select id="select-temporalidad" className="onboarding-input auth-select" value={form.temporalidadOrigen} onChange={e => setForm(f => ({ ...f, temporalidadOrigen: e.target.value }))} style={{ marginTop: 8 }}>
-                <option value="">Selecciona una opción...</option>
-                {listTemporalidad.map(t => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
-                ))}
-              </select>
+              <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Origen / Temporalidad de la condición</label>
+              <CustomSelect
+                options={listTemporalidad.map(t => ({ value: t.id, label: t.label }))}
+                value={form.temporalidadOrigen}
+                onChange={val => setForm(f => ({ ...f, temporalidadOrigen: String(val) }))}
+                placeholder="Selecciona una opción..."
+                minWidth="100%"
+              />
             </div>
 
             {/* Formato Preferido */}
             <div>
-              <label htmlFor="select-formato" style={labelStyle}>Formato de contenido preferido</label>
-              <select id="select-formato" className="onboarding-input auth-select" value={form.preferenciaFormato} onChange={e => setForm(f => ({ ...f, preferenciaFormato: e.target.value }))} style={{ marginTop: 8 }}>
-                <option value="">Selecciona...</option>
-                {listFormatos.map(f => (
-                  <option key={f.id} value={f.id}>{f.label} — {f.description || ''}</option>
-                ))}
-              </select>
+              <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Formato de contenido preferido</label>
+              <CustomSelect
+                options={listFormatos.map(f => ({ value: f.id, label: `${f.label}${f.description ? ` — ${f.description}` : ''}` }))}
+                value={form.preferenciaFormato}
+                onChange={val => setForm(f => ({ ...f, preferenciaFormato: String(val) }))}
+                placeholder="Selecciona un formato..."
+                minWidth="100%"
+              />
             </div>
 
             {/* Viabilidad Económica */}

@@ -657,8 +657,8 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
 
 export default function ForosPage() {
   return (
-    <main id="main" className="responsive-main" style={{ '--main-max-width': '760px' } as React.CSSProperties}>
-      <div style={{ maxWidth: 760, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
+    <main id="main" className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
+      <div style={{ maxWidth: 1100, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
         <ForosExplorer showHeader />
       </div>
     </main>

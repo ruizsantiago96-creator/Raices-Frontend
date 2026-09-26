@@ -267,7 +267,7 @@ async function completeEnterpriseWizard(opts: { stopAtCsf?: boolean } = {}) {
 /* Tutor: name → birthdate → location → email → password →
    relationship_type → relationship_name → relationship_birthdate →
    accommodation → condition → diagnosis → history_edu → history_therapy →
-   support_zones → support_needs → support_areas → scales1 → scales2 →
+   support_zones → support_needs → scales1 → scales2 →
    formats → interests → viability (submit) */
 async function completeTutorWizard() {
   await fillNameStep('Ej. Ana Laura')

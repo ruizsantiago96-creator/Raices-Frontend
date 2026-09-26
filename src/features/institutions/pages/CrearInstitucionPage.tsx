@@ -337,7 +337,7 @@ export default function CrearInstitucionPage() {
      RENDER
      ══════════════════════════════════════════════════════ */
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '680px' } as Record<string, string>}>
+    <main className="responsive-main" style={{ '--main-max-width': '1050px' } as Record<string, string>}>
       {/* Back button */}
       <button
         onClick={() => phase === 2 ? setPhase(1) : navigate(-1)}

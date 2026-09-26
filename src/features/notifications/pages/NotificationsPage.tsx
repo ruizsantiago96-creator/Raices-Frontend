@@ -41,7 +41,7 @@ export default function NotificationsPage() {
     markAll.mutate()
   }
   return (
-    <main className="responsive-main" style={{ '--main-max-width': '800px' } as React.CSSProperties}>
+    <main className="responsive-main" style={{ '--main-max-width': '1050px' } as React.CSSProperties}>
       {/* Header */}
       <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>

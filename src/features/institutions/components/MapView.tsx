@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 // MapLibre GL JS v6 es ESM-only: sin export default, se usa namespace import.
 import * as maplibregl from 'maplibre-gl'
 // En bundlers (Vite) hay que indicar la URL del worker explícitamente.
@@ -6,7 +7,7 @@ import * as maplibregl from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import type { Institution } from '@/types/institutions'
 
 maplibregl.setWorkerUrl(workerUrl)
@@ -31,10 +32,16 @@ interface MapViewProps {
   height?: string
 }
 
+interface ManagedMarker {
+  marker: maplibregl.Marker
+  root: Root
+}
+
 export default function MapView({ institutions = [], height = '400px' }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const markersRef = useRef<maplibregl.Marker[]>([])
+  const managedMarkersRef = useRef<ManagedMarker[]>([])
+  const navigate = useNavigate()
 
   // Initialize map once
   useEffect(() => {
@@ -50,6 +57,12 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
     mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right')
 
     return () => {
+      managedMarkersRef.current.forEach(({ marker, root }) => {
+        marker.remove()
+        root.unmount()
+      })
+      managedMarkersRef.current = []
+
       mapRef.current?.remove()
       mapRef.current = null
     }
@@ -60,15 +73,22 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
     const map = mapRef.current
     if (!map) return
 
-    // Remove previous markers
-    markersRef.current.forEach(m => m.remove())
-    markersRef.current = []
+    // Remove previous markers and unmount React Roots to prevent memory leaks
+    managedMarkersRef.current.forEach(({ marker, root }) => {
+      marker.remove()
+      root.unmount()
+    })
+    managedMarkersRef.current = []
 
     for (const inst of institutions) {
       if (!inst.lat || !inst.lng) continue
 
-      // Custom teal marker element
+      // Custom teal marker element with accessibility attributes
       const el = document.createElement('div')
+      el.className = 'map-marker-pin'
+      el.setAttribute('role', 'button')
+      el.setAttribute('tabindex', '0')
+      el.setAttribute('aria-label', `Marcador de ${inst.name}`)
       el.style.cssText = [
         'width:24px',
         'height:24px',
@@ -81,15 +101,13 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
         'align-items:center',
         'justify-content:center',
         'transition:transform 0.15s',
+        'outline:none',
       ].join(';')
 
       // White dot inside
       const dot = document.createElement('div')
-      dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:white'
+      dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:white;pointer-events:none'
       el.appendChild(dot)
-
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.2)' })
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)' })
 
       // Build popup HTML
       const color = (inst.category && CATEGORY_COLORS[inst.category]) ?? '#01ADFF'
@@ -98,7 +116,7 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
 
       const root = createRoot(popupNode)
       root.render(
-        <PopupContent inst={inst} color={color} />
+        <PopupContent inst={inst} color={color} onNavigate={(id) => navigate(`/institution/${id}`)} />
       )
 
       const popup = new maplibregl.Popup({ offset: 18, closeButton: false, maxWidth: '260px' })
@@ -109,13 +127,23 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
         .setPopup(popup)
         .addTo(map)
 
-      markersRef.current.push(marker)
+      // Evento de teclado para accesibilidad (Enter o Espacio abre/cierra el popup)
+      el.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          marker.togglePopup()
+        }
+      })
+
+      managedMarkersRef.current.push({ marker, root })
     }
-  }, [institutions])
+  }, [institutions, navigate])
 
   return (
     <div
       ref={containerRef}
+      role="region"
+      aria-label="Mapa interactivo de instituciones"
       style={{
         width: '100%',
         height,
@@ -131,13 +159,10 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
 interface PopupContentProps {
   inst: Institution
   color: string
+  onNavigate: (id: string | number) => void
 }
 
-function PopupContent({ inst, color }: PopupContentProps) {
-  const handleClick = () => {
-    window.location.href = `/institution/${inst.id}`
-  }
-
+function PopupContent({ inst, color, onNavigate }: PopupContentProps) {
   return (
     <div style={{ fontFamily: 'Lato, sans-serif', padding: '2px 0' }}>
       <div style={{
@@ -159,7 +184,8 @@ function PopupContent({ inst, color }: PopupContentProps) {
         </div>
       )}
       <button
-        onClick={handleClick}
+        type="button"
+        onClick={() => onNavigate(inst.id)}
         style={{
           width: '100%',
           padding: '8px 0',

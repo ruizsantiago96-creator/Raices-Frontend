@@ -142,8 +142,8 @@ const confirmGlobalLogout = useCallback(async () => {
   }, [addToast, logout])
 
   return (
-    <main id="main" className="responsive-main" style={{ '--main-max-width': '720px' } as React.CSSProperties}>
-      <div style={{ maxWidth: 720, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
+    <main id="main" className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
+      <div style={{ maxWidth: 1100, width: '100%', margin: '0 auto', padding: '0 20px 48px' }}>
 
         {/* Header */}
         <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>

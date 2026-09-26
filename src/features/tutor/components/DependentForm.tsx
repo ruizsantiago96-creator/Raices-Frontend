@@ -1,5 +1,6 @@
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { TUTOR_UI } from '../constants/tutorMessages'
 import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '@/features/auth/lib/validators'
 import type { Dependiente, CrearDependientePayload, UpdateDependentPayload, EtapaVidaOption } from '@/types/tutor'
@@ -74,8 +75,20 @@ export default function DependentForm({ initial, onCancel, onSave, saving = fals
           <button onClick={onCancel} aria-label="Cerrar" style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.x({ s: 18 })}</button>
         </div>
         <form onSubmit={submit}>
-          <div style={{ marginBottom: 18 }}><label htmlFor="dep-name" style={labelStyle}>{TUTOR_UI.NAME_LABEL}</label><input id="dep-name" style={inputStyle} value={form.nombreCompleto} onChange={set('nombreCompleto')} required placeholder={TUTOR_UI.NAME_PLACEHOLDER} autoFocus /></div>
-          <div style={{ marginBottom: 18 }}><label htmlFor="dep-rel" style={labelStyle}>{TUTOR_UI.RELATION_LABEL}</label><select id="dep-rel" style={{ ...inputStyle, cursor: 'pointer' }} value={form.parentesco} onChange={set('parentesco')}>{relationships.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+          <div style={{ marginBottom: 18 }}>
+            <label htmlFor="dep-name" style={labelStyle}>{TUTOR_UI.NAME_LABEL}</label>
+            <input id="dep-name" style={inputStyle} value={form.nombreCompleto} onChange={set('nombreCompleto')} required placeholder={TUTOR_UI.NAME_PLACEHOLDER} autoFocus />
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ ...labelStyle, display: 'block', marginBottom: 6 }}>{TUTOR_UI.RELATION_LABEL}</label>
+            <CustomSelect
+              options={relationships.map(r => ({ value: r, label: r }))}
+              value={form.parentesco}
+              onChange={val => setForm(f => ({ ...f, parentesco: String(val) }))}
+              placeholder="Selecciona el parentesco..."
+              minWidth="100%"
+            />
+          </div>
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-birth-date" style={labelStyle}>Fecha de nacimiento</label>
             <input type="date" id="dep-birth-date" style={inputStyle} max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={form.birth_date || ''} onChange={e => {

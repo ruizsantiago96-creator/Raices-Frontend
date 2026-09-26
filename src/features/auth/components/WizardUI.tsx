@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { Icons } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { lookupPostalCode, validatePostalCodeFormat } from '@shared/lib/postalCodeLookup'
 import { COUNTRIES, DEFAULT_COUNTRY } from '@shared/constants/countries'
 import PasswordRequirements from './PasswordRequirements'
@@ -11,35 +12,103 @@ import { FluentEmoji } from '../constants/fluentEmojis'
  * ============================================================================
  */
 
-// ── Botones de navegación (Volver / Enviar) ───────────────────────
+// ── Botones de navegación (Volver / Enviar / Guardar después) ──────
 export interface WizardNavButtonsProps {
   onBack?: (event: React.MouseEvent<HTMLButtonElement>) => void
+  onSaveLater?: (event: React.MouseEvent<HTMLButtonElement>) => void
   submitLabel: React.ReactNode
   submitDisabled?: boolean
   submitIcon?: React.ReactNode
+  saveLaterLabel?: string
 }
 
 export function WizardNavButtons({
   onBack,
+  onSaveLater,
   submitLabel,
   submitDisabled = false,
   submitIcon,
+  saveLaterLabel = 'Quiero continuar después',
 }: WizardNavButtonsProps): React.JSX.Element {
   return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 24, flexShrink: 0 }}>
-      {onBack && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: 24,
+              background: '#F1F5F9',
+              color: '#475569',
+              border: '1px solid #E2E8F0',
+              fontWeight: 600,
+              fontSize: 14.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E2E8F0'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
+          >
+            {Icons.arrowLeft({ s: 16 })} Volver
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitDisabled}
+          style={{
+            flex: onBack ? 2 : 1,
+            padding: '12px 24px',
+            borderRadius: 24,
+            background: submitDisabled ? '#CBD5E1' : 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
+            color: '#ffffff',
+            border: 'none',
+            fontWeight: 700,
+            fontSize: 14.5,
+            cursor: submitDisabled ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: submitDisabled ? 'none' : '0 4px 14px rgba(34, 155, 88, 0.35)',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            if (!submitDisabled) {
+              e.currentTarget.style.filter = 'brightness(1.08)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!submitDisabled) {
+              e.currentTarget.style.filter = 'none'
+              e.currentTarget.style.transform = 'none'
+            }
+          }}
+        >
+          {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
+        </button>
+      </div>
+
+      {onSaveLater && (
         <button
           type="button"
-          onClick={onBack}
+          onClick={onSaveLater}
           style={{
-            flex: 1,
-            padding: '12px 16px',
-            borderRadius: 24,
-            background: '#F1F5F9',
-            color: '#475569',
-            border: '1px solid #E2E8F0',
+            width: '100%',
+            padding: '10px 16px',
+            borderRadius: 20,
+            background: 'transparent',
+            color: '#229B58',
+            border: '1.5px dashed #229B58',
             fontWeight: 600,
-            fontSize: 14.5,
+            fontSize: 13.5,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -47,47 +116,102 @@ export function WizardNavButtons({
             gap: 8,
             transition: 'all 0.2s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E2E8F0'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(34, 155, 88, 0.08)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+          }}
         >
-          {Icons.arrowLeft({ s: 16 })} Volver
+          {Icons.star ? Icons.star({ s: 16 }) : '💾'} {saveLaterLabel}
         </button>
       )}
-      <button
-        type="submit"
-        disabled={submitDisabled}
+    </div>
+  )
+}
+
+// ── Tarjeta de Selección Vertical Estandarizada ("Así sí") ─────────────
+export interface VerticalCheckCardProps {
+  label: string
+  description?: string
+  selected: boolean
+  onToggle?: () => void
+  onSelect?: () => void
+  type?: 'checkbox' | 'radio'
+  accent?: string
+}
+
+export function VerticalCheckCard({
+  label,
+  description,
+  selected,
+  onToggle,
+  onSelect,
+  type = 'checkbox',
+  accent = '#229B58',
+}: VerticalCheckCardProps): React.JSX.Element {
+  const handleToggle = onSelect || onToggle || (() => {})
+  return (
+    <div
+      onClick={handleToggle}
+      role={type}
+      aria-checked={selected}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          handleToggle()
+        }
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 14,
+        padding: '14px 16px',
+        borderRadius: 14,
+        cursor: 'pointer',
+        border: selected ? `2px solid ${accent}` : '1.5px solid var(--border-color)',
+        background: selected ? `color-mix(in oklch, ${accent} 8%, var(--bg-surface))` : 'var(--bg-surface)',
+        boxShadow: selected ? `0 4px 12px color-mix(in oklch, ${accent} 12%, transparent)` : 'var(--shadow-sm)',
+        transition: 'all 0.18s ease-in-out',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
         style={{
-          flex: onBack ? 2 : 1,
-          padding: '12px 24px',
-          borderRadius: 24,
-          background: submitDisabled ? '#CBD5E1' : 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
-          color: '#ffffff',
-          border: 'none',
-          fontWeight: 700,
-          fontSize: 14.5,
-          cursor: submitDisabled ? 'not-allowed' : 'pointer',
+          width: 20,
+          height: 20,
+          borderRadius: type === 'radio' ? '50%' : 6,
+          border: `2px solid ${selected ? accent : 'var(--border-color)'}`,
+          background: selected ? accent : 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 8,
-          boxShadow: submitDisabled ? 'none' : '0 4px 14px rgba(34, 155, 88, 0.35)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          if (!submitDisabled) {
-            e.currentTarget.style.filter = 'brightness(1.08)'
-            e.currentTarget.style.transform = 'translateY(-1px)'
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!submitDisabled) {
-            e.currentTarget.style.filter = 'none'
-            e.currentTarget.style.transform = 'none'
-          }
+          color: '#ffffff',
+          flexShrink: 0,
+          marginTop: 2,
+          transition: 'all 0.15s ease',
         }}
       >
-        {submitLabel} {submitIcon || Icons.arrowRight({ s: 18 })}
-      </button>
+        {selected && (
+          type === 'radio' ? (
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffffff' }} />
+          ) : (
+            Icons.check({ s: 12 })
+          )
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: selected ? 700 : 600, fontSize: 14, color: 'var(--fg1)', lineHeight: 1.35 }}>
+          {label}
+        </div>
+        {description && (
+          <div style={{ fontSize: 12.5, color: 'var(--fg3)', marginTop: 3, lineHeight: 1.45 }}>
+            {description}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -482,18 +606,13 @@ export function LocationInputs({
           <label htmlFor={`${uid}-pais`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
             País <span style={{ color: '#ef4444' }}>*</span>
           </label>
-          <select
-            id={`${uid}-pais`}
-            className="auth-input"
-            required
+          <CustomSelect
+            options={COUNTRIES.map(c => ({ value: c.code, label: c.name }))}
             value={country || DEFAULT_COUNTRY}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleCountryChange(e.target.value)}
-            style={{ height: 48 }}
-          >
-            {COUNTRIES.map(c => (
-              <option key={c.code} value={c.code}>{c.name}</option>
-            ))}
-          </select>
+            onChange={val => handleCountryChange(String(val))}
+            placeholder="Selecciona país..."
+            minWidth="100%"
+          />
         </div>
         <div style={{ flex: 1 }}>
           <label htmlFor={`${uid}-cp`} style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>

@@ -54,8 +54,7 @@ beforeEach(() => {
 describe('LocationInputs — vista inicial compacta', () => {
   it('muestra solo País (MX preseleccionado) y Código Postal; Estado/Ciudad ocultos', () => {
     renderHarness()
-    const select = screen.getByLabelText(/país/i) as HTMLSelectElement
-    expect(select.value).toBe('MX')
+    expect(screen.getByText('México')).toBeInTheDocument()
     expect(screen.getByLabelText(/código postal/i)).toBeInTheDocument()
     expect(screen.queryByLabelText(/estado \/ región/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/ciudad/i)).not.toBeInTheDocument()
@@ -63,8 +62,9 @@ describe('LocationInputs — vista inicial compacta', () => {
 
   it('ofrece los demás países del catálogo', () => {
     renderHarness()
+    fireEvent.click(screen.getByText('México'))
     for (const name of ['México', 'Estados Unidos', 'Canadá', 'España', 'Argentina', 'Colombia', 'Chile']) {
-      expect(screen.getByRole('option', { name })).toBeInTheDocument()
+      expect(screen.getAllByText(name)[0]).toBeInTheDocument()
     }
   })
 })
@@ -186,7 +186,8 @@ describe('LocationInputs — validación y conservación de datos', () => {
     fireEvent.blur(cp)
     await screen.findByText(/Código no detectado/i)
 
-    fireEvent.change(screen.getByLabelText(/país/i), { target: { value: 'US' } })
+    fireEvent.click(screen.getByText('México'))
+    fireEvent.click(screen.getByText('Estados Unidos'))
     await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('US', '97113'))
   })
 })

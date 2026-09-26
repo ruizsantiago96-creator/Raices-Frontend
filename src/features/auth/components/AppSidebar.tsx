@@ -50,6 +50,12 @@ interface SidebarItem {
   hidden?: boolean
 }
 
+interface SidebarSection {
+  id: string
+  title?: string
+  items: SidebarItem[]
+}
+
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   currentPage = '',
   mode = 'app',
@@ -57,7 +63,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onTab,
   pendingCount,
   alertCritical,
-  stats,
 }) => {
   const { user } = useAuthStore()
   const { isFetching } = useMe()
@@ -82,41 +87,59 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     localStorage.setItem('sidebar_collapsed', String(nextVal))
   }
 
-  let items: SidebarItem[] = []
+  let sections: SidebarSection[] = []
   let logoIcon: React.ReactNode = null
   let title = 'Raíces'
 
   if (mode === 'admin') {
     logoIcon = Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Admin'
-    items = [
-      { id: 'overview',      label: 'Inicio',         icon: Icons.home },
-      { id: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
-      { id: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: 'var(--color-empleo)' },
-      { id: 'users',         label: 'Usuarios',       icon: Icons.users },
-      { id: 'identities',    label: 'Identidades',    icon: Icons.shieldCheck },
-      { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
-      { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
-      { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
-      { id: 'settings',      label: 'Config',         icon: Icons.target },
+    sections = [
+      {
+        id: 'admin',
+        title: 'Administración',
+        items: [
+          { id: 'overview',      label: 'Inicio',         icon: Icons.home },
+          { id: 'intelligence',  label: 'Inteligencia',   icon: Icons.brain },
+          { id: 'institutions',  label: 'Instituciones',  icon: Icons.building,   badge: pendingCount,  badgeColor: 'var(--color-empleo)' },
+          { id: 'users',         label: 'Usuarios',       icon: Icons.users },
+          { id: 'identities',    label: 'Identidades',    icon: Icons.shieldCheck },
+          { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
+          { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
+          { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
+          { id: 'settings',      label: 'Config',         icon: Icons.target },
+        ],
+      },
     ]
   } else if (mode === 'institution') {
     logoIcon = Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Panel'
-    items = [
-      { id: 'servicios', label: 'Servicios y Programas', icon: Icons.briefcase },
-      { id: 'resenas', label: 'Reseñas y Opiniones', icon: Icons.star },
-      { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
-      { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
+    sections = [
+      {
+        id: 'institution',
+        title: 'Portal Institución',
+        items: [
+          { id: 'servicios', label: 'Servicios y Programas', icon: Icons.briefcase },
+          { id: 'resenas', label: 'Reseñas y Opiniones', icon: Icons.star },
+          { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
+          { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
+        ],
+      },
     ]
   } else if (mode === 'empresa') {
     logoIcon = Icons.briefcase({ s: 18, color: 'rgba(255,255,255,0.9)' })
     title = 'Panel'
-    items = [
-      { id: 'bolsa', label: 'Bolsa de Trabajo', icon: Icons.briefcase },
-      { id: 'postulantes', label: 'Postulantes', icon: Icons.users },
-      { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
-      { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: '/empresa-portal/editar' },
+    sections = [
+      {
+        id: 'empresa',
+        title: 'Portal Empresa',
+        items: [
+          { id: 'bolsa', label: 'Bolsa de Trabajo', icon: Icons.briefcase },
+          { id: 'postulantes', label: 'Postulantes', icon: Icons.users },
+          { id: 'foros', label: 'Foros y Comunidad', icon: Icons.message },
+          { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: '/empresa-portal/editar' },
+        ],
+      },
     ]
   } else {
     logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
@@ -124,7 +147,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
                <PlantEmoji />
     title = 'Raíces'
-    // ── Filtrar items según features del usuario ────────────────────
+
     const features = user?.features
     const hasFeature = (name: string) => {
       if (!features) return true
@@ -134,44 +157,251 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       return (features as Record<string, boolean>)[name] !== false
     }
 
-    items = [
-      { id: 'feed', label: 'Inicio', icon: Icons.home, path: '/feed' },
-      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
-      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
-      { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
-      { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas') },
-    ].filter(item => !item.hidden)
-    if (user?.role === 'tutor') {
-      items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
-    }
+    // ── Estructura de Navegación por las 3 Etapas Principales ──────────
+    sections = [
+      {
+        id: 'etapa-1',
+        title: '1. Conocer quién eres',
+        items: [
+          { id: 'profile', label: 'Mi Perfil', icon: Icons.user, path: '/profile' },
+          { id: 'escalas', label: 'Escalas de Vida', icon: Icons.shieldCheck, path: '/escalas-vida' },
+          ...(user?.role === 'tutor' ? [{ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' }] : []),
+        ],
+      },
+      {
+        id: 'etapa-2',
+        title: '2. Tu día a día',
+        items: [
+          { id: 'feed', label: 'Inicio', icon: Icons.home, path: '/feed' },
+          { id: 'social', label: 'Conectemos', icon: Icons.message, path: '/social', hidden: !hasFeature('comunidad') },
+          { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
+          { id: 'explore', label: 'Explorar Instituciones', icon: Icons.building, path: '/explore' },
+        ].filter(i => !i.hidden),
+      },
+      {
+        id: 'etapa-3',
+        title: '3. Logros e Intereses',
+        items: [
+          { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas') },
+          { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
+        ].filter(i => !i.hidden),
+      },
+    ]
+
+    const portalItems: SidebarItem[] = []
     if (user?.role === 'institution') {
-      items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
+      portalItems.push({ id: 'institution-portal', label: 'Panel Institución', icon: Icons.shield, path: '/institution-portal' })
     }
     if (user?.role === 'empresa') {
-      items.push({ id: 'empresa-portal', label: 'Panel', icon: Icons.briefcase, path: '/empresa-portal' })
+      portalItems.push({ id: 'empresa-portal', label: 'Panel Empresa', icon: Icons.briefcase, path: '/empresa-portal' })
     }
     if (user?.role === 'admin') {
-      items.push({ id: 'admin', label: 'Admin', icon: Icons.shield, path: '/admin' })
+      portalItems.push({ id: 'admin', label: 'Panel Admin', icon: Icons.shield, path: '/admin' })
     }
+
+    if (portalItems.length > 0) {
+      sections.push({
+        id: 'gestion',
+        title: 'Gestión',
+        items: portalItems,
+      })
+    }
+  }
+
+  const renderDesktopItem = (item: SidebarItem) => {
+    let isActive = false
+    if (mode === 'app') {
+      isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
+    } else if (mode === 'admin') {
+      isActive = tab === item.id
+    } else if (mode === 'institution') {
+      if (item.id === 'editar') {
+        isActive = location.pathname === '/institution-portal/editar'
+      } else {
+        isActive = location.pathname === '/institution-portal' && tab === item.id
+      }
+    } else if (mode === 'empresa') {
+      if (item.id === 'editar') {
+        isActive = location.pathname === '/empresa-portal/editar'
+      } else {
+        isActive = location.pathname === '/empresa-portal' && tab === item.id
+      }
+    }
+    const isLink = !!item.path
+
+    if (isLink) {
+      return (
+        <Link
+          key={item.id}
+          to={item.path!}
+          aria-current={isActive ? 'page' : undefined}
+          className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
+          style={{ textDecoration: 'none' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
+            {item.icon({ s: 20 })}
+          </span>
+          <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
+        </Link>
+      )
+    }
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          onTab?.(item.id)
+          if (mode === 'institution' && location.pathname !== '/institution-portal') {
+            navigate('/institution-portal')
+          }
+          if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
+            navigate('/empresa-portal')
+          }
+        }}
+        aria-current={isActive ? 'page' : undefined}
+        className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
+        style={{ alignSelf: 'stretch' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
+          {item.icon({ s: 20 })}
+        </span>
+        <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
+        {item.badge !== undefined && item.badge > 0 && (
+          <span
+            className="sidebar-badge"
+            aria-label={`${item.badge} pendientes`}
+            style={{
+              marginLeft: 'auto',
+              minWidth: 18, height: 18, borderRadius: 9,
+              background: item.badgeColor, color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '0 4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {item.badge > 9 ? '9+' : item.badge}
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  const renderMobileItem = (item: SidebarItem) => {
+    let isActive = false
+    if (mode === 'app') {
+      isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
+    } else if (mode === 'admin') {
+      isActive = tab === item.id
+    } else if (mode === 'institution') {
+      if (item.id === 'editar') {
+        isActive = location.pathname === '/institution-portal/editar'
+      } else {
+        isActive = location.pathname === '/institution-portal' && tab === item.id
+      }
+    }
+    const isLink = !!item.path
+
+    if (isLink) {
+      return (
+        <Link
+          key={item.id}
+          to={item.path!}
+          onClick={() => setSidebarOpen(false)}
+          aria-current={isActive ? 'page' : undefined}
+          style={{
+            textDecoration: 'none',
+            background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex', alignItems: 'center', gap: 12,
+            color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
+            transition: 'all 0.2s ease', padding: '10px 14px',
+            fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
+            fontSize: 14,
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
+            {item.icon({ s: 20 })}
+          </span>
+          <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+        </Link>
+      )
+    }
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          onTab?.(item.id)
+          setSidebarOpen(false)
+          if (mode === 'institution' && location.pathname !== '/institution-portal') {
+            navigate('/institution-portal')
+          }
+          if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
+            navigate('/empresa-portal')
+          }
+        }}
+        aria-current={isActive ? 'page' : undefined}
+        style={{
+          border: 'none',
+          background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex', alignItems: 'center', gap: 12,
+          color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
+          transition: 'all 0.2s ease', padding: '10px 14px',
+          fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
+          fontSize: 14,
+          cursor: 'pointer',
+          width: '100%',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>
+          {item.icon({ s: 20 })}
+        </span>
+        <span style={{ flex: 1, lineHeight: 1.2 }}>{item.label}</span>
+        {item.badge !== undefined && item.badge > 0 && (
+          <span
+            style={{
+              minWidth: 18, height: 18, borderRadius: 9,
+              background: item.badgeColor, color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '0 4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {item.badge > 9 ? '9+' : item.badge}
+          </span>
+        )}
+      </button>
+    )
   }
 
   return (
     <>
       {/* Desktop sidebar */}
-      <nav aria-label={mode === 'admin' ? "Panel de administración" : mode === 'institution' ? "Portal de institución" : "Navegación principal"} className="responsive-sidebar" style={{
-        display: 'flex', flexDirection: 'column',
-        padding: '20px 0 20px 12px', gap: 4,
-      }}>
+      <nav
+        aria-label={mode === 'admin' ? "Panel de administración" : mode === 'institution' ? "Portal de institución" : "Navegación principal"}
+        className="responsive-sidebar"
+        style={{
+          display: 'flex', flexDirection: 'column',
+          padding: '20px 0 20px 12px', gap: 4,
+        }}
+      >
         {/* Brand logo at top */}
-        <div className="sidebar-logo-container" style={{ padding: '8px 0 24px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
+        <div
+          className="sidebar-logo-container"
+          style={{ padding: '8px 0 20px 0', display: 'flex', justifyContent: 'center', width: 'var(--sidebar-width)', marginLeft: '-12px' }}
+        >
           <div style={{ position: 'relative', width: 36, height: 36 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 'var(--radius-md)',
-              background: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '#FBF6EE' : 'var(--primary)',
-              border: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '1.5px solid #EFE5D8' : 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxSizing: 'border-box',
-            }}>
+            <div
+              style={{
+                width: 36, height: 36, borderRadius: 'var(--radius-md)',
+                background: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '#FBF6EE' : 'var(--primary)',
+                border: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '1.5px solid #EFE5D8' : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxSizing: 'border-box',
+              }}
+            >
               {logoIcon}
             </div>
             {/* Indicador de sincronización cuando se refrescan permisos */}
@@ -197,79 +427,40 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
         </div>
 
-        {/* Nav items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflow: 'visible' }}>
-          {items.map((item) => {
-            let isActive = false
-            if (mode === 'app') {
-              isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
-            } else if (mode === 'admin') {
-              isActive = tab === item.id
-            } else if (mode === 'institution') {
-              if (item.id === 'editar') {
-                isActive = location.pathname === '/institution-portal/editar'
-              } else {
-                isActive = location.pathname === '/institution-portal' && tab === item.id
-              }
-            } else if (mode === 'empresa') {
-              if (item.id === 'editar') {
-                isActive = location.pathname === '/empresa-portal/editar'
-              } else {
-                isActive = location.pathname === '/empresa-portal' && tab === item.id
-              }
-            }
-            const isLink = !!item.path
-
-            if (isLink) {
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path!}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
+        {/* Nav Sections */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', overflowX: 'visible' }}>
+          {sections.map((section, sIdx) => (
+            <div key={section.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {mode === 'app' && section.title && (
+                <div
+                  className="sidebar-text"
                   style={{
-                    textDecoration: 'none',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'rgba(255,255,255,0.4)',
+                    padding: sIdx === 0 ? '4px 12px 4px 12px' : '10px 12px 4px 12px',
+                    userSelect: 'none',
+                    lineHeight: 1.2,
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                  <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
-                </Link>
-              )
-            }
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onTab?.(item.id)
-                  if (mode === 'institution' && location.pathname !== '/institution-portal') {
-                    navigate('/institution-portal')
-                  }
-                  if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
-                    navigate('/empresa-portal')
-                  }
-                }}
-                aria-current={isActive ? 'page' : undefined}
-                className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
-                style={{
-                  alignSelf: 'stretch',
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="sidebar-badge" aria-label={`${item.badge} pendientes`} style={{
-                    marginLeft: 'auto',
-                    minWidth: 18, height: 18, borderRadius: 9,
-                    background: item.badgeColor, color: '#fff',
-                    fontSize: 10, fontWeight: 700, padding: '0 4px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{item.badge > 9 ? '9+' : item.badge}</span>
-                )}
-              </button>
-            )
-          })}
+                  {section.title}
+                </div>
+              )}
+              {mode === 'app' && sIdx > 0 && (
+                <div
+                  className="sidebar-collapsed-divider"
+                  style={{
+                    height: 1,
+                    background: 'var(--sidebar-border)',
+                    margin: '4px 12px 6px 0',
+                  }}
+                />
+              )}
+              {section.items.map(renderDesktopItem)}
+            </div>
+          ))}
 
           {/* Toggle collapse button */}
           <button
@@ -297,11 +488,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* Volver a la app link for sub-portals */}
         {mode !== 'app' && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-            <Link to="/feed" className="sidebar-desktop-nav-item" style={{
-              textDecoration: 'none',
-              color: 'var(--sidebar-fg)',
-              marginRight: 0,
-            }}>
+            <Link
+              to="/feed"
+              className="sidebar-desktop-nav-item"
+              style={{
+                textDecoration: 'none',
+                color: 'var(--sidebar-fg)',
+                marginRight: 0,
+              }}
+            >
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
               <span className="sidebar-text">Ir a app</span>
             </Link>
@@ -311,10 +506,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* User profile (only main app) */}
         {mode === 'app' && user && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-            <Link to="/profile" className="sidebar-desktop-nav-item" style={{
-              textDecoration: 'none',
-              marginRight: 0,
-            }}>
+            <Link
+              to="/profile"
+              className="sidebar-desktop-nav-item"
+              style={{
+                textDecoration: 'none',
+                marginRight: 0,
+              }}
+            >
               <div style={{ position: 'relative', width: 24, height: 24, flexShrink: 0 }}>
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
@@ -388,7 +587,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           }}
         >
           {/* Header with logo & close button */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '0 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '0 8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {logoIcon}
@@ -414,88 +613,27 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflow: 'hidden' }}>
-            {items.map((item) => {
-              let isActive = false
-              if (mode === 'app') {
-                isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
-              } else if (mode === 'admin') {
-                isActive = tab === item.id
-              } else if (mode === 'institution') {
-                if (item.id === 'editar') {
-                  isActive = location.pathname === '/institution-portal/editar'
-                } else {
-                  isActive = location.pathname === '/institution-portal' && tab === item.id
-                }
-              }
-              const isLink = !!item.path
-
-              if (isLink) {
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.path!}
-                    onClick={() => setSidebarOpen(false)}
-                    aria-current={isActive ? 'page' : undefined}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
+            {sections.map((section, sIdx) => (
+              <div key={section.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {mode === 'app' && section.title && (
+                  <div
                     style={{
-                      textDecoration: 'none',
-                      background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
-                      transition: 'all 0.2s ease', padding: '12px 14px',
-                      fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
-                      fontSize: 15,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: 'rgba(255,255,255,0.45)',
+                      padding: sIdx === 0 ? '2px 14px 4px' : '10px 14px 4px',
+                      userSelect: 'none',
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                    <span style={{ lineHeight: 1.2 }}>{item.label}</span>
-                  </Link>
-                )
-              }
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    onTab?.(item.id)
-                    setSidebarOpen(false)
-                    if (mode === 'institution' && location.pathname !== '/institution-portal') {
-                      navigate('/institution-portal')
-                    }
-                    if (mode === 'empresa' && location.pathname !== '/empresa-portal') {
-                      navigate('/empresa-portal')
-                    }
-                  }}
-                  aria-current={isActive ? 'page' : undefined}
-                  style={{
-                    border: 'none',
-                    background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
-                    transition: 'all 0.2s ease', padding: '12px 14px',
-                    fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
-                    fontSize: 15,
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                  <span style={{ flex: 1, lineHeight: 1.2 }}>{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span style={{
-                      minWidth: 18, height: 18, borderRadius: 9,
-                      background: item.badgeColor, color: '#fff',
-                      fontSize: 10, fontWeight: 700, padding: '0 4px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>{item.badge > 9 ? '9+' : item.badge}</span>
-                  )}
-                </button>
-              )
-            })}
+                    {section.title}
+                  </div>
+                )}
+                {section.items.map(renderMobileItem)}
+              </div>
+            ))}
           </div>
 
           {/* Bottom user / portal controls */}
@@ -532,12 +670,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           ) : (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
-              <Link to="/feed" onClick={() => setSidebarOpen(false)} style={{
-                textDecoration: 'none',
-                display: 'flex', alignItems: 'center', gap: 12,
-                color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
-                padding: '12px 14px', borderRadius: 'var(--radius-md)',
-              }}>
+              <Link
+                to="/feed"
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  textDecoration: 'none',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
+                  padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                }}
+              >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{Icons.arrowRight({ s: 20 })}</span>
                 <span>Ir a app</span>
               </Link>

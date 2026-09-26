@@ -93,10 +93,13 @@ export const ESCALAS_OPCIONES = {
     { value: 1, label: 'Baja → Requiero actividades de baja demanda o periodos cortos' },
   ],
   movilidad: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
+    { value: 7, label: 'Me desplazo sin apoyo' },
+    { value: 6, label: 'Utilizo bastón, muletas, andadera u otro apoyo' },
+    { value: 5, label: 'Utilizo silla de ruedas' },
+    { value: 4, label: 'Algunas veces necesito el apoyo de otra persona' },
+    { value: 3, label: 'Necesito frecuentemente el apoyo de otra persona' },
+    { value: 2, label: 'Mi forma de desplazarme cambia según el lugar, la distancia o el día' },
+    { value: 1, label: 'Utilizo otra forma de apoyo' },
   ],
   social: [
     { value: 4, label: 'Participo con facilidad' },
@@ -145,10 +148,13 @@ export const ESCALAS_OPCIONES_TUTOR = {
     { value: 1, label: 'Baja → Requiere actividades de baja demanda o periodos cortos' },
   ],
   movilidad: [
-    { value: 4, label: 'Independiente' },
-    { value: 3, label: 'Con apoyo ocasional' },
-    { value: 2, label: 'Con apoyo frecuente' },
-    { value: 1, label: 'Con apoyo total' },
+    { value: 7, label: 'Se desplaza sin apoyo' },
+    { value: 6, label: 'Utiliza bastón, muletas, andadera u otro apoyo' },
+    { value: 5, label: 'Utiliza silla de ruedas' },
+    { value: 4, label: 'Algunas veces necesita el apoyo de otra persona' },
+    { value: 3, label: 'Necesita frecuentemente el apoyo de otra persona' },
+    { value: 2, label: 'Su forma de desplazarse cambia según el lugar, la distancia o el día' },
+    { value: 1, label: 'Utiliza otra forma de apoyo' },
   ],
   social: [
     { value: 4, label: 'Participa con facilidad' },
@@ -167,23 +173,69 @@ export const ESCALAS_OPCIONES_TUTOR = {
 // ── FORMATOS (PCD) ─────────────────────────────────────────────────
 export const LIST_FORMATOS = [
   { id: 'texto', label: 'Leyendo textos', icon: FluentEmoji.formatoTexto },
-  { id: 'imagenes', label: 'Con imágenes', icon: FluentEmoji.formatoImagenes },
-  { id: 'audio', label: 'Con audio', icon: FluentEmoji.formatoAudio },
-  { id: 'video', label: 'Con videos', icon: FluentEmoji.formatoVideo },
-  { id: 'persona', label: 'Con apoyo de otra persona', icon: FluentEmoji.apoyo },
+  { id: 'imagenes', label: 'Con imágenes o pictogramas', icon: FluentEmoji.formatoImagenes },
+  { id: 'audio', label: 'Escuchando explicaciones', icon: FluentEmoji.formatoAudio },
+  { id: 'video', label: 'Viendo videos demostrativos', icon: FluentEmoji.formatoVideo },
+  { id: 'persona', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
 ]
 
 // ── FORMATOS (TUTOR) ───────────────────────────────────────────────
 export const LIST_FORMATOS_TUTOR = [
   { id: 'texto', label: 'Leyendo textos', icon: FluentEmoji.formatoTexto },
-  { id: 'imagenes', label: 'Con imágenes y pictogramas', icon: FluentEmoji.formatoImagenes },
-  { id: 'audio', label: 'Con explicaciones en audio', icon: FluentEmoji.formatoAudio },
-  { id: 'video', label: 'Con videos demostrativos', icon: FluentEmoji.formatoVideo },
-  { id: 'persona', label: 'Con apoyo y mediación de otra persona', icon: FluentEmoji.apoyo },
+  { id: 'imagenes', label: 'Con imágenes o pictogramas', icon: FluentEmoji.formatoImagenes },
+  { id: 'audio', label: 'Escuchando explicaciones', icon: FluentEmoji.formatoAudio },
+  { id: 'video', label: 'Viendo videos demostrativos', icon: FluentEmoji.formatoVideo },
+  { id: 'persona', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
+]
+
+// ── BARRERAS SOCIALES (G. SOCIAL) ──────────────────────────────────
+export const LIST_BARRERAS_SOCIALES = [
+  'Falta de accesibilidad en los espacios',
+  'Sobrecarga sensorial o ambientes ruidosos',
+  'Dificultades en la comunicación o interacción',
+  'Falta de mediación o apoyos adecuados',
+  'Prejuicios, actitudes o estigmas sociales',
+  'Ansiedad o inseguridad al interactuar en grupo',
+]
+
+// ── SUBÁREAS DE EDUCACIÓN ──────────────────────────────────────────
+export const LIST_SUBAREAS_EDUCACION = [
+  'Educación básica',
+  'Educación media / superior',
+  'Educación especializada',
+  'Habilidades para la vida',
+  'Cursos / talleres',
+]
+
+// ── FILTROS DE COMUNIDAD ───────────────────────────────────────────
+export const LIST_FILTROS_COMUNIDAD = [
+  'Por tema',
+  'Por etapa de vida',
+  'Por condición',
+  'Con familias',
+  'Por intereses',
+]
+
+// ── TEMAS DE EXPLORACIÓN (CONDICIONAL: Por tema) ───────────────────
+export const LIST_TEMAS_EXPLORAR = [
+  'Vivir con mayor autonomía',
+  'Preparar el futuro',
+  'Trabajo, emprendimiento y proyectos propios',
+  'Bienestar emocional de los cuidadores',
+  'Relaciones y vida social',
+  'Compartir intereses',
 ]
 
 // ── SECCIONES DE INTERÉS (PCD) ─────────────────────────────────────
 export const INTEREST_SECTIONS = [
+  {
+    title: 'EDUCACIÓN', color: '#3B82F6',
+    items: LIST_SUBAREAS_EDUCACION,
+  },
+  {
+    title: 'COMUNIDAD Y FILTROS DE CONTACTO', color: '#8B5CF6',
+    items: LIST_FILTROS_COMUNIDAD,
+  },
   {
     title: 'DEPORTE / MOVIMIENTO', color: '#229B58',
     items: ['Actividad física general', 'Deporte recreativo', 'Deporte adaptado', 'Competencia', 'Rehabilitación funcional', 'Movimiento / coordinación', 'Actividades al aire libre'],
@@ -220,6 +272,14 @@ export const INTEREST_SECTIONS = [
 
 // ── SECCIONES DE INTERÉS (TUTOR) ───────────────────────────────────
 export const INTEREST_SECTIONS_TUTOR = [
+  {
+    title: 'EDUCACIÓN', color: '#3B82F6',
+    items: LIST_SUBAREAS_EDUCACION,
+  },
+  {
+    title: 'COMUNIDAD Y FILTROS DE CONTACTO', color: '#8B5CF6',
+    items: LIST_FILTROS_COMUNIDAD,
+  },
   {
     title: 'DEPORTE / MOVIMIENTO', color: '#229B58',
     items: ['Actividad física general', 'Deporte recreativo', 'Deporte adaptado', 'Competencia', 'Rehabilitación funcional', 'Movimiento / coordinación', 'Actividades al aire libre'],
@@ -345,7 +405,6 @@ export const LIST_EDUCACION = [
   'Educación para adultos (INEA)',
   'Estudios técnicos o de oficio',
   'Universidad',
-  'No he asistido a la escuela',
 ]
 
 // ── EDUCACIÓN (TUTOR) ──────────────────────────────────────────────
@@ -357,7 +416,6 @@ export const LIST_EDUCACION_TUTOR = [
   'Educación para adultos (INEA)',
   'Estudios técnicos o de oficio',
   'Universidad',
-  'No ha asistido a la escuela',
 ]
 
 // ── TERAPIAS (idéntico en ambos) ───────────────────────────────────
@@ -370,4 +428,21 @@ export const LIST_TERAPIAS = [
   'Integración sensorial',
   'Neuropsicología',
   'Ninguna hasta ahora',
+]
+
+// ── GRADO DE ESTUDIOS ─────────────────────────────────────────────
+export const LIST_GRADO_ESTUDIOS = [
+  { id: 'sin_estudios', label: 'Sin estudios formales / Ninguno' },
+  { id: 'preescolar', label: 'Preescolar / Maternal' },
+  { id: 'primaria_trunca', label: 'Primaria (en curso o incompleta)' },
+  { id: 'primaria_concluida', label: 'Primaria (concluida)' },
+  { id: 'secundaria_trunca', label: 'Secundaria (en curso o incompleta)' },
+  { id: 'secundaria_concluida', label: 'Secundaria (concluida)' },
+  { id: 'preparatoria_trunca', label: 'Preparatoria / Bachillerato (en curso o incompleta)' },
+  { id: 'preparatoria_concluida', label: 'Preparatoria / Bachillerato (concluida)' },
+  { id: 'carrera_tecnica', label: 'Estudios técnicos o de oficio' },
+  { id: 'licenciatura_trunca', label: 'Licenciatura / Universidad (en curso o incompleta)' },
+  { id: 'licenciatura_concluida', label: 'Licenciatura / Universidad (concluida)' },
+  { id: 'posgrado', label: 'Posgrado (Maestría / Doctorado)' },
+  { id: 'otro', label: 'Otro' },
 ]

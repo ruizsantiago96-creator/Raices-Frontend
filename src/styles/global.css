@@ -855,7 +855,7 @@ html[data-theme="dark"] .btn-secondary:hover {
   top: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  z-index: 100;
+  z-index: 1001;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   transition: width 0.25s ease, background-color 0.3s ease;
@@ -968,7 +968,7 @@ html[data-theme="dark"] .btn-secondary:hover {
 .responsive-main {
   margin-left: max(var(--sidebar-width), calc(var(--sidebar-width) + (100% - var(--sidebar-width) - var(--main-max-width)) / 2));
   margin-right: auto;
-  padding: calc(var(--topnav-height, 64px) + 28px) 32px 32px;
+  padding: calc(var(--topnav-height, 64px) + 32px) 32px 32px;
   width: auto;
   max-width: var(--main-max-width);
   box-sizing: border-box;
@@ -979,7 +979,7 @@ html[data-theme="dark"] .btn-secondary:hover {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 50;
+  z-index: 1000;
   height: 64px;
   display: flex;
   align-items: center;
@@ -988,6 +988,8 @@ html[data-theme="dark"] .btn-secondary:hover {
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
   background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(7, 59, 76, 0.05);
   font-family: var(--font-body);
@@ -1040,9 +1042,17 @@ html.sidebar-collapsed {
   --sidebar-width: 70px;
 }
 
+.sidebar-collapsed-divider {
+  display: none;
+}
+
 html.sidebar-collapsed .sidebar-text,
 html.sidebar-collapsed .sidebar-badge {
   display: none !important;
+}
+
+html.sidebar-collapsed .sidebar-collapsed-divider {
+  display: block !important;
 }
 
 html.sidebar-collapsed .sidebar-logo-container {
@@ -1081,8 +1091,8 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ── Desktop Large (≥1400px) ─────────────────────────── */
 @media (min-width: 1400px) {
   .responsive-main {
-    padding: calc(var(--topnav-height, 64px) + 32px) 48px 32px;
-    --main-max-width: 1200px;
+    padding: calc(var(--topnav-height, 64px) + 36px) 48px 36px;
+    --main-max-width: 1320px;
   }
   .responsive-topnav {
     padding: 0 48px;
@@ -1092,15 +1102,15 @@ html.sidebar-collapsed .sidebar-user-container a {
 /* ── Desktop (≥1200px) ──────────────────────────────── */
 @media (min-width: 1200px) and (max-width: 1399px) {
   .responsive-main {
-    padding: calc(var(--topnav-height, 64px) + 28px) 40px 28px;
-    --main-max-width: 1100px;
+    padding: calc(var(--topnav-height, 64px) + 32px) 40px 32px;
+    --main-max-width: 1200px;
   }
 }
 
 /* ── Laptop (≥992px) ───────────────────────────────── */
 @media (min-width: 992px) and (max-width: 1199px) {
   .responsive-main {
-    padding: calc(var(--topnav-height, 64px) + 24px) 28px 24px;
+    padding: calc(var(--topnav-height, 64px) + 28px) 28px 28px;
     --main-max-width: 100%;
   }
   .responsive-topnav {
@@ -1122,7 +1132,7 @@ html.sidebar-collapsed .sidebar-user-container a {
     --topnav-height: 56px;
   }
   .responsive-main {
-    padding: calc(var(--topnav-height, 56px) + 20px) 20px 20px;
+    padding: calc(var(--topnav-height, 56px) + 24px) 20px 24px;
     --main-max-width: 100%;
   }
   .responsive-topnav {

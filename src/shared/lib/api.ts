@@ -49,11 +49,19 @@ function forceLogout(_message?: string): void {
   // con <Navigate replace />, manteniendo el historial limpio.
 }
 
-/* ─── ETag Cache ──────────────────────────────────────────────────── */
-// Almacena ETags de respuestas GET para enviar If-None-Match.
-// Key: URL completa (path + query string)
-// Value: { etag: string, data: unknown, status: number }
+/* ─── ETag Cache (LRU Eviction Policy) ─────────────────────────────── */
+const MAX_ETAG_CACHE_SIZE = 100
 const etagCache = new Map<string, EtagCacheEntry>()
+
+function setEtagCache(key: string, value: EtagCacheEntry): void {
+  if (etagCache.has(key)) {
+    etagCache.delete(key)
+  } else if (etagCache.size >= MAX_ETAG_CACHE_SIZE) {
+    const oldestKey = etagCache.keys().next().value
+    if (oldestKey !== undefined) etagCache.delete(oldestKey)
+  }
+  etagCache.set(key, value)
+}
 
 function getEtagKey(config: InternalAxiosRequestConfig): string | null {
   // Solo para GETs, usar URL completa como key
@@ -126,7 +134,7 @@ api.interceptors.response.use(
     if (etagKey && response.status === 200) {
       const etag = response.headers['etag'] as string | undefined
       if (etag) {
-        etagCache.set(etagKey, {
+        setEtagCache(etagKey, {
           etag,
           data: response.data,
           status: response.status,

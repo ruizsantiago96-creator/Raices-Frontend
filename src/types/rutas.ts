@@ -102,6 +102,7 @@ export interface EscalasVidaValues {
   nivelSocial: number
   nivelEmocional: number
   tieneDiagnostico?: boolean
+  diagnosticoEspecifico?: string
   temporalidadOrigen?: string
   preferenciaFormato?: string
   areasInteres?: string[]

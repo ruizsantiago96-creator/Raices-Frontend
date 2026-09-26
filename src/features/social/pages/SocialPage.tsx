@@ -685,7 +685,6 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
 
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState<string | number | null>(null)
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
 
   // Creation form state
   const [newPost, setNewPost] = useState('')
@@ -707,7 +706,6 @@ export default function SocialPage() {
   const { data: groups = [] } = useGroups()
   const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts({
     grupoId: activeGroupId ? String(activeGroupId) : undefined,
-    categoriaCreativa: activeCategoryFilter ?? undefined,
   })
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
@@ -1019,67 +1017,15 @@ export default function SocialPage() {
               </div>
               )}
 
-              {/* ── Category Feed Filter Bar ── */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', whiteSpace: 'nowrap' }}>Filtrar feed:</span>
-                <button
-                  type="button"
-                  onClick={() => setActiveCategoryFilter(null)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: activeCategoryFilter === null ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                    background: activeCategoryFilter === null ? 'var(--primary)' : 'var(--bg-surface)',
-                    color: activeCategoryFilter === null ? '#FFF' : 'var(--fg2)',
-                    fontWeight: activeCategoryFilter === null ? 700 : 500,
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  🌟 Todas
-                </button>
-                {CATEGORY_OPTIONS.map(cat => (
-                  <button
-                    key={cat.value}
-                    type="button"
-                    onClick={() => setActiveCategoryFilter(cat.value)}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: 'var(--radius-pill)',
-                      border: activeCategoryFilter === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      background: activeCategoryFilter === cat.value ? 'var(--primary-subtle)' : 'var(--bg-surface)',
-                      color: activeCategoryFilter === cat.value ? 'var(--primary)' : 'var(--fg2)',
-                      fontWeight: activeCategoryFilter === cat.value ? 700 : 500,
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <span>{cat.icon}</span> {cat.label}
+              {/* Group Filter Indicator if filtered from Groups tab */}
+              {activeGroupId && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--primary-subtle)', borderRadius: 'var(--radius-md)', marginBottom: 16, color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
+                  <span>Viendo publicaciones de: <strong>{groups.find(g => String(g.id) === String(activeGroupId))?.name || 'Grupo'}</strong></span>
+                  <button type="button" onClick={() => setActiveGroupId(null)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+                    Ver feed general
                   </button>
-                ))}
-
-                {/* Group Filter Pill */}
-                {groups.length > 0 && (
-                  <div style={{ marginLeft: 'auto' }}>
-                    <CustomSelect
-                      options={[
-                        { value: '', label: 'Todos los grupos' },
-                        ...groups.map(g => ({ value: String(g.id), label: `Grupo: ${g.name}` })),
-                      ]}
-                      value={activeGroupId !== null && activeGroupId !== undefined ? String(activeGroupId) : ''}
-                      onChange={val => setActiveGroupId(val ? val : null)}
-                      minWidth={180}
-                    />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {postsError ? (
                 <BackendFallback method={COMMUNITY_ENDPOINTS.GET_POSTS.method} endpoint={COMMUNITY_ENDPOINTS.GET_POSTS.path} onRetry={() => refetchPosts()} />
@@ -1096,7 +1042,7 @@ export default function SocialPage() {
                   </div>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>{SOCIAL_UI.EMPTY_POSTS_TITLE}</h3>
                   <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
-                    {activeCategoryFilter ? `No hay publicaciones en la categoría "${CATEGORY_MAP[activeCategoryFilter]?.label}".` : SOCIAL_UI.EMPTY_POSTS_DESC}
+                    {SOCIAL_UI.EMPTY_POSTS_DESC}
                   </p>
                 </div>
               ) : (

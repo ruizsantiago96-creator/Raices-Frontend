@@ -86,3 +86,37 @@ export function clearOnboardingData(): void {
   localStorage.removeItem(STORAGE_KEYS.USER_FORMATOS)
   localStorage.removeItem(STORAGE_KEYS.AI_NARRATIVE)
 }
+
+/**
+ * Guardado progresivo del perfilamiento ("Quiero continuar después").
+ * Guarda el paso actual y las respuestas parciales en localStorage.
+ */
+export function saveOnboardingStepProgress(role: string, step: string, data: Record<string, unknown>): void {
+  try {
+    const key = `raices_onboarding_progress_${role}`
+    localStorage.setItem(key, JSON.stringify({ step, data, updatedAt: new Date().toISOString() }))
+  } catch (e) {
+    console.error('[OnboardingStorage] Error al guardar progreso parcial:', e)
+  }
+}
+
+/**
+ * Recupera el progreso guardado del perfilamiento si existe.
+ */
+export function getOnboardingStepProgress<T = Record<string, unknown>>(role: string): { step: string; data: T; updatedAt: string } | null {
+  try {
+    const key = `raices_onboarding_progress_${role}`
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    return JSON.parse(raw) as { step: string; data: T; updatedAt: string }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Limpia el progreso parcial guardado al finalizar el perfilamiento.
+ */
+export function clearOnboardingStepProgress(role: string): void {
+  localStorage.removeItem(`raices_onboarding_progress_${role}`)
+}

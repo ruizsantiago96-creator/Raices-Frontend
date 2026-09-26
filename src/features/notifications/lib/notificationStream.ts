@@ -31,8 +31,9 @@
  *   3. useEffect re-ejecuta     → crea EventSource normalmente
  */
 
-// ─── Instancia activa ────────────────────────────────────────────────
+// ─── Instancia activa y timers ────────────────────────────────────────
 let activeEventSource: EventSource | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
 // ─── Freno de mano absoluto ──────────────────────────────────────────
 // true = bloquea TODA creación de EventSource (activo durante logout)
@@ -40,11 +41,29 @@ let activeEventSource: EventSource | null = null
 let streamSuspended = false
 
 /**
- * Activa el freno de mano. Llamar ANTES de limpiar tokens.
- * Mientras sea true, ningún useNotificationStream creará un EventSource.
+ * Registra un timer de reconexión activo para ser abortado al cerrar sesión.
+ */
+export function registerReconnectTimer(timer: ReturnType<typeof setTimeout> | null) {
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+  reconnectTimer = timer
+}
+
+/**
+ * Aborta cualquier timer de reconexión pendiente.
+ */
+export function clearReconnectTimer() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+}
+
+/**
+ * Activa el freno de mano y cancela timers pendientes. Llamar ANTES de limpiar tokens.
  */
 export function suspendStream() {
   streamSuspended = true
+  clearReconnectTimer()
 }
 
 /**
@@ -55,8 +74,7 @@ export function resumeStream() {
 }
 
 /**
- * Consulta el estado del freno. Usado por useNotificationStream
- * como primera línea de defensa antes de crear un EventSource.
+ * Consulta el estado del freno.
  */
 export function isStreamSuspended() {
   return streamSuspended
@@ -66,19 +84,16 @@ export function isStreamSuspended() {
 
 /**
  * Registra (o actualiza) la referencia al EventSource activo.
- * Llamado por useNotificationStream al abrir la conexión.
  */
 export function setActiveEventSource(es: EventSource | null) {
   activeEventSource = es
 }
 
 /**
- * Cierra la conexión SSE activa y limpia la referencia.
- * Llamado por authStore.logout() y por el cleanup del useEffect.
- * Llamar .close() sobre un EventSource ya cerrado es un no-op,
- * por lo que es seguro llamarlo múltiples veces.
+ * Cierra la conexión SSE activa, borra timers de reconexión y limpia la referencia.
  */
 export function closeNotificationStream() {
+  clearReconnectTimer()
   if (activeEventSource) {
     try {
       activeEventSource.close()

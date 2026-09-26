@@ -78,9 +78,11 @@ export default function MainLayout() {
     else if (location.pathname.startsWith('/explore')) currentPage = 'explore'
     else if (location.pathname.startsWith('/jobs')) currentPage = 'jobs'
     else if (location.pathname.startsWith('/favorites')) currentPage = 'favorites'
-    else if (location.pathname.startsWith('/social')) currentPage = 'social'
+    else if (location.pathname.startsWith('/social') || location.pathname.startsWith('/foros') || location.pathname.startsWith('/messages')) currentPage = 'social'
     else if (location.pathname.startsWith('/personas') || location.pathname.startsWith('/familia')) currentPage = 'tutor'
-    else if (location.pathname.startsWith('/profile')) currentPage = 'profile'
+    else if (location.pathname.startsWith('/profile') || location.pathname.startsWith('/verificacion-identidad')) currentPage = 'profile'
+    else if (location.pathname.startsWith('/escalas-vida') || location.pathname.startsWith('/mi-identidad')) currentPage = 'escalas'
+    else if (location.pathname.startsWith('/rutas')) currentPage = 'rutas'
     else if (location.pathname.startsWith('/notifications')) currentPage = 'notifications'
   }
 
