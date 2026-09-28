@@ -155,12 +155,14 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   // Reanudación automática en ultimoPasoCompletado + 1
   useEffect(() => {
     if (onboardingStatus && !onboardingStatus.onboardingCompleto && typeof onboardingStatus.ultimoPasoCompletado === 'number') {
-      const targetStepIdx = onboardingStatus.ultimoPasoCompletado // ultimoPasoCompletado + 1 en términos de visualización
+      const targetStepIdx = onboardingStatus.ultimoPasoCompletado
       if (targetStepIdx >= 0 && targetStepIdx < activeSteps.length) {
-        setStep(activeSteps[targetStepIdx])
+        const nextStep = activeSteps[targetStepIdx]
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStep(prev => (prev === 'cover' ? nextStep : prev))
       }
     }
-  }, [onboardingStatus?.ultimoPasoCompletado, onboardingStatus?.onboardingCompleto])
+  }, [onboardingStatus, activeSteps])
 
   const handleSaveLater = async () => {
     try {

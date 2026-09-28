@@ -146,9 +146,9 @@ export default function ProfileCompletionModal({
                 marginBottom: 20,
                 fontSize: 13,
                 color: '#073B4C',
-                lineHeight: 1.5,
               }}
             >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontWeight: 700, fontSize: 13.5, color: '#073B4C' }}>Progreso de perfil</span>
                   {onboardingStatus?.nombrePcd && (
