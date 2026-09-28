@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe, useAuthStore } from '@features/auth'
+import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
+import { formatOnboardingQuestion } from '../lib/onboardingInterpolation'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
 import {
   LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
@@ -135,6 +137,12 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const updateNeedsProfile = useUpdateNeedsProfile()
   const qc = useQueryClient()
 
+  // Contract hooks
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const saveBorradorMutation = useSaveOnboardingBorrador()
+
+  const destinatarioPerfil = onboardingStatus?.destinatarioPerfil || 'PARA_MI_HIJO'
+
   const savedProgress = getOnboardingStepProgress('tutor')
   const savedData = (savedProgress?.data as Record<string, unknown>) || {}
 
@@ -174,58 +182,10 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const [barrerasSociales, setBarrerasSociales] = useState<string[]>(() => (savedData.barrerasSociales as string[]) || [])
   const [otraBarreraSocial, setOtraBarreraSocial] = useState<string>(() => (savedData.otraBarreraSocial as string) || '')
 
+  const effectiveNombrePcd = onboardingStatus?.nombrePcd || nombreDependiente.trim() || 'Diego'
   const personName = nombreDependiente.trim() || (destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado')
 
-  const handleSaveLater = async () => {
-    try {
-      const stepData = {
-        destinatario, nombreDependiente, fechaNacimientoDependiente,
-        acompanamiento, conditionData, scales, formatos,
-        selectedInterests, selectedTemas, experienciaPorTema, otrosIntereses, viabilidad,
-        educacionHistory, gradoEstudios, terapiaHistory, preferredZones,
-        needsList, supportAreas, curpInput, barrerasSociales, otraBarreraSocial,
-      }
-      saveOnboardingStepProgress('tutor', step, stepData)
-
-      // Try partial profile update to backend if possible
-      const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
-      const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
-      const combinedGoals = Array.from(new Set([...selectedInterests, ...selectedTemas]))
-      try {
-        await updateNeedsProfile.mutateAsync({
-          profiling: {
-            disability_types: allConditions,
-            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
-            preferred_zones: preferredZones,
-            needs: needsList,
-            goals: combinedGoals,
-            support_areas: supportAreas,
-            education_history: educacionHistory,
-            education_level: gradoEstudios,
-            grado_estudios: gradoEstudios,
-            gradoEstudios: gradoEstudios,
-            therapy_history: terapiaHistory,
-            ...(fechaNacimientoDependiente ? { birth_date: fechaNacimientoDependiente, age: calcEdad(fechaNacimientoDependiente) } : {}),
-          },
-        })
-      } catch {
-        // Partial backend save error is non-fatal for local state
-      }
-
-      addToast('Tu avance ha sido guardado. Puedes continuar en cualquier momento.', 'info')
-      nav('/feed')
-    } catch (err) {
-      console.error('Error saving progress:', err)
-      addToast('Tu avance se guardó localmente.', 'info')
-      nav('/feed')
-    }
-  }
-
-  // ── Helpers ────────────────────────────────────────────────────
-  const scrollTop = () => {
-    const el = document.querySelector('.profile-wizard-scroll') || document.querySelector('main')
-    if (el) el.scrollTop = 0
-  }
+  const hasNeurodivergence = conditionData.conditions.some(c => c.toLowerCase().includes('neurodivergencia'))
   const { data: me } = useMe()
   const { data: estadoValidacion } = useEstadoValidacion()
   const storeUser = useAuthStore(s => s.user)
@@ -245,13 +205,72 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
     (savedData.curpInput && (savedData.curpInput as string).length === 18)
   )
 
-  const hasNeurodivergence = conditionData.conditions.some(c => c.toLowerCase().includes('neurodivergencia'))
   const activeSteps: TutorProfileStep[] = STEP_ORDER.filter(s =>
     (s !== 'neurodivergence' || hasNeurodivergence) &&
     (s !== 'identity_curp' || !hasCurp)
   )
   const stepIndex = activeSteps.indexOf(step)
   const totalSteps = activeSteps.length
+
+  // Reanudación automática en ultimoPasoCompletado + 1
+  useEffect(() => {
+    if (onboardingStatus && !onboardingStatus.onboardingCompleto && typeof onboardingStatus.ultimoPasoCompletado === 'number') {
+      const targetStepIdx = onboardingStatus.ultimoPasoCompletado
+      if (targetStepIdx >= 0 && targetStepIdx < activeSteps.length) {
+        setStep(activeSteps[targetStepIdx])
+      }
+    }
+  }, [onboardingStatus?.ultimoPasoCompletado, onboardingStatus?.onboardingCompleto])
+
+  const handleSaveLater = async () => {
+    try {
+      const currentStepNumber = Math.max(1, stepIndex + 1)
+      const porcentaje = Math.min(100, Math.round((currentStepNumber / Math.max(1, totalSteps)) * 100))
+
+      const stepData = {
+        destinatario, nombreDependiente, fechaNacimientoDependiente,
+        acompanamiento, conditionData, scales, formatos,
+        selectedInterests, selectedTemas, experienciaPorTema, otrosIntereses, viabilidad,
+        educacionHistory, gradoEstudios, terapiaHistory, preferredZones,
+        needsList, supportAreas, curpInput, barrerasSociales, otraBarreraSocial,
+      }
+      saveOnboardingStepProgress('tutor', step, stepData)
+
+      // POST /api/onboarding/borrador según contrato API
+      try {
+        await saveBorradorMutation.mutateAsync({
+          ultimoPasoCompletado: currentStepNumber,
+          porcentajeProgreso: porcentaje,
+          destinatarioPerfil: destinatarioPerfil || 'PARA_MI_HIJO',
+          nombrePcd: effectiveNombrePcd,
+          tipoCondicion: conditionData.conditions,
+          tipoNeurodivergencia: conditionData.neurodivergencias,
+          tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+          diagnosticoEspecifico: conditionData.diagnosticoEspecifico,
+          gradoEstudios,
+          terapias: terapiaHistory,
+          necesidades: needsList,
+          formatos,
+          intereses: selectedInterests,
+        })
+      } catch (err) {
+        console.warn('[TutorProfileWizard] Error al guardar borrador en backend:', err)
+      }
+
+      addToast('Progreso guardado', 'info')
+      nav('/feed')
+    } catch (err) {
+      console.error('Error saving progress:', err)
+      addToast('Progreso guardado', 'info')
+      nav('/feed')
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────
+  const scrollTop = () => {
+    const el = document.querySelector('.profile-wizard-scroll') || document.querySelector('main')
+    if (el) el.scrollTop = 0
+  }
 
   // ── Toggle handlers ───────────────────────────────────────────
   const toggleCondition = (cond: string) => {

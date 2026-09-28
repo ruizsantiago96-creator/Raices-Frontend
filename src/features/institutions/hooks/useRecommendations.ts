@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { mapInstitucion } from './useInstitutions'
+import type { OnboardingEstadoResponse, OnboardingBorradorPayload, OnboardingBorradorResponse } from '@/types/onboarding'
 
 /**
  * Hook para obtener instituciones recomendadas personalizadas.
@@ -73,34 +74,89 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
 
 /**
  * Hook para verificar el estado de onboarding del usuario.
- * GET /api/usuarios/onboarding
+ * GET /api/onboarding/estado (con fallback a /api/usuarios/onboarding)
  *
  * Retorna:
  * - onboardingCompleto: boolean
- * - camposFaltantes: string[]
- * - porcentaje: number (0–100)
+ * - porcentajeProgreso: number (0–100)
+ * - porcentaje: number (alias)
+ * - ultimoPasoCompletado: number
+ * - destinatarioPerfil: 'PARA_MI' | 'PARA_MI_HIJO' | string
+ * - nombrePcd: string
+ * - pasosPendientes: string[]
  */
 export function useOnboardingStatus() {
-  return useQuery({
+  return useQuery<OnboardingEstadoResponse>({
     queryKey: ['onboarding-status'],
     queryFn: async () => {
-      // Obtenemos ambos estados en paralelo
+      // Obtenemos estado de onboarding y de validación de identidad en paralelo
       const [onboardingRes, identidadRes] = await Promise.all([
-        api.get('/usuarios/onboarding').catch(() => ({ data: { onboardingCompleto: false } })),
-        api.get('/usuarios/estado-validacion-identidad').catch(() => ({ data: { estado: 'no_subido' } }))
+        api.get('/onboarding/estado')
+          .catch(() => api.get('/usuarios/onboarding'))
+          .catch(() => ({ data: {} })),
+        api.get('/usuarios/estado-validacion-identidad')
+          .catch(() => ({ data: { estado: 'no_subido' } }))
       ])
 
-      const data = onboardingRes.data
+      const rawData = onboardingRes.data || {}
       const estado = identidadRes.data?.estado
 
+      const porcentajeProgreso = typeof rawData.porcentajeProgreso === 'number'
+        ? rawData.porcentajeProgreso
+        : typeof rawData.porcentaje === 'number'
+          ? rawData.porcentaje
+          : 0
+
+      const ultimoPasoCompletado = typeof rawData.ultimoPasoCompletado === 'number'
+        ? rawData.ultimoPasoCompletado
+        : 0
+
+      const destinatarioPerfil = rawData.destinatarioPerfil || 'PARA_MI'
+      const nombrePcd = rawData.nombrePcd || ''
+      const pasosPendientes = Array.isArray(rawData.pasosPendientes)
+        ? rawData.pasosPendientes
+        : Array.isArray(rawData.camposFaltantes)
+          ? rawData.camposFaltantes
+          : []
+
+      let onboardingCompleto = Boolean(rawData.onboardingCompleto)
+
       // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
-      // para desbloquear todas las vistas (rutas, foros, etc.) globalmente.
+      // para desbloquear todas las vistas globalmente.
       if (estado === 'aprobado' || estado === 'pendiente') {
-        data.onboardingCompleto = true
+        onboardingCompleto = true
       }
 
-      return data
+      return {
+        ...rawData,
+        onboardingCompleto,
+        porcentajeProgreso,
+        porcentaje: porcentajeProgreso,
+        ultimoPasoCompletado,
+        destinatarioPerfil,
+        nombrePcd,
+        pasosPendientes,
+        camposFaltantes: pasosPendientes,
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
+  })
+}
+
+/**
+ * Hook para guardar avance o pausar el onboarding (Guardar Borrador).
+ * POST /api/onboarding/borrador
+ */
+export function useSaveOnboardingBorrador() {
+  const queryClient = useQueryClient()
+
+  return useMutation<OnboardingBorradorResponse, Error, OnboardingBorradorPayload>({
+    mutationFn: async (payload) => {
+      const response = await api.post('/onboarding/borrador', payload)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-status'] })
+    },
   })
 }

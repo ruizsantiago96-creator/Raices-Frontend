@@ -153,9 +153,22 @@ export const USER_ENDPOINTS = {
   },
   GET_ONBOARDING: {
     method: 'GET',
-    path: '/usuarios/onboarding',
-    description: 'Estado de completitud del onboarding â€” retorna campos faltantes y porcentaje',
-    response: { porcentaje: 'number', camposFaltantes: 'string[]' },
+    path: '/onboarding/estado',
+    description: 'Estado de completitud del onboarding — retorna campos faltantes, porcentaje y personalización',
+    response: { onboardingCompleto: 'boolean', porcentajeProgreso: 'number', ultimoPasoCompletado: 'number', destinatarioPerfil: 'string', nombrePcd: 'string', pasosPendientes: 'string[]' },
+  },
+  GET_ONBOARDING_ESTADO: {
+    method: 'GET',
+    path: '/onboarding/estado',
+    description: 'Estado de completitud del onboarding — retorna campos faltantes, porcentaje y personalización',
+    response: { onboardingCompleto: 'boolean', porcentajeProgreso: 'number', ultimoPasoCompletado: 'number', destinatarioPerfil: 'string', nombrePcd: 'string', pasosPendientes: 'string[]' },
+  },
+  SAVE_ONBOARDING_BORRADOR: {
+    method: 'POST',
+    path: '/onboarding/borrador',
+    description: 'Guardar borrador o avance parcial del onboarding',
+    body: 'PayloadParcial',
+    response: { mensaje: 'string', porcentajeProgreso: 'number', ultimoPasoCompletado: 'number', onboardingCompleto: 'boolean' },
   },
   GET_ESPECIALISTAS: {
     method: 'GET',

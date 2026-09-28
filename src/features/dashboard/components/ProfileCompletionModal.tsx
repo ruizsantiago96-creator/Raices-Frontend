@@ -122,13 +122,13 @@ export default function ProfileCompletionModal({
             </div>
           )}
 
-          {!isRejected && formattedMissing && (
+          {!isRejected && (
             <div
               style={{
                 background: 'linear-gradient(135deg, rgba(34, 155, 88, 0.08) 0%, rgba(7, 59, 76, 0.05) 100%)',
                 border: '1.5px solid rgba(34, 155, 88, 0.22)',
                 borderRadius: 14,
-                padding: '14px 18px',
+                padding: '16px 20px',
                 marginBottom: 20,
                 fontSize: 13,
                 color: '#073B4C',
@@ -136,28 +136,47 @@ export default function ProfileCompletionModal({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontWeight: 700, fontSize: 13, color: '#073B4C' }}>Progreso de perfil</span>
-                <span style={{ fontWeight: 800, fontSize: 13, color: '#229B58' }}>{onboardingStatus?.porcentaje ?? 0}%</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13.5, color: '#073B4C' }}>Progreso de perfil</span>
+                  {onboardingStatus?.nombrePcd && (
+                    <span style={{ fontSize: 11.5, padding: '2px 8px', borderRadius: 10, background: 'rgba(34,155,88,0.15)', color: '#229B58', fontWeight: 700 }}>
+                      {onboardingStatus.destinatarioPerfil === 'PARA_MI_HIJO' ? `Para: ${onboardingStatus.nombrePcd}` : 'Para mi'}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 14, color: '#229B58' }}>
+                  {onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 0}%
+                </span>
               </div>
-              <div style={{ height: 6, background: 'rgba(7, 59, 76, 0.08)', borderRadius: 3, overflow: 'hidden', marginBottom: 10 }}>
+
+              <div style={{ height: 7, background: 'rgba(7, 59, 76, 0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
                 <div
                   style={{
                     height: '100%',
-                    width: `${onboardingStatus?.porcentaje ?? 0}%`,
+                    width: `${onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 0}%`,
                     background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
-                    borderRadius: 3,
+                    borderRadius: 4,
                     transition: 'width 0.5s ease',
                   }}
                 />
               </div>
-              <div style={{ fontSize: 13, color: '#334155' }}>
-                <span style={{ fontWeight: 600, color: '#073B4C' }}>Faltan por completar:</span> {formattedMissing}
-              </div>
+
+              {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0 && (
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#229B58', marginBottom: 6 }}>
+                  📍 Te quedaste en el Paso {onboardingStatus.ultimoPasoCompletado} (Reanudarás automáticamente en el Paso {onboardingStatus.ultimoPasoCompletado + 1})
+                </div>
+              )}
+
+              {formattedMissing && (
+                <div style={{ fontSize: 12.5, color: '#334155' }}>
+                  <span style={{ fontWeight: 600, color: '#073B4C' }}>Faltan por completar:</span> {formattedMissing}
+                </div>
+              )}
             </div>
           )}
 
           <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 28px', lineHeight: 1.5 }}>
-            Puedes hacerlo ahora o más tarde desde <strong>Verificación de Identidad</strong>.
+            Puedes continuar ahora o guardar tu avance para después en cualquier momento.
           </p>
 
           <div
@@ -215,7 +234,12 @@ export default function ProfileCompletionModal({
                 e.currentTarget.style.transform = 'none'
               }}
             >
-              {isRejected ? 'Actualizar documentos' : 'Completar perfil'}
+              {isRejected
+                ? 'Actualizar documentos'
+                : typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                  ? `Reanudar en Paso ${onboardingStatus.ultimoPasoCompletado + 1}`
+                  : 'Completar perfil'
+              }
             </button>
           </div>
         </div>

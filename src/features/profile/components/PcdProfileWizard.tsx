@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useUpdateProfile, useUpdateNeedsProfile } from '@features/auth/hooks/useAuth'
+import { useUpdateProfile, useUpdateNeedsProfile, useMe } from '@features/auth/hooks/useAuth'
+import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
+import { formatOnboardingQuestion } from '../lib/onboardingInterpolation'
 import {
   LIST_ACOMPANAMIENTO,
   CONDICIONES_PCD,
@@ -101,6 +103,14 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
   const qc = useQueryClient()
+  const { data: me } = useMe()
+
+  // Contract hooks
+  const { data: onboardingStatus } = useOnboardingStatus()
+  const saveBorradorMutation = useSaveOnboardingBorrador()
+
+  const destinatarioPerfil = onboardingStatus?.destinatarioPerfil || 'PARA_MI'
+  const nombrePcd = onboardingStatus?.nombrePcd || me?.nombre || me?.displayName || 'Diego'
 
   const savedProgress = getOnboardingStepProgress('pcd')
   const savedData = (savedProgress?.data as Record<string, unknown>) || {}
@@ -137,8 +147,26 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const [barrerasSociales, setBarrerasSociales] = useState<string[]>(() => (savedData.barrerasSociales as string[]) || [])
   const [otraBarreraSocial, setOtraBarreraSocial] = useState<string>(() => (savedData.otraBarreraSocial as string) || '')
 
+  const hasNeurodivergence = conditionData.conditions.some(c => c.toLowerCase().includes('neurodivergencia'))
+  const activeSteps: ProfileStep[] = STEP_ORDER.filter(s => s !== 'neurodivergence' || hasNeurodivergence)
+  const stepIndex = activeSteps.indexOf(step)
+  const totalSteps = activeSteps.length
+
+  // Reanudación automática en ultimoPasoCompletado + 1
+  useEffect(() => {
+    if (onboardingStatus && !onboardingStatus.onboardingCompleto && typeof onboardingStatus.ultimoPasoCompletado === 'number') {
+      const targetStepIdx = onboardingStatus.ultimoPasoCompletado // ultimoPasoCompletado + 1 en términos de visualización
+      if (targetStepIdx >= 0 && targetStepIdx < activeSteps.length) {
+        setStep(activeSteps[targetStepIdx])
+      }
+    }
+  }, [onboardingStatus?.ultimoPasoCompletado, onboardingStatus?.onboardingCompleto])
+
   const handleSaveLater = async () => {
     try {
+      const currentStepNumber = Math.max(1, stepIndex + 1)
+      const porcentaje = Math.min(100, Math.round((currentStepNumber / Math.max(1, totalSteps)) * 100))
+
       const stepData = {
         acompanamiento, conditionData, scales, formatos,
         selectedInterests, selectedTemas, experienciaPorTema, otrosIntereses, viabilidad,
@@ -147,35 +175,32 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
       }
       saveOnboardingStepProgress('pcd', step, stepData)
 
-      // Try partial profile update to backend if possible
-      const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
-      const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
-      const combinedGoals = Array.from(new Set([...selectedInterests, ...selectedTemas]))
+      // POST /api/onboarding/borrador según contrato API
       try {
-        await updateNeedsProfile.mutateAsync({
-          profiling: {
-            disability_types: allConditions,
-            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
-            preferred_zones: preferredZones,
-            needs: needsList,
-            goals: combinedGoals,
-            support_areas: supportAreas,
-            education_history: educacionHistory,
-            education_level: gradoEstudios,
-            grado_estudios: gradoEstudios,
-            gradoEstudios: gradoEstudios,
-            therapy_history: terapiaHistory,
-          },
+        await saveBorradorMutation.mutateAsync({
+          ultimoPasoCompletado: currentStepNumber,
+          porcentajeProgreso: porcentaje,
+          destinatarioPerfil,
+          nombrePcd,
+          tipoCondicion: conditionData.conditions,
+          tipoNeurodivergencia: conditionData.neurodivergencias,
+          tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+          diagnosticoEspecifico: conditionData.diagnosticoEspecifico,
+          gradoEstudios,
+          terapias: terapiaHistory,
+          necesidades: needsList,
+          formatos,
+          intereses: selectedInterests,
         })
-      } catch {
-        // Partial backend save error is non-fatal for local state
+      } catch (err) {
+        console.warn('[PcdProfileWizard] Error al guardar borrador en backend:', err)
       }
 
-      addToast('Tu avance ha sido guardado. Puedes continuar en cualquier momento.', 'info')
+      addToast('Progreso guardado', 'info')
       nav('/feed')
     } catch (err) {
       console.error('Error saving progress:', err)
-      addToast('Tu avance se guardó localmente.', 'info')
+      addToast('Progreso guardado', 'info')
       nav('/feed')
     }
   }
@@ -185,11 +210,6 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
     const el = document.querySelector('.profile-wizard-scroll') || document.querySelector('main')
     if (el) el.scrollTop = 0
   }
-
-  const hasNeurodivergence = conditionData.conditions.some(c => c.toLowerCase().includes('neurodivergencia'))
-  const activeSteps: ProfileStep[] = STEP_ORDER.filter(s => s !== 'neurodivergence' || hasNeurodivergence)
-  const stepIndex = activeSteps.indexOf(step)
-  const totalSteps = activeSteps.length
 
   // ── Toggle handlers ───────────────────────────────────────────
   const toggleCondition = (cond: string) => {

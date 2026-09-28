@@ -571,7 +571,7 @@ export default function FeedPage() {
   const isApproved = identidadStatus?.estado === 'aprobado'
   const isVerified = Boolean(user?.is_verified || isApproved || isPendingDocs)
   const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
-  const isOnboardingComplete = Boolean((onboardingStatus as { onboardingCompleto?: boolean } | undefined)?.onboardingCompleto)
+  const isOnboardingComplete = Boolean(onboardingStatus?.onboardingCompleto)
   
   // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
   const isIncomplete = Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
@@ -709,19 +709,36 @@ export default function FeedPage() {
         {isIncomplete && !isRejected && (
           <div className="animate-fade-in-up" style={{
             background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
-            border: '1px solid rgba(34,155,88,0.15)',
+            border: '1px solid rgba(34,155,88,0.2)',
             borderRadius: 16, padding: '16px 20px', marginBottom: 20,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
           }}>
             <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Tu perfil está al {(onboardingStatus as { porcentaje?: number })?.porcentaje ?? 20}%</h3>
-              <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                  Tu perfil está al {(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 20)}%
+                </h3>
+                {onboardingStatus?.nombrePcd && (
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(34,155,88,0.15)', color: '#229B58', fontWeight: 700 }}>
+                    {onboardingStatus.destinatarioPerfil === 'PARA_MI_HIJO' ? `Para: ${onboardingStatus.nombrePcd}` : 'Para mi'}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
+                {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                  ? `Último paso completado: Paso ${onboardingStatus.ultimoPasoCompletado}. Reanudarás automáticamente en el Paso ${onboardingStatus.ultimoPasoCompletado + 1}.`
+                  : 'Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.'
+                }
+              </p>
               <div style={{ height: 6, background: 'rgba(34,155,88,0.15)', borderRadius: 3, marginTop: 12, overflow: 'hidden' }}>
-                <div style={{ width: `${(onboardingStatus as { porcentaje?: number })?.porcentaje ?? 20}%`, height: '100%', background: '#229B58', borderRadius: 3, transition: 'width 0.3s ease' }} />
+                <div style={{ width: `${(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 20)}%`, height: '100%', background: '#229B58', borderRadius: 3, transition: 'width 0.3s ease' }} />
               </div>
             </div>
-            <Link to="/completar-perfil" style={{ padding: '10px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-              Completar ahora
+            <Link to="/completar-perfil" style={{ padding: '10px 18px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(34,155,88,0.25)' }}>
+              {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                ? `Reanudar (Paso ${onboardingStatus.ultimoPasoCompletado + 1})`
+                : 'Completar ahora'
+              }
             </Link>
           </div>
         )}
