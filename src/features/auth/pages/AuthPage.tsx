@@ -8,6 +8,7 @@ import { Icons, BrandMark } from '@shared/components/shared'
 import { getRememberMe } from '@shared/lib/storage'
 import { VERSION } from '../../../../version'
 import { AUTH_MESSAGES, FIREBASE_PASSWORD_RESET_URL } from '../constants/authMessages'
+import { normalizeEmail } from '../lib/validators'
 import RegistrationWizard from '../components/RegistrationWizard'
 import TutorRegistrationWizard from '../components/TutorRegistrationWizard'
 import InstitutionRegistrationWizard from '../components/InstitutionRegistrationWizard'
@@ -73,6 +74,10 @@ export default function AuthPage() {
     let val = e.target.value
     if (k === 'full_name' && form.role !== 'institution') {
       val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '')
+    }
+    // El correo siempre se normaliza a minúsculas al escribirlo
+    if (k === 'email') {
+      val = normalizeEmail(val)
     }
     setForm(f => ({ ...f, [k]: val }))
     setError('')

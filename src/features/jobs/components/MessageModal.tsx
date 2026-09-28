@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { useMessages, useSendMessage } from '@features/social/hooks/useMessages'
+import { useMessages, useSendMessage, useMarcarConversacionLeida } from '@features/social/hooks/useMessages'
 import { useAuthStore } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
@@ -36,6 +36,14 @@ export default function MessageModal({ job, onClose }: MessageModalProps) {
     data?: SocialMessage[]
     isLoading: boolean
   }
+  const marcarLeidos = useMarcarConversacionLeida()
+
+  // Al abrir la conversación, marcar como leídos los mensajes del socio.
+  // Idempotente: el backend solo actualiza los que estén leido == false.
+  useEffect(() => {
+    if (ownerUserId) marcarLeidos.mutate(ownerUserId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerUserId])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })

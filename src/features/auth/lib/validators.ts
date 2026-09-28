@@ -7,6 +7,15 @@
 export const EMAIL_REGEX: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
+ * Normaliza un correo electrónico a minúsculas y sin espacios en los extremos.
+ * Se aplica en cada cambio de los inputs de email para que el correo nunca se
+ * guarde con mayúsculas (ej. 'ANA.ACEVES@ME.COM' → 'ana.aceves@me.com').
+ */
+export function normalizeEmail(email: string | null | undefined): string {
+  return typeof email === 'string' ? email.trim().toLowerCase() : ''
+}
+
+/**
  * Valida si una cadena cumple con el formato estándar de correo electrónico.
  */
 export function isValidEmail(email: string | null | undefined): boolean {

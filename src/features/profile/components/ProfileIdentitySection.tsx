@@ -7,6 +7,7 @@ import {
 } from '@/types/profile'
 import { useSubirDocumentoIdentidad } from '../hooks/useDocumentoIdentidad'
 import { useUiStore } from '@shared/stores/uiStore'
+import { useEsEmpresa } from '@features/auth/lib/empresaRole'
 
 export function useIdentitySection(_state?: unknown) {
   const [curpNumber, setCurpNumber] = useState<string>('')
@@ -25,7 +26,12 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
   onUploaded,
 }) => {
   const [localCurp, setLocalCurp] = useState(status?.numeroCurp ?? '')
+  // Persona moral: sin CURP ni identificación oficial. Se oculta en el origen
+  // para que ninguna vista que lo monte (MiIdentidadPage, /verificacion-identidad)
+  // pueda ofrecerle la validación individual.
+  const isEmpresa = useEsEmpresa()
 
+  if (isEmpresa) return null
   if (estado === 'aprobado') return null
   if (estado === 'pendiente' && status?.tieneCurp && status?.tieneIdentificacion) return null
 
@@ -414,6 +420,12 @@ export const ProfileIdentitySection: React.FC<ProfileIdentitySectionProps> = ({
   status,
   estado = status?.estado ?? 'sin_documentos',
 }) => {
+  const isEmpresa = useEsEmpresa()
+
+  // Una empresa nunca interactúa con CURP/identificación oficial: toda la
+  // sección (estado + carga de documentos) se suprime.
+  if (isEmpresa) return null
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <IdentityStatusCard status={status} />

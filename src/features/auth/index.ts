@@ -9,6 +9,7 @@
 export { AppSidebar } from './components/AppSidebar'
 export { default as ProtectedRoute } from './components/ProtectedRoute'
 export { default as FeatureGuard } from './components/FeatureGuard'
+export { default as SoloPersonaFisica } from './components/SoloPersonaFisica'
 export { TopNav } from './components/TopNav'
 
 // ── Hooks (business logic used by other features) ─────────────────
@@ -20,3 +21,13 @@ export { useAuthStore } from './store/authStore'
 
 // ── Lib (Firebase bridge — used internally and by api.js) ──────────
 export { firebaseBridgeLogin, isBridgeAvailable } from './lib/firebaseBridge'
+
+// ── Lib (persona moral / gating de empresa) ────────────────────────
+export {
+  esEmpresa,
+  esRutaEmpresa,
+  useEsEmpresa,
+  EMPRESA_HOME,
+  EMPRESA_EDITAR,
+  RUTAS_EMPRESA,
+} from './lib/empresaRole'

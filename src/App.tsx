@@ -7,7 +7,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { queryClient } from '@shared/lib/queryClient'
 import { useA11yStore } from '@features/a11y/store/a11yStore'
-import { ProtectedRoute, getHomePathByRole, useAuthStore } from '@features/auth'
+import { ProtectedRoute, getHomePathByRole, useAuthStore, SoloPersonaFisica } from '@features/auth'
 import FeatureGuard from '@features/auth/components/FeatureGuard'
 import ToastContainer from '@shared/components/Toast'
 import { AccessibilityBar } from '@features/a11y'
@@ -193,7 +193,8 @@ export default function App() {
                   <Route path="/institution/:id" element={<InstitutionPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/mi-identidad" element={<MiIdentidadPage />} />
-                  <Route path="/verificacion-identidad" element={<IdentityVerificationPage />} />
+                  {/* Persona moral: sin CURP, la vista de identidad se redirige a su portal */}
+                  <Route path="/verificacion-identidad" element={<SoloPersonaFisica><IdentityVerificationPage /></SoloPersonaFisica>} />
                   <Route path="/completar-perfil" element={<CompleteProfilePage />} />
                   <Route path="/familia" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
                   <Route path="/personas" element={<ProtectedRoute role="tutor"><TutorPage /></ProtectedRoute>} />
@@ -202,8 +203,16 @@ export default function App() {
                   <Route path="/institution-portal" element={<ProtectedRoute role="institution"><InstitutionPortalPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/registro" element={<ProtectedRoute role="institution"><CrearInstitucionPage /></ProtectedRoute>} />
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
-                  <Route path="/empresa-portal" element={<ProtectedRoute role="empresa"><EmpresaDashboard /></ProtectedRoute>} />
-                  <Route path="/empresa-portal/editar" element={<ProtectedRoute role="empresa"><EditarEmpresaPage /></ProtectedRoute>} />
+
+                  {/* ── Portal de Empresa (persona moral) ───────────────────
+                      ProtectedRoute ya expulsa a toda cuenta empresa fuera de RUTAS_EMPRESA,
+                      así que aquí nunca puede aparecer el layout de usuario estándar. */}
+                  <Route path="/empresa/dashboard" element={<ProtectedRoute role="empresa"><EmpresaDashboard /></ProtectedRoute>} />
+                  <Route path="/empresa/editar" element={<ProtectedRoute role="empresa"><EditarEmpresaPage /></ProtectedRoute>} />
+                  {/* Alias legacy: enlaces y marcadores anteriores a la reorganización */}
+                  <Route path="/empresa-portal" element={<Navigate to="/empresa/dashboard" replace />} />
+                  <Route path="/empresa-portal/editar" element={<Navigate to="/empresa/editar" replace />} />
+
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                   <Route path="/rutas" element={<RutasPage />} />
                   <Route path="/escalas-vida" element={<EscalasVidaPage />} />

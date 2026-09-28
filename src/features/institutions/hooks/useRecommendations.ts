@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { mapInstitucion } from './useInstitutions'
 import type { OnboardingEstadoResponse, OnboardingBorradorPayload, OnboardingBorradorResponse } from '@/types/onboarding'
+import { useAuthStore } from '@features/auth/store/authStore'
 
 /**
  * Hook para obtener instituciones recomendadas personalizadas.
@@ -86,8 +87,11 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
  * - pasosPendientes: string[]
  */
 export function useOnboardingStatus() {
+  const rol = useAuthStore(s => s.user?.role)
+  const esEmpresa = rol === 'empresa'
+
   return useQuery<OnboardingEstadoResponse>({
-    queryKey: ['onboarding-status'],
+    queryKey: ['onboarding-status', esEmpresa],
     queryFn: async () => {
       // Obtenemos estado de onboarding y de validación de identidad en paralelo
       const [onboardingRes, identidadRes] = await Promise.all([
@@ -101,7 +105,7 @@ export function useOnboardingStatus() {
       const rawData = onboardingRes.data || {}
       const estado = identidadRes.data?.estado
 
-      const porcentajeProgreso = typeof rawData.porcentajeProgreso === 'number'
+      let porcentajeProgreso = typeof rawData.porcentajeProgreso === 'number'
         ? rawData.porcentajeProgreso
         : typeof rawData.porcentaje === 'number'
           ? rawData.porcentaje
@@ -113,13 +117,22 @@ export function useOnboardingStatus() {
 
       const destinatarioPerfil = rawData.destinatarioPerfil || 'PARA_MI'
       const nombrePcd = rawData.nombrePcd || ''
-      const pasosPendientes = Array.isArray(rawData.pasosPendientes)
+      let pasosPendientes = Array.isArray(rawData.pasosPendientes)
         ? rawData.pasosPendientes
         : Array.isArray(rawData.camposFaltantes)
           ? rawData.camposFaltantes
           : []
 
       let onboardingCompleto = Boolean(rawData.onboardingCompleto)
+
+      // Normalización para empresas: excluir CURP/fechaNacimiento del cálculo
+      if (esEmpresa) {
+        pasosPendientes = pasosPendientes.filter(f => f !== 'curp' && f !== 'fechaNacimiento')
+        if (pasosPendientes.length === 0) {
+          onboardingCompleto = true
+          porcentajeProgreso = 100
+        }
+      }
 
       // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
       // para desbloquear todas las vistas globalmente.

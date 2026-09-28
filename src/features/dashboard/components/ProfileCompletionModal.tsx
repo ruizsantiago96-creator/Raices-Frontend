@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@features/auth/store/authStore'
+import { esEmpresa } from '@features/auth/lib/empresaRole'
 
 const FIELD_LABELS: Record<string, string> = {
   curp: 'CURP',
@@ -26,12 +28,24 @@ export default function ProfileCompletionModal({
   onClose,
 }: ProfileCompletionModalProps) {
   const nav = useNavigate()
+  const user = useAuthStore(s => s.user)
+
+  // Una empresa es persona moral: no tiene CURP ni fecha de nacimiento, y su
+  // expediente se verifica con la CSF. Este modal es la bitácora de validación
+  // individual, así que no debe renderizarse para ellas en absoluto.
+  // El equivalente para empresas es EmpresaOnboardingModal.
+  if (esEmpresa(user)) {
+    return null
+  }
 
   if (!isOpen) {
     return null
   }
 
-  const formattedMissing = (onboardingStatus?.camposFaltantes || [])
+  const camposFaltantes = onboardingStatus?.camposFaltantes || []
+  const porcentaje = onboardingStatus?.porcentaje ?? 0
+
+  const formattedMissing = camposFaltantes
     .map((field: string) => FIELD_LABELS[field] || field)
     .join(', ')
 
@@ -135,7 +149,6 @@ export default function ProfileCompletionModal({
                 lineHeight: 1.5,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontWeight: 700, fontSize: 13.5, color: '#073B4C' }}>Progreso de perfil</span>
                   {onboardingStatus?.nombrePcd && (

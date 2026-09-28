@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, HTMLAttributes, ChangeEvent, FormEvent } from 'react'
-import { useConversations, useMessages, useSendMessage } from '../hooks/useMessages'
+import { useConversations, useMessages, useSendMessage, useMarcarConversacionLeida } from '../hooks/useMessages'
 import { useMiembrosDestacados } from '../hooks/useCommunity'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { useMe } from '@features/auth'
@@ -206,6 +206,15 @@ export function DirectMessages({
   const { data: messages = [] } = useMessages(activePartnerId)
   const { data: members = [] } = useMiembrosDestacados(50) // load up to 50 members to allow starting chats
   const sendMessage = useSendMessage()
+  const marcarLeidos = useMarcarConversacionLeida()
+
+  // Al abrir una conversación (desktop, móvil o chat flotante), marcar como
+  // leídos los mensajes del socio. Idempotente: el backend solo actualiza
+  // los mensajes con leido == false.
+  useEffect(() => {
+    if (activePartnerId) marcarLeidos.mutate(activePartnerId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePartnerId])
 
   // Sync floating chat partner when it changes (avoids setState-in-effect lint error)
   const floatingPartnerStr = floatingChatPartnerId !== null ? String(floatingChatPartnerId) : null
