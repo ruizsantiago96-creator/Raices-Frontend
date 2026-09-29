@@ -4,7 +4,6 @@ import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe, useAuthStore } from '@features/auth'
 import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
-import { formatOnboardingQuestion } from '../lib/onboardingInterpolation'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
 import {
   LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
@@ -193,7 +192,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const hasDocUploaded = Boolean(
     estadoValidacion?.documentoSubido ||
     estadoValidacion?.curpValidada ||
-    (estadoValidacion?.estado && estadoValidacion.estado !== 'no_subido')
+    (estadoValidacion?.estado && estadoValidacion.estado !== 'sin_subir')
   )
   const hasCurp = Boolean(
     userCurp ||
@@ -360,7 +359,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
         barrerasSociales: finalBarrerasSociales,
         tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
-        diagnosticoEspecifico: specDiag,
+        diagnosticoEspecifico: conditionData.diagnosticoEspecifico.trim() || null,
         temporalidadOrigen: conditionData.temporalidad,
         preferenciaFormato: formatos[0] || 'texto',
         areasInteres: selectedInterests,
@@ -386,14 +385,8 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
             goals: combinedGoals,
             support_areas: supportAreas,
             education_history: educacionHistory,
-            education_level: gradoEstudios,
-            grado_estudios: gradoEstudios,
-            gradoEstudios: gradoEstudios,
             therapy_history: terapiaHistory,
             life_stage: dependienteEtapaPerfil,
-            current_concerns: specDiag,
-            diagnostico_especifico: specDiag,
-            diagnosticoEspecifico: specDiag,
             barreras_sociales: finalBarrerasSociales,
             barrerasSociales: finalBarrerasSociales,
             support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
@@ -587,13 +580,10 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
               Grado / Nivel de estudios alcanzado
-            </label>
-            <CustomSelect
+            </label>              <CustomSelect
               options={LIST_GRADO_ESTUDIOS.map(g => ({ value: g.id, label: g.label }))}
               value={gradoEstudios}
               onChange={val => setGradoEstudios(String(val))}
-              placeholder="Selecciona el grado o nivel de estudios..."
-              minWidth="100%"
             />
           </div>
 
@@ -655,12 +645,11 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
                 Selecciona todas las opciones que correspondan:
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                {LIST_BARRERAS_SOCIALES.map(barrera => (
-                  <VerticalCheckCard
+                {LIST_BARRERAS_SOCIALES.map(barrera => (                    <VerticalCheckCard
                     key={barrera}
                     label={barrera}
                     selected={barrerasSociales.includes(barrera)}
-                    onClick={() => {
+                    onSelect={() => {
                       setBarrerasSociales(prev =>
                         prev.includes(barrera) ? prev.filter(b => b !== barrera) : [...prev, barrera]
                       )
@@ -825,7 +814,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
 
       {/* ── STEP: VIABILITY ── */}
       {step === 'viability' && (
-        <form onSubmit={(e) => { e.preventDefault(); if (hasCurp) { handleFinalSubmit(e) } else { goNext('identity_curp') } }} style={formStyle}>
+        <form onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(e) }} style={formStyle}>
           <div><h2 style={headingStyle}>Viabilidad económica</h2><p style={descStyle}>Esto nos ayuda a priorizar programas o recursos convenientes para ti y {personName}.</p></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {LIST_VIABILIDAD.map(opt => (
@@ -842,8 +831,8 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           <WizardNavButtons
             onBack={goBack}
             onSaveLater={handleSaveLater}
-            submitLabel={sending ? 'Guardando...' : hasCurp ? '¡Finalizar perfil!' : 'Continuar a Verificación (CURP)'}
-            submitIcon={hasCurp && !sending ? <CatalogIcon icon={FluentEmoji.destello} size={14} /> : undefined}
+            submitLabel={sending ? 'Guardando...' : '¡Finalizar perfil!'}
+            submitIcon={sending ? null : <CatalogIcon icon={FluentEmoji.destello} size={14} />}
             submitDisabled={sending}
           />
         </form>
