@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { VERSION } from '../../../version'
 import {
@@ -246,6 +247,18 @@ const FOOTER_COLUMNS: FooterColumn[] = [
   { title: 'Florece', items: ['Acerca de nosotros', 'Nuestro propósito', 'Privacidad', 'Contacto'] },
 ]
 
+/** Etiqueta visible → ruta interna de la landing informativa correspondiente. */
+const FOOTER_LINKS: Record<string, string> = {
+  'Salud y bienestar': '/salud-y-bienestar',
+  'Educación': '/educacion',
+  'Empleo': '/empleo',
+  'Comunidad': '/comunidad',
+  'Acerca de nosotros': '/acerca-de-nosotros',
+  'Nuestro propósito': '/nuestro-proposito',
+  'Privacidad': '/privacidad',
+  'Contacto': '/contacto',
+}
+
 export const AppFooter: React.FC = () => (
   <footer className="app-footer-main" style={{ background: 'var(--landing-footer-bg)', borderTop: '1px solid var(--landing-footer-border)', padding: '44px 48px 24px', fontFamily: 'var(--font-body)', position: 'relative', overflow: 'hidden' }}>
     <style>{`
@@ -280,15 +293,20 @@ export const AppFooter: React.FC = () => (
         <div key={i}>
           <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--landing-footer-text)', margin: '0 0 14px' }}>{col.title}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-            {col.items.map((item, j) => (
-              <li 
-                key={j} 
-                className="footer-nav-item" 
-                style={{ fontSize: 14, cursor: 'pointer' }}
-              >
-                {item}
-              </li>
-            ))}
+            {col.items.map((item, j) => {
+              const to = FOOTER_LINKS[item]
+              return (
+                <li key={j} style={{ fontSize: 14 }}>
+                  {to ? (
+                    <Link to={to} className="footer-nav-item" style={{ display: 'inline-block', width: '100%' }}>
+                      {item}
+                    </Link>
+                  ) : (
+                    <span className="footer-nav-item" style={{ cursor: 'pointer' }}>{item}</span>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </div>
       ))}
@@ -300,7 +318,7 @@ export const AppFooter: React.FC = () => (
           2026. Raíces para florecer. Construida con dignidad y cuidado
         </span>
         <span style={{ opacity: 0.5 }}>·</span>
-        <span className="footer-bottom-link" style={{ cursor: 'pointer' }}>Privacidad · Accesibilidad</span>
+        <Link to="/privacidad" className="footer-bottom-link" style={{ textDecoration: 'none' }}>Privacidad · Accesibilidad</Link>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', color: '#FFFFFF' }}>
         POWERED BY

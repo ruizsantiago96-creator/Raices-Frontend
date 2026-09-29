@@ -1260,6 +1260,17 @@ export const RUTAS_ENDPOINTS = {
     path: '/rutas-desarrollo/:rutaId/pasos/:pasoId/descompletar',
   },
 }
+// ——— CONTACTO (landing pública) ———
+export const CONTACTO_ENDPOINTS = {
+  ENVIAR_MENSAJE: {
+    method: 'POST',
+    path: '/contacto',
+    description: 'Endpoint público: envía un mensaje desde la landing de contacto (sin autenticación). Rate limited: 3 por IP cada 10 min.',
+    body: { email: 'string', nombre: 'string', asunto: 'consulta|institucion|empresa|soporte|otro', mensaje: 'string (20-2000)', aceptoContacto: 'boolean' },
+    response: { id: 'string', estado: 'string' },
+  },
+}
+
 // ——— USUARIOS / SEGURIDAD (futuros) ———
 export const USER_SECURITY_ENDPOINTS = {
   DELETE_OWN_ACCOUNT: {
@@ -1294,6 +1305,7 @@ export const ALL_ENDPOINTS = {
   ...MULTIMEDIA_ENDPOINTS,
   ...RUTAS_ENDPOINTS,
   ...USER_SECURITY_ENDPOINTS,
+  ...CONTACTO_ENDPOINTS,
 }
 
 export interface EndpointInfo {

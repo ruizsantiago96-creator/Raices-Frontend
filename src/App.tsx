@@ -35,6 +35,14 @@ import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
 import { RutasPage, EscalasVidaPage } from '@features/rutas'
+import EducacionPage from '@features/info/pages/EducacionPage'
+import SaludBienestarPage from '@features/info/pages/SaludBienestarPage'
+import EmpleoPage from '@features/info/pages/EmpleoPage'
+import ComunidadPage from '@features/info/pages/ComunidadPage'
+import AcercaDeNosotrosPage from '@features/info/pages/AcercaDeNosotrosPage'
+import NuestroPropositoPage from '@features/info/pages/NuestroPropositoPage'
+import PrivacidadPage from '@features/info/pages/PrivacidadPage'
+import ContactoPage from '@features/info/pages/ContactoPage'
 
 import DesignPreview from '@features/landing/pages/DesignPreview'
 import MainLayout from '@shared/components/MainLayout'
@@ -175,6 +183,16 @@ export default function App() {
             <div id="a11y-root">
             <FCMProvider>
               <Routes>
+                {/* 🌱 Landing pages informativas del footer (públicas) */}
+                <Route path="/salud-y-bienestar" element={<SaludBienestarPage />} />
+                <Route path="/educacion" element={<EducacionPage />} />
+                <Route path="/empleo" element={<EmpleoPage />} />
+                <Route path="/comunidad" element={<ComunidadPage />} />
+                <Route path="/acerca-de-nosotros" element={<AcercaDeNosotrosPage />} />
+                <Route path="/nuestro-proposito" element={<NuestroPropositoPage />} />
+                <Route path="/privacidad" element={<PrivacidadPage />} />
+                <Route path="/contacto" element={<ContactoPage />} />
+
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/design-preview" element={<DesignPreview />} />
 
