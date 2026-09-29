@@ -51,6 +51,7 @@ interface SidebarItem {
   badgeColor?: string
   hidden?: boolean
   isSubItem?: boolean
+  sectionHeader?: string
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
@@ -146,16 +147,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     }
 
     items = [
-      { id: 'feed', label: 'Inicio', icon: Icons.home, path: '/feed' },
-      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
-      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
-      { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
-      { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas') },
+      // ── Etapa 1: Conocer quién eres ──────────────────
+      { id: 'feed', label: 'Inicio', icon: Icons.home, path: '/feed', sectionHeader: '1. Conocer quién eres' },
+      { id: 'profile', label: 'Mi Perfil', icon: Icons.user, path: '/profile' },
+      ...(user?.role === 'tutor' ? [{ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' }] : []),
+
+      // ── Etapa 2: Conocer tu día a día ────────────────
+      { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas'), sectionHeader: '2. Conocer tu día a día' },
       { id: 'escalas-vida', label: 'Escalas de Vida', icon: Icons.barChart, path: '/escalas-vida', hidden: !hasFeature('rutas'), isSubItem: true },
+      { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
+
+      // ── Etapa 3: Reconocer tus logros e intereses ──
+      { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad'), sectionHeader: '3. Logros e Intereses' },
+      { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
     ].filter(item => !item.hidden)
-    if (user?.role === 'tutor') {
-      items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
-    }
+
     if (user?.role === 'institution') {
       items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
     }
@@ -229,29 +235,45 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             }
             const isLink = !!item.path
 
-            if (isLink) {
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path!}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
-                  style={{
-                    textDecoration: 'none',
-                    paddingLeft: item.isSubItem ? 28 : undefined,
-                    opacity: item.isSubItem && !isActive ? 0.85 : 1,
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
-                  <span className="sidebar-text" style={{ lineHeight: 1.2, fontSize: item.isSubItem ? 13 : undefined }}>{item.label}</span>
-                </Link>
-              )
-            }
-
             return (
-              <button
-                key={item.id}
-                type="button"
+              <React.Fragment key={item.id}>
+                {item.sectionHeader && (
+                  <div
+                    className="sidebar-section-header sidebar-text"
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: 'rgba(255, 255, 255, 0.45)',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      padding: '12px 12px 4px 12px',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={item.sectionHeader}
+                  >
+                    {item.sectionHeader}
+                  </div>
+                )}
+                {isLink ? (
+                  <Link
+                    to={item.path!}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
+                    style={{
+                      textDecoration: 'none',
+                      paddingLeft: item.isSubItem ? 28 : undefined,
+                      opacity: item.isSubItem && !isActive ? 0.85 : 1,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
+                    <span className="sidebar-text" style={{ lineHeight: 1.2, fontSize: item.isSubItem ? 13 : undefined }}>{item.label}</span>
+                  </Link>
+                ) : (
+                  <button
+                    key={item.id}
+                    type="button"
                 onClick={() => {
                   onTab?.(item.id)
                   if (modoEfectivo === 'institution' && location.pathname !== '/institution-portal') {
@@ -279,7 +301,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   }}>{item.badge > 9 ? '9+' : item.badge}</span>
                 )}
               </button>
-            )
+            )}
+          </React.Fragment>
+        )
           })}
 
           {/* Toggle collapse button */}
@@ -454,35 +478,46 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               }
               const isLink = !!item.path
 
-              if (isLink) {
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.path!}
-                    onClick={() => setSidebarOpen(false)}
-                    aria-current={isActive ? 'page' : undefined}
-                    style={{
-                      textDecoration: 'none',
-                      background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
-                      transition: 'all 0.2s ease',
-                      padding: item.isSubItem ? '8px 14px 8px 36px' : '12px 14px',
-                      fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
-                      fontSize: item.isSubItem ? 13.5 : 15,
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
-                    <span style={{ lineHeight: 1.2 }}>{item.label}</span>
-                  </Link>
-                )
-              }
-
               return (
-                <button
-                  key={item.id}
-                  type="button"
+                <React.Fragment key={item.id}>
+                  {item.sectionHeader && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: 'rgba(255, 255, 255, 0.45)',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        padding: '14px 14px 4px 14px',
+                      }}
+                    >
+                      {item.sectionHeader}
+                    </div>
+                  )}
+                  {isLink ? (
+                    <Link
+                      to={item.path!}
+                      onClick={() => setSidebarOpen(false)}
+                      aria-current={isActive ? 'page' : undefined}
+                      style={{
+                        textDecoration: 'none',
+                        background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                        transition: 'all 0.2s ease',
+                        padding: item.isSubItem ? '8px 14px 8px 36px' : '12px 14px',
+                        fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
+                        fontSize: item.isSubItem ? 13.5 : 15,
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
+                      <span style={{ lineHeight: 1.2 }}>{item.label}</span>
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.id}
+                      type="button"
                   onClick={() => {
                     onTab?.(item.id)
                     setSidebarOpen(false)
@@ -519,7 +554,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     }}>{item.badge > 9 ? '9+' : item.badge}</span>
                   )}
                 </button>
-              )
+              )}
+            </React.Fragment>
+          )
             })}
           </div>
 
