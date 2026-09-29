@@ -50,6 +50,7 @@ interface SidebarItem {
   badge?: number
   badgeColor?: string
   hidden?: boolean
+  isSubItem?: boolean
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
@@ -150,6 +151,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
       { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad') },
       { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas') },
+      { id: 'escalas-vida', label: 'Escalas de Vida', icon: Icons.barChart, path: '/escalas-vida', hidden: !hasFeature('rutas'), isSubItem: true },
     ].filter(item => !item.hidden)
     if (user?.role === 'tutor') {
       items.push({ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' })
@@ -209,7 +211,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           {items.map((item) => {
             let isActive = false
             if (modoEfectivo === 'app') {
-              isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
+              isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed')) || (item.path ? location.pathname === item.path : false)
             } else if (modoEfectivo === 'admin') {
               isActive = tab === item.id
             } else if (modoEfectivo === 'institution') {
@@ -236,10 +238,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   className={`sidebar-desktop-nav-item ${isActive ? 'active' : ''}`}
                   style={{
                     textDecoration: 'none',
+                    paddingLeft: item.isSubItem ? 28 : undefined,
+                    opacity: item.isSubItem && !isActive ? 0.85 : 1,
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
-                  <span className="sidebar-text" style={{ lineHeight: 1.2 }}>{item.label}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
+                  <span className="sidebar-text" style={{ lineHeight: 1.2, fontSize: item.isSubItem ? 13 : undefined }}>{item.label}</span>
                 </Link>
               )
             }
@@ -432,7 +436,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             {items.map((item) => {
               let isActive = false
               if (modoEfectivo === 'app') {
-                isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed'))
+                isActive = currentPage === item.id || (item.id === 'feed' && (currentPage === 'dashboard' || currentPage === 'feed')) || (item.path ? location.pathname === item.path : false)
               } else if (modoEfectivo === 'admin') {
                 isActive = tab === item.id
               } else if (modoEfectivo === 'institution') {
@@ -463,12 +467,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       borderRadius: 'var(--radius-md)',
                       display: 'flex', alignItems: 'center', gap: 12,
                       color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
-                      transition: 'all 0.2s ease', padding: '12px 14px',
+                      transition: 'all 0.2s ease',
+                      padding: item.isSubItem ? '8px 14px 8px 36px' : '12px 14px',
                       fontFamily: 'var(--font-body)', fontWeight: isActive ? 700 : 500,
-                      fontSize: 15,
+                      fontSize: item.isSubItem ? 13.5 : 15,
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, flexShrink: 0 }}>{item.icon({ s: 20 })}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: item.isSubItem ? 18 : 22, flexShrink: 0 }}>{item.icon({ s: item.isSubItem ? 16 : 20 })}</span>
                     <span style={{ lineHeight: 1.2 }}>{item.label}</span>
                   </Link>
                 )
