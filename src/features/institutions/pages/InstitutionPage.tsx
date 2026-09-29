@@ -42,8 +42,8 @@ function NotFoundState() {
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-body)' }}>
       <div style={{ textAlign: 'center' }}>
         <p style={{ color: 'var(--fg2)', marginBottom: 16, fontSize: 16 }}>Institución no encontrada.</p>
-        <Link to="/explore">
-          <button className="btn-primary">Volver a explorar</button>
+        <Link to="/instituciones">
+          <button className="btn-primary">Volver a instituciones</button>
         </Link>
       </div>
     </div>
@@ -78,8 +78,8 @@ export default function InstitutionPage() {
 
         {/* Breadcrumb */}
         <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, fontSize: 14, color: 'var(--fg3)' }}>
-          <Link to="/explore" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
-            Explorar
+          <Link to="/instituciones" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+            Instituciones
           </Link>
           <span>/</span>
           <span style={{ color: 'var(--fg2)' }}>{institution.name}</span>

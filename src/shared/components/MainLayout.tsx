@@ -83,7 +83,7 @@ export default function MainLayout() {
   let currentPage = ''
   if (sidebarMode === 'app') {
     if (location.pathname.startsWith('/feed') || location.pathname.startsWith('/dashboard')) currentPage = 'feed'
-    else if (location.pathname.startsWith('/explore')) currentPage = 'explore'
+    else if (location.pathname.startsWith('/instituciones') || location.pathname.startsWith('/explore')) currentPage = 'instituciones'
     else if (location.pathname.startsWith('/jobs')) currentPage = 'jobs'
     else if (location.pathname.startsWith('/favorites')) currentPage = 'favorites'
     else if (location.pathname.startsWith('/social') || location.pathname.startsWith('/foros') || location.pathname.startsWith('/messages')) currentPage = 'social'

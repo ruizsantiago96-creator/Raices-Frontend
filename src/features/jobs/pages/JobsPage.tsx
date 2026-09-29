@@ -201,7 +201,8 @@ export default function JobsPage() {
         )}
       </main>
 
-      {applyTarget && <ApplicationModal job={applyTarget} onClose={() => setApplyTarget(null)} />}
+      {/* key fuerza un remount limpio por vacante: sin estado heredado de postulaciones anteriores */}
+      {applyTarget && <ApplicationModal key={applyTarget.id} job={applyTarget} onClose={() => setApplyTarget(null)} />}
       {showCreateJob && <CreateJobModal onClose={() => setShowCreateJob(false)} />}
       {messageTarget && <MessageModal job={messageTarget} onClose={() => setMessageTarget(null)} />}
     </>

@@ -2,7 +2,7 @@
  * Institutions Feature — Public API
  *
  * Exports components and hooks used by other features.
- * Pages (ExplorePage, InstitutionPage, InstitutionPortalPage) are kept private — imported directly by App.jsx.
+ * Pages (InstitucionesPage, InstitutionPage, InstitutionPortalPage) are kept private — imported directly by App.tsx.
  */
 
 // ── Components ─────────────────────────────────────────────────────

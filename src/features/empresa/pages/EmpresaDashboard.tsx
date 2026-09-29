@@ -900,8 +900,13 @@ export default function EmpresaDashboard() {
               </span>
             </div>
 
+            {/* Vista previa pública: abre el listado de vacantes activas de la
+                empresa en modo solo lectura, como lo vería un candidato.
+                La ruta vive bajo /empresa (RUTAS_EMPRESA): ProtectedRoute no la
+                expulsa, a diferencia de /explore o /jobs, que sí causaban el
+                falso ruteo hacia el panel de usuario estándar. */}
             <button
-              onClick={() => navigate('/explore')}
+              onClick={() => navigate('/empresa/vacantes')}
               style={{
                 padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border-color)',
                 background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 13.5, fontWeight: 700,

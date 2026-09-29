@@ -61,8 +61,12 @@ export default function InstitutionPortalPage() {
               </span>
             </div>
 
+            {/* Vista previa pública: abre el catálogo /instituciones, donde la
+                institución aparece listada como la ve cualquier usuario.
+                NO navega a /explore ni /inicio (caía al panel de usuario estándar
+                con onboarding) ni a la ficha de detalle individual. */}
             <button
-              onClick={() => navigate(`/explore`)}
+              onClick={() => navigate('/instituciones')}
               style={{
                 padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border-color)',
                 background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 13.5, fontWeight: 700,

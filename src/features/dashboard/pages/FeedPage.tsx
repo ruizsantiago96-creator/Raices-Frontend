@@ -572,13 +572,24 @@ export default function FeedPage() {
   const isVerified = Boolean(user?.is_verified || isApproved || isPendingDocs)
   const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
   const isOnboardingComplete = Boolean(onboardingStatus?.onboardingCompleto)
-  
+
+  // Un administrador gestiona la plataforma, no usa el ecosistema como beneficiario:
+  // no tiene expediente de onboarding ni documentación de identidad que completar.
+  const isAdmin = user?.role === 'admin'
+
+  // Las instituciones validan su existencia con el registro de la institución y
+  // las empresas (personas morales) con su Constancia de Situación Fiscal (CSF):
+  // ninguno de los dos roles pasa por el onboarding de usuario estándar (CURP,
+  // perfil al 33%, candados de recomendaciones). Todo ese flujo se oculta para
+  // ellos también (banner, candados y modal).
+  const esRolSinOnboardingEstándar = isAdmin || user?.role === 'institution' || user?.role === 'empresa'
+
   // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
-  const isIncomplete = Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
+  const isIncomplete = !esRolSinOnboardingEstándar && Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
 
   // Debe salir si fue rechazado por el admin, o si aún no está verificado y su perfil está incompleto.
   const [modalDismissed, setModalDismissed] = useState<boolean>(false)
-  const shouldShowProfileModal = !modalDismissed && (isRejected || (!isVerified && isIncomplete))
+  const shouldShowProfileModal = !esRolSinOnboardingEstándar && !modalDismissed && (isRejected || (!isVerified && isIncomplete))
 
   const handleDismissModal = () => {
     setModalDismissed(true)
@@ -818,7 +829,7 @@ export default function FeedPage() {
                   Basados en tu perfil y ubicación
                 </p>
               </div>
-              <Link to="/explore" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Link to="/instituciones" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                 Ver todos {Icons.arrowRight({ s: 13 })}
               </Link>
             </div>
@@ -981,7 +992,7 @@ export default function FeedPage() {
           }}>
             Has visto las {feed.length} publicaciones disponibles
             <br />
-            <Link to="/explore" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
+            <Link to="/instituciones" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
               Explorar más instituciones {Icons.arrowRight({ s: 12 })}
             </Link>
           </div>

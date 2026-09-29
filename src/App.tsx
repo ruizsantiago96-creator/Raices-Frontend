@@ -15,7 +15,7 @@ import FCMProvider from '@features/notifications/components/FCMProvider'
 import LandingPage from '@features/landing/pages/LandingPage'
 import AuthPage from '@features/auth/pages/AuthPage'
 import FeedPage from '@features/feed/pages/FeedPage'
-import ExplorePage from '@features/institutions/pages/ExplorePage'
+import InstitucionesPage from '@features/institutions/pages/InstitucionesPage'
 import SocialPage from '@features/social/pages/SocialPage'
 import ForosPage from '@features/social/pages/ForosPage'
 import MessagesPage from '@features/social/pages/MessagesPage'
@@ -27,6 +27,7 @@ import AdminPage from '@features/admin/pages/AdminPage'
 import InstitutionPortalPage from '@features/institutions/pages/InstitutionPortalPage'
 import EmpresaDashboard from '@features/empresa/pages/EmpresaDashboard'
 import EditarEmpresaPage from '@features/empresa/pages/EditarEmpresaPage'
+import VacantesPublicasPage from '@features/empresa/pages/VacantesPublicasPage'
 import ProfilePage from '@features/profile/pages/ProfilePage'
 import MiIdentidadPage from '@features/profile/pages/MiIdentidadPage'
 import CompleteProfilePage from '@features/profile/pages/CompleteProfilePage'
@@ -227,6 +228,10 @@ export default function App() {
                       así que aquí nunca puede aparecer el layout de usuario estándar. */}
                   <Route path="/empresa/dashboard" element={<ProtectedRoute role="empresa"><EmpresaDashboard /></ProtectedRoute>} />
                   <Route path="/empresa/editar" element={<ProtectedRoute role="empresa"><EditarEmpresaPage /></ProtectedRoute>} />
+                  {/* Vista previa pública de las vacantes de la empresa (solo
+                      lectura). Vive bajo el prefijo /empresa, que ya está en
+                      RUTAS_EMPRESA: ProtectedRoute no expulsa la cuenta. */}
+                  <Route path="/empresa/vacantes" element={<ProtectedRoute role="empresa"><VacantesPublicasPage /></ProtectedRoute>} />
                   {/* Alias legacy: enlaces y marcadores anteriores a la reorganización */}
                   <Route path="/empresa-portal" element={<Navigate to="/empresa/dashboard" replace />} />
                   <Route path="/empresa-portal/editar" element={<Navigate to="/empresa/editar" replace />} />
@@ -234,7 +239,15 @@ export default function App() {
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                   <Route path="/rutas" element={<RutasPage />} />
                   <Route path="/escalas-vida" element={<EscalasVidaPage />} />
-                  <Route path="/explore" element={<ExplorePage />} />
+
+                  {/* ── Instituciones: índice + detalle (anidadas) ──────────
+                      La ruta padre renderiza el grid del catálogo y la ruta
+                      paramétrica hija renderiza el detalle (ubicación completa,
+                      reseñas y Asistente IA). */}
+                  <Route path="/instituciones" element={<InstitucionesPage />} />
+                  <Route path="/instituciones/:id" element={<InstitutionPage />} />
+                  {/* Alias legacy: enlaces antiguos al catálogo */}
+                  <Route path="/explore" element={<Navigate to="/instituciones" replace />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -58,7 +58,7 @@ export const TopNavSearchBar: FC<TopNavSearchBarProps> = ({ variant = 'topnav' }
     saveRecentSearches(newList)
 
     setIsOpen(false)
-    nav(`/explore?q=${encodeURIComponent(term)}`)
+    nav(`/instituciones?q=${encodeURIComponent(term)}`)
   }
 
   const handleDeleteRecent = (e: ReactMouseEvent, termToDelete: string) => {
@@ -245,7 +245,7 @@ export const TopNavSearchBar: FC<TopNavSearchBarProps> = ({ variant = 'topnav' }
                 key={i}
                 onClick={() => {
                   setIsOpen(false)
-                  nav(`/explore?category=${encodeURIComponent(topic.category)}`)
+                  nav(`/instituciones?category=${encodeURIComponent(topic.category)}`)
                 }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,

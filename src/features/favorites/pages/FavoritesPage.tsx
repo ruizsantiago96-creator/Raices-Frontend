@@ -31,7 +31,7 @@ export default function FavoritesPage() {
           </div>
           <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Aún no tienes guardados</h3>
           <p style={{ fontSize: 15, color: 'var(--fg2)', marginBottom: 24 }}>Guarda instituciones para encontrarlas fácilmente más adelante</p>
-          <Link to="/explore">
+          <Link to="/instituciones">
             <button className="btn-primary" style={{ padding: '12px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               {Icons.search({ s: 16 })} Explorar instituciones
             </button>
@@ -67,7 +67,7 @@ export default function FavoritesPage() {
                     {Icons.star({ s: 14, filled: true })} {inst.rating_avg?.toFixed(1) ?? '—'}
                     <span style={{ color: 'var(--fg3)' }}>({inst.rating_count ?? 0})</span>
                   </span>
-                  <Link to={`/institution/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Link to={`/instituciones/${inst.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                     Ver más {Icons.arrowRight({ s: 14 })}
                   </Link>
                 </div>

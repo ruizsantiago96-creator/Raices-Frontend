@@ -116,7 +116,7 @@ export default function MapView({ institutions = [], height = '400px' }: MapView
 
       const root = createRoot(popupNode)
       root.render(
-        <PopupContent inst={inst} color={color} onNavigate={(id) => navigate(`/institution/${id}`)} />
+        <PopupContent inst={inst} color={color} onNavigate={(id) => navigate(`/instituciones/${id}`)} />
       )
 
       const popup = new maplibregl.Popup({ offset: 18, closeButton: false, maxWidth: '260px' })

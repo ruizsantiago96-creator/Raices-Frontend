@@ -154,8 +154,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
       // ── Etapa 2: Conocer tu día a día ────────────────
       { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas'), sectionHeader: '2. Conocer tu día a día' },
-      { id: 'escalas-vida', label: 'Escalas de Vida', icon: Icons.barChart, path: '/escalas-vida', hidden: !hasFeature('rutas'), isSubItem: true },
+      { id: 'escalas-vida', label: 'Escalas de Vida', icon: Icons.barChart, path: '/escalas-vida', hidden: !hasFeature('rutas') },
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
+      { id: 'instituciones', label: 'Instituciones', icon: Icons.building, path: '/instituciones' },
 
       // ── Etapa 3: Reconocer tus logros e intereses ──
       { id: 'social', label: 'Conectemos', icon: Icons.users, path: '/social', hidden: !hasFeature('comunidad'), sectionHeader: '3. Logros e Intereses' },
@@ -329,10 +330,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </button>
         </div>
 
-        {/* Volver a la app link for sub-portals */}
+        {/* Volver a la app link for sub-portals.
+            El destino de "la app" depende del rol: para una empresa (persona
+            moral), /feed es una ruta bloqueada y ProtectedRoute la expulsaría
+            de vuelta a su portal; su vista principal es el portal de empresa. */}
         {mode !== 'app' && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-            <Link to="/feed" className="sidebar-desktop-nav-item" style={{
+            <Link to={esEmpresa(user) ? EMPRESA_HOME : '/feed'} className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
               color: 'var(--sidebar-fg)',
               marginRight: 0,
@@ -594,7 +598,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           ) : (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
-              <Link to="/feed" onClick={() => setSidebarOpen(false)} style={{
+              <Link to={esEmpresa(user) ? EMPRESA_HOME : '/feed'} onClick={() => setSidebarOpen(false)} style={{
                 textDecoration: 'none',
                 display: 'flex', alignItems: 'center', gap: 12,
                 color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,

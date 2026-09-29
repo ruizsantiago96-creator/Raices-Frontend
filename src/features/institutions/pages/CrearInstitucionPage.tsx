@@ -272,7 +272,7 @@ export default function CrearInstitucionPage() {
       const datos = buildPayload(includeVerification)
       const result = await crear.mutateAsync(datos)
       if (result?.id) navigate('/institution-portal')
-      else navigate('/explore')
+      else navigate('/instituciones')
     } catch (err: unknown) {
       const errorObj = err as { response?: { status?: number; data?: { message?: string; error?: string } } }
       const msg = errorObj.response?.data?.message || errorObj.response?.data?.error || ''

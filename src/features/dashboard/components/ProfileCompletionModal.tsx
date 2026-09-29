@@ -31,10 +31,24 @@ export default function ProfileCompletionModal({
   const user = useAuthStore(s => s.user)
 
   // Una empresa es persona moral: no tiene CURP ni fecha de nacimiento, y su
-  // expediente se verifica con la CSF. Este modal es la bitácora de validación
+  // expediente de onboarding no aplica. Este modal es la bitácora de validación
   // individual, así que no debe renderizarse para ellas en absoluto.
   // El equivalente para empresas es EmpresaOnboardingModal.
   if (esEmpresa(user)) {
+    return null
+  }
+
+  // Un administrador gestiona la plataforma y no tiene expediente de onboarding:
+  // si el modal llegara a dispararse, se mantiene cerrado. Además, si no hay
+  // porcentaje ni campos faltantes, el contenido saldría en blanco, así que
+  // tampoco se renderiza en ese caso (salvo cuando es un aviso de documentos
+  // rechazados, que sí tiene contenido propio y no depende del onboarding).
+  const isAdmin = user?.role === 'admin'
+  const tieneDatosDeOnboarding =
+    Number(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 0) > 0
+    || (onboardingStatus?.camposFaltantes?.length ?? 0) > 0
+  const esAvisoRechazo = Boolean(isRejected && identidadStatus?.motivoRechazo)
+  if (isAdmin || (!tieneDatosDeOnboarding && !esAvisoRechazo)) {
     return null
   }
 
@@ -151,14 +165,14 @@ export default function ProfileCompletionModal({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontWeight: 700, fontSize: 13.5, color: '#073B4C' }}>Progreso de perfil</span>
-                  {onboardingStatus?.nombrePcd && (
+                  {onboardingStatus?.nombrePcd ? (
                     <span style={{ fontSize: 11.5, padding: '2px 8px', borderRadius: 10, background: 'rgba(34,155,88,0.15)', color: '#229B58', fontWeight: 700 }}>
-                      {onboardingStatus.destinatarioPerfil === 'PARA_MI_HIJO' ? `Para: ${onboardingStatus.nombrePcd}` : 'Para mi'}
+                      {onboardingStatus.destinatarioPerfil === 'PARA_MI_HIJO' ? `Para: ${String(onboardingStatus.nombrePcd)}` : 'Para mi'}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <span style={{ fontWeight: 800, fontSize: 14, color: '#229B58' }}>
-                  {onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 0}%
+                  {Number(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 0)}%
                 </span>
               </div>
 

@@ -90,15 +90,33 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
   const [location, setLocation] = useState<LocationInfo>({ pais: 'México', codigoPostal: '', ciudadEstado: '', direccion: '' })
   const [isEditingCountry, setIsEditingCountry] = useState(false)
 
-  // Archivo CV
+  // Archivo CV — SIEMPRE inicia vacío: cada postulación debe empezar sin
+  // documento seleccionado. No se hidrata desde localStorage ni desde el perfil.
   const [cvFile, setCvFile] = useState<CvFileData | null>(null)
   const [cvFileUrl, setCvFileUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Limpia la selección de CV y libera el blob URL de la vista previa para
+  // evitar fugas de memoria.
+  const clearCvSelection = () => {
+    if (cvFileUrl) {
+      URL.revokeObjectURL(cvFileUrl)
+      setCvFileUrl(null)
+    }
+    setCvFile(null)
+    setIsUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // Reset al cerrar (desmontaje) y ante una nueva vacante: la limpieza del
+  // blob URL vive en la función de cleanup del efecto.
   useEffect(() => {
-    return () => { if (cvFileUrl) URL.revokeObjectURL(cvFileUrl) }
-  }, [cvFileUrl])
+    return () => {
+      if (cvFileUrl) URL.revokeObjectURL(cvFileUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job?.id])
 
   // Carta de presentación
   const [letter, setLetter] = useState('')
@@ -154,16 +172,10 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
       direccion: localStorage.getItem('raices_user_address_' + String(currentCandidateId || 'me')) || '',
     })
 
-    const savedCv = localStorage.getItem('raices_user_cv_' + String(currentCandidateId || 'me'))
-    if (savedCv) {
-      try {
-        setCvFile(JSON.parse(savedCv) as CvFileData)
-      } catch {
-        setCvFile(null)
-      }
-    } else {
-      setCvFile(null)
-    }
+    // NOTA: el CV ya NO se hidrata desde localStorage ('raices_user_cv_*').
+    // El usuario debe seleccionar explícitamente un archivo en el paso 2;
+    // la caché previa queda obsoleta y se elimina para no confundir otros flujos.
+    localStorage.removeItem('raices_user_cv_' + String(currentCandidateId || 'me'))
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
@@ -196,8 +208,6 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
       if (cvFileUrl) URL.revokeObjectURL(cvFileUrl)
       setCvFileUrl(URL.createObjectURL(file))
       setIsUploading(false)
-      const cid = getCandidateId()
-      localStorage.setItem('raices_user_cv_' + String(cid || 'me'), JSON.stringify(fileData))
       addToast('CV cargado con éxito', 'success')
     }, 1000)
   }
@@ -358,7 +368,7 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'green', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Icons.check({ s: 12 })}</div>
-                    <button type="button" onClick={() => { setCvFile(null); if (cvFileUrl) { URL.revokeObjectURL(cvFileUrl); setCvFileUrl(null) }; const cid = getCandidateId(); localStorage.removeItem('raices_user_cv_' + String(cid || 'me')) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: 4 }} title="Eliminar archivo">{Icons.trash({ s: 16 })}</button>
+                    <button type="button" onClick={clearCvSelection} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: 4 }} title="Eliminar archivo">{Icons.trash({ s: 16 })}</button>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
