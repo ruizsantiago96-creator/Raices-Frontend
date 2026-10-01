@@ -410,7 +410,7 @@ export default function EscalasVidaPage() {
               <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Origen / Temporalidad de la condición</label>
               <CustomSelect
                 options={listTemporalidad.map(t => ({ value: t.id, label: t.label }))}
-                value={form.temporalidadOrigen}
+                value={form.temporalidadOrigen || ''}
                 onChange={val => setForm(f => ({ ...f, temporalidadOrigen: String(val) }))}
                 placeholder="Selecciona una opción..."
                 minWidth="100%"
@@ -422,7 +422,7 @@ export default function EscalasVidaPage() {
               <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Formato de contenido preferido</label>
               <CustomSelect
                 options={listFormatos.map(f => ({ value: f.id, label: `${f.label}${f.description ? ` — ${f.description}` : ''}` }))}
-                value={form.preferenciaFormato}
+                value={form.preferenciaFormato || ''}
                 onChange={val => setForm(f => ({ ...f, preferenciaFormato: String(val) }))}
                 placeholder="Selecciona un formato..."
                 minWidth="100%"

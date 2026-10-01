@@ -127,7 +127,7 @@ export function useOnboardingStatus() {
 
       // Normalización para empresas: excluir CURP/fechaNacimiento del cálculo
       if (esEmpresa) {
-        pasosPendientes = pasosPendientes.filter(f => f !== 'curp' && f !== 'fechaNacimiento')
+        pasosPendientes = pasosPendientes.filter((f: string) => f !== 'curp' && f !== 'fechaNacimiento')
         if (pasosPendientes.length === 0) {
           onboardingCompleto = true
           porcentajeProgreso = 100

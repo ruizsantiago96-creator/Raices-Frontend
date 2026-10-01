@@ -110,7 +110,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const saveBorradorMutation = useSaveOnboardingBorrador()
 
   const destinatarioPerfil = onboardingStatus?.destinatarioPerfil || 'PARA_MI'
-  const nombrePcd = onboardingStatus?.nombrePcd || me?.nombre || me?.displayName || 'Diego'
+  const nombrePcd = onboardingStatus?.nombrePcd || me?.full_name || 'Diego'
 
   const savedProgress = getOnboardingStepProgress('pcd')
   const savedData = (savedProgress?.data as Record<string, unknown>) || {}
@@ -362,6 +362,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
           ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
         })
         const combinedGoals = Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
+        const specDiag = conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null
         await updateNeedsProfile.mutateAsync({
           profiling: {
             disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
@@ -374,19 +375,18 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
             goals: combinedGoals,
             support_areas: supportAreas,
             education_history: educacionHistory,
-            education_level: gradoEstudios,
             grado_estudios: gradoEstudios,
             gradoEstudios: gradoEstudios,
             therapy_history: terapiaHistory,
             life_stage: etapa || null,
-            current_concerns: specDiag,
+            current_concerns: specDiag ? [specDiag] : [],
             diagnostico_especifico: specDiag,
             diagnosticoEspecifico: specDiag,
             barreras_sociales: finalBarrerasSociales,
             barrerasSociales: finalBarrerasSociales,
             support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
             ...(birthDate ? { birth_date: birthDate, age: edad } : {}),
-          },
+          } as Record<string, unknown>,
         })
       } catch (profErr) { console.warn('Profile save notice:', profErr) }
 

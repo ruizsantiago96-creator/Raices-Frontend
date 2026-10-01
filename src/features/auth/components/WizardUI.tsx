@@ -137,6 +137,7 @@ export interface VerticalCheckCardProps {
   selected: boolean
   onToggle?: () => void
   onSelect?: () => void
+  onClick?: () => void
   type?: 'checkbox' | 'radio'
   accent?: string
 }
@@ -147,10 +148,11 @@ export function VerticalCheckCard({
   selected,
   onToggle,
   onSelect,
+  onClick,
   type = 'checkbox',
   accent = '#229B58',
 }: VerticalCheckCardProps): React.JSX.Element {
-  const handleToggle = onSelect || onToggle || (() => {})
+  const handleToggle = onClick || onSelect || onToggle || (() => {})
   return (
     <div
       onClick={handleToggle}

@@ -192,7 +192,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const hasDocUploaded = Boolean(
     estadoValidacion?.documentoSubido ||
     estadoValidacion?.curpValidada ||
-    (estadoValidacion?.estado && estadoValidacion.estado !== 'sin_subir')
+    (estadoValidacion?.estado && (estadoValidacion.estado as string) !== 'sin_documentos')
   )
   const hasCurp = Boolean(
     userCurp ||
@@ -392,7 +392,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
             support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
             birth_date: dependienteDOB,
             age: dependienteEdad,
-          },
+          } as Record<string, unknown>,
         })
       } catch (err) { console.warn('Profile err:', err) }
 
