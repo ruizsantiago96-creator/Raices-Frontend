@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe } from '@features/auth/hooks/useAuth'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
 import { formatOnboardingQuestion } from '../lib/onboardingInterpolation'
 import {
@@ -403,8 +404,9 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
       onDone?.()
     } catch (err) {
       console.error('Profile completion error:', err)
-      setError('Hubo un error al guardar tu perfil. Inténtalo de nuevo.')
-      addToast('Error al guardar perfil.', 'error')
+      const errorMsg = mapErrorMessage(err)
+      setError(errorMsg)
+      addToast(errorMsg, 'error')
     } finally {
       setSending(false)
     }

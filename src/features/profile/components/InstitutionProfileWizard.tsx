@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { WizardNavButtons, CheckChip, WizardProgress } from '@features/auth/components/WizardUI'
 import { useQueryClient } from '@tanstack/react-query'
 import { Icons } from '@shared/components/shared'
@@ -160,7 +161,7 @@ export default function InstitutionProfileWizard({ onDone }: InstitutionProfileW
       setStep('done')
       if (onDone) onDone()
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Ocurrió un error al guardar el perfil.'
+      const msg = mapErrorMessage(err)
       setError(msg)
       addToast(msg, 'error')
     } finally {

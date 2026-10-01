@@ -12,6 +12,7 @@ import { WizardNavButtons, ScaleCard, CheckChip, WizardProgress, WizardErrorBann
 import { calcEdad365, calcEtapaVida365 } from '../lib/age'
 import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate, normalizeEmail } from '../lib/validators'
 import { saveOnboardingData } from '../lib/onboardingStorage'
+import { mapErrorMessage } from '../lib/mapErrorMessage'
 import type { User } from '../../../types/auth'
 
 export interface RegistrationWizardProps {
@@ -218,7 +219,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
       addToast('¡Cuenta creada exitosamente!', 'success')
       nav('/dashboard', { replace: true })
     } catch (err: any) {
-       const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
+       const msg = mapErrorMessage(err)
        setError(msg)
        addToast(msg, 'error')
     } finally {

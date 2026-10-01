@@ -5,6 +5,7 @@ import { Icons } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
 import { normalizeEmail } from '../lib/validators'
+import { mapErrorMessage } from '../lib/mapErrorMessage'
 import {
   OrganizationProgress,
   OrganizationThanksStep,
@@ -172,7 +173,7 @@ export default function EnterpriseRegistrationWizard({
       }
     } catch (err: unknown) {
       console.error('Enterprise registration error:', err)
-      const errorMsg = err instanceof Error ? err.message : 'No pudimos crear tu cuenta. Intenta de nuevo.'
+      const errorMsg = mapErrorMessage(err)
       setError(errorMsg)
       addToast(errorMsg, 'error')
     } finally {

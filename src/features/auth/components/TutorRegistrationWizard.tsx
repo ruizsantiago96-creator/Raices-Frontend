@@ -7,6 +7,7 @@ import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
+import { mapErrorMessage } from '../lib/mapErrorMessage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import {
   LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
@@ -397,7 +398,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       addToast('¡Cuenta creada exitosamente!', 'success')
       nav('/dashboard', { replace: true })
     } catch (err: any) {
-       const msg = err.response?.data?.message || err.response?.data?.mensaje || 'Error al registrar.'
+       const msg = mapErrorMessage(err)
        setError(msg)
        addToast(msg, 'error')
     } finally {

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { FormEvent, CSSProperties } from 'react'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useAuthStore } from '@features/auth/store/authStore'
 import { useMessages, useSendMessage, useMarcarConversacionLeida } from '@features/social/hooks/useMessages'
 import { usePerfilPcd, type PerfilPcd } from '../hooks/usePerfilPcd'
@@ -112,9 +113,8 @@ function ChatConPostulante({
     try {
       await sendMessage.mutateAsync({ toId: partnerId, content: msg })
     } catch (err: unknown) {
-      setText(msg) // restaurar el texto si falla el envío
-      const apiErr = err as { response?: { data?: { message?: string } } }
-      addToast(apiErr.response?.data?.message ?? 'No se pudo enviar el mensaje', 'error')
+      const msgContent = text.trim()
+      addToast(mapErrorMessage(err), 'error')
     }
   }
 

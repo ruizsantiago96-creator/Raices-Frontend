@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useAdminUsers, useToggleUserActive, useChangeUserRole, useDeleteUser, useUpdateUserAdmin } from '../hooks/useUsers'
 import { USERS_UI } from '../constants/usersMessages'
@@ -144,15 +145,13 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
   const onToggle = (u: UsuarioAdmin) => toggleActive.mutate(u.id, {
     onSuccess: (d) => { addToast(d.is_active ? 'Usuario activado' : 'Usuario desactivado', 'success'); setActionMenuId(null) },
     onError: (e: unknown) => {
-      const err = e as { response?: { data?: { message?: string } } }
-      addToast(err.response?.data?.message ?? 'Error', 'error')
+      addToast(mapErrorMessage(e), 'error')
     },
   })
   const onRole = (id: string | number, role: string) => changeRole.mutate({ id, role }, {
     onSuccess: () => { addToast('Rol actualizado', 'success'); setRoleConfirm(null); setActionMenuId(null) },
     onError: (e: unknown) => {
-      const err = e as { response?: { data?: { message?: string } } }
-      addToast(err.response?.data?.message ?? 'Error', 'error')
+      addToast(mapErrorMessage(e), 'error')
     },
   })
   const doDelete = () => {
@@ -163,8 +162,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
     deleteUser.mutate(idToDelete, {
       onSuccess: () => addToast('Usuario eliminado', 'success'),
       onError: (e: unknown) => {
-        const err = e as { response?: { data?: { message?: string } } }
-        addToast(err.response?.data?.message ?? 'Error al eliminar', 'error')
+        addToast(mapErrorMessage(e), 'error')
       },
     })
   }
@@ -178,8 +176,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
     updateUser.mutate({ id: editUser.id, ...editForm }, {
       onSuccess: () => { addToast('Usuario actualizado', 'success'); setEditUser(null) },
       onError: (e: unknown) => {
-        const err = e as { response?: { data?: { message?: string } } }
-        addToast(err.response?.data?.message ?? 'Error al actualizar', 'error')
+        addToast(mapErrorMessage(e), 'error')
       },
     })
   }

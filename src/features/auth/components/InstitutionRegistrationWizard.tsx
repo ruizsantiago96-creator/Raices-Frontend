@@ -5,6 +5,7 @@ import { Icons, CATEGORY_COLORS } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { WizardNavButtons, LocationInputs, PasswordField } from './WizardUI'
 import { normalizeEmail } from '../lib/validators'
+import { mapErrorMessage } from '../lib/mapErrorMessage'
 import {
   OrganizationProgress,
   OrganizationThanksStep,
@@ -192,7 +193,7 @@ export default function InstitutionRegistrationWizard({
       }
     } catch (err: unknown) {
       console.error('Institution registration error:', err)
-      const errorMsg = err instanceof Error ? err.message : 'No pudimos registrar tu institución. Intenta de nuevo.'
+      const errorMsg = mapErrorMessage(err)
       setError(errorMsg)
       addToast(errorMsg, 'error')
     } finally {

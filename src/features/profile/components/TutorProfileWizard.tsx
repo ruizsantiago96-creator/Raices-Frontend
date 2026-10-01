@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe, useAuthStore } from '@features/auth'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
 import {
@@ -429,8 +430,9 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       nav('/feed', { replace: true })
     } catch (err) {
       console.error('Final submit error:', err)
-      setError('Hubo un error al guardar tu perfil. Inténtalo de nuevo.')
-      addToast('Error al guardar perfil.', 'error')
+      const errorMsg = mapErrorMessage(err)
+      setError(errorMsg)
+      addToast(errorMsg, 'error')
     } finally {
       setSending(false)
     }

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useMe } from '@features/auth'
+import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
 import PerfilPostulanteModal from '../components/PerfilPostulanteModal'
@@ -175,8 +176,7 @@ function VacantesTab() {
       {
         onSuccess: () => addToast(target.activo ? 'Vacante pausada' : 'Vacante reactivada', 'success'),
         onError: (e: unknown) => {
-          const err = e as { response?: { data?: { message?: string } } }
-          addToast(err.response?.data?.message ?? 'No se pudo cambiar el estado', 'error')
+          addToast(mapErrorMessage(e), 'error')
         },
       }
     )
@@ -201,8 +201,7 @@ function VacantesTab() {
     }
 
     const onError = (e: unknown) => {
-      const err = e as { response?: { data?: { message?: string } } }
-      addToast(err.response?.data?.message ?? 'No se pudo guardar la vacante', 'error')
+      addToast(mapErrorMessage(e), 'error')
     }
 
     if (editingVacante) {
@@ -235,8 +234,7 @@ function VacantesTab() {
         setDeleteTarget(null)
       },
       onError: (e: unknown) => {
-        const err = e as { response?: { data?: { message?: string } } }
-        addToast(err.response?.data?.message ?? 'No se pudo eliminar la vacante', 'error')
+        addToast(mapErrorMessage(e), 'error')
         setDeleteTarget(null)
       },
     })
@@ -600,8 +598,7 @@ function PostulantesTab() {
           setUpdatingId(null)
         },
         onError: (e: unknown) => {
-          const err = e as { response?: { data?: { message?: string } } }
-          addToast(err.response?.data?.message ?? 'No se pudo actualizar la postulación', 'error')
+          addToast(mapErrorMessage(e), 'error')
           setUpdatingId(null)
         },
       }
