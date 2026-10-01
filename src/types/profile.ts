@@ -16,6 +16,7 @@ export interface EstadoValidacionIdentidad {
   estado: DocumentoIdentidadEstado
   tieneCurp?: boolean
   tieneIdentificacion?: boolean
+  tieneCsf?: boolean
   numeroCurp?: string
   fechaSubida?: string
   fechaRevision?: string
@@ -23,15 +24,16 @@ export interface EstadoValidacionIdentidad {
   archivos?: {
     curp?: string
     identificacion?: string
+    csf?: string
   }
   [key: string]: unknown
 }
 
 /**
- * Payload para subir documentos de identidad
+ * Payload para subir documentos de identidad o corporativos
  */
 export interface SubirDocumentoPayload {
-  tipo: 'curp' | 'identificacion_oficial'
+  tipo: 'curp' | 'identificacion_oficial' | 'csf' | string
   file: File
   numeroCurp?: string
 }

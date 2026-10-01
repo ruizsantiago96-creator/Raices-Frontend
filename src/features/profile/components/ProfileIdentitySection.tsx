@@ -120,7 +120,7 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
 }
 
 export interface IdentityDocumentUploaderProps {
-  tipo: 'curp' | 'identificacion_oficial'
+  tipo: 'curp' | 'identificacion_oficial' | 'csf' | string
   isUploaded?: boolean
   numeroCurp?: string
   onUploadSuccess?: () => void
@@ -132,7 +132,12 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
   numeroCurp,
   onUploadSuccess,
 }) => {
-  const tipoLabel = tipo === 'curp' ? 'CURP' : 'Identificación oficial'
+  const tipoLabel =
+    tipo === 'csf'
+      ? 'Constancia de Situación Fiscal (CSF)'
+      : tipo === 'curp'
+      ? 'CURP'
+      : 'Identificación oficial del representante legal'
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -411,6 +416,118 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
   )
 }
 
+export const EmpresaIdentitySection: React.FC<IdentityUploadSectionProps> = ({
+  status,
+  estado = status?.estado ?? 'sin_documentos',
+  onUploaded,
+}) => {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Tarjeta de estado de la empresa */}
+      <div
+        className="animate-fade-in-up"
+        style={{
+          background: 'var(--bg-surface, #fff)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 14,
+          padding: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: estado === 'aprobado' ? 'rgba(16,185,129,0.12)' : estado === 'pendiente' ? 'rgba(212,148,76,0.12)' : 'rgba(99,102,241,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: estado === 'aprobado' ? '#10B981' : estado === 'pendiente' ? '#D4944C' : 'var(--primary)',
+            }}
+          >
+            {estado === 'aprobado' ? Icons.shieldCheck({ s: 22 }) : Icons.building({ s: 22 })}
+          </div>
+          <div>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+              {estado === 'aprobado' ? 'Empresa Verificada' : estado === 'pendiente' ? 'Documentos Corporativos en Revisión' : 'Verificación de la Empresa'}
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '2px 0 0' }}>
+              {estado === 'aprobado'
+                ? 'Tu organización ha sido validada exitosamente con su Constancia de Situación Fiscal (CSF).'
+                : estado === 'pendiente'
+                ? 'Tus documentos oficiales están siendo revisados por nuestro equipo de validación.'
+                : 'Sube la Constancia de Situación Fiscal (CSF) de tu empresa y la identificación oficial del representante legal.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Carga de documentos oficiales (CSF + INE del Representante Legal) — SIN SOLICITAR CURP */}
+      <div
+        className="animate-fade-in-up delay-1"
+        style={{
+          background: 'var(--bg-surface, #fff)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 14,
+          padding: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
+          {estado === 'rechazado' ? 'Actualizar documentos oficiales de la empresa' : 'Documentos oficiales de la empresa'}
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 20px' }}>
+          Adjunta los archivos requeridos para verificar la existencia legal de tu organización. <strong>No se requiere ni se solicita CURP para cuentas de empresa.</strong>
+        </p>
+
+        {/* 1. Constancia de Situación Fiscal (CSF) */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--fg2)', marginBottom: 8 }}>
+            1. Constancia de Situación Fiscal (CSF)
+          </div>
+          <IdentityDocumentUploader
+            tipo="csf"
+            isUploaded={Boolean(status?.tieneCsf || status?.archivos?.csf)}
+            onUploadSuccess={onUploaded}
+          />
+        </div>
+
+        {/* 2. Identificación Oficial del Representante Legal (INE) */}
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--fg2)', marginBottom: 8 }}>
+            2. Identificación Oficial del Representante Legal (INE / Pasaporte / Cédula)
+          </div>
+          <IdentityDocumentUploader
+            tipo="identificacion_oficial"
+            isUploaded={Boolean(status?.tieneIdentificacion && estado !== 'rechazado')}
+            onUploadSuccess={onUploaded}
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            padding: '12px 16px',
+            background: 'rgba(99,102,241,0.06)',
+            border: '1px solid rgba(99,102,241,0.15)',
+            borderRadius: 10,
+            display: 'flex',
+            gap: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ flexShrink: 0, marginTop: 1 }}>{Icons.target({ s: 14 })}</span>
+          <div style={{ fontSize: 12.5, color: 'var(--fg2)', lineHeight: 1.5 }}>
+            <strong>Entidades Empresariales / Persona Moral:</strong> La Constancia de Situación Fiscal (CSF) valida la razón social, el RFC corporativo y el domicilio fiscal de tu empresa. La información es tratada confidencialmente.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export interface ProfileIdentitySectionProps {
   status?: EstadoValidacionIdentidad | null
   estado?: DocumentoIdentidadEstado | string
@@ -422,9 +539,9 @@ export const ProfileIdentitySection: React.FC<ProfileIdentitySectionProps> = ({
 }) => {
   const isEmpresa = useEsEmpresa()
 
-  // Una empresa nunca interactúa con CURP/identificación oficial: toda la
-  // sección (estado + carga de documentos) se suprime.
-  if (isEmpresa) return null
+  if (isEmpresa) {
+    return <EmpresaIdentitySection status={status} estado={estado} />
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

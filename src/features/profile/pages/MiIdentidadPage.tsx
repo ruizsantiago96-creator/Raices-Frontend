@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useAuthStore, useProfile, useUpdateProfile } from '@features/auth'
+import { useAuthStore, useProfile, useUpdateProfile, useEsEmpresa } from '@features/auth'
 import { getFirebaseAuth } from '@features/auth/lib/firebaseAuth'
 import { sendPasswordResetEmail, type Auth as FirebaseAuth } from 'firebase/auth'
 import type { User } from '@/types/auth'
@@ -16,6 +16,7 @@ import api from '@shared/lib/api'
 import ConfirmDialog from '../../tutor/components/ConfirmDialog'
 
 export default function MiIdentidadPage() {
+  const isEmpresa = useEsEmpresa()
   const { data: status, isLoading, isError } = useEstadoValidacion()
   const { data: profile } = useProfile()
   const updateProfile = useUpdateProfile()
@@ -152,7 +153,9 @@ const confirmGlobalLogout = useCallback(async () => {
           </h1>
           {activeTab === 'verificacion' && (
             <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>
-              Sube tu CURP e identificación oficial para verificar tu cuenta
+              {isEmpresa
+                ? 'Sube la Constancia de Situación Fiscal (CSF) e identificación oficial del representante legal'
+                : 'Sube tu CURP e identificación oficial para verificar tu cuenta'}
             </p>
           )}
         </div>
@@ -179,7 +182,7 @@ const confirmGlobalLogout = useCallback(async () => {
             }}
           >
             {Icons.shieldCheck({ s: 15 })}
-            Verificación de identidad
+            {isEmpresa ? 'Verificación empresarial' : 'Verificación de identidad'}
           </button>
           <button
             type="button"

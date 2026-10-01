@@ -6,6 +6,7 @@ import { useNotifications, useMarkRead } from '@features/notifications'
 import { useUiStore } from '@shared/stores/uiStore'
 import { LordIcon } from '@shared/components/LordIcon'
 import ConfirmDialog from '../../tutor/components/ConfirmDialog'
+import { esEmpresa } from '../lib/empresaRole'
 import type { User } from '@/types/auth'
 import { TopNavSearchBar } from './TopNavSearchBar'
 
@@ -43,6 +44,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [isLogoutModalOpen, setLogoutModalOpen] = useState(false)
 
+  const isEmpresaUser = esEmpresa(user)
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const notifDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -318,7 +320,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                 {/* Options list */}
                 <div style={{ padding: '8px 8px 0', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Link
-                    to="/profile"
+                    to={isEmpresaUser ? '/empresa/editar' : '/profile'}
                     onClick={() => setDropdownOpen(false)}
                     className="dropdown-item"
                   >
@@ -327,7 +329,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                   </Link>
 
                   <Link
-                    to="/mi-identidad?tab=seguridad"
+                    to="/mi-identidad"
                     onClick={() => setDropdownOpen(false)}
                     className="dropdown-item"
                   >
