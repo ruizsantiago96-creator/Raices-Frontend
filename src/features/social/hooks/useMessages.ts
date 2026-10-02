@@ -170,13 +170,14 @@ export function useUnreadCount() {
 }
 
 export interface EliminarConversacionResultado {
-  exito: boolean
-  mensaje: string
-  eliminados?: number
+  /** `true` si la conversación quedó oculta para el usuario autenticado. */
+  ocultado: boolean
+  /** Socio de la conversación borrada. */
+  socioId: string
 }
 
 /**
- * "Eliminar chat" (DELETE /mensajes/conversacion/:userId).
+ * "Eliminar chat" (DELETE /mensajes/conversaciones/:userId).
  *
  * El borrado es lógico y por usuario en el backend, así que tras el 200 la
  * conversación no volverá aunque el polling (15 s) la vuelva a pedir. Aun así se
@@ -186,7 +187,7 @@ export function useDeleteConversation() {
   const qc = useQueryClient()
   return useMutation<EliminarConversacionResultado, Error, string | number>({
     mutationFn: (userId) =>
-      api.delete<EliminarConversacionResultado>(`/mensajes/conversacion/${userId}`).then(r => r.data),
+      api.delete<EliminarConversacionResultado>(`/mensajes/conversaciones/${userId}`).then(r => r.data),
     onSuccess: (_res, userId) => {
       const id = String(userId)
       qc.setQueryData<Conversation[]>(['messages', 'conversations'], prev =>

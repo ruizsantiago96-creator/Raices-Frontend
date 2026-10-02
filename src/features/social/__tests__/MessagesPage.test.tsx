@@ -209,7 +209,7 @@ describe('DirectMessages — menú "Eliminar chat"', () => {
     // El backend aplica el borrado lógico: el refetch posterior ya no la devuelve.
     apiMock.delete.mockImplementation(() => {
       state.conversaciones = []
-      return Promise.resolve({ data: { exito: true, mensaje: 'Conversación eliminada', eliminados: 2 } })
+      return Promise.resolve({ data: { ocultado: true, socioId: 'ana-1' } })
     })
     const user = userEvent.setup()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -222,7 +222,7 @@ describe('DirectMessages — menú "Eliminar chat"', () => {
     await user.click(menuItem)
 
     await waitFor(() =>
-      expect(apiMock.delete).toHaveBeenCalledWith('/mensajes/conversacion/ana-1'),
+      expect(apiMock.delete).toHaveBeenCalledWith('/mensajes/conversaciones/ana-1'),
     )
     expect(await screen.findByText('Conversación eliminada')).toBeInTheDocument()
 
