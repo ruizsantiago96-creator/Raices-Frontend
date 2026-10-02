@@ -20,6 +20,12 @@ export const SOCIAL_TOAST = {
   GROUP_JOIN_FAILED: 'No pudimos unirte al grupo. Intenta de nuevo.',
   GROUP_LEFT: 'Saliste del grupo',
   GROUP_LEAVE_FAILED: 'No pudimos sacarte del grupo. Intenta de nuevo.',
+
+  // Chat / mensajes directos
+  PARTNER_DELETED: 'El usuario ya no está disponible',
+  SEND_FAILED: 'No pudimos enviar tu mensaje. Intenta de nuevo.',
+  CHAT_DELETED: 'Conversación eliminada',
+  CHAT_DELETE_FAILED: 'No pudimos eliminar la conversación. Intenta de nuevo.',
 }
 
 // ─── Textos de UI ─────────────────────────────────────────
@@ -57,13 +63,19 @@ export const SOCIAL_UI = {
   ALL_GROUPS: 'Todos',
   CREATE_GROUP: 'Crear grupo',
   
-  // Mensajes
+// Mensajes
   MESSAGES_TITLE: 'Mensajes',
   MESSAGES_EMPTY: 'Aún no tienes conversaciones',
   MESSAGES_EMPTY_HINT: 'Escribe a alguien desde la comunidad para comenzar',
   MESSAGES_LOADING: 'Cargando…',
-  MESSAGE_PLACEHOLDER: 'Escribe tu mensaje aquí...',
+  MESSAGE_PLACEHOLDER: 'Escribe un mensaje aquí...',
   SELECT_CONVERSATION: 'Selecciona una conversación para chatear',
+
+  // Chat: socio eliminado ("usuario fantasma")
+  DELETED_PARTNER_LABEL: 'Usuario Eliminado',
+  DELETED_PARTNER_PLACEHOLDER: 'No puedes responder a esta conversación',
+  DELETED_PARTNER_SUBTITLE: 'Esta cuenta fue eliminada',
+  MENU_DELETE_CHAT: 'Eliminar chat',
   
   // Estadísticas
   ACTIVE_MEMBERS: 'Miembros activos',
@@ -95,6 +107,7 @@ export const SOCIAL_UI = {
 // ─── Confirmaciones ───────────────────────────────────────
 export const SOCIAL_CONFIRM = {
   DELETE_POST: '¿Eliminar esta publicación?',
+  DELETE_CHAT: '¿Eliminar esta conversación? Se quitará solo de tu lista; la otra persona conservará su historial.',
 }
 
 

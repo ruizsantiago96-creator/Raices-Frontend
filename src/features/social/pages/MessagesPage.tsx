@@ -1,13 +1,28 @@
 import React, { useState, useRef, useEffect, HTMLAttributes, ChangeEvent, FormEvent } from 'react'
-import { useConversations, useMessages, useSendMessage, useMarcarConversacionLeida } from '../hooks/useMessages'
+import { createPortal } from 'react-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  useConversations,
+  useMessages,
+  useSendMessage,
+  useMarcarConversacionLeida,
+  useDeleteConversation,
+  isConversacionEliminada,
+  nombreParaMostrar,
+} from '../hooks/useMessages'
 import { useMiembrosDestacados } from '../hooks/useCommunity'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { useMe } from '@features/auth'
 import { Icons } from '@shared/components/shared'
-import { SOCIAL_UI } from '../constants/socialMessages'
+import { SOCIAL_UI, SOCIAL_TOAST, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
 import { FeaturedMember, MessagePartner, Conversation } from '@/types/social'
+
+/** Extrae el status HTTP de un error de axios sin arrastrar el módulo al componente. */
+function statusDeError(err: unknown): number | undefined {
+  return (err as { response?: { status?: number } })?.response?.status
+}
 
 const relativeDate = (d: string | number | Date): string => {
   const diff = Date.now() - new Date(d).getTime()
@@ -40,7 +55,8 @@ interface ChatAvatarProps {
   name: string
   src?: string | null
   size?: number
-  status?: 'online' | 'offline'
+  /** `null` omite el punto de estado (usado en conversaciones con cuentas eliminadas). */
+  status?: 'online' | 'offline' | null
 }
 
 const ChatAvatar: React.FC<ChatAvatarProps> = ({ name, src, size = 44, status = 'online' }) => {
@@ -52,7 +68,6 @@ const ChatAvatar: React.FC<ChatAvatarProps> = ({ name, src, size = 44, status = 
     .toUpperCase()
     .slice(0, 2)
   const color = hashColor(name)
-  const statusColor = status === 'online' ? '#229B58' : '#F4C84A'
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
@@ -78,18 +93,20 @@ const ChatAvatar: React.FC<ChatAvatarProps> = ({ name, src, size = 44, status = 
           {initials}
         </div>
       )}
-      <span
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: 10,
-          height: 10,
-          borderRadius: '50%',
-          background: statusColor,
-          border: '2px solid #fff',
-        }}
-      />
+      {status && (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: status === 'online' ? '#229B58' : '#F4C84A',
+            border: '2px solid #fff',
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -188,6 +205,8 @@ export function DirectMessages({
   const floatingChatMaximized = useUiStore(s => s.floatingChatMaximized)
   const setFloatingChatMaximized = useUiStore(s => s.setFloatingChatMaximized)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const addToast = useUiStore(s => s.addToast)
 
   const [activePartnerId, setActivePartnerIdState] = useState<string | null>(
     isFloating ? (floatingChatPartnerId !== null ? String(floatingChatPartnerId) : null) : null
@@ -202,11 +221,23 @@ export function DirectMessages({
   const [modalSearchQuery, setModalSearchQuery] = useState('')
   const chatEndRef = useRef<HTMLDivElement | null>(null)
 
+  // Menú contextual de la cabecera (⋮) — "Eliminar chat", estilo WhatsApp.
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  const cerrarMenu = () => {
+    setMenuAbierto(false)
+    setMenuPos(null)
+  }
+
   const { data: conversations = [], isLoading: convsLoading } = useConversations()
   const { data: messages = [] } = useMessages(activePartnerId)
   const { data: members = [] } = useMiembrosDestacados(50) // load up to 50 members to allow starting chats
   const sendMessage = useSendMessage()
   const marcarLeidos = useMarcarConversacionLeida()
+  const deleteConversation = useDeleteConversation()
 
   // Al abrir una conversación (desktop, móvil o chat flotante), marcar como
   // leídos los mensajes del socio. Idempotente: el backend solo actualiza
@@ -220,11 +251,15 @@ export function DirectMessages({
   const floatingPartnerStr = floatingChatPartnerId !== null ? String(floatingChatPartnerId) : null
   if (isFloating && floatingPartnerStr !== activePartnerId) {
     setActivePartnerIdState(floatingPartnerStr)
+    cerrarMenu()
   }
 
   const setActivePartnerId = (id: string | number | null) => {
     const strId = id !== null ? String(id) : null
     setActivePartnerIdState(strId)
+    // El menú contextual es posicional: si no se cierra al cambiar de chat queda
+    // descolgado del botón que lo abrió.
+    cerrarMenu()
     if (isFloating) {
       setFloatingChatPartnerId(strId)
     }
@@ -234,6 +269,104 @@ export function DirectMessages({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const activeConv: Conversation | null =
+    conversations.find(c => String(c.partner?.id) === String(activePartnerId)) ||
+    (activeNewPartner && String(activeNewPartner.id) === String(activePartnerId)
+      ? { partner: activeNewPartner, last_message: '', unread: 0 }
+      : null)
+
+  /** El socio fue eliminado: el historial se puede leer, pero no se puede responder. */
+  const partnerIsDeleted = activeConv ? isConversacionEliminada(activeConv) : false
+  const activeName = partnerIsDeleted
+    ? SOCIAL_UI.DELETED_PARTNER_LABEL
+    : activeConv?.partner.full_name ?? SOCIAL_UI.USER_FALLBACK
+
+  /**
+   * Marca en la caché local una conversación como eliminada. Se usa cuando el
+   * backend responde 403 al enviar: la cuenta destino desapareció entre la carga
+   * de la lista y el envío, así que la UI se actualiza sin esperar al polling.
+   */
+  const marcarSocioEliminado = (partnerId: string) => {
+    queryClient.setQueryData<Conversation[]>(['messages', 'conversations'], prev =>
+      prev?.map(c =>
+        String(c.partner?.id) !== partnerId
+          ? c
+          : {
+              ...c,
+              isDeleted: true,
+              destinatarioActivo: false,
+              partner: {
+                ...c.partner,
+                full_name: SOCIAL_UI.DELETED_PARTNER_LABEL,
+                avatar_url: null,
+                is_active: false,
+              },
+            },
+      ),
+    )
+  }
+
+  /**
+   * "Eliminar chat" (DELETE /mensajes/conversacion/:userId).
+   * El borrado es lógico y por usuario: la contraparte conserva su historial.
+   */
+  const handleDeleteChat = () => {
+    if (!activePartnerId || deleteConversation.isPending) return
+    setMenuAbierto(false)
+    setMenuPos(null)
+    if (!window.confirm(SOCIAL_CONFIRM.DELETE_CHAT)) return
+
+    deleteConversation.mutate(activePartnerId, {
+      onSuccess: () => {
+        // El hook ya retiró la conversación de la caché (y el backend la ocultará
+        // en los próximos refetch); aquí se limpia la vista activa.
+        setActivePartnerId(null)
+        setActiveNewPartner(null)
+        setText('')
+        setPendingFile(null)
+        setPendingFileName('')
+        addToast(SOCIAL_TOAST.CHAT_DELETED, 'success')
+      },
+      onError: () => addToast(SOCIAL_TOAST.CHAT_DELETE_FAILED, 'error'),
+    })
+  }
+
+  const toggleChatMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (menuAbierto) {
+      setMenuAbierto(false)
+      setMenuPos(null)
+      return
+    }
+    // Se posiciona con getBoundingClientRect + portal a document.body porque la
+    // cabecera vive dentro de un contenedor con `overflow: hidden`.
+    const r = e.currentTarget.getBoundingClientRect()
+    setMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right })
+    setMenuAbierto(true)
+  }
+
+  useEffect(() => {
+    if (!menuAbierto) return
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (menuRef.current?.contains(target) || menuBtnRef.current?.contains(target)) return
+      setMenuAbierto(false)
+      setMenuPos(null)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuAbierto(false)
+        setMenuPos(null)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuAbierto])
+
+  // Cambiar de conversación cierra el menú para que no quede flotando descolgado.
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -245,6 +378,12 @@ export function DirectMessages({
   const handleSend = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if ((!text.trim() && !pendingFile) || !activePartnerId || sendMessage.isPending) return
+
+    // Red de seguridad para el caso de que la lista aún no refleje la baja del socio.
+    if (partnerIsDeleted) {
+      addToast(SOCIAL_TOAST.PARTNER_DELETED, 'warning')
+      return
+    }
 
     let content = text
     if (pendingFile) {
@@ -258,24 +397,27 @@ export function DirectMessages({
     }
 
     if (!content.trim()) return
-    sendMessage.mutate(
-      { toId: activePartnerId, content },
-      {
-        onSuccess: () => {
-          setText('')
-          setPendingFile(null)
-          setPendingFileName('')
-        },
+
+    try {
+      await sendMessage.mutateAsync({ toId: activePartnerId, content })
+      setText('')
+      setPendingFile(null)
+      setPendingFileName('')
+    } catch (err) {
+      // El backend responde 403 ("Usuario destinatario no existe") si la cuenta se
+      // eliminó entre la carga de la lista y este envío. La UI no se rompe: se avisa
+      // y la conversación se marca como eliminada para no permitir más intentos.
+      if (statusDeError(err) === 403) {
+        marcarSocioEliminado(activePartnerId)
+        addToast(SOCIAL_TOAST.PARTNER_DELETED, 'warning')
+      } else {
+        addToast(SOCIAL_TOAST.SEND_FAILED, 'error')
       }
-    )
+    }
   }
 
-  const activeConv: Conversation | { partner: MessagePartner } | null =
-    conversations.find(c => String(c.partner?.id) === String(activePartnerId)) ||
-    (activeNewPartner && String(activeNewPartner.id) === String(activePartnerId) ? { partner: activeNewPartner } : null)
-
   const filteredConversations = conversations.filter(conv =>
-    conv.partner && conv.partner.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    (conv.partner?.full_name ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const filteredMembers = members.filter(
@@ -433,7 +575,12 @@ export function DirectMessages({
             filteredConversations.map(conv => {
               const isSelected = String(activePartnerId) === String(conv.partner.id)
               const timeLabel = conv.last_message_time ? relativeDate(conv.last_message_time) : ''
-              const partnerRole = (conv.partner.role && ROLE_LABELS[conv.partner.role]) || 'Miembro'
+              // "Usuario fantasma": se muestra como eliminado y sin punto de estado.
+              const isDeleted = isConversacionEliminada(conv)
+              const displayName = nombreParaMostrar(conv)
+              const partnerRole = isDeleted
+                ? SOCIAL_UI.DELETED_PARTNER_SUBTITLE
+                : (conv.partner.role && ROLE_LABELS[conv.partner.role]) || 'Miembro'
 
               return (
                 <button
@@ -464,9 +611,9 @@ export function DirectMessages({
                   }}
                 >
                   <ChatAvatar
-                    name={conv.partner.full_name}
+                    name={displayName}
                     src={conv.partner.avatar_url}
-                    status={conv.partner.is_active ? 'online' : 'offline'}
+                    status={isDeleted ? null : conv.partner.is_active ? 'online' : 'offline'}
                     size={38}
                   />
                   <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -488,7 +635,7 @@ export function DirectMessages({
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {conv.partner.full_name}
+                        {displayName}
                       </span>
                       <span style={{ fontSize: 10.5, color: 'var(--fg3)', flexShrink: 0, marginLeft: 8 }}>
                         {timeLabel}
@@ -556,25 +703,63 @@ export function DirectMessages({
               ...(isFloating ? dragHandleProps?.style : {}),
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <ChatAvatar
-                name={activeConv?.partner.full_name ?? ''}
+                name={activeName}
                 src={activeConv?.partner.avatar_url}
-                status={activeConv?.partner.is_active ? 'online' : 'offline'}
+                status={partnerIsDeleted ? null : activeConv?.partner.is_active ? 'online' : 'offline'}
                 size={36}
               />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--fg1)' }}>
-                  {activeConv?.partner.full_name ?? SOCIAL_UI.USER_FALLBACK}
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 14.5,
+                    color: 'var(--fg1)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {activeName}
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--fg3)' }}>
-                  {activeConv?.partner.is_active ? 'En línea' : 'Desconectado'}
+                  {partnerIsDeleted
+                    ? SOCIAL_UI.DELETED_PARTNER_SUBTITLE
+                    : activeConv?.partner.is_active
+                      ? 'En línea'
+                      : 'Desconectado'}
                 </div>
               </div>
             </div>
 
             {/* Opciones de Ventana / Menú estilo Reddit */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--fg3)' }}>
+              {/* Menú contextual de la conversación (⋮) */}
+              <button
+                ref={menuBtnRef}
+                onClick={toggleChatMenu}
+                onMouseDown={e => e.stopPropagation()}
+                title="Opciones de la conversación"
+                aria-haspopup="menu"
+                aria-expanded={menuAbierto}
+                aria-label="Opciones de la conversación"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'inherit',
+                  padding: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="5" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="19" cy="12" r="2" />
+                </svg>
+              </button>
               {isFloating ? (
                 <>
                   <button
@@ -792,6 +977,71 @@ export function DirectMessages({
             </div>
           </div>
 
+          {/* Menú contextual (portal) — evita que `overflow: hidden` lo recorte */}
+          {menuAbierto &&
+            menuPos &&
+            createPortal(
+              <div
+                ref={menuRef}
+                role="menu"
+                style={{
+                  position: 'fixed',
+                  top: menuPos.top,
+                  right: menuPos.right,
+                  minWidth: 190,
+                  background: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: 'var(--shadow-lg)',
+                  zIndex: 9999,
+                  padding: '6px 0',
+                  animation: 'fade-in 0.12s ease-out',
+                }}
+              >
+                <button
+                  role="menuitem"
+                  onClick={handleDeleteChat}
+                  disabled={deleteConversation.isPending}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '9px 16px',
+                    border: 'none',
+                    background: 'none',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: 'var(--color-error)',
+                    cursor: deleteConversation.isPending ? 'default' : 'pointer',
+                    opacity: deleteConversation.isPending ? 0.6 : 1,
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-cool)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                  {SOCIAL_UI.MENU_DELETE_CHAT}
+                </button>
+              </div>,
+              document.body,
+            )}
+
           {/* Lista de Mensajes */}
           <div
             style={{
@@ -977,7 +1227,10 @@ export function DirectMessages({
                 <input
                   value={text}
                   onChange={e => setText(e.target.value)}
-                  placeholder="Escribe un mensaje..."
+                  disabled={partnerIsDeleted}
+                  placeholder={
+                    partnerIsDeleted ? SOCIAL_UI.DELETED_PARTNER_PLACEHOLDER : 'Escribe un mensaje...'
+                  }
                   style={{
                     flex: 1,
                     height: '100%',
@@ -987,6 +1240,7 @@ export function DirectMessages({
                     fontSize: 14,
                     fontFamily: 'var(--font-body)',
                     color: 'var(--fg1)',
+                    cursor: partnerIsDeleted ? 'not-allowed' : 'text',
                   }}
                 />
 
@@ -1057,15 +1311,24 @@ export function DirectMessages({
               {/* Botón enviar */}
               <button
                 type="submit"
-                disabled={(!text.trim() && !pendingFile) || sendMessage.isPending || uploadMedia.isPending}
+                disabled={
+                  partnerIsDeleted ||
+                  (!text.trim() && !pendingFile) ||
+                  sendMessage.isPending ||
+                  uploadMedia.isPending
+                }
                 style={{
                   width: 44,
                   height: 44,
                   borderRadius: '50%',
-                  background: text.trim() || pendingFile ? 'var(--primary)' : 'var(--border-color)',
+                  background:
+                    !partnerIsDeleted && (text.trim() || pendingFile)
+                      ? 'var(--primary)'
+                      : 'var(--border-color)',
                   border: 'none',
                   color: '#fff',
-                  cursor: text.trim() || pendingFile ? 'pointer' : 'default',
+                  cursor:
+                    !partnerIsDeleted && (text.trim() || pendingFile) ? 'pointer' : 'default',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
