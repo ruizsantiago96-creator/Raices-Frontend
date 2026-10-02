@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { Icons, hashColor } from '@shared/components/shared'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useMe } from '@features/auth'
+import { useMe, EMPRESA_VISTA_PREVIA } from '@features/auth'
 import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
@@ -897,13 +897,13 @@ export default function EmpresaDashboard() {
               </span>
             </div>
 
-            {/* Vista previa pública: abre el listado de vacantes activas de la
-                empresa en modo solo lectura, como lo vería un candidato.
-                La ruta vive bajo /empresa (RUTAS_EMPRESA): ProtectedRoute no la
-                expulsa, a diferencia de /explore o /jobs, que sí causaban el
-                falso ruteo hacia el panel de usuario estándar. */}
+            {/* Vista previa pública: las vacantes activas de la empresa en modo
+                solo lectura, con el sidebar de la app. No puede apuntar a
+                /instituciones como el botón homónimo de institución: el backend
+                excluye a las empresas del directorio público, así que la empresa
+                no se vería listada. MainLayout la excluye del modo 'empresa'. */}
             <button
-              onClick={() => navigate('/empresa/vacantes')}
+              onClick={() => navigate(EMPRESA_VISTA_PREVIA)}
               style={{
                 padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border-color)',
                 background: 'var(--bg-surface)', color: 'var(--primary)', fontSize: 13.5, fontWeight: 700,

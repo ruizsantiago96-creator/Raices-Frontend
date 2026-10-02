@@ -224,13 +224,15 @@ export default function App() {
                   <Route path="/institution-portal/editar" element={<ProtectedRoute role="institution"><EditarInstitucionPage /></ProtectedRoute>} />
 
                   {/* ── Portal de Empresa (persona moral) ───────────────────
-                      ProtectedRoute ya expulsa a toda cuenta empresa fuera de RUTAS_EMPRESA,
-                      así que aquí nunca puede aparecer el layout de usuario estándar. */}
+                      El panel vive bajo /empresa. La empresa puede abrir además
+                      toda la app de usuario (ProtectedRoute solo la expulsa de
+                      RUTAS_BLOQUEADAS_EMPRESA), y desde ahí vuelve al panel con
+                      el item "Panel" del sidebar. */}
                   <Route path="/empresa/dashboard" element={<ProtectedRoute role="empresa"><EmpresaDashboard /></ProtectedRoute>} />
                   <Route path="/empresa/editar" element={<ProtectedRoute role="empresa"><EditarEmpresaPage /></ProtectedRoute>} />
-                  {/* Vista previa pública de las vacantes de la empresa (solo
-                      lectura). Vive bajo el prefijo /empresa, que ya está en
-                      RUTAS_EMPRESA: ProtectedRoute no expulsa la cuenta. */}
+                  {/* Vista previa de perfil público (solo lectura). El backend no
+                      lista a las empresas en el directorio /instituciones, así que
+                      esta página cubre ese hueco. */}
                   <Route path="/empresa/vacantes" element={<ProtectedRoute role="empresa"><VacantesPublicasPage /></ProtectedRoute>} />
                   {/* Alias legacy: enlaces y marcadores anteriores a la reorganización */}
                   <Route path="/empresa-portal" element={<Navigate to="/empresa/dashboard" replace />} />

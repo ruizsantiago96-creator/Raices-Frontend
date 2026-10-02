@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useMe, useProfile } from '@features/auth'
 import { useRecomendaciones, useRecomendacionesEspecialistas, useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
@@ -531,6 +531,7 @@ function sortFeed(items: UnifiedFeedItem[], mode: string): UnifiedFeedItem[] {
    FeedPage — Reddit-style mixed feed
    ═══════════════════════════════════════════════════════════ */
 export default function FeedPage() {
+  const location = useLocation()
   const { data: profile } = useProfile()
   const { data: onboardingStatus } = useOnboardingStatus()
   const { data: recomendacionesData, isLoading: instLoading, refetch: refetchDiscovery } = useRecomendaciones()
@@ -714,10 +715,8 @@ export default function FeedPage() {
 
   return (
     <main className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-
-        {/* ── Progress Bar ── */}
-        {isIncomplete && !isRejected && (
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>        {/* ── Progress Bar ── */}
+        {isIncomplete && !isRejected && !((esRolSinOnboardingEstándar && location.pathname === '/feed') && onboardingStatus?.onboardingCompleto && !isPendingDocs && !isApproved) && (
           <div className="animate-fade-in-up" style={{
             background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
             border: '1px solid rgba(34,155,88,0.2)',
@@ -738,8 +737,7 @@ export default function FeedPage() {
               <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
                 {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
                   ? `Último paso completado: Paso ${onboardingStatus.ultimoPasoCompletado}. Reanudarás automáticamente en el Paso ${onboardingStatus.ultimoPasoCompletado + 1}.`
-                  : 'Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.'
-                }
+                  : 'Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.'}
               </p>
               <div style={{ height: 6, background: 'rgba(34,155,88,0.15)', borderRadius: 3, marginTop: 12, overflow: 'hidden' }}>
                 <div style={{ width: `${(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 20)}%`, height: '100%', background: '#229B58', borderRadius: 3, transition: 'width 0.3s ease' }} />
@@ -748,8 +746,7 @@ export default function FeedPage() {
             <Link to="/completar-perfil" style={{ padding: '10px 18px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(34,155,88,0.25)' }}>
               {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
                 ? `Reanudar (Paso ${onboardingStatus.ultimoPasoCompletado + 1})`
-                : 'Completar ahora'
-              }
+                : 'Completar ahora'}
             </Link>
           </div>
         )}

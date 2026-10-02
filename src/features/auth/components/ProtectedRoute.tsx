@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { EMPRESA_HOME, esEmpresa, esRutaEmpresa, tieneRol } from '../lib/empresaRole'
+import { EMPRESA_HOME, esEmpresa, puedeAbrirEmpresa, tieneRol } from '../lib/empresaRole'
 
 export interface ProtectedRouteProps {
   children: ReactNode
@@ -15,10 +15,16 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
   if (!token) return <Navigate to="/" replace />
 
   // ── Empresa (persona moral) ────────────────────────────────────────
-  // Las cuentas de empresa NUNCA renderizan la superficie de usuario estándar
-  // (feed, oportunidades, rutas…), así que se las expulsa a su portal. Sin esto
-  // aterrizarían en el panel de CURP, que no les corresponde.
-  if (esEmpresa(user) && !esRutaEmpresa(location.pathname)) {
+  // La empresa recorre la app como cualquier usuario: el sidebar estándar es el
+  // que ve y todas sus secciones (Mis Rutas, Oportunidades, Conectemos,
+  // Guardados…) abren de verdad. Solo se la expulsa de las superficies que no
+  // tienen sentido para una persona moral, declaradas en
+  // RUTAS_BLOQUEADAS_EMPRESA: administración, portal de institución, alta de
+  // institución y las vistas de identidad que piden CURP (se acredita con CSF).
+  //
+  // El panel sigue siendo su aterrizaje: MainLayout lo deduce de la ruta, y el
+  // item "Panel" del sidebar devuelve desde cualquier sección de la app.
+  if (esEmpresa(user) && !puedeAbrirEmpresa(location.pathname)) {
     return <Navigate to={EMPRESA_HOME} replace />
   }
 

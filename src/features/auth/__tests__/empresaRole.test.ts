@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { esEmpresa, esRutaEmpresa, tieneRol, EMPRESA_HOME, EMPRESA_EDITAR, RUTAS_EMPRESA } from '../lib/empresaRole'
+import { esEmpresa, puedeAbrirEmpresa, esVistaPreviaEmpresa, tieneRol, EMPRESA_HOME, EMPRESA_EDITAR, EMPRESA_VISTA_PREVIA, RUTAS_BLOQUEADAS_EMPRESA } from '../lib/empresaRole'
 import { getCamposOnboardingFaltantes } from '../../empresa/components/EmpresaOnboardingModal'
 import type { Institution } from '../../../types/institutions'
 
@@ -40,37 +40,90 @@ describe('esEmpresa', () => {
   })
 })
 
-describe('esRutaEmpresa', () => {
-  it('permite la superficie propia de la empresa', () => {
-    expect(esRutaEmpresa(EMPRESA_HOME)).toBe(true)
-    expect(esRutaEmpresa(EMPRESA_EDITAR)).toBe(true)
-    expect(esRutaEmpresa('/empresa/cualquier-subruta')).toBe(true)
-    expect(esRutaEmpresa('/profile')).toBe(true)
-    expect(esRutaEmpresa('/notifications')).toBe(true)
-    expect(esRutaEmpresa('/inicio')).toBe(true)
+describe('puedeAbrirEmpresa', () => {
+  it('permite la superficie propia del panel', () => {
+    expect(puedeAbrirEmpresa(EMPRESA_HOME)).toBe(true)
+    expect(puedeAbrirEmpresa(EMPRESA_EDITAR)).toBe(true)
+    expect(puedeAbrirEmpresa('/empresa/cualquier-subruta')).toBe(true)
+    expect(puedeAbrirEmpresa('/profile')).toBe(true)
+    expect(puedeAbrirEmpresa('/notifications')).toBe(true)
+    expect(puedeAbrirEmpresa('/inicio')).toBe(true)
   })
 
-  it('bloquea la superficie de usuario estándar', () => {
-    expect(esRutaEmpresa('/feed')).toBe(false)
-    expect(esRutaEmpresa('/jobs')).toBe(false)
-    expect(esRutaEmpresa('/rutas')).toBe(false)
-    expect(esRutaEmpresa('/social')).toBe(false)
-    expect(esRutaEmpresa('/explore')).toBe(false)
-    expect(esRutaEmpresa('/verificacion-identidad')).toBe(false)
-    expect(esRutaEmpresa('/completar-perfil')).toBe(false)
+  // ── Cada sección del sidebar estándar debe abrir de verdad, como en PCD ──
+  it('permite todas las secciones del sidebar de la app', () => {
+    expect(puedeAbrirEmpresa('/feed')).toBe(true)
+    expect(puedeAbrirEmpresa('/rutas')).toBe(true)
+    expect(puedeAbrirEmpresa('/escalas-vida')).toBe(true)
+    expect(puedeAbrirEmpresa('/jobs')).toBe(true)
+    expect(puedeAbrirEmpresa('/social')).toBe(true)
+    expect(puedeAbrirEmpresa('/foros')).toBe(true)
+    expect(puedeAbrirEmpresa('/messages')).toBe(true)
+    expect(puedeAbrirEmpresa('/favorites')).toBe(true)
+    expect(puedeAbrirEmpresa('/instituciones')).toBe(true)
+    expect(puedeAbrirEmpresa('/instituciones/inst-42')).toBe(true)
+    expect(puedeAbrirEmpresa('/explore')).toBe(true)
   })
 
-  it('no hace match por prefijo parcial ambiguo', () => {
-    expect(esRutaEmpresa('/empresario')).toBe(false)
-    expect(esRutaEmpresa('/perfil')).toBe(false)
+  it('permite la vista previa de perfil público', () => {
+    expect(puedeAbrirEmpresa(EMPRESA_VISTA_PREVIA)).toBe(true)
   })
 
-  it('expone una lista de rutas no vacía que cubre la home y la edición', () => {
-    expect(RUTAS_EMPRESA.length).toBeGreaterThan(0)
-    // Las rutas son prefijos: home y edición cuelgan de '/empresa'
-    expect(esRutaEmpresa(EMPRESA_HOME)).toBe(true)
-    expect(esRutaEmpresa(EMPRESA_EDITAR)).toBe(true)
-    expect(RUTAS_EMPRESA.some(r => EMPRESA_HOME.startsWith(r))).toBe(true)
+  it('bloquea solo lo que no aplica a una persona moral', () => {
+    expect(puedeAbrirEmpresa('/admin')).toBe(false)
+    expect(puedeAbrirEmpresa('/institution-portal')).toBe(false)
+    expect(puedeAbrirEmpresa('/institution-portal/editar')).toBe(false)
+    expect(puedeAbrirEmpresa('/institution/nueva')).toBe(false)
+    // La persona moral se acredita con CSF: no hay CURP que verificar.
+    expect(puedeAbrirEmpresa('/verificacion-identidad')).toBe(false)
+    expect(puedeAbrirEmpresa('/completar-perfil')).toBe(false)
+  })
+
+  it('cubre las subrutas de cada ruta bloqueada', () => {
+    for (const bloqueada of RUTAS_BLOQUEADAS_EMPRESA) {
+      expect(puedeAbrirEmpresa(bloqueada)).toBe(false)
+      expect(puedeAbrirEmpresa(`${bloqueada}/subruta`)).toBe(false)
+    }
+  })
+
+  // El match es por segmento: '/institution-portal' no puede arrastrar a
+  // '/instituciones', que es un directorio público que sí debe abrir.
+  it('no confunde prefijos que comparten raíz', () => {
+    expect(puedeAbrirEmpresa('/instituciones')).toBe(true)
+    expect(puedeAbrirEmpresa('/instituciones/inst-42')).toBe(true)
+    expect(puedeAbrirEmpresa('/institution/otra')).toBe(true)
+  })
+
+  it('expone una lista de bloqueo no vacía', () => {
+    expect(RUTAS_BLOQUEADAS_EMPRESA.length).toBeGreaterThan(0)
+    // Ninguna ruta del panel propio puede estar bloqueada: sería un bucle.
+    expect(RUTAS_BLOQUEADAS_EMPRESA).not.toContain(EMPRESA_HOME)
+    expect(RUTAS_BLOQUEADAS_EMPRESA).not.toContain(EMPRESA_EDITAR)
+    expect(RUTAS_BLOQUEADAS_EMPRESA).not.toContain(EMPRESA_VISTA_PREVIA)
+  })
+})
+
+describe('esVistaPreviaEmpresa', () => {
+  // MainLayout usa esta helper para excluir la vista previa del modo 'empresa':
+  // cuelga de /empresa pero debe dibujarse con el sidebar de la app.
+  it('reconoce la vista previa y sus subrutas', () => {
+    expect(esVistaPreviaEmpresa(EMPRESA_VISTA_PREVIA)).toBe(true)
+    expect(esVistaPreviaEmpresa(`${EMPRESA_VISTA_PREVIA}/subruta`)).toBe(true)
+  })
+
+  it('no confunde el resto de la superficie de empresa', () => {
+    expect(esVistaPreviaEmpresa(EMPRESA_HOME)).toBe(false)
+    expect(esVistaPreviaEmpresa(EMPRESA_EDITAR)).toBe(false)
+    expect(esVistaPreviaEmpresa('/empresa')).toBe(false)
+    expect(esVistaPreviaEmpresa('/feed')).toBe(false)
+    expect(esVistaPreviaEmpresa('/instituciones')).toBe(false)
+  })
+
+  // La vista previa cuelga de /empresa, así que ProtectedRoute no expulsa a la
+  // persona moral y MainLayout cae en modo 'app'.
+  it('es una ruta que ProtectedRoute ya autoriza', () => {
+    expect(puedeAbrirEmpresa(EMPRESA_VISTA_PREVIA)).toBe(true)
+    expect(EMPRESA_VISTA_PREVIA.startsWith('/empresa')).toBe(true)
   })
 })
 

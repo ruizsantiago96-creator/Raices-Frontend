@@ -23,6 +23,14 @@ const renderWithRouter = (ui: React.ReactElement, initialRoute = '/ruta-protegid
         <Route path="/ruta-protegida" element={ui} />
         <Route path="/feed" element={ui} />
         <Route path="/empresa/editar" element={ui} />
+        <Route path="/empresa/vacantes" element={ui} />
+        <Route path="/instituciones" element={ui} />
+        <Route path="/rutas" element={ui} />
+        <Route path="/jobs" element={ui} />
+        <Route path="/social" element={ui} />
+        <Route path="/favorites" element={ui} />
+        <Route path="/admin" element={ui} />
+        <Route path="/institution-portal" element={ui} />
       </Routes>
     </MemoryRouter>
   );
@@ -103,15 +111,77 @@ describe('Test Suite: ProtectedRoute', () => {
     expect(screen.getByText('Pantalla Dedicada para Empresas')).toBeInTheDocument();
   });
 
-  // ── Persona moral (empresa): nunca debe caer en el panel de usuario ──
+  // ── Persona moral (empresa): la app se recorre como cualquier usuario ──
 
-  it('Debe expulsar a la empresa de las rutas de usuario estándar hacia /empresa/dashboard', () => {
+  it('Debe dejar abrir a la empresa cada sección del sidebar de la app', () => {
     (useAuthStore as any).mockReturnValue({ 
       token: 'token-valido', 
       user: { role: 'empresa' } 
     });
 
-    // /feed es la superficie estándar (Inicio, Oportunidades, Mis Rutas)
+    // Estas son exactamente las rutas de los items del sidebar estándar. Antes
+    // ProtectedRoute las expulsaba al panel y el enlace solo rebotaba.
+    for (const [ruta, texto] of [
+      ['/feed', 'Feed de usuario'],
+      ['/rutas', 'Mis Rutas'],
+      ['/jobs', 'Oportunidades'],
+      ['/social', 'Conectemos'],
+      ['/favorites', 'Guardados'],
+      ['/instituciones', 'Catálogo de instituciones'],
+    ] as const) {
+      const { unmount } = renderWithRouter(
+        <ProtectedRoute>
+          <div>{texto}</div>
+        </ProtectedRoute>,
+        ruta
+      );
+      expect(screen.getByText(texto)).toBeInTheDocument();
+      expect(screen.queryByTestId('empresa-dashboard')).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('Debe expulsar a la empresa de las superficies que no aplican a una persona moral', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'empresa' } 
+    });
+
+    renderWithRouter(
+      <ProtectedRoute>
+        <div>Panel de usuario</div>
+      </ProtectedRoute>,
+      '/admin'
+    );
+
+    expect(screen.getByTestId('empresa-dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Panel de usuario')).not.toBeInTheDocument();
+  });
+
+  it('No debe dejar a la empresa abrir el portal de institución por ruta', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'empresa' } 
+    });
+
+    renderWithRouter(
+      <ProtectedRoute>
+        <div>Vista institucional</div>
+      </ProtectedRoute>,
+      '/institution-portal'
+    );
+
+    expect(screen.getByTestId('empresa-dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Vista institucional')).not.toBeInTheDocument();
+  });
+
+  // ── Las dos salidas hacia la app, idénticas a las de la institución ──
+  it('Debe dejar ver el feed a la empresa (botón "Ir a app")', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'empresa' } 
+    });
+
     renderWithRouter(
       <ProtectedRoute>
         <div>Feed de usuario</div>
@@ -119,8 +189,39 @@ describe('Test Suite: ProtectedRoute', () => {
       '/feed'
     );
 
-    expect(screen.getByTestId('empresa-dashboard')).toBeInTheDocument();
-    expect(screen.queryByText('Feed de usuario')).not.toBeInTheDocument();
+    expect(screen.getByText('Feed de usuario')).toBeInTheDocument();
+  });
+
+  it('Debe dejar ver la vista previa de perfil público a la empresa', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'empresa' } 
+    });
+
+    renderWithRouter(
+      <ProtectedRoute role="empresa">
+        <div>Vista previa de perfil público</div>
+      </ProtectedRoute>,
+      '/empresa/vacantes'
+    );
+
+    expect(screen.getByText('Vista previa de perfil público')).toBeInTheDocument();
+  });
+
+  it('Debe dejar consultar el directorio público a la empresa', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'empresa' } 
+    });
+
+    renderWithRouter(
+      <ProtectedRoute>
+        <div>Catálogo de instituciones</div>
+      </ProtectedRoute>,
+      '/instituciones'
+    );
+
+    expect(screen.getByText('Catálogo de instituciones')).toBeInTheDocument();
   });
 
   it('Debe dejar pasar a la empresa dentro de su propia superficie', () => {
@@ -146,13 +247,13 @@ describe('Test Suite: ProtectedRoute', () => {
     });
 
     renderWithRouter(
-      <ProtectedRoute>
-        <div>Feed de usuario</div>
+      <ProtectedRoute role="empresa">
+        <div>Vista previa de perfil público</div>
       </ProtectedRoute>,
-      '/feed'
+      '/empresa/vacantes'
     );
 
-    expect(screen.getByTestId('empresa-dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Vista previa de perfil público')).toBeInTheDocument();
   });
 
   it('Debe reconocer el rol crudo `rol: "empresa"` sin normalizar', () => {
@@ -162,13 +263,31 @@ describe('Test Suite: ProtectedRoute', () => {
     });
 
     renderWithRouter(
-      <ProtectedRoute>
-        <div>Feed de usuario</div>
+      <ProtectedRoute role="empresa">
+        <div>Vista previa de perfil público</div>
       </ProtectedRoute>,
-      '/feed'
+      '/empresa/vacantes'
+    );
+
+    expect(screen.getByText('Vista previa de perfil público')).toBeInTheDocument();
+  });
+
+  // ── Regresión: una persona moral no debe ganar acceso a /admin ──
+  it('sigue expulsando a la institution tipada como empresa de /admin', () => {
+    (useAuthStore as any).mockReturnValue({ 
+      token: 'token-valido', 
+      user: { role: 'institution', tipo: 'empresa' } 
+    });
+
+    renderWithRouter(
+      <ProtectedRoute>
+        <div>Vista institucional</div>
+      </ProtectedRoute>,
+      '/admin'
     );
 
     expect(screen.getByTestId('empresa-dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Vista institucional')).not.toBeInTheDocument();
   });
 
   it('No debe dejar a una institución (sin tipo=empresa) fuera de sus rutas', () => {
