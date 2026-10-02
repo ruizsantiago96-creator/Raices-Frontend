@@ -138,6 +138,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const qc = useQueryClient()
 
   // Contract hooks
+  const { data: me } = useMe()
   const { data: onboardingStatus } = useOnboardingStatus()
   const saveBorradorMutation = useSaveOnboardingBorrador()
 
@@ -151,10 +152,24 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const [error, setError] = useState('')
 
   // ── State ─────────────────────────────────────────────────────
-  const [curpInput, setCurpInput] = useState<string>(() => (savedData.curpInput as string) || '')
+  const [curpInput, setCurpInput] = useState<string>(() => (savedData.curpInput as string) || (me as { curp?: string })?.curp || '')
   const [destinatario, setDestinatario] = useState<string>(() => (savedData.destinatario as string) || 'hijo')
-  const [nombreDependiente, setNombreDependiente] = useState<string>(() => (savedData.nombreDependiente as string) || '')
-  const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState<string>(() => (savedData.fechaNacimientoDependiente as string) || '')
+  const [nombreDependiente, setNombreDependiente] = useState<string>(() =>
+    (savedData.nombreDependiente as string) ||
+    onboardingStatus?.nombrePcd ||
+    (me as { nombrePcd?: string; nombre_pcd?: string })?.nombrePcd ||
+    (me as { nombre_pcd?: string })?.nombre_pcd ||
+    localStorage.getItem('raices_dep_name') ||
+    ''
+  )
+  const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState<string>(() =>
+    (savedData.fechaNacimientoDependiente as string) ||
+    onboardingStatus?.fechaNacimientoPcd ||
+    (me as { fechaNacimientoPcd?: string; fecha_nacimiento_pcd?: string })?.fechaNacimientoPcd ||
+    (me as { fecha_nacimiento_pcd?: string })?.fecha_nacimiento_pcd ||
+    localStorage.getItem('raices_dep_birth_date') ||
+    ''
+  )
   const [acompanamiento, setAcompanamiento] = useState<string>(() => (savedData.acompanamiento as string) || 'recomendaciones_paso')
   
   const [conditionData, setConditionData] = useState<ConditionData>(() => (savedData.conditionData as ConditionData) || {
@@ -186,7 +201,6 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const personName = nombreDependiente.trim() || (destinatario === 'hijo' ? 'tu hijo/a' : destinatario === 'familiar' ? 'tu familiar' : 'la persona a tu cuidado')
 
   const hasNeurodivergence = conditionData.conditions.some(c => c.toLowerCase().includes('neurodivergencia'))
-  const { data: me } = useMe()
   const { data: estadoValidacion } = useEstadoValidacion()
   const storeUser = useAuthStore(s => s.user)
   const userCurp = me?.curp || storeUser?.curp
@@ -295,6 +309,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const toggleSuggestedZone = (zone: string) => setPreferredZones(prev => prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone])
   const toggleNeed = (item: string) => setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   const toggleSupport = (item: string) => setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  const toggleBarreraSocial = (barrera: string) => setBarrerasSociales(prev => prev.includes(barrera) ? prev.filter(b => b !== barrera) : [...prev, barrera])
 
   const addManualZone = () => {
     const val = zonaInput.trim()
@@ -418,7 +433,8 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         addToast(`Perfil guardado, pero no se pudo agregar a ${nombreDependiente}. Agrégalo luego en "Mis personas".`, 'warning')
       }
 
-      // 4. Invalidate queries
+      // 4. Invalidate queries and set completion flag
+      localStorage.setItem('raices_onboarding_completed_tutor', 'true')
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
@@ -647,15 +663,13 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
                 Selecciona todas las opciones que correspondan:
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                {LIST_BARRERAS_SOCIALES.map(barrera => (                    <VerticalCheckCard
+                {LIST_BARRERAS_SOCIALES.map(barrera => (
+                  <VerticalCheckCard
                     key={barrera}
+                    type="checkbox"
                     label={barrera}
                     selected={barrerasSociales.includes(barrera)}
-                    onSelect={() => {
-                      setBarrerasSociales(prev =>
-                        prev.includes(barrera) ? prev.filter(b => b !== barrera) : [...prev, barrera]
-                      )
-                    }}
+                    onSelect={() => toggleBarreraSocial(barrera)}
                   />
                 ))}
               </div>

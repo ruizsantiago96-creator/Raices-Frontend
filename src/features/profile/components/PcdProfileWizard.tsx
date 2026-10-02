@@ -244,6 +244,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const toggleSuggestedZone = (zone: string) => setPreferredZones(prev => prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone])
   const toggleNeed = (item: string) => setNeedsList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
   const toggleSupport = (item: string) => setSupportAreas(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
+  const toggleBarreraSocial = (barrera: string) => setBarrerasSociales(prev => prev.includes(barrera) ? prev.filter(b => b !== barrera) : [...prev, barrera])
 
   const addManualZone = () => {
     const val = zonaInput.trim()
@@ -630,13 +631,10 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
                 {LIST_BARRERAS_SOCIALES.map(barrera => (
                   <VerticalCheckCard
                     key={barrera}
+                    type="checkbox"
                     label={barrera}
                     selected={barrerasSociales.includes(barrera)}
-                    onClick={() => {
-                      setBarrerasSociales(prev =>
-                        prev.includes(barrera) ? prev.filter(b => b !== barrera) : [...prev, barrera]
-                      )
-                    }}
+                    onSelect={() => toggleBarreraSocial(barrera)}
                   />
                 ))}
               </div>

@@ -13,6 +13,8 @@ export interface CommunityGroup {
   esPublico?: boolean
   is_member: boolean
   member_count: number
+  owner_name?: string
+  owner_avatar?: string | null
   [key: string]: unknown
 }
 

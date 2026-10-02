@@ -149,7 +149,7 @@ export default function LandingPage() {
           left: 0;
           right: 0;
           z-index: 50;
-          background: var(--landing-bg-topbar);
+          background: #ffffff;
           border-bottom: 1px solid var(--landing-border-topbar);
           height: 60px;
           display: flex;
@@ -158,7 +158,7 @@ export default function LandingPage() {
           padding: 0 16px;
           box-sizing: border-box;
           transition: all 0.3s ease;
-          box-shadow: inset 0 -1px 0 0 rgba(255, 255, 255, 0.3), 0 4px 20px 0 rgba(31, 38, 135, 0.04);
+          box-shadow: 0 2px 10px rgba(33, 48, 82, 0.06);
         }
         @media (min-width: 768px) {
           .landing-topbar {
@@ -191,7 +191,7 @@ export default function LandingPage() {
           transition: background 0.2s;
         }
         .landing-hamburger-btn:hover {
-          background: rgba(7, 59, 76, 0.06);
+          background: rgba(33, 48, 82, 0.06);
         }
         @media (min-width: 768px) {
           .landing-hamburger-btn {
@@ -210,71 +210,39 @@ export default function LandingPage() {
           }
         }
 
-        /* ── Mobile menu overlay ── */
+        /* ── Mobile menu dropdown (Acceso rápido) ── */
         .landing-mobile-menu {
           position: fixed;
-          top: 60px;
-          left: 0;
-          right: 0;
-          bottom: 0;
+          top: 66px;
+          right: 16px;
+          width: min(220px, calc(100vw - 32px));
           z-index: 49;
-          background: var(--landing-bg-topbar);
-          border-top: 1px solid var(--landing-border-topbar);
+          background: #FFFFFF !important;
+          border: 1px solid #E5DCD2;
+          border-radius: 16px;
           display: flex;
           flex-direction: column;
-          padding: 24px 16px;
-          gap: 8px;
+          padding: 12px;
+          gap: 6px;
+          box-shadow: 0 10px 30px rgba(33, 48, 82, 0.16);
           opacity: 1;
-          transform: translateY(0);
-          transition: opacity 0.3s ease, transform 0.3s ease;
+          transform: translateY(0) scale(1);
+          transform-origin: top right;
+          transition: opacity 0.2s ease, transform 0.2s ease;
           pointer-events: auto;
         }
         .landing-mobile-menu--closed {
           opacity: 0;
-          transform: translateY(-12px);
+          transform: translateY(-8px) scale(0.95);
           pointer-events: none;
-        }
-        .landing-mobile-menu--open .landing-mobile-link,
-        .landing-mobile-menu--open .landing-mobile-auth-btn {
-          animation: mobileMenuItemFadeIn 0.3s ease-out both;
-        }
-        .landing-mobile-menu--open .landing-mobile-link:nth-child(1) { animation-delay: 0.05s; }
-        .landing-mobile-menu--open .landing-mobile-link:nth-child(2) { animation-delay: 0.1s; }
-        .landing-mobile-menu--open .landing-mobile-auth-btn { animation-delay: 0.15s; }
-        @keyframes mobileMenuItemFadeIn {
-          from { opacity: 0; transform: translateY(-6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .landing-mobile-link {
-          display: flex;
-          align-items: center;
-          width: 100%;
-          padding: 14px 16px;
-          border-radius: 12px;
-          background: transparent;
-          border: none;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--landing-text-topbar);
-          cursor: pointer;
-          font-family: var(--font-body);
-          transition: background 0.2s;
-          text-align: left;
-        }
-        .landing-mobile-link:hover {
-          background: rgba(7, 59, 76, 0.06);
-        }
-        .landing-mobile-link.active {
-          background: var(--landing-title);
-          color: var(--bg-warm);
         }
         .landing-mobile-auth-btn {
           display: flex;
           align-items: center;
           justify-content: center;
           width: 100%;
-          padding: 14px 24px;
-          border-radius: 20px;
+          padding: 12px 20px;
+          border-radius: 14px;
           background: #FF4D68;
           color: #fff;
           border: none;
@@ -282,7 +250,7 @@ export default function LandingPage() {
           font-weight: 700;
           cursor: pointer;
           font-family: var(--font-body);
-          margin-top: 12px;
+          margin-top: 0;
           transition: background 0.2s, transform 0.2s;
         }
         .landing-mobile-auth-btn:hover {
@@ -455,7 +423,7 @@ export default function LandingPage() {
               onMouseEnter={(e) => { e.currentTarget.style.background = '#FF3352'; e.currentTarget.style.transform = 'scale(1.03)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = '#FF4D68'; e.currentTarget.style.transform = 'scale(1)' }}
             >
-              Entrar
+              Inicia tu camino
             </button>
           )}
         </div>
@@ -481,21 +449,8 @@ export default function LandingPage() {
         </button>
       </header>
 
-      {/* ── MOBILE MENU DROPDOWN ── */}
+      {/* ── MOBILE MENU DROPDOWN (Acceso rápido al login) ── */}
       <div className={`landing-mobile-menu${isMobileMenuOpen ? ' landing-mobile-menu--open' : ' landing-mobile-menu--closed'}`}>
-        {NAV_LINKS.map(link => (
-          <button
-            key={link.id}
-            className={`landing-mobile-link${activeNav === link.id ? ' active' : ''}`}
-            onClick={() => {
-              setActiveNav(link.id)
-              setIsMobileMenuOpen(false)
-              scrollToSection(link.id)
-            }}
-          >
-            {link.label}
-          </button>
-        ))}
         {token ? (
           <button
             className="landing-mobile-auth-btn"
@@ -516,7 +471,7 @@ export default function LandingPage() {
               nav('/auth')
             }}
           >
-            Entrar
+            Inicia tu camino
           </button>
         )}
       </div>

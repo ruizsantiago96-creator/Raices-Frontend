@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
+import { useState, useMemo, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import { useUiStore } from '@shared/stores/uiStore'
 import {
   useGroups,
@@ -485,26 +485,74 @@ interface GroupsViewProps {
 
 function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
   const [search, setSearch] = useState('')
+  const [filterMode, setFilterMode] = useState<'all' | 'my'>('all')
+  const { user } = useAuthStore()
+  const canCreateGroup = user?.role === 'institution' || user?.role === 'admin'
   const { data: groups = [], isLoading, isError, refetch } = useGroups(search)
   const joinGroup = useJoinGroup()
   const leaveGroup = useLeaveGroup()
   const { addToast } = useUiStore()
 
+  const joinedGroups = groups.filter(g => g.is_member)
+  const displayedGroups = filterMode === 'my' ? joinedGroups : groups
+
   return (
     <div style={{ maxWidth: 840, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Grupos de Comunidad</h2>
-          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>Encuentra y únete a espacios de apoyo y conversación</p>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Grupos y Foros Institucionales</h2>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>Espacios oficiales de orientación, apoyo y consulta organizados por instituciones</p>
         </div>
-        <button
-          type="button"
-          onClick={onCreateGroupClick}
-          className="btn-primary"
-          style={{ padding: '8px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          {Icons.plus({ s: 16 })} Crear Grupo
-        </button>
+        {canCreateGroup && (
+          <button
+            type="button"
+            onClick={onCreateGroupClick}
+            className="btn-primary"
+            style={{ padding: '8px 18px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            {Icons.plus({ s: 16 })} Crear Grupo Institucional
+          </button>
+        )}
+      </div>
+
+      {/* Filter Tabs & Search */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setFilterMode('all')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: 'var(--radius-pill)',
+              border: filterMode === 'all' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              background: filterMode === 'all' ? 'var(--primary)' : 'var(--bg-surface)',
+              color: filterMode === 'all' ? '#FFFFFF' : 'var(--fg2)',
+              fontWeight: filterMode === 'all' ? 700 : 500,
+              cursor: 'pointer',
+              fontSize: 13,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🌐 Todos los foros ({groups.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterMode('my')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: 'var(--radius-pill)',
+              border: filterMode === 'my' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              background: filterMode === 'my' ? 'var(--primary)' : 'var(--bg-surface)',
+              color: filterMode === 'my' ? '#FFFFFF' : 'var(--fg2)',
+              fontWeight: filterMode === 'my' ? 700 : 500,
+              cursor: 'pointer',
+              fontSize: 13,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            ✅ Mis foros unidos ({joinedGroups.length})
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -512,10 +560,52 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar grupos por nombre o descripción..."
+          placeholder="Buscar foros por institución, nombre o tema..."
           style={{ width: '100%', padding: '10px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', fontSize: 14 }}
         />
       </div>
+
+      {/* Fast access banner for joined groups */}
+      {joinedGroups.length > 0 && filterMode === 'all' && (
+        <div style={{
+          background: 'var(--primary-subtle)',
+          border: '1.5px solid var(--primary)',
+          borderRadius: 14,
+          padding: '14px 18px',
+          marginBottom: 20,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>⭐ Tus foros unidos ({joinedGroups.length}):</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {joinedGroups.map(g => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => onSelectGroup(g.id)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: '#FFFFFF',
+                  border: '1px solid var(--primary)',
+                  color: 'var(--primary)',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'transform 0.15s ease',
+                }}
+              >
+                <span>🏛️ {g.name}</span>
+                <span style={{ fontSize: 11, color: 'var(--fg3)', fontWeight: 500 }}>→ Ver publicaciones</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isError ? (
         <BackendFallback method={COMMUNITY_ENDPOINTS.GET_GROUPS.method} endpoint={COMMUNITY_ENDPOINTS.GET_GROUPS.path} onRetry={() => refetch()} />
@@ -525,24 +615,50 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
             <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, height: 140, animation: 'pulse 1.4s infinite' }} />
           ))}
         </div>
-      ) : groups.length === 0 ? (
+      ) : filterMode === 'my' && joinedGroups.length === 0 ? (
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
-          <p style={{ color: 'var(--fg3)', margin: 0 }}>No se encontraron grupos disponibles.</p>
+          <p style={{ color: 'var(--fg3)', margin: '0 0 12px', fontSize: 14 }}>Aún no te has unido a ningún foro institucional.</p>
+          <button
+            type="button"
+            onClick={() => setFilterMode('all')}
+            style={{ padding: '8px 18px', borderRadius: 'var(--radius-pill)', border: 'none', background: 'var(--primary)', color: '#FFF', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            Explorar foros disponibles
+          </button>
+        </div>
+      ) : displayedGroups.length === 0 ? (
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: 'var(--fg3)', margin: 0 }}>No se encontraron foros institucionales disponibles.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-          {groups.map(g => (
-            <div key={g.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          {displayedGroups.map(g => (
+            <div key={g.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{g.name}</h3>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: g.is_public ? 'var(--primary-subtle)' : 'var(--bg-warm)', color: g.is_public ? 'var(--primary)' : 'var(--fg3)' }}>
-                    {g.is_public ? '🌐 Público' : '🔒 Privado'}
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
+                      🏛️ Institucional
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)' }}>
+                      {g.is_public ? '🌐 Público' : '🔒 Privado'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Owner Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, background: 'var(--bg-warm)', padding: '4px 10px', borderRadius: 8, width: 'fit-content' }}>
+                  <Avatar name={g.owner_name} src={g.owner_avatar} size={20} />
+                  <span style={{ fontSize: 12, color: 'var(--fg2)', fontWeight: 600 }}>
+                    Organizado por: <strong>{g.owner_name || 'Institución Oficial'}</strong>
                   </span>
                 </div>
+
                 {g.description && <p style={{ fontSize: 13, color: 'var(--fg2)', margin: '0 0 12px', lineHeight: 1.4 }}>{g.description}</p>}
                 <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                   <span>👥 {g.member_count} miembro{g.member_count !== 1 ? 's' : ''}</span>
+                  {g.is_member && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)' }}>• ¡Estás unido!</span>}
                 </div>
               </div>
 
@@ -552,9 +668,9 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
                     <button
                       type="button"
                       onClick={() => onSelectGroup(g.id)}
-                      style={{ flex: 1, padding: '6px 12px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                      style={{ flex: 1, padding: '7px 12px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
                     >
-                      Ver publicaciones
+                      Entrar al Foro →
                     </button>
                     <button
                       type="button"
@@ -570,9 +686,9 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
                     type="button"
                     onClick={() => joinGroup.mutate(g.id, { onSuccess: () => addToast('¡Te has unido al grupo!', 'success') })}
                     disabled={joinGroup.isPending}
-                    style={{ flex: 1, padding: '6px 12px', borderRadius: 'var(--radius-pill)', border: 'none', background: 'var(--primary)', color: '#FFF', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '7px 12px', borderRadius: 'var(--radius-pill)', border: 'none', background: 'var(--primary)', color: '#FFF', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
                   >
-                    + Unirse al Grupo
+                    + Unirse al Foro
                   </button>
                 )}
               </div>
@@ -685,6 +801,9 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
 
 export default function SocialPage() {
   const [activeGroupId, setActiveGroupId] = useState<string | number | null>(null)
+  const [feedCategoryFilter, setFeedCategoryFilter] = useState<string | null>(null)
+  const [feedGroupFilter, setFeedGroupFilter] = useState<string | number | null>(null)
+  const [feedAlgorithmMode, setFeedAlgorithmMode] = useState<'parati' | 'recientes' | 'mis_grupos'>('parati')
 
   // Creation form state
   const [newPost, setNewPost] = useState('')
@@ -704,9 +823,68 @@ export default function SocialPage() {
 
   const { user } = useAuthStore()
   const { data: groups = [] } = useGroups()
-  const { data: posts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts({
-    grupoId: activeGroupId ? String(activeGroupId) : undefined,
+
+  const joinedGroupIds = useMemo(() => {
+    return new Set(groups.filter(g => g.is_member).map(g => String(g.id)))
+  }, [groups])
+
+  const userInterests = useMemo(() => {
+    try {
+      const local = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
+      if (Array.isArray(local)) return local.map((s: string) => String(s).toLowerCase())
+    } catch (_) {}
+    return []
+  }, [])
+
+  const effectiveGroupId = feedGroupFilter ?? activeGroupId ?? undefined
+
+  const selectedGroupObj = useMemo(() => {
+    if (!effectiveGroupId) return null
+    return groups.find(g => String(g.id) === String(effectiveGroupId)) ?? null
+  }, [groups, effectiveGroupId])
+  const { data: rawPosts = [], isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = usePosts({
+    grupoId: effectiveGroupId ? String(effectiveGroupId) : undefined,
+    categoriaCreativa: feedCategoryFilter ? feedCategoryFilter : undefined,
   })
+
+  const posts = useMemo(() => {
+    let list = rawPosts
+
+    if (feedCategoryFilter) {
+      list = list.filter(p => (p.categoriaCreativa || '').toLowerCase() === feedCategoryFilter.toLowerCase())
+    }
+
+    if (feedAlgorithmMode === 'mis_grupos') {
+      list = list.filter(p => p.group_id && joinedGroupIds.has(String(p.group_id)))
+    }
+
+    const copy = [...list]
+    if (feedAlgorithmMode === 'parati') {
+      const scorePost = (p: CommunityPost) => {
+        let score = 100
+        if (p.group_id && joinedGroupIds.has(String(p.group_id))) score += 50
+        if (p.categoriaCreativa && userInterests.some(i => i.includes(p.categoriaCreativa!.toLowerCase()) || p.categoriaCreativa!.toLowerCase().includes(i))) {
+          score += 30
+        }
+        score += (p.like_count ?? 0) * 2 + (p.comment_count ?? 0) * 3
+        if (p.created_at) {
+          const hours = (Date.now() - new Date(p.created_at).getTime()) / 3600000
+          if (!isNaN(hours) && hours > 0) score -= Math.min(hours * 1.5, 60)
+        }
+        return score
+      }
+      copy.sort((a, b) => scorePost(b) - scorePost(a))
+    } else if (feedAlgorithmMode === 'recientes') {
+      copy.sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0
+        const db = b.created_at ? new Date(b.created_at).getTime() : 0
+        return db - da
+      })
+    }
+
+    return copy
+  }, [rawPosts, feedCategoryFilter, feedAlgorithmMode, joinedGroupIds, userInterests])
+
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
 
@@ -979,7 +1157,7 @@ export default function SocialPage() {
                             <CustomSelect
                               options={[
                                 { value: '', label: 'General / Público' },
-                                ...groups.map(g => ({ value: String(g.id), label: g.name })),
+                                ...groups.map(g => ({ value: String(g.id), label: `${g.name}${g.is_member ? ' (Unido)' : ''}` })),
                               ]}
                               value={postGroupId !== null && postGroupId !== undefined ? String(postGroupId) : ''}
                               onChange={val => setPostGroupId(val ? val : null)}
@@ -1017,13 +1195,210 @@ export default function SocialPage() {
               </div>
               )}
 
-              {/* Group Filter Indicator if filtered from Groups tab */}
-              {activeGroupId && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--primary-subtle)', borderRadius: 'var(--radius-md)', marginBottom: 16, color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
-                  <span>Viendo publicaciones de: <strong>{groups.find(g => String(g.id) === String(activeGroupId))?.name || 'Grupo'}</strong></span>
-                  <button type="button" onClick={() => setActiveGroupId(null)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
-                    Ver feed general
+              {/* ── Feed Algorithm Mode Selector ── */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setFeedAlgorithmMode('parati')}
+                  style={{
+                    padding: '7px 16px',
+                    borderRadius: 'var(--radius-pill)',
+                    border: feedAlgorithmMode === 'parati' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: feedAlgorithmMode === 'parati' ? 'var(--primary)' : 'var(--bg-surface)',
+                    color: feedAlgorithmMode === 'parati' ? '#FFFFFF' : 'var(--fg2)',
+                    fontWeight: feedAlgorithmMode === 'parati' ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: 13.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: feedAlgorithmMode === 'parati' ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  ✨ Para ti (Algoritmo)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedAlgorithmMode('recientes')}
+                  style={{
+                    padding: '7px 16px',
+                    borderRadius: 'var(--radius-pill)',
+                    border: feedAlgorithmMode === 'recientes' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: feedAlgorithmMode === 'recientes' ? 'var(--primary)' : 'var(--bg-surface)',
+                    color: feedAlgorithmMode === 'recientes' ? '#FFFFFF' : 'var(--fg2)',
+                    fontWeight: feedAlgorithmMode === 'recientes' ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: 13.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: feedAlgorithmMode === 'recientes' ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  ⏱️ Más recientes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedAlgorithmMode('mis_grupos')}
+                  style={{
+                    padding: '7px 16px',
+                    borderRadius: 'var(--radius-pill)',
+                    border: feedAlgorithmMode === 'mis_grupos' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: feedAlgorithmMode === 'mis_grupos' ? 'var(--primary)' : 'var(--bg-surface)',
+                    color: feedAlgorithmMode === 'mis_grupos' ? '#FFFFFF' : 'var(--fg2)',
+                    fontWeight: feedAlgorithmMode === 'mis_grupos' ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: 13.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: feedAlgorithmMode === 'mis_grupos' ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  👥 De mis foros unidos
+                </button>
+              </div>
+
+              {/* ── Feed Filter Bar ── */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 10,
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 14px',
+                marginBottom: 16,
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginRight: 2 }}>
+                    Filtrar feed:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFeedCategoryFilter(null)}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 'var(--radius-pill)',
+                      border: feedCategoryFilter === null ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                      background: feedCategoryFilter === null ? 'var(--primary)' : 'var(--bg-warm)',
+                      color: feedCategoryFilter === null ? '#FFFFFF' : 'var(--fg2)',
+                      fontWeight: feedCategoryFilter === null ? 700 : 500,
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    ☀️ Todas
                   </button>
+                  {CATEGORY_OPTIONS.map(cat => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => setFeedCategoryFilter(cat.value)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 'var(--radius-pill)',
+                        border: feedCategoryFilter === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                        background: feedCategoryFilter === cat.value ? 'var(--primary)' : 'var(--bg-warm)',
+                        color: feedCategoryFilter === cat.value ? '#FFFFFF' : 'var(--fg2)',
+                        fontWeight: feedCategoryFilter === cat.value ? 700 : 500,
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span>{cat.icon}</span> {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Filter by Group dropdown */}
+                {groups.length > 0 && (
+                  <CustomSelect
+                    options={[
+                      { value: '', label: 'Todos los grupos' },
+                      ...groups.map(g => ({ value: String(g.id), label: `${g.name}${g.is_member ? ' (Unido)' : ''}` })),
+                    ]}
+                    value={effectiveGroupId ? String(effectiveGroupId) : ''}
+                    onChange={val => {
+                      setFeedGroupFilter(val ? val : null)
+                      if (activeGroupId && !val) setActiveGroupId(null)
+                    }}
+                    minWidth={160}
+                  />
+                )}
+              </div>
+
+              {/* Group Space Hero Banner */}
+              {selectedGroupObj && (
+                <div style={{
+                  background: 'var(--bg-surface)',
+                  border: '2px solid var(--primary)',
+                  borderRadius: 16,
+                  padding: '18px 20px',
+                  marginBottom: 20,
+                  boxShadow: 'var(--shadow-sm)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
+                          🏛️ Foro Institucional Oficial
+                        </span>
+                        {selectedGroupObj.is_member && (
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#DCFCE7', color: '#166534' }}>
+                            ✓ Eres miembro de este foro
+                          </span>
+                        )}
+                      </div>
+                      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
+                        {selectedGroupObj.name}
+                      </h2>
+                      {selectedGroupObj.description && (
+                        <p style={{ fontSize: 13.5, color: 'var(--fg2)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                          {selectedGroupObj.description}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12.5, color: 'var(--fg3)', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Avatar name={selectedGroupObj.owner_name} src={selectedGroupObj.owner_avatar} size={22} />
+                          <span>Organizado por: <strong style={{ color: 'var(--fg1)' }}>{selectedGroupObj.owner_name || 'Institución Oficial'}</strong></span>
+                        </div>
+                        <span>•</span>
+                        <span>👥 {selectedGroupObj.member_count} Miembro{selectedGroupObj.member_count !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setActiveGroupId(null); setFeedGroupFilter(null) }}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: 'var(--radius-pill)',
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--bg-warm)',
+                        color: 'var(--fg2)',
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ← Ver feed general
+                    </button>
+                  </div>
                 </div>
               )}
 

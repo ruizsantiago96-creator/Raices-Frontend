@@ -86,7 +86,7 @@ input::-ms-clear {
   /* Flat Solid Custom Properties (Clean Solid Design) */
   --glass-bg: #FFFFFF;
   --glass-border: #E5DCD2;
-  --glass-shadow: 0 2px 8px rgba(7, 59, 76, 0.05);
+  --glass-shadow: 0 2px 8px rgba(33, 48, 82, 0.05);
   --glass-blur: none;
   --modal-backdrop: rgba(15, 23, 42, 0.4);
   --modal-card-bg: var(--bg-surface);
@@ -104,7 +104,7 @@ input::-ms-clear {
 
   /* ═══════════════════════════════════════════
      RAÍCES BRAND PALETTE
-     Azul petróleo : #073B4C  → PRIMARY
+     Azul Marino   : #213052  → PRIMARY
      Rosa cálido   : #CA918E
      Verde matcha  : #A8B86B
      Verde vivo    : #229B58
@@ -113,10 +113,10 @@ input::-ms-clear {
      Crema         : #fff9f2  → BODY BG
      ═══════════════════════════════════════════ */
 
-  /* Colors - Primary (Azul Petróleo) */
-  --primary: #073B4C;
-  --primary-dark: #052e3b;
-  --primary-subtle: rgba(7, 59, 76, 0.10);
+  /* Colors - Primary (Azul Marino) */
+  --primary: #213052;
+  --primary-dark: #16223D;
+  --primary-subtle: rgba(33, 48, 82, 0.10);
 
   /* Colors - Brand accents */
   --color-rosa:    #CA918E;   /* Rosa Cálido  */
@@ -140,9 +140,9 @@ input::-ms-clear {
   --bg-surface: #FFFFFF;
 
   /* Colors - Foreground */
-  --fg1: #073B4C;          /* Azul Petróleo - títulos */
-  --fg2: #2F5463;          /* Azul petróleo medio     */
-  --fg3: rgba(7,59,76,0.6);/* Azul petróleo suave     */
+  --fg1: #213052;          /* Azul Marino - títulos */
+  --fg2: #334155;          /* Azul marino medio     */
+  --fg3: rgba(33,48,82,0.65);/* Azul marino suave     */
 
   /* Colors - Borders */
   --border-color: #E5DCD2;
@@ -155,24 +155,24 @@ input::-ms-clear {
   --radius-pill: 15px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(7,59,76,0.10);
-  --shadow-md: 0 4px 12px rgba(7,59,76,0.14);
-  --shadow-lg: 0 8px 24px rgba(7,59,76,0.18);
-  --shadow-xl: 0 16px 48px rgba(7,59,76,0.24);
+  --shadow-sm: 0 1px 3px rgba(33,48,82,0.10);
+  --shadow-md: 0 4px 12px rgba(33,48,82,0.14);
+  --shadow-lg: 0 8px 24px rgba(33,48,82,0.18);
+  --shadow-xl: 0 16px 48px rgba(33,48,82,0.24);
 
   /* Category Colors (brand-aligned) */
   --color-salud:     #CA918E;  /* Rosa Cálido  */
   --color-educacion: #A8B86B;  /* Verde Matcha */
   --color-empleo:    #F4C84A;  /* Amarillo Sol */
   --color-artes:     #229B58;  /* Verde Vivo   */
-  --color-comunidad: #073B4C;  /* Azul Petróleo*/
+  --color-comunidad: #213052;  /* Azul Marino  */
   --color-vida:      #FF4D68;  /* Coral        */
 
   /* Status Colors */
   --color-success: #229B58;   /* Verde Vivo   */
   --color-warning: #F4C84A;   /* Amarillo Sol */
   --color-error:   #FF4D68;   /* Coral        */
-  --color-info:    #073B4C;   /* Azul Petróleo*/
+  --color-info:    #213052;   /* Azul Marino  */
 
   /* Typography */
   --font-display: 'Poppins', Georgia, serif;
@@ -183,26 +183,26 @@ input::-ms-clear {
   --focus-ring: none;
 
   /* Landing Page & Footer theme tokens */
-  --landing-bg-topbar: rgba(255, 255, 255, 0.45);
+  --landing-bg-topbar: #FFFFFF;
   --landing-hero-bg: #f6eddf;
-  --landing-border-topbar: rgba(255, 255, 255, 0.45);
-  --landing-text-topbar: #073B4C;
-  --landing-text-topbar-muted: rgba(7, 59, 76, 0.75);
+  --landing-border-topbar: #E5DCD2;
+  --landing-text-topbar: #213052;
+  --landing-text-topbar-muted: rgba(33, 48, 82, 0.75);
   --landing-footer-bg: #213052;
   --landing-footer-text: #FFFFFF;
   --landing-footer-text-muted: rgba(255, 255, 255, 0.80);
   --landing-footer-border: rgba(255, 255, 255, 0.12);
-  --landing-title: #073B4C;
-  --landing-text-muted: rgba(7, 59, 76, 0.70);
-  --landing-card-bg: rgba(255, 249, 242, 0.80);
-  --landing-card-border: rgba(7, 59, 76, 0.08);
-  --landing-card-shadow: 0 4px 20px 0 rgba(7, 59, 76, 0.06);
+  --landing-title: #213052;
+  --landing-text-muted: rgba(33, 48, 82, 0.70);
+  --landing-card-bg: #FFFFFF;
+  --landing-card-border: rgba(33, 48, 82, 0.08);
+  --landing-card-shadow: 0 4px 20px 0 rgba(33, 48, 82, 0.06);
   --landing-glow-opacity-rose: 0.15;
   --landing-glow-opacity-matcha: 0.15;
-  --landing-glass-text: #073B4C;
-  --landing-glass-text-muted: rgba(7, 59, 76, 0.70);
+  --landing-glass-text: #213052;
+  --landing-glass-text-muted: rgba(33, 48, 82, 0.70);
   --landing-sec1-bg: #b6c6cf;
-  --landing-sec2-bg: #e9dcce ;
+  --landing-sec2-bg: #e9dcce;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -318,7 +318,7 @@ select,
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   background-color: var(--bg-surface, #ffffff) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23073B4C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23213052' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 12px center !important;
   background-size: 14px 14px !important;
@@ -328,11 +328,11 @@ select,
   font-family: var(--font-body, sans-serif) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: var(--fg1, #073B4C) !important;
+  color: var(--fg1, #213052) !important;
   cursor: pointer !important;
   outline: none !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 1px 2px rgba(7, 59, 76, 0.05) !important;
+  box-shadow: 0 1px 2px rgba(33, 48, 82, 0.05) !important;
   display: inline-flex !important;
   align-items: center !important;
   min-height: 36px !important;
@@ -340,21 +340,21 @@ select,
 
 select:hover,
 .custom-select:hover {
-  border-color: var(--primary, #073B4C) !important;
+  border-color: var(--primary, #213052) !important;
   background-color: var(--bg-warm, #FFF9F2) !important;
-  box-shadow: 0 2px 6px rgba(7, 59, 76, 0.1) !important;
+  box-shadow: 0 2px 6px rgba(33, 48, 82, 0.1) !important;
 }
 
 select:focus,
 select:focus-visible,
 .custom-select:focus {
-  border-color: var(--primary, #073B4C) !important;
-  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(7, 59, 76, 0.15)) !important;
+  border-color: var(--primary, #213052) !important;
+  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(33, 48, 82, 0.15)) !important;
 }
 
 select option {
   background-color: #ffffff !important;
-  color: #073B4C !important;
+  color: #213052 !important;
   padding: 10px 14px !important;
   font-weight: 600 !important;
   font-size: 13.5px !important;
@@ -384,15 +384,15 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:hover {
-  border-color: var(--primary, #073B4C) !important;
-  background-color: var(--primary-subtle, rgba(7, 59, 76, 0.08)) !important;
+  border-color: var(--primary, #213052) !important;
+  background-color: var(--primary-subtle, rgba(33, 48, 82, 0.08)) !important;
   transform: scale(1.06);
 }
 
 input[type="checkbox"]:checked {
-  background-color: var(--primary, #073B4C) !important;
-  border-color: var(--primary, #073B4C) !important;
-  box-shadow: 0 2px 5px rgba(7, 59, 76, 0.25) !important;
+  background-color: var(--primary, #213052) !important;
+  border-color: var(--primary, #213052) !important;
+  box-shadow: 0 2px 5px rgba(33, 48, 82, 0.25) !important;
 }
 
 input[type="checkbox"]:checked::after {
@@ -407,7 +407,7 @@ input[type="checkbox"]:checked::after {
 
 input[type="checkbox"]:focus-visible {
   outline: none !important;
-  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(7, 59, 76, 0.2)) !important;
+  box-shadow: 0 0 0 3px var(--primary-subtle, rgba(33, 48, 82, 0.2)) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════

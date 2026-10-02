@@ -99,7 +99,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
               justifyContent: 'center',
               width: 40, height: 40,
               borderRadius: 'var(--radius-sm)',
-              background: '#001D26',
+              background: 'var(--primary)',
               border: 'none',
               color: '#fff',
               cursor: 'pointer',

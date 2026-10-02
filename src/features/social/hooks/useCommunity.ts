@@ -95,9 +95,11 @@ function mapGroup(g: RawGroup): CommunityGroup {
     id: g.id ?? '',
     name: g.nombre ?? g.name ?? 'Sin nombre',
     description: g.descripcion ?? g.description,
-    is_public: g.esPublico ?? g.is_public,
+    is_public: g.esPublico ?? g.is_public ?? true,
     is_member: g.esMiembro ?? g.es_miembro ?? g.isMember ?? g.is_member ?? false,
-    member_count: g.cantidadMiembros ?? g.member_count ?? 0,
+    member_count: g.cantidadMiembros ?? g.member_count ?? 1,
+    owner_name: (g.institucionNombre as string) ?? (g.nombreInstitucion as string) ?? (g.creadorNombre as string) ?? (g.ownerName as string) ?? (g.owner_name as string) ?? (g.autorNombre as string) ?? 'Institución Oficial',
+    owner_avatar: decodeAvatarUrl((g.avatarInstitucion as string) ?? (g.urlAvatarInstitucion as string) ?? (g.avatarCreador as string) ?? (g.owner_avatar as string) ?? null),
   }
 }
 
@@ -161,7 +163,7 @@ function mapPostFromBackend(p: RawPost): CommunityPost {
     created_at: p.fechaCreacion ?? p.created_at ?? new Date().toISOString(),
     group_name: p.group_name ?? p.nombreGrupo,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
-    categoriaCreativa: p.categoriaCreativa,
+    categoriaCreativa: p.categoriaCreativa ?? p.categoria_creativa ?? p.categoria ?? p.category,
     exclusivoPadres: p.exclusivoPadres ?? false,
     mediaUrl: p.mediaUrl,
   }

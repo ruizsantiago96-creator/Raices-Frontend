@@ -415,7 +415,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             top: 0,
             bottom: 0,
             width: 270,
-            background: '#001D26',
+            background: 'var(--sidebar-bg)',
             zIndex: 1000,
             display: 'flex',
             flexDirection: 'column',
@@ -587,7 +587,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                         width: 10, height: 10,
                         borderRadius: '50%',
                         background: 'var(--color-warning)',
-                        border: '2px solid #001D26',
+                        border: '2px solid var(--sidebar-bg)',
                         animation: 'spin 1s linear infinite',
                       }}
                     />

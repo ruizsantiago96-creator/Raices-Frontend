@@ -380,21 +380,15 @@ export const LIST_AREAS_APOYO_TUTOR = [
   'Salud y bienestar integral',
 ]
 
-// ── ZONAS SUGERIDAS MÉRIDA (idéntico en ambos) ─────────────────────
-export const MERIDA_ZONAS_SUGERIDAS = [
-  'Centro (97000)',
-  'Altabrisa (97130)',
-  'Francisco de Montejo (97203)',
-  'Ciudad Caucel (97314)',
-  'Las Américas (97302)',
-  'García Ginerés (97070)',
-  'Campestre (97120)',
-  'Chuburná (97205)',
-  'Montebello (97113)',
-  'Itzimná (97100)',
-  'Pensiones (97217)',
-  'Los Héroes (97306)',
+// ── ZONAS Y ALCANCE GEOGRÁFICO SUGERIDO (idéntico en ambos) ───────────
+export const ZONAS_SUGERIDAS_GENERALES = [
+  'Mi municipio / localidad cercana',
+  'Toda la zona metropolitana / estado',
+  'Atención virtual / en línea',
+  'Servicio a domicilio / acompañamiento',
+  'Centros o instituciones regionales',
 ]
+export const MERIDA_ZONAS_SUGERIDAS = ZONAS_SUGERIDAS_GENERALES
 
 // ── EDUCACIÓN (PCD) ────────────────────────────────────────────────
 export const LIST_EDUCACION = [

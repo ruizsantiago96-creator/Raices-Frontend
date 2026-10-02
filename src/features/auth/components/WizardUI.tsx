@@ -41,9 +41,9 @@ export function WizardNavButtons({
               flex: 1,
               padding: '12px 16px',
               borderRadius: 24,
-              background: '#F1F5F9',
-              color: '#475569',
-              border: '1px solid #E2E8F0',
+              background: 'var(--bg-warm)',
+              color: 'var(--fg2)',
+              border: '1px solid var(--border-color)',
               fontWeight: 600,
               fontSize: 14.5,
               cursor: 'pointer',
@@ -53,8 +53,8 @@ export function WizardNavButtons({
               gap: 8,
               transition: 'all 0.2s',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E2E8F0'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-color)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-warm)'}
           >
             {Icons.arrowLeft({ s: 16 })} Volver
           </button>
@@ -152,7 +152,14 @@ export function VerticalCheckCard({
   type = 'checkbox',
   accent = '#229B58',
 }: VerticalCheckCardProps): React.JSX.Element {
-  const handleToggle = onClick || onSelect || onToggle || (() => {})
+  const handleToggle = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    const fn = onSelect || onToggle || onClick
+    if (fn) fn()
+  }
+
   return (
     <div
       onClick={handleToggle}
@@ -162,7 +169,7 @@ export function VerticalCheckCard({
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault()
-          handleToggle()
+          handleToggle(e)
         }
       }}
       style={{

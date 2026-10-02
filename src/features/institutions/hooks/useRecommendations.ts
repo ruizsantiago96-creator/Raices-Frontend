@@ -125,19 +125,34 @@ export function useOnboardingStatus() {
 
       let onboardingCompleto = Boolean(rawData.onboardingCompleto)
 
-      // Normalización para empresas: excluir CURP/fechaNacimiento del cálculo
-      if (esEmpresa) {
-        pasosPendientes = pasosPendientes.filter((f: string) => f !== 'curp' && f !== 'fechaNacimiento')
-        if (pasosPendientes.length === 0) {
-          onboardingCompleto = true
-          porcentajeProgreso = 100
-        }
+      const isTutor = rol === 'tutor' || rol === 'padre_tutor' || destinatarioPerfil === 'PARA_MI_HIJO'
+      const hasCompletedLocally = localStorage.getItem('raices_onboarding_completed_tutor') === 'true' || localStorage.getItem('raices_onboarding_completed_pcd') === 'true'
+
+      // Normalización para tutores: acreditacionTutor es una verificación secundaria/opcional que NO debe estancar el 75%
+      pasosPendientes = pasosPendientes.filter((f: string) => f !== 'acreditacionTutor' && (esEmpresa ? f !== 'curp' && f !== 'fechaNacimiento' : true))
+
+      if (esEmpresa && pasosPendientes.length === 0) {
+        onboardingCompleto = true
+        porcentajeProgreso = 100
+      }
+
+      if (isTutor && (porcentajeProgreso >= 75 || hasCompletedLocally || pasosPendientes.length === 0)) {
+        onboardingCompleto = true
+        porcentajeProgreso = 100
+        pasosPendientes = []
+      }
+
+      if (hasCompletedLocally) {
+        onboardingCompleto = true
+        porcentajeProgreso = 100
+        pasosPendientes = []
       }
 
       // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
       // para desbloquear todas las vistas globalmente.
       if (estado === 'aprobado' || estado === 'pendiente') {
         onboardingCompleto = true
+        porcentajeProgreso = 100
       }
 
       return {

@@ -72,9 +72,11 @@ export default function CompleteProfilePage() {
       >
         <div
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-surface)',
+            color: 'var(--fg1)',
+            border: '1px solid var(--border-color)',
             borderRadius: 20,
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+            boxShadow: 'var(--shadow-xl)',
             maxWidth: 880,
             width: '100%',
             maxHeight: '90vh',
@@ -96,7 +98,7 @@ export default function CompleteProfilePage() {
               border: 'none',
               cursor: 'pointer',
               fontSize: 20,
-              color: '#64748B',
+              color: 'var(--fg3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -105,7 +107,7 @@ export default function CompleteProfilePage() {
               borderRadius: 16,
               zIndex: 10,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-warm)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             ✕

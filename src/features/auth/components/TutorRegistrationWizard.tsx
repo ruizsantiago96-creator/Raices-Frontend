@@ -383,20 +383,42 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      if (!authResult || !authResult.tokenAcceso) throw new Error('No se pudo completar el registro.')
+      let tokenAcceso = authResult?.tokenAcceso || authResult?.token_acceso || authResult?.token || authResult?.datos?.tokenAcceso
+      let tokenRefresco = authResult?.tokenRefresco || authResult?.token_refresco || null
+      let usuarioObj = authResult?.usuario || authResult?.user || authResult?.datos?.usuario
 
-      const userObj = {
-        id: String(authResult.usuario?.id ?? ''),
-        email: authResult.usuario?.email || generalForm.email,
-        role: 'tutor' as UserRole,
-        full_name: nombreCompleto,
+      if (!tokenAcceso) {
+        try {
+          const loginRes = await api.post('/autenticacion/login', {
+            email: generalForm.email,
+            password: generalForm.password,
+          })
+          const lData = loginRes.data
+          tokenAcceso = lData?.tokenAcceso || lData?.token_acceso || lData?.token
+          tokenRefresco = lData?.tokenRefresco || lData?.token_refresco || null
+          if (lData?.usuario) usuarioObj = lData.usuario
+        } catch (loginErr) {
+          console.warn('[TutorRegistrationWizard] Auto-login fallback notice:', loginErr)
+        }
       }
-      setRememberMe(true)
-      setAuth(authResult.tokenAcceso, userObj, authResult.tokenRefresco ?? null, true)
-      saveUser(userObj, true)
-      
-      addToast('¡Cuenta creada exitosamente!', 'success')
-      nav('/dashboard', { replace: true })
+
+      if (tokenAcceso) {
+        const userObj = {
+          id: String(usuarioObj?.id ?? ''),
+          email: usuarioObj?.email || generalForm.email,
+          role: 'tutor' as UserRole,
+          full_name: nombreCompleto,
+        }
+        setRememberMe(true)
+        setAuth(tokenAcceso, userObj, tokenRefresco, true)
+        saveUser(userObj, true)
+        
+        addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
+        nav('/completar-perfil', { replace: true })
+      } else {
+        addToast('¡Cuenta creada exitosamente! Inicia sesión para continuar.', 'success')
+        nav('/auth?mode=login', { replace: true })
+      }
     } catch (err: any) {
        const msg = mapErrorMessage(err)
        setError(msg)

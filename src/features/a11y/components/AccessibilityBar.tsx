@@ -627,9 +627,9 @@ export default function AccessibilityBar() {
         }
         
         .liquid-glass-panel {
-          background: var(--bg-surface);
+          background: #FFFFFF;
           border: 1px solid var(--border-color);
-          box-shadow: 0 4px 20px rgba(7, 59, 76, 0.12);
+          box-shadow: 0 4px 20px rgba(33, 48, 82, 0.12);
         }
         
         html[data-theme="dark"] .liquid-glass-panel {
@@ -639,19 +639,17 @@ export default function AccessibilityBar() {
         }
         
         .glass-button {
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(0, 0, 0, 0.06);
-          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+          background: #FFFFFF;
+          border: 1px solid rgba(33, 48, 82, 0.12);
+          box-shadow: 0 1px 3px rgba(33, 48, 82, 0.04);
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .glass-button:hover {
-          background: rgba(255, 255, 255, 0.35);
-          border-color: rgba(0, 0, 0, 0.1);
+          background: #F8FAFC;
+          border-color: rgba(33, 48, 82, 0.2);
           transform: translateY(-1.5px);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-            0 6px 15px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 4px 12px rgba(33, 48, 82, 0.08);
         }
         
         .glass-button:active {
@@ -659,18 +657,16 @@ export default function AccessibilityBar() {
         }
         
         .glass-button.active {
-          background: color-mix(in srgb, var(--color-coral, #FF4D68) 15%, rgba(255, 255, 255, 0.45));
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 12%, #FFFFFF);
           border-color: var(--color-coral, #FF4D68);
           border-width: 1.5px;
           color: var(--color-coral, #FF4D68) !important;
           font-weight: 800 !important;
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-            0 4px 12px rgba(255, 77, 104, 0.15);
+          box-shadow: 0 4px 12px rgba(255, 77, 104, 0.15);
         }
         
         .glass-button.active:hover {
-          background: color-mix(in srgb, var(--color-coral, #FF4D68) 22%, rgba(255, 255, 255, 0.55));
+          background: color-mix(in srgb, var(--color-coral, #FF4D68) 20%, #FFFFFF);
         }
         
         html[data-theme="dark"] .glass-button {
@@ -701,18 +697,16 @@ export default function AccessibilityBar() {
         }
 
         .liquid-glass-trigger {
-          background: #4d7e55 !important;
+          background: #213052 !important;
           border: 1px solid rgba(255, 255, 255, 0.25) !important;
-          box-shadow: 0 4px 14px rgba(77, 126, 85, 0.25);
+          box-shadow: 0 4px 14px rgba(33, 48, 82, 0.25);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .liquid-glass-trigger:hover {
           transform: translateY(-2px) scale(1.04);
-          background: #3c6b44 !important;
-          box-shadow: 
-            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.4),
-            0 12px 35px rgba(77, 126, 85, 0.35);
+          background: #16223D !important;
+          box-shadow: 0 12px 35px rgba(33, 48, 82, 0.35);
         }
 
         .liquid-glass-trigger:active {
