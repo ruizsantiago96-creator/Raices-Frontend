@@ -828,13 +828,15 @@ export default function SocialPage() {
     return new Set(groups.filter(g => g.is_member).map(g => String(g.id)))
   }, [groups])
 
-  const userInterests = useMemo(() => {
+  const [nowTimestamp] = useState(() => Date.now())
+
+  const userInterests = (() => {
     try {
       const local = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
       if (Array.isArray(local)) return local.map((s: string) => String(s).toLowerCase())
     } catch (_) {}
     return []
-  }, [])
+  })()
 
   const effectiveGroupId = feedGroupFilter ?? activeGroupId ?? undefined
 
@@ -868,7 +870,7 @@ export default function SocialPage() {
         }
         score += (p.like_count ?? 0) * 2 + (p.comment_count ?? 0) * 3
         if (p.created_at) {
-          const hours = (Date.now() - new Date(p.created_at).getTime()) / 3600000
+          const hours = (nowTimestamp - new Date(p.created_at).getTime()) / 3600000
           if (!isNaN(hours) && hours > 0) score -= Math.min(hours * 1.5, 60)
         }
         return score
@@ -883,7 +885,7 @@ export default function SocialPage() {
     }
 
     return copy
-  }, [rawPosts, feedCategoryFilter, feedAlgorithmMode, joinedGroupIds, userInterests])
+  }, [rawPosts, feedCategoryFilter, feedAlgorithmMode, joinedGroupIds, userInterests, nowTimestamp])
 
   const createPost = useCreatePost()
   const toggleLike = useToggleLike()
