@@ -13,6 +13,7 @@ export interface OnboardingEstadoResponse {
   ultimoPasoCompletado: number
   destinatarioPerfil: 'PARA_MI' | 'PARA_MI_HIJO' | string
   nombrePcd: string
+  fechaNacimientoPcd?: string
   pasosPendientes?: string[]
   camposFaltantes?: string[]
   [key: string]: unknown

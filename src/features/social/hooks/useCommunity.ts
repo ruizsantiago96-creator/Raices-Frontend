@@ -64,6 +64,9 @@ interface RawPost {
   cantidadComentarios?: number
   comment_count?: number
   categoriaCreativa?: string
+  categoria_creativa?: string
+  categoria?: string
+  category?: string
   exclusivoPadres?: boolean
   mediaUrl?: string
   [key: string]: unknown

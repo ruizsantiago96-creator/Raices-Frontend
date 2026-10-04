@@ -151,25 +151,30 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
-  // ── State ─────────────────────────────────────────────────────
-  const [curpInput, setCurpInput] = useState<string>(() => (savedData.curpInput as string) || (me as { curp?: string })?.curp || '')
+  const meRecord = me as Record<string, unknown> | undefined
+  const onboardingRecord = onboardingStatus as Record<string, unknown> | undefined
+  const [curpInput, setCurpInput] = useState<string>(() => (savedData.curpInput as string) || (meRecord?.curp as string) || '')
   const [destinatario, setDestinatario] = useState<string>(() => (savedData.destinatario as string) || 'hijo')
-  const [nombreDependiente, setNombreDependiente] = useState<string>(() =>
-    (savedData.nombreDependiente as string) ||
-    onboardingStatus?.nombrePcd ||
-    (me as { nombrePcd?: string; nombre_pcd?: string })?.nombrePcd ||
-    (me as { nombre_pcd?: string })?.nombre_pcd ||
-    localStorage.getItem('raices_dep_name') ||
-    ''
-  )
-  const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState<string>(() =>
-    (savedData.fechaNacimientoDependiente as string) ||
-    onboardingStatus?.fechaNacimientoPcd ||
-    (me as { fechaNacimientoPcd?: string; fecha_nacimiento_pcd?: string })?.fechaNacimientoPcd ||
-    (me as { fecha_nacimiento_pcd?: string })?.fecha_nacimiento_pcd ||
-    localStorage.getItem('raices_dep_birth_date') ||
-    ''
-  )
+  const [nombreDependiente, setNombreDependiente] = useState<string>(() => {
+    return (
+      (savedData.nombreDependiente as string) ||
+      (onboardingRecord?.nombrePcd as string) ||
+      (meRecord?.nombrePcd as string) ||
+      (meRecord?.nombre_pcd as string) ||
+      localStorage.getItem('raices_dep_name') ||
+      ''
+    )
+  })
+  const [fechaNacimientoDependiente, setFechaNacimientoDependiente] = useState<string>(() => {
+    return (
+      (savedData.fechaNacimientoDependiente as string) ||
+      (onboardingRecord?.fechaNacimientoPcd as string) ||
+      (meRecord?.fechaNacimientoPcd as string) ||
+      (meRecord?.fecha_nacimiento_pcd as string) ||
+      localStorage.getItem('raices_dep_birth_date') ||
+      ''
+    )
+  })
   const [acompanamiento, setAcompanamiento] = useState<string>(() => (savedData.acompanamiento as string) || 'recomendaciones_paso')
   
   const [conditionData, setConditionData] = useState<ConditionData>(() => (savedData.conditionData as ConditionData) || {
