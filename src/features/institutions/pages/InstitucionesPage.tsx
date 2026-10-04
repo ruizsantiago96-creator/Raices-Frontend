@@ -180,7 +180,7 @@ export default function InstitucionesPage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar instituciones, servicios, ciudades..."
             aria-label="Buscar instituciones"
-            style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', height: 48, paddingLeft: 48, paddingRight: 16, border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-body)', fontSize: 15, background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
         <button onClick={() => setShowFilters(v => !v)} className={`btn-filter-banner ${showFilters || category || tipoDiscapacidad || ciudad ? 'is-active' : ''}`} title="Filtros avanzados">
@@ -196,11 +196,11 @@ export default function InstitucionesPage() {
           <div style={{ width: '100%' }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 8, fontFamily: 'var(--font-body)' }}>Categoría</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-warm)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
+              <button onClick={() => setCategory('')} style={{ padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: !category ? 'none' : '1px solid var(--border-color)', background: !category ? 'var(--primary)' : 'var(--bg-warm)', color: !category ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>Todos</button>
               {CATEGORIES.map(cat => {
                 const active = category === cat.value
                 const color = CATEGORY_COLORS[cat.value] ?? 'var(--primary)'
-                return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
+                return (<button key={cat.value} onClick={() => setCategory(active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? color : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>{cat.label}</button>)
               })}
             </div>
           </div>
@@ -275,7 +275,7 @@ export default function InstitucionesPage() {
       {/* ── Cargar más ── */}
       {!isLoading && remaining > 0 && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-          <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} style={{ padding: '10px 24px', borderRadius: 9999, border: '1.5px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg1)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+          <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} style={{ padding: '10px 24px', borderRadius: 'var(--radius-btn)', border: '1.5px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--fg1)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
             Ver más ({remaining})
           </button>
         </div>
@@ -338,7 +338,7 @@ export function InstitucionCard({ inst, isFav, onToggleFav, onClick }: CardProps
         <Link
           to={`/instituciones/${inst.id}`}
           onClick={onClick}
-          style={{ padding: '7px 14px', borderRadius: 9999, background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, boxShadow: '0 2px 6px rgba(34,155,88,0.25)' }}
+          style={{ padding: '7px 14px', borderRadius: 'var(--radius-btn)', background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, boxShadow: '0 2px 6px rgba(34,155,88,0.25)' }}
         >
           Ver detalles {Icons.arrowRight({ s: 14 })}
         </Link>
@@ -372,7 +372,7 @@ export function InstitucionRow({ inst, isFav, onToggleFav, onClick }: CardProps)
       <Link
         to={`/instituciones/${inst.id}`}
         onClick={onClick}
-        style={{ padding: '8px 16px', borderRadius: 9999, background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+        style={{ padding: '8px 16px', borderRadius: 'var(--radius-btn)', background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}
       >
         Ver detalles {Icons.arrowRight({ s: 14 })}
       </Link>
@@ -385,7 +385,7 @@ export function InstitucionRow({ inst, isFav, onToggleFav, onClick }: CardProps)
 function SkeletonCard() {
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ width: 72, height: 20, borderRadius: 9999, background: 'var(--bg-cool)' }} />
+      <div style={{ width: 72, height: 20, borderRadius: 6, background: 'var(--bg-cool)' }} />
       <div style={{ width: '70%', height: 18, borderRadius: 6, background: 'var(--bg-cool)' }} />
       <div style={{ width: '100%', height: 12, borderRadius: 6, background: 'var(--bg-cool)' }} />
       <div style={{ width: '90%', height: 12, borderRadius: 6, background: 'var(--bg-cool)' }} />
@@ -402,7 +402,7 @@ function BackendErrorState({ onRetry }: { onRetry: () => void }) {
       <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
       <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>No se pudieron cargar las instituciones</h3>
       <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '0 0 20px' }}>Ocurrió un problema de conexión. Inténtalo de nuevo.</p>
-      <button onClick={onRetry} style={{ padding: '10px 22px', borderRadius: 9999, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+      <button onClick={onRetry} style={{ padding: '10px 22px', borderRadius: 'var(--radius-btn)', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
         Reintentar
       </button>
     </div>

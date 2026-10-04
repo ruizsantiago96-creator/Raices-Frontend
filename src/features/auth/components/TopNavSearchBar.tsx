@@ -161,7 +161,7 @@ export const TopNavSearchBar: FC<TopNavSearchBarProps> = ({ variant = 'topnav' }
               }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 16px', borderRadius: 20, border: '1.5px solid var(--border-color)',
+                padding: '8px 16px', borderRadius: 10, border: '1.5px solid var(--border-color)',
                 background: 'transparent', color: 'var(--fg1)', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', transition: 'background 0.2s',
               }}

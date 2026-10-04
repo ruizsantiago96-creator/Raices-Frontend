@@ -295,7 +295,7 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
         {inst.final_score != null && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 20,
+            padding: '6px 12px', borderRadius: 8,
             background: 'rgba(34, 155, 88, 0.08)', color: '#229B58',
             fontSize: 13, fontWeight: 600,
           }}>
@@ -305,7 +305,7 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
         {inst.rating_avg != null && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', borderRadius: 20,
+            padding: '8px 14px', borderRadius: 8,
             background: 'rgba(212, 148, 76, 0.08)', color: '#D4944C',
             fontSize: 14, fontWeight: 600,
           }}>
@@ -319,7 +319,7 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
           onClick={(e) => { e.preventDefault(); onToggleFav() }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', borderRadius: 20,
+            padding: '8px 14px', borderRadius: 10,
             background: isFav ? 'rgba(255, 77, 104, 0.08)' : 'rgba(7, 59, 76, 0.05)',
             color: isFav ? 'var(--color-coral)' : 'var(--fg2)',
             fontSize: 14, fontWeight: 600,
@@ -334,7 +334,7 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
         {(inst.city || inst.state) && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', borderRadius: 20,
+            padding: '8px 14px', borderRadius: 8,
             background: 'rgba(7, 59, 76, 0.05)', color: 'var(--fg2)',
             fontSize: 14,
           }}>
@@ -348,7 +348,7 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '8px 18px', borderRadius: 20,
+            padding: '8px 18px', borderRadius: 'var(--radius-btn)',
             background: 'var(--primary)', color: '#fff',
             fontSize: 14, fontWeight: 700, textDecoration: 'none',
             transition: 'all 0.15s ease',
@@ -810,11 +810,11 @@ export default function FeedPage() {
         {!especialistasLoading && especialistas.length > 0 && (
           <div style={{ marginBottom: 24, position: 'relative' }}>
             {isIncomplete && (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
+              <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--bg-surface)', opacity: 0.94, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
                 <div style={{ fontSize: 32, marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>🔒</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', maxWidth: 280 }}>Desbloquea recomendaciones</div>
                 <div style={{ fontSize: 13, color: 'var(--fg2)', textAlign: 'center', maxWidth: 280, marginTop: 4, fontWeight: 500 }}>Completa tu perfil para ver especialistas adaptados a ti</div>
-                <Link to="/completar-perfil" style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 20, fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>Completar perfil</Link>
+                <Link to="/completar-perfil" style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 'var(--radius-btn)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>Completar perfil</Link>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

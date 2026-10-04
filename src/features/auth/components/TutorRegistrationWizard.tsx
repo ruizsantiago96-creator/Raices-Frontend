@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
+import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { mapErrorMessage } from '../lib/mapErrorMessage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
@@ -26,7 +27,7 @@ import {
 } from '../constants/registrationCatalogos'
 import { WizardNavButtons as NavButtons, ScaleCard, CheckChip, PasswordField, LocationInputs } from './WizardUI'
 import { calcEdad, calcEtapaDependiente, calcEtapaVida as calcEtapaPerfil } from '../lib/age'
-import { saveOnboardingData } from '../lib/onboardingStorage'
+import { saveOnboardingData, saveOnboardingStepProgress } from '../lib/onboardingStorage'
 import { isValidEmail, getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate, normalizeEmail } from '../lib/validators'
 import type { User } from '../../../types/auth'
 
@@ -331,6 +332,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       setError('Por favor, ingresa el nombre de la persona a tu cuidado.')
       return
     }
+    localStorage.setItem('raices_dep_name', nombreDependiente.trim())
     setWizardStep('relationship_birthdate')
     scrollTop()
   }
@@ -343,6 +345,8 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       setError(depBirthValidation.error || 'Por favor, ingresa la fecha de nacimiento de la persona a tu cuidado.')
       return
     }
+    localStorage.setItem('raices_dep_birth_date', fechaNacimientoDependiente)
+    localStorage.setItem('raices_destinatario', destinatario)
     setWizardStep('accommodation')
     scrollTop()
   }
@@ -352,6 +356,10 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     setError('')
     if (!generalForm.acompanamiento) {
       setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.')
+      return
+    }
+    if (generalForm.acompanamiento === 'explorar_solo') {
+      handleConditionSubmit(e)
       return
     }
     setWizardStep('condition')
@@ -364,6 +372,22 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
     setError('')
 
     try {
+      if (nombreDependiente.trim()) {
+        localStorage.setItem('raices_dep_name', nombreDependiente.trim())
+      }
+      if (fechaNacimientoDependiente) {
+        localStorage.setItem('raices_dep_birth_date', fechaNacimientoDependiente)
+      }
+      if (destinatario) {
+        localStorage.setItem('raices_destinatario', destinatario)
+      }
+      saveOnboardingStepProgress('tutor', 'accommodation', {
+        destinatario,
+        nombreDependiente: nombreDependiente.trim(),
+        fechaNacimientoDependiente,
+        conditionData,
+      })
+
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
       const registerPayload = {
         nombreCompleto,
@@ -412,6 +436,31 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         setRememberMe(true)
         setAuth(tokenAcceso, userObj, tokenRefresco, true)
         saveUser(userObj, true)
+
+        // Registrar dependiente inicial si se ingresó nombre en el registro
+        if (nombreDependiente.trim()) {
+          try {
+            let catParentescos: string[] = []
+            try { const catRes = await api.get('/catalogos'); catParentescos = catRes?.data?.parentescos ?? [] } catch { }
+            const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
+            const dependienteEtapaDep = fechaNacimientoDependiente ? calcEtapaDependiente(fechaNacimientoDependiente) : undefined
+
+            const depPayload = {
+              nombreCompleto: nombreDependiente.trim(),
+              parentesco: resolveParentesco(catParentescos, destinatario),
+              tiposDiscapacidad: wizardConditionsToCodes(disabilityTypes, conditionData.neurodivergencias),
+              ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
+            }
+
+            const depRes = await api.post('/usuarios/dependientes', depPayload)
+            const newId = depRes?.data?.id || depRes?.data?.datos?.id
+            if (newId && fechaNacimientoDependiente) {
+              localStorage.setItem(`raices_dep_birth_date_${newId}`, fechaNacimientoDependiente)
+            }
+          } catch (depErr) {
+            console.warn('[TutorRegistrationWizard] Error al registrar dependiente inicial:', depErr)
+          }
+        }
         
         addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
         nav('/completar-perfil', { replace: true })
@@ -534,11 +583,13 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
 
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento (como tutor/cuidador) <span style={{ color: '#ef4444' }}>*</span></label>
-            <input type="date" className="auth-input" required
+            <CustomDatePicker
+              required
               max={getMaxBirthDate()}
               min={MIN_BIRTH_DATE}
               value={generalForm.birth_date}
-              onChange={e => setGeneralForm(prev => ({ ...prev, birth_date: e.target.value }))} />
+              onChange={val => setGeneralForm(prev => ({ ...prev, birth_date: val }))}
+            />
           </div>
 
           <NavButtons onBack={() => { setWizardStep('name'); scrollTop() }} submitLabel="Continuar" />
@@ -716,14 +767,12 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>
               Fecha de nacimiento de {personName} <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <input
-              type="date"
-              className="auth-input"
+            <CustomDatePicker
               required
               max={getMaxBirthDate()}
               min={MIN_BIRTH_DATE}
               value={fechaNacimientoDependiente}
-              onChange={e => setFechaNacimientoDependiente(e.target.value)}
+              onChange={val => setFechaNacimientoDependiente(val)}
             />
             {fechaNacimientoDependiente && (() => {
               const edad = calcEdad(fechaNacimientoDependiente)

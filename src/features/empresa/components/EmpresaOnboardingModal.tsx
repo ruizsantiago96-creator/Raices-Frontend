@@ -291,7 +291,7 @@ export default function EmpresaOnboardingModal({
           overflowY: 'auto',
           margin: 'auto',
           padding: 28,
-          borderRadius: 20,
+          borderRadius: 16,
           boxShadow: 'var(--shadow-xl)',
         }}
       >

@@ -1,6 +1,7 @@
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { CustomSelect } from '@shared/components/CustomSelect'
+import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { TUTOR_UI } from '../constants/tutorMessages'
 import { getMaxBirthDate, MIN_BIRTH_DATE, validateBirthDate } from '@/features/auth/lib/validators'
 import type { Dependiente, CrearDependientePayload, UpdateDependentPayload, EtapaVidaOption } from '@/types/tutor'
@@ -91,36 +92,42 @@ export default function DependentForm({ initial, onCancel, onSave, saving = fals
           </div>
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="dep-birth-date" style={labelStyle}>Fecha de nacimiento</label>
-            <input type="date" id="dep-birth-date" style={inputStyle} max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={form.birth_date || ''} onChange={e => {
-              const bdate = e.target.value; let calculatedStage = ''
-              if (bdate) {
-                const v = validateBirthDate(bdate)
-                if (v.valid) {
-                  const bd = new Date(bdate)
-                  if (!isNaN(bd.getTime())) {
-                    const t = new Date()
-                    let age = t.getFullYear() - bd.getFullYear()
-                    const m = t.getMonth() - bd.getMonth()
-                    if (m < 0 || (m === 0 && t.getDate() < bd.getDate())) age--
-                    if (age >= 0) {
-                      if (age <= 12) calculatedStage = 'infancia'
-                      else if (age <= 17) calculatedStage = 'adolescencia'
-                      else if (age <= 29) calculatedStage = 'adultoJoven'
-                      else if (age <= 59) calculatedStage = 'adulto'
-                      else calculatedStage = 'mayor'
+            <CustomDatePicker
+              id="dep-birth-date"
+              max={getMaxBirthDate()}
+              min={MIN_BIRTH_DATE}
+              value={form.birth_date || ''}
+              onChange={(bdate) => {
+                let calculatedStage = ''
+                if (bdate) {
+                  const v = validateBirthDate(bdate)
+                  if (v.valid) {
+                    const bd = new Date(bdate)
+                    if (!isNaN(bd.getTime())) {
+                      const t = new Date()
+                      let age = t.getFullYear() - bd.getFullYear()
+                      const m = t.getMonth() - bd.getMonth()
+                      if (m < 0 || (m === 0 && t.getDate() < bd.getDate())) age--
+                      if (age >= 0) {
+                        if (age <= 12) calculatedStage = 'infancia'
+                        else if (age <= 17) calculatedStage = 'adolescencia'
+                        else if (age <= 29) calculatedStage = 'adultoJoven'
+                        else if (age <= 59) calculatedStage = 'adulto'
+                        else calculatedStage = 'mayor'
+                      }
                     }
                   }
                 }
-              }
-              setForm(f => ({ ...f, birth_date: bdate, etapaVida: calculatedStage }))
-            }} />
+                setForm(f => ({ ...f, birth_date: bdate, etapaVida: calculatedStage }))
+              }}
+            />
           </div>
           {(() => {
             const listDis = disabilities.filter((d: string) => { const n = d.toLowerCase(); return n.includes('motriz') || n.includes('visual') || n.includes('auditiva') || n.includes('intelectual') || n.includes('psicosocial') || n.includes('múltiple') || n.includes('multiple') || n.includes('otra') })
             const listCond = disabilities.filter((d: string) => !listDis.includes(d))
             return (<>
-              <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}><legend style={{ ...labelStyle, padding: 0 }}>{TUTOR_UI.DISABILITY_LABEL}</legend><div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>              {listDis.map((d: string) => { const on = form.tiposDiscapacidad.includes(d); return <button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on} style={{ padding: '8px 14px', minHeight: 44, borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, border: on ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: on ? 'var(--primary)' : 'var(--fg2)' }}>{on && <span aria-hidden="true">✓ </span>}{d}</button> })}</div></fieldset>
-              {listCond.length > 0 && <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}><legend style={{ ...labelStyle, padding: 0 }}>Condición</legend><div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>              {listCond.map((d: string) => { const on = form.tiposDiscapacidad.includes(d); return <button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on} style={{ padding: '8px 14px', minHeight: 44, borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, border: on ? '2px solid var(--primary)' : '2px solid var(--border-color)', background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: on ? 'var(--primary)' : 'var(--fg2)' }}>{on && <span aria-hidden="true">✓ </span>}{d}</button> })}</div></fieldset>}
+              <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}><legend style={{ ...labelStyle, padding: 0 }}>{TUTOR_UI.DISABILITY_LABEL}</legend><div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>              {listDis.map((d: string) => { const on = form.tiposDiscapacidad.includes(d); return <button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on} style={{ padding: '8px 14px', minHeight: 44, borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, border: on ? '1px solid transparent' : '1px solid var(--border-color)', background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: on ? 'var(--primary)' : 'var(--fg2)' }}>{on && <span aria-hidden="true">✓ </span>}{d}</button> })}</div></fieldset>
+              {listCond.length > 0 && <fieldset style={{ border: 'none', padding: 0, margin: '0 0 18px' }}><legend style={{ ...labelStyle, padding: 0 }}>Condición</legend><div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>              {listCond.map((d: string) => { const on = form.tiposDiscapacidad.includes(d); return <button key={d} type="button" onClick={() => toggleDis(d)} aria-pressed={on} style={{ padding: '8px 14px', minHeight: 44, borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, border: on ? '1px solid transparent' : '1px solid var(--border-color)', background: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', color: on ? 'var(--primary)' : 'var(--fg2)' }}>{on && <span aria-hidden="true">✓ </span>}{d}</button> })}</div></fieldset>}
             </>)
           })()}
           {!initial?.id && (

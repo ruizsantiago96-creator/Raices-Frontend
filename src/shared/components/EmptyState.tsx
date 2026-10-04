@@ -32,7 +32,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       style={{
         background: 'var(--bg-surface)',
         border: '1.5px dashed var(--border-color)',
-        borderRadius: 20,
+        borderRadius: 16,
         padding: '44px 28px',
         textAlign: 'center',
         display: 'flex',

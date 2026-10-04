@@ -82,7 +82,7 @@ export default function VacanteCard({
               background: vacante.activo ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-warm)',
               color: vacante.activo ? '#16A34A' : 'var(--fg3)',
               border: '1px solid var(--border-color)',
-              borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 700,
+              borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700,
               cursor: 'pointer',
             }}
           >

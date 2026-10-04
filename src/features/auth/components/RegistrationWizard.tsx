@@ -5,6 +5,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
 import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
+import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
 import { LIST_ACOMPANAMIENTO, CONDICIONES_PCD, NEURODIVERGENCIAS_LIST, LIST_TEMPORALIDAD, ESCALAS_OPCIONES, LIST_FORMATOS, INTEREST_SECTIONS, LIST_VIABILIDAD, LIST_NECESIDADES, LIST_AREAS_APOYO, MERIDA_ZONAS_SUGERIDAS, LIST_EDUCACION, LIST_TERAPIAS } from '../constants/registrationCatalogos'
@@ -326,11 +327,13 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
 
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento <span style={{ color: '#ef4444' }}>*</span></label>
-            <input type="date" className="auth-input" required
+            <CustomDatePicker
+              required
               max={getMaxBirthDate()}
               min={MIN_BIRTH_DATE}
               value={generalForm.birth_date}
-              onChange={e => setGeneralForm(prev => ({ ...prev, birth_date: e.target.value }))} />
+              onChange={val => setGeneralForm(prev => ({ ...prev, birth_date: val }))}
+            />
           </div>
 
           <WizardNavButtons onBack={() => { setWizardStep('name'); scrollTop() }} submitLabel="Continuar" />

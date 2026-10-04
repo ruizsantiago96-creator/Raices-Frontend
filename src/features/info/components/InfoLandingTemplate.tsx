@@ -129,7 +129,7 @@ function CallToAction({ ctaTitle, ctaDesc }: { ctaTitle: string; ctaDesc: string
     <section style={{ maxWidth: 800, margin: '0 auto', padding: '48px 48px 88px' }}>
       <div className="info-cta-card scroll-reveal-scale" style={{
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-        borderRadius: 20, padding: '56px 48px', textAlign: 'center',
+        borderRadius: 16, padding: '56px 48px', textAlign: 'center',
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: '50% 50% 50% 14%',

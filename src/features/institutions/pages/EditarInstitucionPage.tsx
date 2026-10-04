@@ -338,7 +338,7 @@ export default function EditarInstitucionPage() {
               {CATEGORY_OPTIONS.map(cat => {
                 const active = form.categoria === cat.value
                 return (
-                  <button key={cat.value} type="button" onClick={() => updateField('categoria', active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
+                  <button key={cat.value} type="button" onClick={() => updateField('categoria', active ? '' : cat.value)} style={{ padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
                     {cat.label}
                   </button>
                 )
@@ -456,7 +456,7 @@ export default function EditarInstitucionPage() {
               const dtLabel = typeof dt === 'string' ? dt : (dt.label ?? dtValue)
               const active = form.tiposDiscapacidad.includes(dtValue)
               return (
-                <button key={dtValue} type="button" onClick={() => toggleDisability(dtValue)} style={{ padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
+                <button key={dtValue} type="button" onClick={() => toggleDisability(dtValue)} style={{ padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', border: active ? 'none' : '1px solid var(--border-color)', background: active ? 'var(--primary)' : 'var(--bg-warm)', color: active ? 'white' : 'var(--fg3)', transition: 'all 0.2s' }}>
                   {active && <span style={{ marginRight: 4 }}>✓</span>}
                   {dtLabel}
                 </button>
@@ -518,7 +518,7 @@ export default function EditarInstitucionPage() {
           {form.servicios.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {form.servicios.map((srv, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 9999, background: 'var(--primary-subtle)', color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
                   {srv}
                   <button type="button" onClick={() => removeServicio(srv)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.7 }}>
                     {Icons.x({ s: 14 })}

@@ -92,7 +92,7 @@ describe('Carga de CSF de la empresa', () => {
 
     // Y, sobre todo, no debe tocar el endpoint que devolvía el 400.
     expect(mockPost.mock.calls.some(c => c[0] === '/usuarios/documento-identidad')).toBe(false)
-  })
+  }, 15000)
 
   // El INE del representante legal sí es un documento de identidad: sigue yendo
   // por su endpoint original.

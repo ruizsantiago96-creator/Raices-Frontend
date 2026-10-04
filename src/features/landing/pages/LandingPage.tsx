@@ -149,7 +149,7 @@ export default function LandingPage() {
           left: 0;
           right: 0;
           z-index: 50;
-          background: #ffffff;
+          background: var(--landing-bg-topbar, #f6eddf);
           border-bottom: 1px solid var(--landing-border-topbar);
           height: 60px;
           display: flex;
@@ -217,7 +217,7 @@ export default function LandingPage() {
           right: 16px;
           width: min(220px, calc(100vw - 32px));
           z-index: 49;
-          background: #FFFFFF !important;
+          background: var(--landing-bg-topbar, #f6eddf) !important;
           border: 1px solid #E5DCD2;
           border-radius: 16px;
           display: flex;
@@ -379,9 +379,9 @@ export default function LandingPage() {
               onClick={() => { setActiveNav(link.id); scrollToSection(link.id) }}
               style={{
                 background: activeNav === link.id ? 'var(--landing-title)' : 'transparent',
-                color: activeNav === link.id ? 'var(--bg-warm)' : 'var(--landing-text-topbar)',
-                border: '1.5px solid var(--landing-title)',
-                borderRadius: 20, padding: '6px 16px',
+                color: activeNav === link.id ? '#FFFFFF' : 'var(--landing-text-topbar)',
+                border: activeNav === link.id ? '1px solid var(--landing-title)' : '1px solid var(--border-strong)',
+                borderRadius: 'var(--radius-btn)', padding: '6px 16px',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 fontFamily: 'var(--font-body)',
                 transition: 'all 0.2s ease',
@@ -401,7 +401,7 @@ export default function LandingPage() {
                 else if (user?.role === 'institution') nav('/institution-portal')
                 else nav('/dashboard')
               }}
-              style={{ background: '#FF4D68', color: '#f6eddf', border: 'none', borderRadius: 20, padding: '8px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+              style={{ background: '#FF4D68', color: '#f6eddf', border: 'none', borderRadius: 'var(--radius-btn)', padding: '8px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
             >
               Ir a mi panel
             </button>
@@ -412,7 +412,7 @@ export default function LandingPage() {
                 background: '#FF4D68',
                 color: '#fff',
                 border: 'none',
-                borderRadius: 20,
+                borderRadius: 'var(--radius-btn)',
                 padding: '8px 24px',
                 fontSize: 14,
                 fontWeight: 700,
@@ -815,7 +815,7 @@ export default function LandingPage() {
                 style={{
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',
-                  borderRadius: 20,
+                  borderRadius: 16,
                   padding: '28px 20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -848,7 +848,7 @@ export default function LandingPage() {
                 style={{
                   background: 'var(--landing-card-bg)',
                   border: '1px solid var(--landing-card-border)',
-                  borderRadius: 20,
+                  borderRadius: 16,
                   padding: '28px 20px 24px',
                   display: 'flex',
                   flexDirection: 'column',

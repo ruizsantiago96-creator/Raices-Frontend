@@ -24,7 +24,7 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
             alignItems: 'center',
             gap: 6,
             padding: '4px 12px',
-            borderRadius: 20,
+            borderRadius: 8,
             background: 'rgba(34, 155, 88, 0.12)',
             color: '#229B58',
             fontSize: 12,
@@ -58,7 +58,7 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
       <div
         style={{
           background: 'linear-gradient(135deg, #9CB2BC 0%, #8DA6B2 100%)',
-          borderRadius: 20,
+          borderRadius: 16,
           padding: '24px 20px',
           color: '#0C3B4B',
           marginBottom: 28,
@@ -143,14 +143,13 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
           {/* Step 2 Card */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.65)',
-              backdropFilter: 'blur(4px)',
+              background: 'var(--bg-surface)',
               borderRadius: 16,
               padding: '16px 14px',
               display: 'flex',
               flexDirection: 'column',
               gap: 10,
-              border: '1px solid rgba(12, 59, 75, 0.15)',
+              border: '1px solid var(--border-color)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -200,8 +199,7 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
           {/* Step 3 Card */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.65)',
-              backdropFilter: 'blur(4px)',
+              background: 'var(--bg-surface)',
               borderRadius: 16,
               padding: '16px 14px',
               display: 'flex',

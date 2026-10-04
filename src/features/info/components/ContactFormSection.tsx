@@ -70,7 +70,7 @@ export default function ContactFormSection() {
     <section id="formulario" aria-labelledby="formulario-titulo" style={{ maxWidth: 720, margin: '0 auto', padding: '8px 48px 88px' }}>
       <div style={{
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-        borderRadius: 20, padding: '48px 40px', boxShadow: 'var(--shadow-sm)',
+        borderRadius: 16, padding: '48px 40px', boxShadow: 'var(--shadow-sm)',
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: '50% 50% 50% 14%',

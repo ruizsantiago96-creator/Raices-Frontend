@@ -114,7 +114,7 @@ export function EventsDiscovery() {
               onClick={() => setActiveRegion(region)}
               style={{
                 padding: '8px 16px',
-                borderRadius: 20,
+                borderRadius: 10,
                 border: 'none',
                 background: activeRegion === region ? 'var(--primary-subtle)' : 'transparent',
                 color: activeRegion === region ? 'var(--primary)' : 'var(--fg2)',

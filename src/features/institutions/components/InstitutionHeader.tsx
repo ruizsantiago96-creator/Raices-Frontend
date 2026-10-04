@@ -146,7 +146,7 @@ export default function InstitutionHeader({ institution, isFav = false }: Instit
         {isIncomplete && (
           <div style={{ 
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(3px)', zIndex: 10,
+            background: 'var(--bg-surface)', opacity: 0.92, zIndex: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8,
             fontWeight: 700, color: '#073B4C', gap: 6, fontSize: 13
           }}>

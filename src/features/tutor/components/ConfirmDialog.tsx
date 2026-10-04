@@ -21,7 +21,7 @@ export default function ConfirmDialog({ title, message, onConfirm, onCancel, con
         <p style={{ fontSize: 15, color: 'var(--fg2)', lineHeight: 1.5, margin: '0 0 20px' }}>{message}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           <button className="btn-secondary" onClick={onCancel}>{TUTOR_UI.CANCEL_BUTTON}</button>
-          <button onClick={onConfirm} style={{ fontSize: 17, padding: '12px 24px', minHeight: 48, borderRadius: 'var(--radius-pill)', border: '2px solid var(--color-error)', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--font-body)', background: 'var(--color-error)', color: '#fff' }}>{confirmLabel || TUTOR_UI.CONFIRM_DELETE_BUTTON}</button>
+          <button onClick={onConfirm} style={{ fontSize: 17, padding: '12px 24px', minHeight: 48, borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--font-body)', background: 'var(--color-error)', color: '#fff' }}>{confirmLabel || TUTOR_UI.CONFIRM_DELETE_BUTTON}</button>
         </div>
       </div>
     </div>,

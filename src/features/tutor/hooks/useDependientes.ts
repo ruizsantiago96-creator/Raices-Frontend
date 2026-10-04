@@ -56,7 +56,38 @@ export function useDependientes() {
       const arr: RawBackendDependiente[] = Array.isArray(raw)
         ? raw
         : ((raw as { datos?: RawBackendDependiente[] })?.datos ?? [])
-      return arr.map(mapDependiente)
+      
+      let mapped = arr.map(mapDependiente)
+
+      // Si el backend no tiene dependientes guardados pero hay uno capturado en el registro/onboarding
+      if (mapped.length === 0) {
+        const savedDepName = localStorage.getItem('raices_dep_name')?.trim()
+        if (savedDepName) {
+          try {
+            const dest = localStorage.getItem('raices_destinatario') || 'hijo'
+            const birthDate = localStorage.getItem('raices_dep_birth_date') || ''
+            const parentesco = dest === 'hijo' ? 'Hijo/a' : dest === 'familiar' ? 'Familiar' : 'Persona a mi cuidado'
+            
+            const createRes = await api.post('/usuarios/dependientes', {
+              nombreCompleto: savedDepName,
+              parentesco,
+            })
+            const newId = createRes?.data?.id || createRes?.data?.datos?.id
+            if (newId && birthDate) {
+              localStorage.setItem(`raices_dep_birth_date_${newId}`, birthDate)
+            }
+            const refreshed = await getDependientes()
+            const freshArr: RawBackendDependiente[] = Array.isArray(refreshed)
+              ? refreshed
+              : ((refreshed as { datos?: RawBackendDependiente[] })?.datos ?? [])
+            mapped = freshArr.map(mapDependiente)
+          } catch (autoSyncErr) {
+            console.warn('[useDependientes] Auto-sync local dependent notice:', autoSyncErr)
+          }
+        }
+      }
+
+      return mapped
     },
     enabled: !!token,
     staleTime: 5 * 60 * 1000, // 5 minutos

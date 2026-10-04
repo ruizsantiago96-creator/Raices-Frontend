@@ -316,7 +316,7 @@ function VacantesTab() {
             style={{
               width: '100%', maxWidth: 520,
               maxHeight: 'calc(100vh - 64px)', overflowY: 'auto',
-              padding: 28, borderRadius: 20, margin: 'auto',
+              padding: 28, borderRadius: 16, margin: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}
           >
@@ -413,7 +413,7 @@ function VacantesTab() {
                           borderColor: selected ? 'var(--primary)' : 'var(--border-color)',
                           background: selected ? 'color-mix(in oklch, var(--primary) 10%, transparent)' : 'var(--bg-warm)',
                           color: selected ? 'var(--primary)' : 'var(--fg2)',
-                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600,
                           cursor: 'pointer', transition: 'all 0.15s ease',
                         }}
                       >
@@ -467,7 +467,7 @@ function VacantesTab() {
                         key={tag}
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '5px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                           background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
                           color: 'var(--primary)', border: '1.5px solid var(--primary)',
                         }}
@@ -516,8 +516,8 @@ function VacantesTab() {
 
       {/* Modal: confirmar eliminación */}
       {deleteTarget && createPortal(
-        <div onClick={() => setDeleteTarget(null)} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)' }}>
+        <div onClick={() => setDeleteTarget(null)} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in oklch, var(--color-error) 14%, transparent)', color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {Icons.shieldAlert({ s: 20 })}
@@ -614,7 +614,7 @@ function PostulantesTab() {
             key={f.value}
             onClick={() => setFilter(f.value)}
             style={{
-              padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer',
+              padding: '7px 16px', borderRadius: 10, border: '1px solid var(--border-color)', cursor: 'pointer',
               fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s',
               background: filter === f.value ? 'var(--primary)' : 'var(--bg-surface)',
               color: filter === f.value ? '#fff' : 'var(--fg2)',

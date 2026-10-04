@@ -142,7 +142,7 @@ function CommentSection({ postId, currentUser }: CommentSectionProps) {
         <input
           type="text" value={text} onChange={(e) => setText(e.target.value)}
           placeholder={SOCIAL_UI.COMMENT_PLACEHOLDER}
-          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: 20, fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--bg-warm)', color: 'var(--fg1)', outline: 'none' }}
+          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--bg-warm)', color: 'var(--fg1)', outline: 'none' }}
         />
         <button
           type="submit" disabled={!text.trim() || createComment.isPending}
@@ -523,8 +523,8 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
             onClick={() => setFilterMode('all')}
             style={{
               padding: '6px 16px',
-              borderRadius: 'var(--radius-pill)',
-              border: filterMode === 'all' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              borderRadius: '10px',
+              border: filterMode === 'all' ? '1px solid transparent' : '1px solid var(--border-color)',
               background: filterMode === 'all' ? 'var(--primary)' : 'var(--bg-surface)',
               color: filterMode === 'all' ? '#FFFFFF' : 'var(--fg2)',
               fontWeight: filterMode === 'all' ? 700 : 500,
@@ -540,8 +540,8 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
             onClick={() => setFilterMode('my')}
             style={{
               padding: '6px 16px',
-              borderRadius: 'var(--radius-pill)',
-              border: filterMode === 'my' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              borderRadius: '10px',
+              border: filterMode === 'my' ? '1px solid transparent' : '1px solid var(--border-color)',
               background: filterMode === 'my' ? 'var(--primary)' : 'var(--bg-surface)',
               color: filterMode === 'my' ? '#FFFFFF' : 'var(--fg2)',
               fontWeight: filterMode === 'my' ? 700 : 500,
@@ -757,8 +757,8 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
             onClick={() => setCategoria(cat.value)}
             style={{
               padding: '6px 16px',
-              borderRadius: 'var(--radius-pill)',
-              border: categoria === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+              borderRadius: '10px',
+              border: categoria === cat.value ? '1px solid transparent' : '1px solid var(--border-color)',
               background: categoria === cat.value ? 'var(--primary)' : 'var(--bg-surface)',
               color: categoria === cat.value ? '#FFF' : 'var(--fg2)',
               fontWeight: categoria === cat.value ? 700 : 500,
@@ -1109,8 +1109,8 @@ export default function SocialPage() {
                             onClick={() => setPostCategory(cat.value)}
                             style={{
                               padding: '5px 12px',
-                              borderRadius: 'var(--radius-pill)',
-                              border: postCategory === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                              borderRadius: '10px',
+                              border: postCategory === cat.value ? '1px solid transparent' : '1px solid var(--border-color)',
                               background: postCategory === cat.value ? 'var(--primary-subtle)' : 'var(--bg-warm)',
                               color: postCategory === cat.value ? 'var(--primary)' : 'var(--fg2)',
                               fontWeight: postCategory === cat.value ? 700 : 500,
@@ -1204,8 +1204,8 @@ export default function SocialPage() {
                   onClick={() => setFeedAlgorithmMode('parati')}
                   style={{
                     padding: '7px 16px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: feedAlgorithmMode === 'parati' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    border: feedAlgorithmMode === 'parati' ? '1px solid transparent' : '1px solid var(--border-color)',
                     background: feedAlgorithmMode === 'parati' ? 'var(--primary)' : 'var(--bg-surface)',
                     color: feedAlgorithmMode === 'parati' ? '#FFFFFF' : 'var(--fg2)',
                     fontWeight: feedAlgorithmMode === 'parati' ? 700 : 500,
@@ -1225,8 +1225,8 @@ export default function SocialPage() {
                   onClick={() => setFeedAlgorithmMode('recientes')}
                   style={{
                     padding: '7px 16px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: feedAlgorithmMode === 'recientes' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    border: feedAlgorithmMode === 'recientes' ? '1px solid transparent' : '1px solid var(--border-color)',
                     background: feedAlgorithmMode === 'recientes' ? 'var(--primary)' : 'var(--bg-surface)',
                     color: feedAlgorithmMode === 'recientes' ? '#FFFFFF' : 'var(--fg2)',
                     fontWeight: feedAlgorithmMode === 'recientes' ? 700 : 500,
@@ -1246,8 +1246,8 @@ export default function SocialPage() {
                   onClick={() => setFeedAlgorithmMode('mis_grupos')}
                   style={{
                     padding: '7px 16px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: feedAlgorithmMode === 'mis_grupos' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    border: feedAlgorithmMode === 'mis_grupos' ? '1px solid transparent' : '1px solid var(--border-color)',
                     background: feedAlgorithmMode === 'mis_grupos' ? 'var(--primary)' : 'var(--bg-surface)',
                     color: feedAlgorithmMode === 'mis_grupos' ? '#FFFFFF' : 'var(--fg2)',
                     fontWeight: feedAlgorithmMode === 'mis_grupos' ? 700 : 500,
@@ -1287,8 +1287,8 @@ export default function SocialPage() {
                     onClick={() => setFeedCategoryFilter(null)}
                     style={{
                       padding: '5px 12px',
-                      borderRadius: 'var(--radius-pill)',
-                      border: feedCategoryFilter === null ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      border: feedCategoryFilter === null ? '1px solid transparent' : '1px solid var(--border-color)',
                       background: feedCategoryFilter === null ? 'var(--primary)' : 'var(--bg-warm)',
                       color: feedCategoryFilter === null ? '#FFFFFF' : 'var(--fg2)',
                       fontWeight: feedCategoryFilter === null ? 700 : 500,
@@ -1309,8 +1309,8 @@ export default function SocialPage() {
                       onClick={() => setFeedCategoryFilter(cat.value)}
                       style={{
                         padding: '5px 12px',
-                        borderRadius: 'var(--radius-pill)',
-                        border: feedCategoryFilter === cat.value ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                        borderRadius: '10px',
+                        border: feedCategoryFilter === cat.value ? '1px solid transparent' : '1px solid var(--border-color)',
                         background: feedCategoryFilter === cat.value ? 'var(--primary)' : 'var(--bg-warm)',
                         color: feedCategoryFilter === cat.value ? '#FFFFFF' : 'var(--fg2)',
                         fontWeight: feedCategoryFilter === cat.value ? 700 : 500,
@@ -1348,7 +1348,7 @@ export default function SocialPage() {
               {selectedGroupObj && (
                 <div style={{
                   background: 'var(--bg-surface)',
-                  border: '2px solid var(--primary)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: 16,
                   padding: '18px 20px',
                   marginBottom: 20,

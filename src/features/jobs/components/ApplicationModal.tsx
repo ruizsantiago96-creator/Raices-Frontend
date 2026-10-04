@@ -353,12 +353,12 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
                   <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', display: 'block' }}>{isUploading ? 'Subiendo currículum...' : 'Sube tu currículum'}</span>
                   <span style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 4, display: 'block' }}>Soporta formatos PDF de hasta 10MB</span>
                 </div>
-                <button type="button" style={{ padding: '8px 18px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', background: '#fff', color: 'var(--primary)', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>Seleccionar archivo</button>
+                <button type="button" style={{ padding: '8px 18px', borderRadius: '10px', border: '1px solid var(--primary)', background: '#fff', color: 'var(--primary)', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>Seleccionar archivo</button>
                 <input ref={fileInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileChange} />
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', border: '2px solid var(--primary)', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--primary) 3%, #fff)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'color-mix(in oklch, var(--primary) 3%, #fff)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     {filePdfIcon}
                     <div style={{ textAlign: 'left' }}>

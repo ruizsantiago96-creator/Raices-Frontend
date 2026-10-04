@@ -13,6 +13,7 @@ import {
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle, RestrictedBlock } from '@shared/components/shared'
+import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type {
   CreateRutaPayload,
@@ -310,7 +311,12 @@ export default function RutasPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Fecha límite</label>
-                    <input type="date" className="onboarding-input" value={newForm.fechaLimite} onChange={e => setNewForm(f => ({ ...f, fechaLimite: e.target.value }))} style={{ marginTop: 6 }} />
+                    <div style={{ marginTop: 6 }}>
+                      <CustomDatePicker
+                        value={newForm.fechaLimite}
+                        onChange={val => setNewForm(f => ({ ...f, fechaLimite: val }))}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

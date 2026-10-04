@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
+import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useMe } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
@@ -57,6 +57,7 @@ interface DisabilityItem {
 }
 
 export default function ProfilePage() {
+  const { data: me } = useMe()
   const { data, isLoading, isError } = useProfile()
   const { data: rawCatalogos } = useCatalogos()
   const catalogos = rawCatalogos as { etapasVida?: LifeStageItem[]; tiposDiscapacidad?: (DisabilityItem | string)[] } | undefined
@@ -202,7 +203,7 @@ export default function ProfilePage() {
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     chip: (color: string) => ({
       display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-      borderRadius: 20, fontSize: 13, fontWeight: 600,
+      borderRadius: 8, fontSize: 13, fontWeight: 600,
       background: `color-mix(in oklch, ${color} 15%, transparent)`,
       color, border: `1px solid color-mix(in oklch, ${color} 30%, transparent)`,
     }),
@@ -314,11 +315,48 @@ export default function ProfilePage() {
 
               {/* Preferencias seleccionadas en registro */}
               {(() => {
+                const isExplorarSolo = me?.preferenciasAcompanamiento === 'explorar_solo' ||
+                  localStorage.getItem('raices_onboarding_progress_tutor')?.includes('explorar_solo') ||
+                  localStorage.getItem('raices_onboarding_progress_pcd')?.includes('explorar_solo')
+
                 let regInterests: string[] = []
-                try {
-                  regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
-                } catch {}
-                if (regInterests.length === 0 && !data?.profiling) return null
+                if (isExplorarSolo) {
+                  localStorage.removeItem('raices_user_interests')
+                  regInterests = []
+                } else {
+                  try {
+                    regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
+                  } catch {}
+                  if (regInterests.length === 0 && Array.isArray(data?.profiling?.goals)) {
+                    regInterests = (data.profiling.goals as string[]).filter(Boolean)
+                  }
+                }
+
+                const DEFAULT_FALLBACK_8 = [
+                  'Atención médica especializada',
+                  'Deporte recreativo',
+                  'Reintegración laboral',
+                  'Negocio propio',
+                  'Pintura / dibujo',
+                  'Movilidad',
+                  'Relaciones',
+                  'Nuevas experiencias'
+                ]
+                const isExactFallback8 = regInterests.length === 8 && DEFAULT_FALLBACK_8.every(item => regInterests.includes(item))
+                if (isExactFallback8) {
+                  regInterests = []
+                  localStorage.removeItem('raices_user_interests')
+                }
+
+                const hasInterests = regInterests.length > 0
+                const hasLifeStage = Boolean(data?.profiling?.life_stage && stage)
+                const hasDisabilities = disabilities.length > 0
+                const hasCommModes = Boolean(data?.profiling?.communication_modes && data.profiling.communication_modes.length > 0)
+                const hasMobility = Boolean(data?.profiling?.mobility_needs && data.profiling.mobility_needs.length > 0)
+
+                const hasAnyPreferences = hasInterests || hasLifeStage || hasDisabilities || hasCommModes || hasMobility
+
+                if (!hasAnyPreferences) return null
                 return (
                   <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
                     <div style={s.sectionTitle}>
@@ -407,7 +445,7 @@ export default function ProfilePage() {
                             type="button"
                             key={val}
                             onClick={() => toggleArrayItem('disability_types', val)}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
                           >
                             {label}
                           </button>
@@ -427,7 +465,7 @@ export default function ProfilePage() {
                             type="button"
                             key={ls.id}
                             onClick={() => setProfilingForm((f) => (f ? { ...f, life_stage: active ? null : ls.id } : null))}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
                           >
                             {ls.label}
                           </button>
@@ -447,7 +485,7 @@ export default function ProfilePage() {
                             type="button"
                             key={m}
                             onClick={() => toggleArrayItem('mobility_needs', m)}
-                            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
+                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
                           >
                             {m}
                           </button>

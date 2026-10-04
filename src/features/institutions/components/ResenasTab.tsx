@@ -216,7 +216,7 @@ export default function ResenasTab() {
               maxHeight: 'calc(100vh - 64px)',
               overflowY: 'auto',
               padding: 28,
-              borderRadius: 20,
+              borderRadius: 16,
               margin: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}

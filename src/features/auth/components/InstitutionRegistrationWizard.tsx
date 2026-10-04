@@ -374,7 +374,7 @@ export default function InstitutionRegistrationWizard({
                   onClick={() => setCategoria(active ? '' : catValue)}
                   style={{
                     padding: '10px 20px',
-                    borderRadius: 9999,
+                    borderRadius: 10,
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: 'pointer',

@@ -240,7 +240,7 @@ export default function ServiciosTab() {
                     background: servicio.activo ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-warm)',
                     color: servicio.activo ? '#16A34A' : 'var(--fg3)',
                     border: '1px solid var(--border-color)',
-                    borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 700,
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
@@ -320,7 +320,7 @@ export default function ServiciosTab() {
               maxHeight: 'calc(100vh - 64px)',
               overflowY: 'auto',
               padding: 28,
-              borderRadius: 20,
+              borderRadius: 16,
               margin: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}
@@ -423,7 +423,7 @@ export default function ServiciosTab() {
                           borderColor: selected ? 'var(--primary)' : 'var(--border-color)',
                           background: selected ? 'color-mix(in oklch, var(--primary) 10%, transparent)' : 'var(--bg-warm)',
                           color: selected ? 'var(--primary)' : 'var(--fg2)',
-                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600,
                           cursor: 'pointer', transition: 'all 0.15s ease',
                         }}
                       >

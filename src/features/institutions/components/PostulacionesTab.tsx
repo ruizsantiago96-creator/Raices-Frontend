@@ -164,8 +164,8 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
 
   if (step === 1) {
     return createPortal(
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: '24px', padding: 36, maxWidth: 520, width: '100%', boxShadow: 'var(--glass-shadow)', border: '1px solid var(--glass-border)', position: 'relative' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', padding: 32, maxWidth: 520, width: '100%', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', position: 'relative' }}>
           <button onClick={onClose} aria-label="Cerrar modal" style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, lineHeight: 1 }}>
             &times;
           </button>
@@ -221,7 +221,7 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
               className="btn-primary" 
               onClick={handleAIWrite} 
               disabled={isLoadingAI || !cargo.trim()} 
-              style={{ width: '100%', height: 48, borderRadius: '24px', fontSize: 15, fontWeight: 700, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer', color: 'white', transition: 'all 0.2s' }}
+              style={{ width: '100%', height: 48, borderRadius: '10px', fontSize: 15, fontWeight: 700, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer', color: 'white', transition: 'all 0.2s' }}
             >
               {isLoadingAI ? Icons.loader({ s: 18 }) : Icons.sparkles({ s: 16 })} 
               {isLoadingAI ? 'Generando descripción...' : 'Escribir con IA'}
@@ -242,8 +242,8 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
   }
 
   return createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: '24px', padding: 36, maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--glass-shadow)', border: '1px solid var(--glass-border)', position: 'relative' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', padding: 32, maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', position: 'relative' }}>
         <button onClick={onClose} aria-label="Cerrar modal" style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--fg3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, lineHeight: 1 }}>
           &times;
         </button>
@@ -376,8 +376,8 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-            <button type="button" onClick={() => setStep(1)} style={{ padding: '12px 24px', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>Atrás</button>
-            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || !form.descripcion?.trim() || createJob.isPending} style={{ padding: '12px 28px', fontSize: 14, fontWeight: 700, borderRadius: '24px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}>
+            <button type="button" onClick={() => setStep(1)} style={{ padding: '12px 24px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>Atrás</button>
+            <button type="submit" className="btn-primary" disabled={!form.titulo.trim() || !form.descripcion?.trim() || createJob.isPending} style={{ padding: '12px 28px', fontSize: 14, fontWeight: 700, borderRadius: '10px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}>
               {createJob.isPending ? 'Publicando...' : 'Publicar vacante'}
             </button>
           </div>
@@ -397,8 +397,8 @@ interface DeleteConfirmModalProps {
 /* ─── DeleteConfirmModal ─────────────────────────────────── */
 function DeleteConfirmModal({ job, onClose, onConfirm }: DeleteConfirmModalProps) {
   return createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', borderRadius: 'var(--radius-md)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--modal-backdrop)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} className="animate-scale-in" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', padding: 28, maxWidth: 420, width: '100%', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in oklch, var(--color-error) 14%, transparent)', color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {Icons.shieldAlert({ s: 20 })}

@@ -1563,8 +1563,7 @@ export function DirectMessages({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.45)',
-            backdropFilter: 'blur(4px)',
+            background: 'var(--modal-backdrop)',
             zIndex: 3000,
             display: 'flex',
             alignItems: 'center',

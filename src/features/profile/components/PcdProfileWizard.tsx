@@ -266,6 +266,10 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const handleAccommodationSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!acompanamiento) { setError('Por favor, selecciona cómo prefieres que Raíces te acompañe.'); return }
+    if (acompanamiento === 'explorar_solo') {
+      handleFinalSubmit(e)
+      return
+    }
     goNext('condition')
   }
 
@@ -363,37 +367,43 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
         await updateProfile.mutateAsync({
           ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
         })
-        const combinedGoals = Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
+        const isExplorarSolo = acompanamiento === 'explorar_solo'
+        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
         const specDiag = conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null
         await updateNeedsProfile.mutateAsync({
           profiling: {
-            disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
-            severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
-            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
-            mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
-            tech_access: formatos,
-            preferred_zones: preferredZones,
-            needs: needsList,
+            disability_types: isExplorarSolo ? [] : (allConditions.length > 0 ? allConditions : disabilityTypes),
+            severity: isExplorarSolo ? null : (conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', ')),
+            communication_modes: isExplorarSolo ? [] : formatos.filter(f => f !== 'Prefiero no responder'),
+            mobility_needs: isExplorarSolo ? [] : (scales.movilidad >= 4 ? [] : ['Movilidad reducida']),
+            tech_access: isExplorarSolo ? [] : formatos,
+            preferred_zones: isExplorarSolo ? [] : preferredZones,
+            needs: isExplorarSolo ? [] : needsList,
             goals: combinedGoals,
-            support_areas: supportAreas,
-            education_history: educacionHistory,
-            grado_estudios: gradoEstudios,
-            gradoEstudios: gradoEstudios,
-            therapy_history: terapiaHistory,
+            support_areas: isExplorarSolo ? [] : supportAreas,
+            education_history: isExplorarSolo ? [] : educacionHistory,
+            grado_estudios: isExplorarSolo ? '' : gradoEstudios,
+            gradoEstudios: isExplorarSolo ? '' : gradoEstudios,
+            therapy_history: isExplorarSolo ? [] : terapiaHistory,
             life_stage: etapa || null,
-            current_concerns: specDiag ? [specDiag] : [],
+            current_concerns: isExplorarSolo ? [] : (specDiag ? [specDiag] : []),
             diagnostico_especifico: specDiag,
             diagnosticoEspecifico: specDiag,
-            barreras_sociales: finalBarrerasSociales,
-            barrerasSociales: finalBarrerasSociales,
-            support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
+            barreras_sociales: isExplorarSolo ? [] : finalBarrerasSociales,
+            barrerasSociales: isExplorarSolo ? [] : finalBarrerasSociales,
+            support_level: isExplorarSolo ? null : (scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo'),
             ...(birthDate ? { birth_date: birthDate, age: edad } : {}),
           } as Record<string, unknown>,
         })
       } catch (profErr) { console.warn('Profile save notice:', profErr) }
 
       // 3. Save local data
-      saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
+      const isExplorarSolo = acompanamiento === 'explorar_solo'
+      saveOnboardingData({
+        interests: isExplorarSolo ? [] : selectedInterests,
+        viability: isExplorarSolo ? '' : viabilidad,
+        formatos: isExplorarSolo ? [] : formatos,
+      })
 
       // 4. Invalidate queries to refresh dashboard
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
@@ -840,8 +850,8 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
               style={{
                 flex: 1,
                 padding: '12px 24px',
-                borderRadius: 24,
-                background: 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
+                borderRadius: 10,
+                background: 'var(--primary)',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,

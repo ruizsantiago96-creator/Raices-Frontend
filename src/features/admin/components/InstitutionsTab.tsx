@@ -146,7 +146,7 @@ export default function InstitutionsTab() {
         <div style={{ display: 'flex', gap: 8 }}>
           {[{ k: 'pending', l: `Pendientes (${combinedPending.length})` }, { k: 'all', l: `Todas (${all.length})` }].map(f => (
             <button key={f.k} onClick={() => setFilter(f.k)}
-              style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+              style={{ padding: '7px 16px', borderRadius: 10, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
                 background: filter === f.k ? 'var(--primary)' : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
               {f.l}
             </button>

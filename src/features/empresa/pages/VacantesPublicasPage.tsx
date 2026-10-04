@@ -113,7 +113,7 @@ export default function VacantesPublicasPage() {
             aria-label="Buscar vacantes publicadas"
             style={{
               width: '100%', height: 48, paddingLeft: 48, paddingRight: 16,
-              border: '1.5px solid var(--border-color)', borderRadius: 9999,
+              border: '1.5px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
               fontFamily: 'var(--font-body)', fontSize: 15,
               background: 'var(--bg-surface)', color: 'var(--fg1)', outline: 'none', boxSizing: 'border-box',
             }}

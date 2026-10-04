@@ -253,7 +253,7 @@ function SearchBar({ value, onChange, placeholder, icon }: SearchBarProps) {
 
 const FILTER_BUTTON: React.CSSProperties = {
   padding: '7px 16px',
-  borderRadius: 20,
+  borderRadius: 10,
   border: '1px solid var(--border-color)',
   cursor: 'pointer',
   fontSize: 13,

@@ -29,9 +29,7 @@ export const SupportCardModal: React.FC<SupportCardModalProps> = ({ isOpen, onCl
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px 16px',
-        background: 'rgba(0, 0, 0, 0.55)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'var(--modal-backdrop)',
         overflowY: 'auto',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}

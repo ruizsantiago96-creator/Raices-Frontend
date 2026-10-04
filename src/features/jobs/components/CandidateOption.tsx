@@ -27,7 +27,7 @@ export default function CandidateOption({
         flex: 1,
         padding: '14px 12px',
         borderRadius: 'var(--radius-md)',
-        border: `2px solid ${selected ? 'var(--primary)' : 'var(--border-color)'}`,
+        border: `1px solid ${selected ? 'var(--primary)' : 'var(--border-color)'}`,
         background: selected ? 'var(--primary-subtle)' : 'var(--bg-surface)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,

@@ -147,7 +147,7 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
       }}>
         <Link to="/social" style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '7px 14px', borderRadius: 20,
+          padding: '7px 14px', borderRadius: 8,
           background: post.liked_by_me ? 'rgba(255, 77, 104, 0.08)' : 'rgba(7, 59, 76, 0.05)',
           color: post.liked_by_me ? '#e04e6e' : 'var(--fg2)',
           fontSize: 13, fontWeight: 600, textDecoration: 'none',
@@ -159,7 +159,7 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
 
         <Link to="/social" style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '7px 14px', borderRadius: 20,
+          padding: '7px 14px', borderRadius: 8,
           background: 'rgba(7, 59, 76, 0.05)', color: 'var(--fg2)',
           fontSize: 13, fontWeight: 600, textDecoration: 'none',
         }}>
@@ -174,7 +174,7 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '7px 16px', borderRadius: 20,
+            padding: '7px 16px', borderRadius: 'var(--radius-btn)',
             background: 'var(--primary)', color: '#fff',
             fontSize: 13, fontWeight: 700, textDecoration: 'none',
             transition: 'all 0.15s ease',
@@ -280,7 +280,7 @@ export function ForumFeedCard({ forum }: { forum: ForumFeedCardItem }) {
       }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '7px 14px', borderRadius: 20,
+          padding: '7px 14px', borderRadius: 8,
           background: 'rgba(99, 102, 241, 0.08)',
           color: 'var(--primary, #6366f1)',
           fontSize: 13, fontWeight: 600,
@@ -294,7 +294,7 @@ export function ForumFeedCard({ forum }: { forum: ForumFeedCardItem }) {
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '7px 16px', borderRadius: 20,
+            padding: '7px 16px', borderRadius: 'var(--radius-btn)',
             background: 'var(--primary)', color: '#fff',
             fontSize: 13, fontWeight: 700, textDecoration: 'none',
             transition: 'all 0.15s ease',
@@ -327,7 +327,7 @@ export function FeedItemSkeleton() {
       <div style={{ width: '100%', height: 44, borderRadius: 8, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
       <div style={{ display: 'flex', gap: 10, paddingTop: 10, borderTop: '1px solid var(--border-color)' }}>
         {[60, 70, 50].map((w, i) => (
-          <div key={i} style={{ width: w, height: 30, borderRadius: 20, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+          <div key={i} style={{ width: w, height: 30, borderRadius: 8, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
         ))}
       </div>
     </div>

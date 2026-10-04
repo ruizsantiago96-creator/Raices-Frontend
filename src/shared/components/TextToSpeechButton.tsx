@@ -61,7 +61,7 @@ export const TextToSpeechButton: React.FC<TextToSpeechButtonProps> = ({
         alignItems: 'center',
         gap: isSmall ? 4 : 6,
         padding: isSmall ? '3px 8px' : '5px 12px',
-        borderRadius: 20,
+        borderRadius: 8,
         border: '1.5px solid',
         borderColor: isPlaying ? 'var(--primary)' : 'var(--border-color)',
         background: isPlaying ? 'color-mix(in oklch, var(--primary) 12%, transparent)' : 'var(--bg-warm)',

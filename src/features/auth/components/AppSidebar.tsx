@@ -401,9 +401,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.4)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
+            background: 'var(--modal-backdrop)',
             zIndex: 999,
             opacity: sidebarOpen ? 1 : 0,
             visibility: sidebarOpen ? 'visible' : 'hidden',

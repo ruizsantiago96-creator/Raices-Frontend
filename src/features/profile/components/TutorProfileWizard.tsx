@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe, useAuthStore } from '@features/auth'
+import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
@@ -224,7 +225,17 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
     (savedData.curpInput && (savedData.curpInput as string).length === 18)
   )
 
+  const hasRelationshipInfo = Boolean(
+    (savedData.nombreDependiente as string) ||
+    (onboardingRecord?.nombrePcd as string) ||
+    (meRecord?.nombrePcd as string) ||
+    (meRecord?.nombre_pcd as string) ||
+    localStorage.getItem('raices_dep_name') ||
+    nombreDependiente.trim()
+  )
+
   const activeSteps: TutorProfileStep[] = STEP_ORDER.filter(s =>
+    (s !== 'relationship' || !hasRelationshipInfo) &&
     (s !== 'neurodivergence' || hasNeurodivergence) &&
     (s !== 'identity_curp' || !hasCurp)
   )
@@ -335,7 +346,14 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
     if (!fechaNacimientoDependiente) { setError('Ingresa la fecha de nacimiento.'); return }
     goNext('accommodation')
   }
-  const handleAccommodationSubmit = (e: FormEvent) => { e.preventDefault(); goNext('condition') }
+  const handleAccommodationSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (acompanamiento === 'explorar_solo') {
+      handleFinalSubmit(e)
+      return
+    }
+    goNext('condition')
+  }
   const handleConditionSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (conditionData.conditions.length === 0) { setError('Selecciona al menos una opción.'); return }
@@ -393,49 +411,97 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         if (curpInput.trim()) {
           await updateProfile.mutateAsync({ curp: curpInput.trim() })
         }
-        const combinedGoals = Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
+        const isExplorarSolo = acompanamiento === 'explorar_solo'
+        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
         await updateNeedsProfile.mutateAsync({
           profiling: {
-            disability_types: allConditions.length > 0 ? allConditions : disabilityTypes,
-            severity: conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', '),
-            communication_modes: formatos.filter(f => f !== 'Prefiero no responder'),
-            mobility_needs: scales.movilidad >= 4 ? [] : ['Movilidad reducida'],
-            tech_access: formatos,
-            preferred_zones: preferredZones,
-            needs: needsList,
+            disability_types: isExplorarSolo ? [] : (allConditions.length > 0 ? allConditions : disabilityTypes),
+            severity: isExplorarSolo ? null : (conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', ')),
+            communication_modes: isExplorarSolo ? [] : formatos.filter(f => f !== 'Prefiero no responder'),
+            mobility_needs: isExplorarSolo ? [] : (scales.movilidad >= 4 ? [] : ['Movilidad reducida']),
+            tech_access: isExplorarSolo ? [] : formatos,
+            preferred_zones: isExplorarSolo ? [] : preferredZones,
+            needs: isExplorarSolo ? [] : needsList,
             goals: combinedGoals,
-            support_areas: supportAreas,
-            education_history: educacionHistory,
-            therapy_history: terapiaHistory,
+            support_areas: isExplorarSolo ? [] : supportAreas,
+            education_history: isExplorarSolo ? [] : educacionHistory,
+            therapy_history: isExplorarSolo ? [] : terapiaHistory,
             life_stage: dependienteEtapaPerfil,
-            barreras_sociales: finalBarrerasSociales,
-            barrerasSociales: finalBarrerasSociales,
-            support_level: scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo',
+            barreras_sociales: isExplorarSolo ? [] : finalBarrerasSociales,
+            barrerasSociales: isExplorarSolo ? [] : finalBarrerasSociales,
+            support_level: isExplorarSolo ? null : (scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo'),
             birth_date: dependienteDOB,
             age: dependienteEdad,
           } as Record<string, unknown>,
         })
       } catch (err) { console.warn('Profile err:', err) }
 
-      // 3. Registrar a la persona dependiente
-      let catParentescos: string[] = []
-      try { const catRes = await api.get('/catalogos'); catParentescos = catRes?.data?.parentescos ?? [] } catch { }
+      // 3. Registrar o actualizar a la persona dependiente (evitando error de doble registro)
+      if (nombreDependiente.trim()) {
+        let catParentescos: string[] = []
+        try { const catRes = await api.get('/catalogos'); catParentescos = catRes?.data?.parentescos ?? [] } catch { }
 
-      const depPayload = {
-        nombreCompleto: nombreDependiente.trim(),
-        parentesco: resolveParentesco(catParentescos, destinatario),
-        tiposDiscapacidad: wizardConditionsToCodes(disabilityTypes, conditionData.neurodivergencias),
-        ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
-        notas: specDiag,
-        diagnosticoEspecifico: specDiag,
-      }
-      try {
-        const depRes = await api.post('/usuarios/dependientes', depPayload)
-        if (depRes?.data?.id && dependienteDOB) {
-          localStorage.setItem(`raices_dep_birth_date_${depRes.data.id}`, dependienteDOB)
+        const depPayload = {
+          nombreCompleto: nombreDependiente.trim(),
+          parentesco: resolveParentesco(catParentescos, destinatario),
+          tiposDiscapacidad: wizardConditionsToCodes(disabilityTypes, conditionData.neurodivergencias),
+          ...(dependienteEtapaDep ? { etapaVida: dependienteEtapaDep } : {}),
+          notas: specDiag,
+          diagnosticoEspecifico: specDiag,
         }
-      } catch (err) {
-        addToast(`Perfil guardado, pero no se pudo agregar a ${nombreDependiente}. Agrégalo luego en "Mis personas".`, 'warning')
+
+        try {
+          let existingDep: Record<string, unknown> | null = null
+          try {
+            const existingRes = await api.get('/usuarios/dependientes')
+            const list = Array.isArray(existingRes?.data)
+              ? existingRes.data
+              : (existingRes?.data?.dependientes as Record<string, unknown>[] || [])
+            
+            existingDep = list.find((d: Record<string, unknown>) => {
+              const nameA = normText((d.nombreCompleto || d.nombre_completo || d.nombre) as string)
+              const nameB = normText(nombreDependiente)
+              return nameA && nameB && (nameA === nameB || nameA.includes(nameB) || nameB.includes(nameA))
+            }) || null
+          } catch {
+            // Ignorar error si no se pueden obtener dependientes existentes
+          }
+
+          if (existingDep && (existingDep.id || existingDep._id)) {
+            const depId = String(existingDep.id || existingDep._id)
+            try {
+              await api.patch(`/usuarios/dependientes/${depId}`, depPayload)
+            } catch {
+              try { await api.put(`/usuarios/dependientes/${depId}`, depPayload) } catch {}
+            }
+            if (dependienteDOB) {
+              localStorage.setItem(`raices_dep_birth_date_${depId}`, dependienteDOB)
+            }
+          } else {
+            try {
+              const depRes = await api.post('/usuarios/dependientes', depPayload)
+              const newId = depRes?.data?.id || depRes?.data?.datos?.id
+              if (newId && dependienteDOB) {
+                localStorage.setItem(`raices_dep_birth_date_${newId}`, dependienteDOB)
+              }
+            } catch (err: unknown) {
+              const errObj = err as { response?: { status?: number; data?: unknown }; message?: string }
+              const errStr = JSON.stringify(errObj?.response?.data || errObj?.message || '')
+              if (
+                errStr.toLowerCase().includes('existe') ||
+                errStr.toLowerCase().includes('duplicad') ||
+                errObj?.response?.status === 400 ||
+                errObj?.response?.status === 409
+              ) {
+                console.info('[TutorProfileWizard] Dependiente ya registrado previamente:', nombreDependiente)
+              } else {
+                console.warn('[TutorProfileWizard] Error al registrar dependiente:', err)
+              }
+            }
+          }
+        } catch (depErr) {
+          console.warn('[TutorProfileWizard] Error en gestión de dependiente:', depErr)
+        }
       }
 
       // 4. Invalidate queries and set completion flag
@@ -444,7 +510,12 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
       qc.invalidateQueries({ queryKey: ['dependientes'] })
-      saveOnboardingData({ interests: selectedInterests, viability: viabilidad, formatos })
+      const isExplorarSolo = acompanamiento === 'explorar_solo'
+      saveOnboardingData({
+        interests: isExplorarSolo ? [] : selectedInterests,
+        viability: isExplorarSolo ? '' : viabilidad,
+        formatos: isExplorarSolo ? [] : formatos,
+      })
 
       addToast('¡Perfil completado! Tienes acceso completo a Raíces.', 'success')
       if (onDone) onDone()
@@ -502,7 +573,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento de {personName} <span style={{ color: '#ef4444' }}>*</span></label>
-            <input type="date" className="auth-input" required max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={fechaNacimientoDependiente} onChange={e => setFechaNacimientoDependiente(e.target.value)} />
+            <CustomDatePicker required max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={fechaNacimientoDependiente} onChange={val => setFechaNacimientoDependiente(val)} />
           </div>
           <WizardNavButtons onBack={() => nav('/feed')} onSaveLater={handleSaveLater} submitLabel="Continuar" />
         </form>
@@ -911,8 +982,8 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
               style={{
                 flex: 1,
                 padding: '12px 24px',
-                borderRadius: 24,
-                background: 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
+                borderRadius: 10,
+                background: 'var(--primary)',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,

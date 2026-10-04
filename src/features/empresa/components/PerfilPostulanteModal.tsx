@@ -416,7 +416,6 @@ export default function PerfilPostulanteModal({ postulacion, onClose }: PerfilPo
       style={{
         position: 'fixed', inset: 0, zIndex: 3000,
         background: 'var(--modal-backdrop, rgba(15, 23, 42, 0.45))',
-        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
       }}
     >
@@ -428,7 +427,7 @@ export default function PerfilPostulanteModal({ postulacion, onClose }: PerfilPo
         className="animate-scale-in"
         style={{
           background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-          borderRadius: 20, width: '100%', maxWidth: 560,
+          borderRadius: 16, width: '100%', maxWidth: 560,
           maxHeight: 'calc(100vh - 64px)', overflowY: 'auto',
           padding: 28, boxShadow: 'var(--shadow-xl)',
         }}

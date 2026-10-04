@@ -50,7 +50,7 @@ export default function AlertsTab({ alerts: initialAlerts }: AlertsTabProps) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         {[{ k: 'all', l: `Todas (${alerts.length})` }, { k: 'alta', l: 'Alta' }, { k: 'media', l: 'Media' }, { k: 'info', l: 'Info' }].map(f => (
           <button key={f.k} onClick={() => setFilter(f.k)}
-            style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+            style={{ padding: '7px 16px', borderRadius: 10, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
               background: filter === f.k ? (f.k === 'alta' ? 'var(--color-error)' : f.k === 'media' ? 'var(--color-empleo)' : 'var(--primary)') : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
             {f.l}
           </button>

@@ -354,7 +354,7 @@ export default function AccessibilityBar() {
       maxWidth: 'calc(100vw - 40px)',
       maxHeight: 'calc(100vh - 120px)',
       overflowY: 'auto',
-      borderRadius: '24px',
+      borderRadius: '16px',
       padding: 20,
       fontFamily: 'var(--font-body)',
       animation: 'slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',

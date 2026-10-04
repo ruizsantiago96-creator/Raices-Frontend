@@ -260,14 +260,14 @@ const btnPill = {
   ...btnBase,
   background: COLORS.primary,
   color: '#FFFFFF',
-  borderRadius: 9999,
+  borderRadius: 'var(--radius-btn)',
 }
 
 const btnPillSecondary = {
   ...btnBase,
   background: COLORS.secondary,
   color: COLORS.fg1,
-  borderRadius: 9999,
+  borderRadius: 'var(--radius-btn)',
 }
 
 // ── Card Style ─────────────────────────────────────────────────────

@@ -77,9 +77,7 @@ export default function ProfileCompletionModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(15, 23, 42, 0.45)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'var(--modal-backdrop)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -90,7 +88,7 @@ export default function ProfileCompletionModal({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: 20,
+          borderRadius: 16,
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
           maxWidth: 520,
           width: '100%',
@@ -220,7 +218,7 @@ export default function ProfileCompletionModal({
               onClick={onClose}
               style={{
                 padding: '12px 28px',
-                borderRadius: 24,
+                borderRadius: 10,
                 background: '#F1F5F9',
                 color: '#475569',
                 border: '1px solid #E2E8F0',
@@ -241,15 +239,15 @@ export default function ProfileCompletionModal({
               onClick={handleComplete}
               style={{
                 padding: '12px 32px',
-                borderRadius: 24,
-                background: 'linear-gradient(135deg, #229B58 0%, #073B4C 100%)',
+                borderRadius: 10,
+                background: 'var(--primary)',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,
                 fontSize: 14.5,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                boxShadow: '0 4px 14px rgba(34, 155, 88, 0.35)',
+                boxShadow: 'var(--shadow-sm)',
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {

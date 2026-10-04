@@ -385,7 +385,7 @@ export default function EditarEmpresaPage() {
                     background: selected ? 'color-mix(in oklch, var(--primary) 10%, transparent)' : 'var(--bg-warm)',
                     color: selected ? 'var(--primary)' : 'var(--fg2)',
                     padding: '6px 12px',
-                    borderRadius: 20,
+                    borderRadius: 10,
                     fontSize: 12,
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -408,7 +408,7 @@ export default function EditarEmpresaPage() {
                     key={tag}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                       background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
                       color: 'var(--primary)', border: '1.5px solid var(--primary)',
                     }}

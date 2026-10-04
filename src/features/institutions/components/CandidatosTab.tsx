@@ -172,7 +172,7 @@ export default function CandidatosTab() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
         {FILTER_OPTIONS.map(f => (
           <button key={f.value} onClick={() => setFilter(f.value)}
-            style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+            style={{ padding: '7px 16px', borderRadius: 10, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
               background: filter === f.value ? 'var(--primary)' : 'var(--bg-surface)', color: filter === f.value ? '#fff' : 'var(--fg2)',
               transition: 'all 0.15s' }}>
             {f.label} ({counts[f.value] ?? 0})

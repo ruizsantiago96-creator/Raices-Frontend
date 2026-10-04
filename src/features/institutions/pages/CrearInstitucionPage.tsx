@@ -64,7 +64,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
               fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-display)',
               background: i < currentStep ? 'var(--primary)' : i === currentStep ? 'var(--primary-subtle)' : 'rgba(229, 220, 210, 0.4)',
               color: i < currentStep ? '#fff' : i === currentStep ? 'var(--primary)' : 'var(--fg3)',
-              border: i === currentStep ? '2px solid var(--primary)' : '2px solid transparent',
+              border: i === currentStep ? '1.5px solid var(--primary)' : '1.5px solid transparent',
               transition: 'all 0.3s ease',
             }}
           >
@@ -359,7 +359,7 @@ export default function CrearInstitucionPage() {
       {/* API Error */}
       {apiError && (
         <div className="animate-fade-in-up" style={{
-          background: 'rgba(254, 242, 242, 0.7)', backdropFilter: 'blur(12px)',
+          background: 'rgba(254, 242, 242, 0.95)',
           border: '1px solid rgba(254, 202, 202, 0.6)', borderRadius: 12,
           padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10,
         }}>
@@ -400,7 +400,7 @@ export default function CrearInstitucionPage() {
               {loadingCatalogos ? (
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[1, 2, 3, 4].map(i => (
-                    <div key={i} style={{ width: 120, height: 36, borderRadius: 9999, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                    <div key={i} style={{ width: 120, height: 36, borderRadius: 8, background: 'var(--border-color)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                   ))}
                 </div>
               ) : (
@@ -415,13 +415,12 @@ export default function CrearInstitucionPage() {
                       key={catValue} type="button"
                       onClick={() => updateField('categoria', active ? '' : catValue)}
                       style={{
-                        padding: '8px 18px', borderRadius: 9999, fontSize: 14, fontWeight: 600,
+                        padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600,
                         cursor: 'pointer', fontFamily: 'var(--font-body)',
                         border: active ? 'none' : '1px solid var(--border-color)',
-                        background: active ? color : 'rgba(255, 249, 242, 0.5)',
+                        background: active ? color : 'var(--bg-surface)',
                         color: active ? 'white' : 'var(--fg3)',
                         transition: 'all 0.2s',
-                        backdropFilter: active ? 'none' : 'blur(8px)',
                       }}
                     >
                       {catLabel}
@@ -508,13 +507,12 @@ export default function CrearInstitucionPage() {
                     key={dtValue} type="button"
                     onClick={() => toggleDisability(dtValue)}
                     style={{
-                      padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: 600,
+                      padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
                       cursor: 'pointer', fontFamily: 'var(--font-body)',
                       border: active ? 'none' : '1px solid var(--border-color)',
-                      background: active ? 'var(--primary)' : 'rgba(255, 249, 242, 0.5)',
+                      background: active ? 'var(--primary)' : 'var(--bg-surface)',
                       color: active ? 'white' : 'var(--fg3)',
                       transition: 'all 0.2s',
-                      backdropFilter: active ? 'none' : 'blur(8px)',
                     }}
                   >
                     {active && <span style={{ marginRight: 4 }}>✓</span>}
@@ -690,8 +688,7 @@ export default function CrearInstitucionPage() {
               onClick={() => handleSubmit(false)}
               style={{
                 padding: '14px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10,
-                border: '1px solid var(--border-color)', background: 'rgba(255, 249, 242, 0.5)',
-                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid var(--border-color)', background: 'var(--bg-surface)',
                 color: 'var(--fg2)', cursor: 'pointer', fontFamily: 'var(--font-body)',
                 display: 'flex', alignItems: 'center', gap: 6,
                 transition: 'all 0.2s ease',
