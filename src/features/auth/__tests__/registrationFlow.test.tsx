@@ -423,7 +423,7 @@ describe('Contrato de registro — Institución', () => {
 })
 
 describe('Contrato de registro — Empresa', () => {
-  it('4) sin token en registro: registra en JSON y auto-login + /inicio', async () => {
+  it('4) con CSF: registra en multipart adjuntando el archivo (como institución)', async () => {
     stubApi({
       'post /autenticacion/registro': { mensaje: 'ok' },
       'post /autenticacion/inicio-sesion': EMPRESA_LOGIN_RESPONSE,
@@ -434,24 +434,73 @@ describe('Contrato de registro — Empresa', () => {
     await completeEnterpriseWizard()
 
     // NO debe existir validación síncrona de CSF en el wizard
-    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)    // Registro en JSON (la CSF aún no se adjunta)
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
+
+    // ── Regresión: la CSF de la empresa NO se puede descartar ──────────
+    // La empresa comparte la entidad institución, así que su CSF va en el
+    // mismo campo "csf" que la de una institución. Antes se enviaba el
+    // registro en JSON y el archivo se perdía en silencio: la empresa quedaba
+    // sin CSF y tenía que volver a /mi-identidad a subirla.
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
+    const payload = lastCallFor('post', '/autenticacion/registro')
+    expect(payload).toBeInstanceOf(FormData)
+    const fd = payload as FormData
+    expect(fd.get('rol')).toBe('empresa')
+    expect(fd.get('email')).toBe(EMAIL)
+    expect(fd.has('csf')).toBe(true)
+    expect(fd.get('csf')).toBeInstanceOf(File)
+
+    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('et-1')
+    expect(window.location.pathname).toBe('/inicio')
+    expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
+  }, 20000)
+
+  it('4b) sin CSF: registra en JSON y auto-login + /inicio', async () => {
+    stubApi({
+      'post /autenticacion/registro': { mensaje: 'ok' },
+      'post /autenticacion/inicio-sesion': EMPRESA_LOGIN_RESPONSE,
+      'put /usuarios/perfil': { mensaje: 'ok' },
+    })
+
+    renderWithProviders(<EnterpriseRegistrationWizard onBackToRoles={() => {}} />)
+    // Se avanza hasta el paso CSF sin subir nada
+    await completeEnterpriseWizard({ stopAtCsf: true })
+
+    expect(screen.getByRole('button', { name: /finalizar registro/i })).toBeEnabled()
+    clickButton(/finalizar registro/i)
+
+    // Sin archivo → payload JSON, sin validar-csf-qr
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     const payload = lastCallFor('post', '/autenticacion/registro')
     expect(payload).not.toBeInstanceOf(FormData)
     expect(payload).toMatchObject({ rol: 'empresa', email: EMAIL })
-    expect((payload as Record<string, unknown>).documentoCsf).toBeUndefined()
+    expect(callsFor('post', '/instituciones/validar-csf-qr')).toHaveLength(0)
 
-    expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
-    expect(lastCallFor('post', '/autenticacion/inicio-sesion')).toMatchObject({ email: EMAIL, password: PASSWORD })
+    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('et-1')
+    expect(window.location.pathname).toBe('/inicio')
+  }, 20000)
+
+  it('4c) la CSF sí llega al perfil institucional que el backend crea', async () => {
+    stubApi({
+      'post /autenticacion/registro': { mensaje: 'ok' },
+      'post /autenticacion/inicio-sesion': EMPRESA_LOGIN_RESPONSE,
+      'put /usuarios/perfil': { mensaje: 'ok' },
+    })
+
+    renderWithProviders(<EnterpriseRegistrationWizard onBackToRoles={() => {}} />)
+    await completeEnterpriseWizard()
+
+    await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
+    // El backend guarda la CSF como `documentoCsf` en `instituciones/{uid}` con
+    // `tipo: 'empresa'`; el frontend no debe mandar `documentoCsf` en el JSON
+    // (lo resuelve el servidor a partir del archivo).
+    const fd = lastCallFor('post', '/autenticacion/registro') as FormData
+    expect(fd.has('documentoCsf')).toBe(false)
 
     expect(callsFor('put', '/usuarios/perfil')).toHaveLength(1)
     expect(lastCallFor('put', '/usuarios/perfil').perfilEcosistema).toMatchObject({
       nombreOrganizacion: 'Centro Terapéutico Raíces',
     })
-
-    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('et-1')
-    expect(window.location.pathname).toBe('/inicio')
-    expect(callsFor('post', '/usuarios/escalas-vida')).toHaveLength(0)
   }, 20000)
 })
 

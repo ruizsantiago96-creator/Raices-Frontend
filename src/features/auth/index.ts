@@ -25,9 +25,12 @@ export { firebaseBridgeLogin, isBridgeAvailable } from './lib/firebaseBridge'
 // ── Lib (persona moral / gating de empresa) ────────────────────────
 export {
   esEmpresa,
-  esRutaEmpresa,
+  puedeAbrirEmpresa,
+  esVistaPreviaEmpresa,
   useEsEmpresa,
+  tieneRol,
   EMPRESA_HOME,
   EMPRESA_EDITAR,
-  RUTAS_EMPRESA,
+  EMPRESA_VISTA_PREVIA,
+  RUTAS_BLOQUEADAS_EMPRESA,
 } from './lib/empresaRole'

@@ -244,6 +244,112 @@ export function useValidarCsfQr(): UseMutationResult<ValidarCsfQrResponse, Error
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Documentos de verificación (persona moral)
+   POST /instituciones/verificacion/documentos
+   ═══════════════════════════════════════════════════════════ */
+
+export type TipoDocumentoVerificacion = 'csf' | 'identificacion_representante'
+
+export interface DocumentoVerificacionSubido {
+  tipo: TipoDocumentoVerificacion | 'identificacion_oficial'
+  urlDocumento: string
+  estado: 'pendiente'
+  fechaSubida: string
+}
+
+/**
+ * Sube la CSF (o la identificación del representante legal) de una persona moral.
+ *
+ * OJO con el endpoint: NO es `/usuarios/documento-identidad`. Ese solo admite
+ * `curp | identificacion_oficial | certificado_discapacidad` y rechaza cualquier
+ * otra cosa con 400, incluida la CSF. Además, un documento guardado ahí no
+ * alimenta `instituciones/{id}.documentoCsf`, que es el campo que el admin
+ * lee (`puedeAprobarse = tieneCsf`) para decidir si la empresa puede aprobarse.
+ *
+ * Este endpoint sí acepta `csf` y la persiste donde el flujo de aprobación la
+ * espera.
+ */
+export function useSubirDocumentoVerificacion(): UseMutationResult<
+  unknown,
+  Error,
+  { tipo: TipoDocumentoVerificacion; file: File }
+> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ tipo, file }: { tipo: TipoDocumentoVerificacion; file: File }) => {
+      const formData = new FormData()
+      formData.append('tipo', tipo)
+      formData.append('documento', file)
+      return api
+        .post('/instituciones/verificacion/documentos', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then(r => r.data as DocumentoVerificacionSubido)
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['estado-verificacion-institucion'] })
+      qc.invalidateQueries({ queryKey: ['mi-institucion'] })
+      // El INE del representante legal acaba en la colección de documentos de
+      // identidad, así que el estado de usuario también se ve afectado.
+      if (vars.tipo === 'identificacion_representante') {
+        qc.invalidateQueries({ queryKey: ['documento-identidad'] })
+      }
+    },
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Estado de verificación de mi institución/empresa
+   GET /instituciones/mi-institucion/estado-verificacion
+   ═══════════════════════════════════════════════════════════ */
+
+export interface PasoVerificacion {
+  clave: 'csf' | 'aprobacion_admin' | 'identificacion_representante' | string
+  titulo: string
+  obligatorio: boolean
+  completado: boolean
+  descripcion?: string
+}
+
+export interface EstadoVerificacionInstitucion {
+  institucionId: string
+  nombre: string | null
+  verificada: boolean
+  porcentaje: number
+  pasos: PasoVerificacion[]
+  pasosPendientes: string[]
+  documentosFaltantes: string[]
+}
+
+/**
+ * Estado de verificación de la persona moral. Es la única fuente fiable de
+ * `tieneCsf`: el endpoint de identidad de usuario ni siquiera menciona la CSF
+ * (no aplica a personas morales), así que consultarla devolvía siempre
+ * "sin CSF" aunque la empresa ya la hubiera subido.
+ *
+ * Devuelve `null` cuando el usuario no tiene institución registrada (404).
+ */
+export function useEstadoVerificacionInstitucion(opts?: {
+  enabled?: boolean
+}): UseQueryResult<EstadoVerificacionInstitucion | null> {
+  return useQuery({
+    queryKey: ['estado-verificacion-institucion'],
+    queryFn: async (): Promise<EstadoVerificacionInstitucion | null> => {
+      try {
+        const r = await api.get('/instituciones/mi-institucion/estado-verificacion')
+        return r.data as EstadoVerificacionInstitucion
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 404) return null
+        throw err
+      }
+    },
+    enabled: opts?.enabled !== false,
+    retry: false,
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════
    Delete My Institution
    DELETE /instituciones/mi-institucion
    ═══════════════════════════════════════════════════════════ */

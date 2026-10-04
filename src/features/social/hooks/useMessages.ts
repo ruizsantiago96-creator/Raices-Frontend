@@ -36,6 +36,8 @@ interface RawConversation {
   last_message_time?: string
   noLeidos?: number
   unread?: number
+  isDeleted?: boolean
+  destinatarioActivo?: boolean
   [key: string]: unknown
 }
 
@@ -60,20 +62,52 @@ interface RawMessage {
   [key: string]: unknown
 }
 
+/** Nombre mostrado cuando el socio fue eliminado de la plataforma. */
+export const USUARIO_ELIMINADO = 'Usuario Eliminado'
+
+/** Forma mínima necesaria para decidir si un socio está eliminado. */
+type SocioEstado = {
+  isDeleted?: boolean
+  destinatarioActivo?: boolean
+  partner?: { full_name?: string; is_active?: boolean } | null
+}
+
+/**
+ * Un socio está eliminado si el backend lo marcó con `isDeleted` o, en su
+ * respuesta, con el alias semántico `destinatarioActivo: false`. También se infiere
+ * de `activo: false` para tolerar respuestas de backends previos al flag.
+ */
+export function isConversacionEliminada(conv: SocioEstado): boolean {
+  if (typeof conv.isDeleted === 'boolean') return conv.isDeleted
+  if (typeof conv.destinatarioActivo === 'boolean') return !conv.destinatarioActivo
+  return conv.partner?.is_active === false
+}
+
+/**
+ * Nombre a mostrar para el socio. Si la cuenta fue eliminada se muestra siempre
+ * "Usuario Eliminado", sin importar lo que devuelva el backend.
+ */
+export function nombreParaMostrar(conv: SocioEstado): string {
+  return isConversacionEliminada(conv) ? USUARIO_ELIMINADO : conv.partner?.full_name ?? 'Sin nombre'
+}
+
 /**
  * Mapea una conversación del backend al formato que el frontend espera.
  */
 function mapConversation(conv: RawConversation): Conversation {
   const socio = conv.socio ?? conv.partner ?? {}
+  // El backend ya omite la PII de las cuentas dadas de baja, pero se normaliza
+  // aquí también para no confiar en el nombre real si el backend lo enviara.
+  const isDeleted = isConversacionEliminada({ ...conv, partner: socio })
   const partner: MessagePartner = {
     id: socio.id ?? '',
-    email: socio.email,
-    full_name: socio.nombreCompleto ?? socio.full_name ?? 'Sin nombre',
+    email: isDeleted ? undefined : socio.email,
+    full_name: isDeleted ? USUARIO_ELIMINADO : (socio.nombreCompleto ?? socio.full_name ?? 'Sin nombre'),
     role: socio.rol ?? socio.role,
     city: socio.ciudad ?? socio.city,
     state: socio.estado ?? socio.state,
-    avatar_url: decodeAvatarUrl(socio.urlAvatar ?? socio.avatar_url ?? null),
-    is_active: socio.activo ?? socio.is_active,
+    avatar_url: isDeleted ? null : decodeAvatarUrl(socio.urlAvatar ?? socio.avatar_url ?? null),
+    is_active: !isDeleted && (socio.activo ?? socio.is_active ?? true),
     is_verified: socio.verificado ?? socio.is_verified,
   }
   return {
@@ -82,6 +116,8 @@ function mapConversation(conv: RawConversation): Conversation {
     last_message: conv.ultimoMensaje ?? conv.last_message ?? '',
     last_message_time: conv.ultimoEn ?? conv.last_message_time,
     unread: conv.noLeidos ?? conv.unread ?? 0,
+    isDeleted,
+    destinatarioActivo: !isDeleted,
   }
 }
 
@@ -102,12 +138,7 @@ function mapMessage(msg: RawMessage): DirectMessage {
 
 export function useConversations() {
   return useQuery<Conversation[]>({
-    queryKey: ['messages', 'conversations'],
-    queryFn: () => api.get('/mensajes/conversaciones').then(r => {
-      const res = r.data
-      const arr: RawConversation[] = Array.isArray(res) ? res : (res?.datos ?? [])
-      return arr.map(mapConversation)
-    }),
+    queryKey: ['messages', 'conversations'],    queryFn: () => api.get('/mensajes/conversaciones').then(r => {      const res = r.data      const arr: RawConversation[] = Array.isArray(res) ? res : (res?.datos ?? [])      return arr.map(mapConversation)    }),
     refetchInterval: 15000,
   })
 }
@@ -135,6 +166,37 @@ export function useUnreadCount() {
       return (data as { cantidad?: number; noLeidos?: number })?.cantidad ?? (data as { cantidad?: number; noLeidos?: number })?.noLeidos ?? 0
     }),
     refetchInterval: 30000,
+  })
+}
+
+export interface EliminarConversacionResultado {
+  /** `true` si la conversación quedó oculta para el usuario autenticado. */
+  ocultado: boolean
+  /** Socio de la conversación borrada. */
+  socioId: string
+}
+
+/**
+ * "Eliminar chat" (DELETE /mensajes/conversaciones/:userId).
+ *
+ * El borrado es lógico y por usuario en el backend, así que tras el 200 la
+ * conversación no volverá aunque el polling (15 s) la vuelva a pedir. Aun así se
+ * quita de la caché de inmediato para que la UI responda al instante.
+ */
+export function useDeleteConversation() {
+  const qc = useQueryClient()
+  return useMutation<EliminarConversacionResultado, Error, string | number>({
+    mutationFn: (userId) =>
+      api.delete<EliminarConversacionResultado>(`/mensajes/conversaciones/${userId}`).then(r => r.data),
+    onSuccess: (_res, userId) => {
+      const id = String(userId)
+      qc.setQueryData<Conversation[]>(['messages', 'conversations'], prev =>
+        prev?.filter(c => String(c.partner?.id) !== id),
+      )
+      qc.removeQueries({ queryKey: ['messages', 'with', userId] })
+      qc.invalidateQueries({ queryKey: ['messages', 'conversations'] })
+      qc.invalidateQueries({ queryKey: ['messages', 'unread'] })
+    },
   })
 }
 

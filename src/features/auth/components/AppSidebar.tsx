@@ -69,12 +69,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Una empresa (persona moral) nunca debe ver el sidebar de usuario estándar
-  // (Inicio, Oportunidades, Guardados, Conectemos, Mis Rutas). Aunque el layout
-  // ya le pase mode='empresa', aquí se normaliza para que ningún consumidor
-  // futuro pueda reintroducir el sidebar equivocado por descuido.
-  const modoEfectivo: AppSidebarProps['mode'] =
-    (mode === 'app' && esEmpresa(user) ? 'empresa' : mode) ?? 'app'
+  // El modo lo decide MainLayout a partir de la ruta y se respeta tal cual:
+  // dentro de /empresa/* se dibuja el panel de la persona moral (con su botón
+  // "Ir a app"), y en /feed o /instituciones —las dos rutas a las que lleva esa
+  // acción— el sidebar de la app, igual que le ocurre a la institución.
+const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true'
@@ -163,7 +162,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       { id: 'favorites', label: 'Guardados', icon: Icons.heart, path: '/favorites', hidden: !hasFeature('favoritos') },
     ].filter(item => !item.hidden)
 
-    if (user?.role === 'institution') {
+    // Regreso al panel del rol. La empresa recorre la app con el sidebar
+    // estándar completo, así que necesita un enlace explícito para volver a su
+    // portal; se coloca al final, como el "Panel" de la institución.
+    if (esEmpresa(user)) {
+      items.push({ id: 'empresa', label: 'Panel', icon: Icons.briefcase, path: EMPRESA_HOME })
+    } else if (user?.role === 'institution') {
       items.push({ id: 'institution-portal', label: 'Panel', icon: Icons.shield, path: '/institution-portal' })
     }
     if (user?.role === 'admin') {
@@ -280,7 +284,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   if (modoEfectivo === 'institution' && location.pathname !== '/institution-portal') {
                     navigate('/institution-portal')
                   }
-                  if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME) {
+                  if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME && location.pathname !== '/feed') {
                     navigate(EMPRESA_HOME)
                   }
                 }}
@@ -330,13 +334,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </button>
         </div>
 
-        {/* Volver a la app link for sub-portals.
-            El destino de "la app" depende del rol: para una empresa (persona
-            moral), /feed es una ruta bloqueada y ProtectedRoute la expulsaría
-            de vuelta a su portal; su vista principal es el portal de empresa. */}
-        {mode !== 'app' && (
+        {/* Boton de "Ir a app". Solo aparece fuera de la app (admin, institución
+            y empresa): lleva a /feed, donde MainLayout cambia el modo a 'app' y
+            este sidebar se redibuja con la navegación estándar. Para la persona
+            moral es la misma salida que tiene la institución, y nunca exige
+            CURP ni registro de PCD. */}
+        {modoEfectivo !== 'app' && (
           <div className="sidebar-user-container" style={{ padding: '12px 0 0', borderTop: '1px solid var(--sidebar-border)', marginTop: 8, width: 'var(--sidebar-width)', marginLeft: '-12px' }}>
-            <Link to={esEmpresa(user) ? EMPRESA_HOME : '/feed'} className="sidebar-desktop-nav-item" style={{
+            <Link to="/feed" className="sidebar-desktop-nav-item" style={{
               textDecoration: 'none',
               color: 'var(--sidebar-fg)',
               marginRight: 0,
@@ -528,7 +533,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     if (modoEfectivo === 'institution' && location.pathname !== '/institution-portal') {
                       navigate('/institution-portal')
                     }
-                    if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME) {
+                    if (modoEfectivo === 'empresa' && location.pathname !== EMPRESA_HOME && location.pathname !== '/feed') {
                       navigate(EMPRESA_HOME)
                     }
                   }}
@@ -598,7 +603,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           ) : (
             <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
-              <Link to={esEmpresa(user) ? EMPRESA_HOME : '/feed'} onClick={() => setSidebarOpen(false)} style={{
+              <Link to="/feed" onClick={() => setSidebarOpen(false)} style={{
                 textDecoration: 'none',
                 display: 'flex', alignItems: 'center', gap: 12,
                 color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,

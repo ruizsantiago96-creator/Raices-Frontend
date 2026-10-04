@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useOutlet, useLocation } from 'react-router-dom'
-import { useAuthStore, useMe, AppSidebar, TopNav, esEmpresa } from '@features/auth'
+import { useAuthStore, useMe, AppSidebar, TopNav, esVistaPreviaEmpresa } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants, useMiInstitucion } from '@features/institutions'
 import { useAdminAlerts } from '@features/admin'
@@ -35,9 +35,8 @@ interface ResizeStartData {
 }
 
 export default function MainLayout() {
-  const { logout, user: sessionUser } = useAuthStore()
+  const { logout } = useAuthStore()
   const { data: user } = useMe()
-  const isEmpresaUser = esEmpresa(sessionUser)
   const location = useLocation()
   const outlet = useOutlet()
   
@@ -52,12 +51,18 @@ export default function MainLayout() {
   // Determinar el modo según la ruta
   const isAdmin = location.pathname.startsWith('/admin')
   const isInstPortal = location.pathname.startsWith('/institution-portal')
-  const isEmpresaPortal = location.pathname.startsWith('/empresa')
-  // Una empresa es persona moral: siempre se dibuja su panel, nunca el sidebar
-  // de usuario estándar (Inicio / Oportunidades / Mis Rutas). ProtectedRoute ya
-  // impide que llegue aquí desde otra ruta, pero el layout no depende de ello.
+  // La vista previa de perfil público cuelga de /empresa, pero se dibuja con el
+  // sidebar de la app: la empresa está mirando su perfil como lo vería un
+  // postulante, no administrándolo.
+  const isEmpresaPortal =
+    location.pathname.startsWith('/empresa') && !esVistaPreviaEmpresa(location.pathname)
+  // El modo se deduce SOLO de la ruta, igual que para institución y admin. Por
+  // eso una empresa que pulsa "Ir a app" (/feed) o "Vista Previa de Perfil
+  // Público" (/empresa/vacantes) sale del panel y ve el sidebar de la app.
+  // ProtectedRoute ya impide que una persona moral aterrice aquí desde el resto
+  // de la superficie estándar, pero el layout no depende de ello.
   const sidebarMode: 'admin' | 'institution' | 'empresa' | 'app' =
-    isAdmin ? 'admin' : isInstPortal ? 'institution' : (isEmpresaPortal || isEmpresaUser) ? 'empresa' : 'app'
+    isAdmin ? 'admin' : isInstPortal ? 'institution' : isEmpresaPortal ? 'empresa' : 'app'
 
   // Consultas de React Query para los contadores de la barra lateral (seguras según el modo)
   const { data: pendingInsts = [] } = usePendingInstitutions({ enabled: isAdmin })
@@ -66,7 +71,7 @@ export default function MainLayout() {
   const criticalCount = adminAlerts.filter(a => a.severity === 'critical' || a.severity === 'high').length
 
   // La entidad institución sostiene tanto el portal institucional como el de empresa
-  const isPortal = isInstPortal || isEmpresaPortal || isEmpresaUser
+  const isPortal = isInstPortal || isEmpresaPortal
 
   // Solo buscar la institución del usuario cuando estamos en un portal
   const { data: myInstitution, isLoading: loadingMyInst } = useMiInstitucion({ enabled: isPortal })

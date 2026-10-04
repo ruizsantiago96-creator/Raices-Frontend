@@ -27,7 +27,10 @@ export default function FeatureGuard({ feature, children }: FeatureGuardProps): 
 
   let isEnabled = true
   if (Array.isArray(features)) {
-    isEnabled = features.includes(feature)
+    // Un array vacío significa "sin restricciones", igual que en el backend
+    // (`user?.features ?? FEATURES_POR_DEFECTO`) y en `AppSidebar.hasFeature`.
+    // Sin esta guarda, una cuenta con `features: []` perdía el acceso a todo.
+    isEnabled = features.length === 0 || features.includes(feature)
   } else if (typeof features === 'object' && features !== null) {
     isEnabled = (features as Record<string, boolean>)[feature] !== false
   }

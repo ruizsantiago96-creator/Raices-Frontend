@@ -6,6 +6,10 @@ import {
   DocumentoIdentidadEstado,
 } from '@/types/profile'
 import { useSubirDocumentoIdentidad } from '../hooks/useDocumentoIdentidad'
+import {
+  useEstadoVerificacionInstitucion,
+  useSubirDocumentoVerificacion,
+} from '@features/institutions/hooks/useInstitutions'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useEsEmpresa } from '@features/auth/lib/empresaRole'
 
@@ -142,6 +146,13 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const subirDoc = useSubirDocumentoIdentidad()
+  // La CSF no pertenece al flujo de identidad de usuario: es un documento de la
+  // persona moral y va a su propio endpoint (ver useSubirDocumentoVerificacion).
+  const subirVerificacion = useSubirDocumentoVerificacion()
+  const esCsf = tipo === 'csf'
+  // El botón debe reflejar la subida que realmente se está haciendo: la de la
+  // CSF va por su propio endpoint, la del resto por el de identidad de usuario.
+  const isEnviando = esCsf ? subirVerificacion.isPending : subirDoc.isPending
   const addToast = useUiStore((s) => s.addToast)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,22 +186,33 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
 
   const handleUpload = () => {
     if (!selectedFile) return
+    const onSuccess = () => {
+      addToast(`${tipoLabel} subido exitosamente`, 'success')
+      handleClear()
+      onUploadSuccess?.()
+    }
+    const onError = (err: Error) => {
+      addToast(err?.message || `Error al subir ${tipoLabel}`, 'error')
+    }
+
+    // Bifurcación por endpoint: mandarlo todo a /usuarios/documento-identidad
+    // devolvía 400 para la CSF ("Tipo de documento inválido"), porque ese
+    // endpoint solo admite curp | identificacion_oficial | certificado_discapacidad.
+    if (esCsf) {
+      subirVerificacion.mutate(
+        { tipo: 'csf', file: selectedFile },
+        { onSuccess, onError },
+      )
+      return
+    }
+
     subirDoc.mutate(
       {
         tipo,
         file: selectedFile,
         numeroCurp,
       },
-      {
-        onSuccess: () => {
-          addToast(`${tipoLabel} subido exitosamente`, 'success')
-          handleClear()
-          onUploadSuccess?.()
-        },
-        onError: (err: Error) => {
-          addToast(err?.message || `Error al subir ${tipoLabel}`, 'error')
-        },
-      }
+      { onSuccess, onError },
     )
   }
 
@@ -345,7 +367,7 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
           <button
             type="button"
             onClick={handleUpload}
-            disabled={subirDoc.isPending}
+            disabled={isEnviando}
             style={{
               padding: '10px 20px',
               background: 'var(--primary, #6366f1)',
@@ -360,10 +382,10 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              opacity: subirDoc.isPending ? 0.7 : 1,
+              opacity: isEnviando ? 0.7 : 1,
             }}
           >
-            {subirDoc.isPending ? (
+            {isEnviando ? (
               <>
                 <span
                   style={{
@@ -421,6 +443,22 @@ export const EmpresaIdentitySection: React.FC<IdentityUploadSectionProps> = ({
   estado = status?.estado ?? 'sin_documentos',
   onUploaded,
 }) => {
+  // La CSF vive en la entidad de la persona moral (`documentoCsf`), así que su
+  // estado se lee del endpoint de verificación de institución. Antes se leía
+  // `status?.tieneCsf` de /usuarios/estado-validacion-identidad, campo que ese
+  // endpoint nunca devuelve (no aplica a personas morales): por eso la tarjeta
+  // de CSF nunca se markaba como subida, aunque la carga hubiera funcionado.
+  const { data: estadoVerificacion } = useEstadoVerificacionInstitucion()
+  const pasoCsf = estadoVerificacion?.pasos?.find(p => p.clave === 'csf')
+  const tieneCsf = pasoCsf?.completado === true
+
+  // Para la persona moral la bandera que manda es `instituciones/{id}.verificada`
+  // (la que el admin aprueba), no el estado de sus documentos de identidad. Se
+  // usa como fuente principal y se cae al `estado` previo si aún no hay respuesta.
+  const verificada = estadoVerificacion?.verificada === true || estado === 'aprobado'
+  const enRevision = !verificada && (tieneCsf || estado === 'pendiente')
+  const estadoVisible = verificada ? 'aprobado' : enRevision ? 'pendiente' : estado
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Tarjeta de estado de la empresa */}
@@ -440,23 +478,23 @@ export const EmpresaIdentitySection: React.FC<IdentityUploadSectionProps> = ({
               width: 44,
               height: 44,
               borderRadius: '50%',
-              background: estado === 'aprobado' ? 'rgba(16,185,129,0.12)' : estado === 'pendiente' ? 'rgba(212,148,76,0.12)' : 'rgba(99,102,241,0.12)',
+              background: estadoVisible === 'aprobado' ? 'rgba(16,185,129,0.12)' : estadoVisible === 'pendiente' ? 'rgba(212,148,76,0.12)' : 'rgba(99,102,241,0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: estado === 'aprobado' ? '#10B981' : estado === 'pendiente' ? '#D4944C' : 'var(--primary)',
+              color: estadoVisible === 'aprobado' ? '#10B981' : estadoVisible === 'pendiente' ? '#D4944C' : 'var(--primary)',
             }}
           >
-            {estado === 'aprobado' ? Icons.shieldCheck({ s: 22 }) : Icons.building({ s: 22 })}
+            {estadoVisible === 'aprobado' ? Icons.shieldCheck({ s: 22 }) : Icons.building({ s: 22 })}
           </div>
           <div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-              {estado === 'aprobado' ? 'Empresa Verificada' : estado === 'pendiente' ? 'Documentos Corporativos en Revisión' : 'Verificación de la Empresa'}
+              {estadoVisible === 'aprobado' ? 'Empresa Verificada' : estadoVisible === 'pendiente' ? 'Documentos Corporativos en Revisión' : 'Verificación de la Empresa'}
             </h3>
             <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '2px 0 0' }}>
-              {estado === 'aprobado'
+              {estadoVisible === 'aprobado'
                 ? 'Tu organización ha sido validada exitosamente con su Constancia de Situación Fiscal (CSF).'
-                : estado === 'pendiente'
+                : estadoVisible === 'pendiente'
                 ? 'Tus documentos oficiales están siendo revisados por nuestro equipo de validación.'
                 : 'Sube la Constancia de Situación Fiscal (CSF) de tu empresa y la identificación oficial del representante legal.'}
             </p>
@@ -489,7 +527,7 @@ export const EmpresaIdentitySection: React.FC<IdentityUploadSectionProps> = ({
           </div>
           <IdentityDocumentUploader
             tipo="csf"
-            isUploaded={Boolean(status?.tieneCsf || status?.archivos?.csf)}
+            isUploaded={tieneCsf && estado !== 'rechazado'}
             onUploadSuccess={onUploaded}
           />
         </div>

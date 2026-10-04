@@ -318,14 +318,18 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       const registerPayload = buildPayload(formData, extra)
 
       // 2. Registrar la cuenta.
-      //    Institución con CSF: multipart/form-data con el campo "csf" (el
-      //    backend la sube a Storage y la guarda como documentoCsf para
-      //    verificación del admin — sustituye la CURP del alta).
+      //    Persona moral (institución O empresa) con CSF: multipart/form-data
+      //    con el campo "csf" (el backend la sube a Storage y la guarda como
+      //    documentoCsf para verificación del admin — sustituye la CURP del
+      //    alta). Ambas comparten la entidad institución, así que el archivo
+      //    va igual para las dos; excluir a la empresa aquí hacía que su CSF se
+      //    descartara en silencio y llegara sin ella a /mi-identidad.
       //    Resto de roles / sin archivo: JSON puro.
       //    SIN header Content-Type manual: el navegador genera el boundary.
       const maybeFile = (formData as Record<string, unknown>)?.csfFile
+      const esPersonaMoral = role === 'institution' || role === 'empresa'
       let regRes
-      if (role === 'institution' && maybeFile instanceof File) {
+      if (esPersonaMoral && maybeFile instanceof File) {
         const fd = new FormData()
         for (const [key, value] of Object.entries(registerPayload)) {
           if (value === undefined || value === null || value === '') continue

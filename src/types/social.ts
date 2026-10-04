@@ -143,6 +143,14 @@ export interface Conversation {
   last_message: string
   last_message_time?: string
   unread: number
+  /**
+   * `true` cuando el socio es un "usuario fantasma": su perfil ya no existe o su
+   * cuenta fue eliminada. El historial se conserva, pero la conversación no admite
+   * respuestas (el backend respondería 403). El backend lo envía como `isDeleted`
+   * y también como el alias semántico `destinatarioActivo`.
+   */
+  isDeleted?: boolean
+  destinatarioActivo?: boolean
   [key: string]: unknown
 }
 
