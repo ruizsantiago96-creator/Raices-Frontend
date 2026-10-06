@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { Icons, hashColor } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useAdminUsers, useToggleUserActive, useChangeUserRole, useDeleteUser, useUpdateUserAdmin } from '../hooks/useUsers'
 import { USERS_UI } from '../constants/usersMessages'
 import type { UsuarioAdmin } from '@/types/admin'
@@ -119,6 +120,8 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
   const [roleConfirm, setRoleConfirm] = useState<UsuarioAdmin | null>(null)
   const [editUser, setEditUser] = useState<UsuarioAdmin | null>(null)
   const [editForm, setEditForm] = useState({ full_name: '', email: '' })
+  const [editError, setEditError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const actionMenuRef = useRef<HTMLDivElement | null>(null)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
 
@@ -168,17 +171,57 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
   }
   const openEdit = (u: UsuarioAdmin) => {
     setEditUser(u)
-    setEditForm({ full_name: u.full_name ?? '', email: u.email ?? '' })
+    setEditForm({ full_name: u.full_name ?? u.nombreCompleto ?? '', email: u.email ?? '' })
+    setEditError(null)
+    setEmailError(null)
     setActionMenuId(null)
   }
   const doEdit = () => {
     if (!editUser) return
-    updateUser.mutate({ id: editUser.id, ...editForm }, {
-      onSuccess: () => { addToast('Usuario actualizado', 'success'); setEditUser(null) },
-      onError: (e: unknown) => {
-        addToast(mapErrorMessage(e), 'error')
+    setEditError(null)
+    setEmailError(null)
+
+    const nameToSave = editForm.full_name.trim()
+    const emailToSave = editForm.email.trim()
+
+    if (!nameToSave) {
+      setEditError('El nombre completo es requerido')
+      return
+    }
+    if (!emailToSave) {
+      setEmailError('El correo electrónico es requerido')
+      return
+    }
+
+    updateUser.mutate(
+      {
+        id: editUser.id,
+        nombreCompleto: nameToSave,
+        full_name: nameToSave,
+        email: emailToSave,
       },
-    })
+      {
+        onSuccess: () => {
+          addToast('Usuario actualizado exitosamente', 'success')
+          setEditUser(null)
+          setEditError(null)
+          setEmailError(null)
+        },
+        onError: (err: unknown) => {
+          const res = (err as { response?: { status?: number; data?: { message?: string } } })?.response
+          if (res?.status === 409) {
+            setEmailError('Este correo electrónico ya pertenece a otra cuenta')
+          } else if (res?.status === 400) {
+            setEmailError('El formato del correo electrónico no es válido')
+          } else if (res?.status === 404) {
+            setEditError('Si el id del usuario no existe en la base de datos')
+          } else {
+            const msg = mapErrorMessage(err) || 'Error al actualizar el usuario'
+            setEditError(msg)
+          }
+        },
+      }
+    )
   }
 
   const inputStyle: React.CSSProperties = {
@@ -206,15 +249,19 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder={USERS_UI.SEARCH_PLACEHOLDER}
             style={inputStyle} />
         </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          style={{ height: 40, padding: '0 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, fontWeight: 500, color: 'var(--fg2)', background: 'var(--bg-surface)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-          <option value="all">{USERS_UI.FILTER_ALL}</option>
-          <option value="admin">{USERS_UI.FILTER_ADMIN}</option>
-          <option value="institution">{USERS_UI.FILTER_INSTITUTION}</option>
-          <option value="tutor">{USERS_UI.FILTER_TUTOR}</option>
-          <option value="pcd">{USERS_UI.FILTER_PCD}</option>
-          <option value="empresa">{USERS_UI.FILTER_EMPRESA}</option>
-        </select>
+        <CustomSelect
+          value={roleFilter}
+          onChange={val => setRoleFilter(val)}
+          minWidth={170}
+          options={[
+            { value: 'all', label: USERS_UI.FILTER_ALL },
+            { value: 'admin', label: USERS_UI.FILTER_ADMIN },
+            { value: 'institution', label: USERS_UI.FILTER_INSTITUTION },
+            { value: 'tutor', label: USERS_UI.FILTER_TUTOR },
+            { value: 'pcd', label: USERS_UI.FILTER_PCD },
+            { value: 'empresa', label: USERS_UI.FILTER_EMPRESA },
+          ]}
+        />
       </div>
 
       {isLoading ? (
@@ -339,21 +386,48 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
               </div>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{USERS_UI.EDIT_TITLE}</h3>
             </div>
+
+            {editError && (
+              <div style={{ fontSize: 13, color: 'var(--color-error)', background: 'color-mix(in oklch, var(--color-error) 10%, transparent)', padding: '10px 14px', borderRadius: 8, marginBottom: 14, fontWeight: 500 }}>
+                {editError}
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>{USERS_UI.EDIT_NAME_LABEL}</label>
-                <input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
-                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+                <input
+                  value={editForm.full_name}
+                  onChange={e => { setEditForm({ ...editForm, full_name: e.target.value }); setEditError(null) }}
+                  placeholder="Nombre completo"
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }}
+                />
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>{USERS_UI.EDIT_EMAIL_LABEL}</label>
-                <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }} />
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => { setEditForm({ ...editForm, email: e.target.value }); setEmailError(null) }}
+                  placeholder="correo@ejemplo.com"
+                  style={{ width: '100%', height: 40, padding: '0 12px', border: emailError ? '1px solid var(--color-error)' : '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-surface)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }}
+                />
+                {emailError && (
+                  <span style={{ fontSize: 12, color: 'var(--color-error)', marginTop: 4, display: 'block', fontWeight: 600 }}>
+                    {emailError}
+                  </span>
+                )}
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
               <button className="btn-secondary" style={{ fontSize: 14, padding: '10px 20px' }} onClick={() => setEditUser(null)}>{USERS_UI.EDIT_CANCEL}</button>
-              <button onClick={doEdit} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{USERS_UI.EDIT_SAVE}</button>
+              <button
+                onClick={doEdit}
+                disabled={updateUser.isPending}
+                style={{ fontSize: 14, padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: updateUser.isPending ? 'not-allowed' : 'pointer', opacity: updateUser.isPending ? 0.7 : 1, fontFamily: 'var(--font-body)' }}
+              >
+                {updateUser.isPending ? 'Guardando...' : USERS_UI.EDIT_SAVE}
+              </button>
             </div>
           </div>
         </div>,

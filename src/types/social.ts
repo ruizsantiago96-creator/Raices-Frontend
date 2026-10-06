@@ -30,6 +30,7 @@ export interface CommunityPost {
   liked_by_me: boolean
   created_at: string
   group_name?: string
+  group_id?: string | number
   grupoId?: string | number
   comment_count: number
   categoriaCreativa?: string
@@ -124,7 +125,16 @@ export interface ForoDetalle extends ForoItem {
   preguntasConRespuestas: PreguntaConRespuestas[]
 }
 
-// ─── Mensajes Directos y Conversaciones ───────────────────────────
+export interface UserSearchResult {
+  id: string | number
+  nombreCompleto: string
+  urlAvatar?: string | null
+  rol?: string
+  ciudad?: string
+  profesion?: string
+  [key: string]: unknown
+}
+
 export interface MessagePartner {
   id: string | number
   email?: string

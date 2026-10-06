@@ -5,6 +5,7 @@ import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentid
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import type { ValidarCsfQrResponse, UpdateInstitucionPayload } from '@/types/institutions'
 
 const CATEGORY_OPTIONS = [
@@ -487,9 +488,11 @@ export default function EditarInstitucionPage() {
             </div>
             <div>
               <label style={labelStyle}>Tipo de plan</label>
-              <select value={form.tipoPlan} onChange={e => updateField('tipoPlan', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                {PLAN_OPTIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
+              <CustomSelect
+                value={form.tipoPlan}
+                onChange={val => updateField('tipoPlan', val)}
+                options={PLAN_OPTIONS}
+              />
             </div>
           </div>
         </div>

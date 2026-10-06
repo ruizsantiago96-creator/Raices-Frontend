@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type CSSProperties } from 'react'
 import { useCreateJob } from '../hooks/useJobs'
 import { useUiStore } from '@shared/stores/uiStore'
+import { CsfRequiredModal } from '@shared/components/CsfRequiredModal'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { JOBS_TOAST, JOBS_UI } from '../constants/jobsMessages'
 import type { CreateJobPayload } from '@/types/jobs'
 
@@ -41,6 +43,8 @@ export default function CreateJobModal({ onClose }: CreateJobModalProps) {
     estado: '',
     inclusivaDiscapacidad: true,
   })
+  const [showCsfModal, setShowCsfModal] = useState(false)
+  const [csfMessage, setCsfMessage] = useState('')
   const createJob = useCreateJob()
   const { addToast } = useUiStore()
 
@@ -55,8 +59,23 @@ export default function CreateJobModal({ onClose }: CreateJobModalProps) {
       addToast(JOBS_TOAST.JOB_CREATED, 'success')
       onClose()
     } catch (err: unknown) {
-      const errorResponse = err as { response?: { data?: { message?: string } } }
-      addToast(errorResponse?.response?.data?.message ?? JOBS_TOAST.JOB_CREATE_FAILED, 'error')
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string | string[]; mensaje?: string } } }
+      const status = axiosErr?.response?.status
+      const rawMsg = axiosErr?.response?.data?.message || axiosErr?.response?.data?.mensaje
+      const serverMsg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || ''
+
+      if (
+        status === 403 ||
+        serverMsg.toLowerCase().includes('constancia') ||
+        serverMsg.toLowerCase().includes('csf')
+      ) {
+        setCsfMessage(
+          serverMsg || 'Tu cuenta requiere cargar la Constancia de Situación Fiscal (CSF) para publicar vacantes.'
+        )
+        setShowCsfModal(true)
+      } else {
+        addToast(serverMsg || JOBS_TOAST.JOB_CREATE_FAILED, 'error')
+      }
     }
   }
 
@@ -70,9 +89,15 @@ export default function CreateJobModal({ onClose }: CreateJobModalProps) {
           <div><label style={labelStyle}>{JOBS_UI.JOB_REQUIREMENTS_LABEL}</label><textarea rows={2} value={form.requisitos} onChange={e => update('requisitos', e.target.value)} placeholder={JOBS_UI.JOB_REQUIREMENTS_PLACEHOLDER} style={{ ...inputStyle, resize: 'vertical' }} /></div>
           <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>{JOBS_UI.MODALITY_LABEL}</label>
-              <select value={form.modalidad} onChange={e => update('modalidad', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                <option value="presencial">{JOBS_UI.MODALITY_PRESENCIAL}</option><option value="remoto">{JOBS_UI.MODALITY_REMOTO}</option><option value="híbrido">{JOBS_UI.MODALITY_HYBRID}</option>
-              </select></div>
+              <CustomSelect
+                value={form.modalidad}
+                onChange={val => update('modalidad', val)}
+                options={[
+                  { value: 'presencial', label: JOBS_UI.MODALITY_PRESENCIAL },
+                  { value: 'remoto', label: JOBS_UI.MODALITY_REMOTO },
+                  { value: 'híbrido', label: JOBS_UI.MODALITY_HYBRID },
+                ]}
+              /></div>
             <div><label style={labelStyle}>{JOBS_UI.SCHEDULE_LABEL}</label><input value={form.horario} onChange={e => update('horario', e.target.value)} placeholder={JOBS_UI.SCHEDULE_PLACEHOLDER} style={inputStyle} /></div>
           </div>
           <div className="grid-2-cols" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -90,6 +115,13 @@ export default function CreateJobModal({ onClose }: CreateJobModalProps) {
           </div>
         </form>
       </div>
+
+      <CsfRequiredModal
+        isOpen={showCsfModal}
+        message={csfMessage}
+        onClose={() => setShowCsfModal(false)}
+        redirectPath="/mi-identidad?tab=verificacion"
+      />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import {
   useSendMessage,
   useMarcarConversacionLeida,
   useDeleteConversation,
+  useSearchUsers,
   isConversacionEliminada,
   nombreParaMostrar,
 } from '../hooks/useMessages'
@@ -17,7 +18,7 @@ import { Icons } from '@shared/components/shared'
 import { SOCIAL_UI, SOCIAL_TOAST, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
-import { FeaturedMember, MessagePartner, Conversation } from '@/types/social'
+import { FeaturedMember, MessagePartner, Conversation, UserSearchResult } from '@/types/social'
 
 /** Extrae el status HTTP de un error de axios sin arrastrar el módulo al componente. */
 function statusDeError(err: unknown): number | undefined {
@@ -234,7 +235,7 @@ export function DirectMessages({
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations()
   const { data: messages = [] } = useMessages(activePartnerId)
-  const { data: members = [] } = useMiembrosDestacados(50) // load up to 50 members to allow starting chats
+  const { data: searchResults = [], isLoading: isSearchingUsers } = useSearchUsers(modalSearchQuery)
   const sendMessage = useSendMessage()
   const marcarLeidos = useMarcarConversacionLeida()
   const deleteConversation = useDeleteConversation()
@@ -246,6 +247,26 @@ export function DirectMessages({
     if (activePartnerId) marcarLeidos.mutate(activePartnerId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePartnerId])
+
+  const handleDeleteChatById = (partnerId: string | number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (deleteConversation.isPending) return
+    if (!window.confirm(SOCIAL_CONFIRM.DELETE_CHAT)) return
+
+    deleteConversation.mutate(partnerId, {
+      onSuccess: () => {
+        if (String(activePartnerId) === String(partnerId)) {
+          setActivePartnerId(null)
+          setActiveNewPartner(null)
+          setText('')
+          setPendingFile(null)
+          setPendingFileName('')
+        }
+        addToast(SOCIAL_TOAST.CHAT_DELETED, 'success')
+      },
+      onError: () => addToast(SOCIAL_TOAST.CHAT_DELETE_FAILED, 'error'),
+    })
+  }
 
   // Sync floating chat partner when it changes (avoids setState-in-effect lint error)
   const floatingPartnerStr = floatingChatPartnerId !== null ? String(floatingChatPartnerId) : null
@@ -420,18 +441,17 @@ export function DirectMessages({
     (conv.partner?.full_name ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredMembers = members.filter(
-    (m: FeaturedMember) =>
-      m.nombreCompleto.toLowerCase().includes(modalSearchQuery.toLowerCase()) &&
-      String(m.id) !== String(currentUserId)
+  const filteredMembers = searchResults.filter(
+    (m: UserSearchResult) => String(m.id) !== String(currentUserId)
   )
 
-  const handleStartNewChat = (member: FeaturedMember) => {
+  const handleStartNewChat = (member: UserSearchResult) => {
     const partnerData: MessagePartner = {
       id: member.id,
       full_name: member.nombreCompleto,
       avatar_url: member.urlAvatar ?? null,
       role: member.rol,
+      city: member.ciudad,
       is_active: true,
     }
     setActiveNewPartner(partnerData)
@@ -666,19 +686,50 @@ export function DirectMessages({
                       {conv.last_message}
                     </div>
                   </div>
-                  {conv.unread > 0 && (
-                    <span
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {conv.unread > 0 && (
+                      <span
+                        style={{
+                          background: 'var(--color-coral)',
+                          color: '#fff',
+                          borderRadius: '50%',
+                          width: 8,
+                          height: 8,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteChatById(conv.partner.id, e)}
+                      title="Eliminar chat"
                       style={{
-                        background: 'var(--color-coral)',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        width: 8,
-                        height: 8,
-                        flexShrink: 0,
-                        marginLeft: 8,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--fg3)',
+                        padding: 4,
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0.6,
+                        transition: 'all 0.15s ease',
                       }}
-                    />
-                  )}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.opacity = '1'
+                        e.currentTarget.style.color = 'var(--color-error)'
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.opacity = '0.6'
+                        e.currentTarget.style.color = 'var(--fg3)'
+                        e.currentTarget.style.background = 'none'
+                      }}
+                    >
+                      {Icons.trash({ s: 14 })}
+                    </button>
+                  </div>
                 </button>
               )
             })
@@ -734,7 +785,39 @@ export function DirectMessages({
             </div>
 
             {/* Opciones de Ventana / Menú estilo Reddit */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--fg3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--fg3)' }}>
+              {/* Botón directo Borrar Chat */}
+              <button
+                type="button"
+                onClick={handleDeleteChat}
+                disabled={deleteConversation.isPending}
+                title="Borrar chat"
+                aria-label="Borrar chat"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: deleteConversation.isPending ? 'default' : 'pointer',
+                  color: 'var(--fg3)',
+                  padding: 6,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                  opacity: deleteConversation.isPending ? 0.5 : 1,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = 'var(--color-error)'
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = 'var(--fg3)'
+                  e.currentTarget.style.background = 'none'
+                }}
+              >
+                {Icons.trash({ s: 17 })}
+              </button>
+
               {/* Menú contextual de la conversación (⋮) */}
               <button
                 ref={menuBtnRef}
@@ -1663,8 +1746,12 @@ export function DirectMessages({
             </div>
 
             {/* Members List */}
-            <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-              {filteredMembers.length === 0 ? (
+            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              {isSearchingUsers ? (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg3)', fontSize: 13 }}>
+                  Buscando miembros de la comunidad...
+                </div>
+              ) : filteredMembers.length === 0 ? (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg3)', fontSize: 13 }}>
                   No se encontraron miembros de la comunidad
                 </div>
@@ -1729,7 +1816,7 @@ export function DirectMessages({
                         </div>
                       )}
                     </div>
-                    <div style={{ minWidth: 0 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
                           fontWeight: 700,
@@ -1742,8 +1829,10 @@ export function DirectMessages({
                       >
                         {m.nombreCompleto}
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--primary)', fontWeight: 600 }}>
-                        {(m.rol && ROLE_LABELS[m.rol]) ?? m.rol}
+                      <div style={{ fontSize: 11.5, color: 'var(--primary)', fontWeight: 600, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span>{(m.rol && ROLE_LABELS[m.rol]) ?? m.rol ?? 'Miembro'}</span>
+                        {m.ciudad && <span style={{ color: 'var(--fg3)', fontWeight: 400 }}>• {m.ciudad}</span>}
+                        {m.profesion && <span style={{ color: 'var(--fg3)', fontWeight: 400 }}>• {m.profesion}</span>}
                       </div>
                     </div>
                   </button>

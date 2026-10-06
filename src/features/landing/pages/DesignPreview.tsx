@@ -3,6 +3,7 @@
  * Primary: #01ADFF (Blue) | Secondary: #F1FA3F (Yellow/Lime)
  */
 import { BrandMark } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 
 const COLORS = {
   primary: '#01ADFF',
@@ -167,11 +168,15 @@ export default function DesignPreview() {
             </div>
             <div>
               <label style={labelStyle}>Seleccionar</label>
-              <select style={inputStyle}>
-                <option>Opción 1</option>
-                <option>Opción 2</option>
-                <option>Opción 3</option>
-              </select>
+              <CustomSelect
+                value="Opción 1"
+                onChange={() => {}}
+                options={[
+                  { value: 'Opción 1', label: 'Opción 1' },
+                  { value: 'Opción 2', label: 'Opción 2' },
+                  { value: 'Opción 3', label: 'Opción 3' },
+                ]}
+              />
             </div>
           </div>
         </section>

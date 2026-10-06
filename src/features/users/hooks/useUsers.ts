@@ -81,8 +81,59 @@ export function useDeleteUser() {
 export function useUpdateUserAdmin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }: UpdateUserAdminPayload) =>
-      api.put(`/administracion/usuarios/${id}`, data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    mutationFn: async ({ id, ...data }: UpdateUserAdminPayload) => {
+      if (!id || id === 'undefined') {
+        throw new Error('ID de usuario no proporcionado')
+      }
+      const nombreCompleto = data.nombreCompleto ?? data.full_name ?? ''
+      const payload: Record<string, unknown> = {
+        nombreCompleto,
+        full_name: nombreCompleto,
+        email: data.email,
+      }
+      if (data.role || data.rol) {
+        payload.rol = data.rol ?? data.role
+        payload.role = data.role ?? data.rol
+      }
+
+      try {
+        const res = await api.patch(`/administracion/usuarios/${id}`, payload)
+        return res.data
+      } catch (err: unknown) {
+        const errRes = err as { response?: { status?: number } }
+        if (errRes.response?.status === 404) {
+          try {
+            const resAlt = await api.put(`/administracion/usuarios/${id}`, payload)
+            return resAlt.data
+          } catch (err2: unknown) {
+            const err2Res = err2 as { response?: { status?: number } }
+            if (err2Res.response?.status === 404) {
+              const resAlt2 = await api.put(`/usuarios/${id}`, payload)
+              return resAlt2.data
+            }
+            throw err2
+          }
+        }
+        throw err
+      }
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+      qc.setQueryData<UsuarioAdmin[]>(['admin', 'users'], (old = []) => {
+        return old.map(u => {
+          if (String(u.id) === String(variables.id)) {
+            const newName = (variables.nombreCompleto ?? variables.full_name ?? u.full_name) as string
+            const newEmail = (variables.email ?? u.email) as string
+            return {
+              ...u,
+              full_name: newName,
+              nombreCompleto: newName,
+              email: newEmail,
+            }
+          }
+          return u
+        })
+      })
+    },
   })
 }

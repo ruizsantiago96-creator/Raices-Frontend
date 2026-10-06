@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FC, ReactNode } from 'react'
+import { useState, useEffect, FC, ReactNode } from 'react'
 import { Icons } from '@shared/components/shared'
 import { usePermisos, useUpdatePermisos, DEFAULT_PERMISOS, PERMISOS_CONFIG } from '../hooks/usePermisos'
 
@@ -10,48 +10,114 @@ export interface PermissionsModalProps {
 
 type PermisoKey = 'puedeComentar' | 'puedeInteractuar' | 'accesoMultimedia' | 'accesoChat' | 'puedePublicar'
 
+function getStoredPermisos(depId: string | number): Record<string, boolean> | null {
+  try {
+    const raw = localStorage.getItem(`raices_dep_permisos_${depId}`)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function extractBooleanVal(depId: string | number, data: Record<string, unknown> | null | undefined, key: PermisoKey, fallback: boolean): boolean {
+  const stored = getStoredPermisos(depId)
+  if (stored && typeof stored[key] === 'boolean') {
+    return stored[key]
+  }
+
+  if (!data) return fallback
+
+  const candidates: unknown[] = []
+
+  if (data.acciones !== undefined) candidates.push(data.acciones)
+  if (data.permisos !== undefined) candidates.push(data.permisos)
+  if (data.modulos !== undefined) candidates.push(data.modulos)
+
+  const datos = data.datos as Record<string, unknown> | undefined
+  if (datos) {
+    if (datos.acciones !== undefined) candidates.push(datos.acciones)
+    if (datos.permisos !== undefined) candidates.push(datos.permisos)
+    if (datos.modulos !== undefined) candidates.push(datos.modulos)
+    candidates.push(datos)
+  }
+  candidates.push(data)
+
+  for (const target of candidates) {
+    if (!target) continue
+
+    if (Array.isArray(target)) {
+      const lowerArr = target.map(item => String(item).toLowerCase())
+      return lowerArr.includes(key.toLowerCase())
+    }
+
+    if (typeof target === 'object') {
+      const rec = target as Record<string, unknown>
+      if (typeof rec[key] === 'boolean') {
+        return rec[key] as boolean
+      }
+      const keyMatch = Object.keys(rec).find(k => k.toLowerCase() === key.toLowerCase())
+      if (keyMatch && typeof rec[keyMatch] === 'boolean') {
+        return rec[keyMatch] as boolean
+      }
+    }
+  }
+
+  return fallback
+}
+
 export default function PermissionsModal({ dependienteId, dependienteName, onClose }: PermissionsModalProps) {
   const { data: permisosData, isLoading: loadingPermisos } = usePermisos(dependienteId)
   const updatePermisos = useUpdatePermisos()
 
-  // Estado local de los permisos (se inicializa con los datos del backend o defaults)
-  const [permisos, setPermisos] = useState(DEFAULT_PERMISOS)
-  const initializedRef = useRef(false)
+  // Estado local de los permisos (se inicializa con datos locales/backend o defaults)
+  const [permisos, setPermisos] = useState<Record<PermisoKey, boolean>>(() => ({
+    puedeComentar: extractBooleanVal(dependienteId, permisosData, 'puedeComentar', DEFAULT_PERMISOS.puedeComentar),
+    puedeInteractuar: extractBooleanVal(dependienteId, permisosData, 'puedeInteractuar', DEFAULT_PERMISOS.puedeInteractuar),
+    accesoMultimedia: extractBooleanVal(dependienteId, permisosData, 'accesoMultimedia', DEFAULT_PERMISOS.accesoMultimedia),
+    accesoChat: extractBooleanVal(dependienteId, permisosData, 'accesoChat', DEFAULT_PERMISOS.accesoChat),
+    puedePublicar: extractBooleanVal(dependienteId, permisosData, 'puedePublicar', DEFAULT_PERMISOS.puedePublicar),
+  }))
 
-  // Sincronizar con datos del backend cuando lleguen (una sola vez)
+  // Sincronizar cuando lleguen datos
   useEffect(() => {
-    if (permisosData && !initializedRef.current) {
-      initializedRef.current = true
-      setPermisos({
-        puedeComentar: permisosData.puedeComentar ?? DEFAULT_PERMISOS.puedeComentar,
-        puedeInteractuar: permisosData.puedeInteractuar ?? DEFAULT_PERMISOS.puedeInteractuar,
-        accesoMultimedia: permisosData.accesoMultimedia ?? DEFAULT_PERMISOS.accesoMultimedia,
-        accesoChat: permisosData.accesoChat ?? DEFAULT_PERMISOS.accesoChat,
-        puedePublicar: permisosData.puedePublicar ?? DEFAULT_PERMISOS.puedePublicar,
-      })
-    }
-  }, [permisosData])
+    setPermisos({
+      puedeComentar: extractBooleanVal(dependienteId, permisosData, 'puedeComentar', DEFAULT_PERMISOS.puedeComentar),
+      puedeInteractuar: extractBooleanVal(dependienteId, permisosData, 'puedeInteractuar', DEFAULT_PERMISOS.puedeInteractuar),
+      accesoMultimedia: extractBooleanVal(dependienteId, permisosData, 'accesoMultimedia', DEFAULT_PERMISOS.accesoMultimedia),
+      accesoChat: extractBooleanVal(dependienteId, permisosData, 'accesoChat', DEFAULT_PERMISOS.accesoChat),
+      puedePublicar: extractBooleanVal(dependienteId, permisosData, 'puedePublicar', DEFAULT_PERMISOS.puedePublicar),
+    })
+  }, [permisosData, dependienteId])
 
   const togglePermiso = (key: PermisoKey) => {
-    if (isSaving) return // Evitar race conditions con toggles rápidos
-    
-    setPermisos(prevPermisos => {
-      const previousValue = prevPermisos[key]
-      const newValue = !previousValue
-      const updatedPermisos = { ...prevPermisos, [key]: newValue }
+    if (updatePermisos.isPending) return
 
-      updatePermisos.mutate(
-        { id: dependienteId, permisos: updatedPermisos } as unknown as Parameters<typeof updatePermisos.mutate>[0],
-        {
-          onError: () => {
-            // Revertir atómicamente con el valor previo capturado
-            setPermisos(current => ({ ...current, [key]: previousValue }))
-          },
-        }
-      )
+    const previousValue = permisos[key]
+    const newValue = !previousValue
+    const updatedPermisos = { ...permisos, [key]: newValue }
 
-      return updatedPermisos
-    })
+    setPermisos(updatedPermisos)
+    try {
+      localStorage.setItem(`raices_dep_permisos_${dependienteId}`, JSON.stringify(updatedPermisos))
+    } catch {
+      // ignore
+    }
+
+    updatePermisos.mutate(
+      { id: dependienteId, permisos: updatedPermisos },
+      {
+        onError: () => {
+          const reverted = { ...updatedPermisos, [key]: previousValue }
+          setPermisos(reverted)
+          try {
+            localStorage.setItem(`raices_dep_permisos_${dependienteId}`, JSON.stringify(reverted))
+          } catch {
+            // ignore
+          }
+        },
+      }
+    )
   }
 
   const isSaving = updatePermisos.isPending
@@ -60,8 +126,8 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
     <div onClick={onClose} className="modal-overlay" style={{ zIndex: 1000, overflowY: 'auto' }}>
       <div 
         onClick={e => e.stopPropagation()} 
-        className="modal-card" 
-        style={{ maxWidth: 480, width: '100%', margin: 'auto' }}
+        className="glass-card" 
+        style={{ maxWidth: 480, width: '100%', margin: 'auto', background: 'var(--bg-surface)', padding: 28 }}
       >
         {/* ── Header ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -103,7 +169,9 @@ export default function PermissionsModal({ dependienteId, dependienteName, onClo
             gap: 12,
           }}
         >
-          <span style={{ fontSize: 20 }}>🛡️</span>
+          <div style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {Icons.shield({ s: 20 })}
+          </div>
           <p style={{ fontSize: 13, color: 'var(--fg1)', margin: 0, lineHeight: 1.4 }}>
             Como tutor, puedes activar o desactivar funciones según las necesidades de esta persona.
           </p>

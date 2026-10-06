@@ -10,6 +10,8 @@ import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
 import PerfilPostulanteModal from '../components/PerfilPostulanteModal'
 import EmpresaOnboardingModal, { useEmpresaOnboardingPendiente } from '../components/EmpresaOnboardingModal'
+import { CsfRequiredModal } from '@shared/components/CsfRequiredModal'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import {
   useMyJobPostings,
   useCreateJobPosting,
@@ -111,6 +113,8 @@ function VacantesTab() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingVacante, setEditingVacante] = useState<VacanteItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<VacanteItem | null>(null)
+  const [showCsfModal, setShowCsfModal] = useState(false)
+  const [csfMessage, setCsfMessage] = useState('')
 
   // Form state
   const [formPuesto, setFormPuesto] = useState('')
@@ -201,7 +205,23 @@ function VacantesTab() {
     }
 
     const onError = (e: unknown) => {
-      addToast(mapErrorMessage(e), 'error')
+      const axiosErr = e as { response?: { status?: number; data?: { message?: string | string[]; mensaje?: string } } }
+      const status = axiosErr?.response?.status
+      const rawMsg = axiosErr?.response?.data?.message || axiosErr?.response?.data?.mensaje
+      const serverMsg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || ''
+
+      if (
+        status === 403 ||
+        serverMsg.toLowerCase().includes('constancia') ||
+        serverMsg.toLowerCase().includes('csf')
+      ) {
+        const displayMsg =
+          serverMsg || 'Tu cuenta requiere cargar la Constancia de Situación Fiscal (CSF) para publicar vacantes.'
+        setCsfMessage(displayMsg)
+        setShowCsfModal(true)
+      } else {
+        addToast(mapErrorMessage(e), 'error')
+      }
     }
 
     if (editingVacante) {
@@ -345,31 +365,31 @@ function VacantesTab() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={labelStyle}>Área del puesto</label>
-                  <select value={formArea} onChange={e => setFormArea(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {AREAS.map(area => (
-                      <option key={area} value={area}>{area}</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={formArea}
+                    onChange={val => setFormArea(val)}
+                    options={AREAS.map(area => ({ value: area, label: area }))}
+                  />
                 </div>
 
                 <div>
                   <label style={labelStyle}>Modalidad de trabajo</label>
-                  <select value={formModalidad} onChange={e => setFormModalidad(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {MODALIDADES.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={formModalidad}
+                    onChange={val => setFormModalidad(val)}
+                    options={MODALIDADES.map(m => ({ value: m, label: m }))}
+                  />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={labelStyle}>Tipo de jornada</label>
-                  <select value={formJornada} onChange={e => setFormJornada(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {JORNADAS.map(j => (
-                      <option key={j} value={j}>{j}</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={formJornada}
+                    onChange={val => setFormJornada(val)}
+                    options={JORNADAS.map(j => ({ value: j, label: j }))}
+                  />
                 </div>
 
                 <div>
@@ -538,6 +558,14 @@ function VacantesTab() {
         </div>,
         document.body
       )}
+
+      {/* Modal: Alerta de CSF requerida (Error 403 Forbidden) */}
+      <CsfRequiredModal
+        isOpen={showCsfModal}
+        message={csfMessage}
+        onClose={() => setShowCsfModal(false)}
+        redirectPath="/mi-identidad?tab=verificacion"
+      />
     </div>
   )
 }

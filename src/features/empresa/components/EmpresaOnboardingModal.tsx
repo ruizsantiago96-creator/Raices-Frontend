@@ -18,6 +18,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useMiInstitucion, useUpdateMiInstitucion } from '@features/institutions'
 import { useEsEmpresa } from '@features/auth/lib/empresaRole'
@@ -339,24 +340,15 @@ export default function EmpresaOnboardingModal({
             <legend style={{ ...labelStyle, marginBottom: 8, padding: 0 }}>
               Tipo de categoría empresarial <span aria-hidden="true" style={{ color: 'var(--color-error)' }}>*</span>
             </legend>
-            <select
+            <CustomSelect
               value={categoria}
-              onChange={e => setCategoria(e.target.value)}
-              aria-required="true"
-              aria-invalid={tocado && faltaCategoria}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-                borderColor: tocado && faltaCategoria ? 'var(--color-error)' : 'var(--border-color)',
-              }}
-            >
-              <option value="">Selecciona una categoría…</option>
-              {CATEGORIAS_EMPRESA.map(c => (
-                <option key={c.value} value={c.value}>
-                  {c.label} — {c.desc}
-                </option>
-              ))}
-            </select>
+              onChange={val => setCategoria(val)}
+              placeholder="Selecciona una categoría…"
+              options={CATEGORIAS_EMPRESA.map(c => ({
+                value: c.value,
+                label: `${c.label} — ${c.desc}`,
+              }))}
+            />
             {categoria && (
               <p style={{ fontSize: 12.5, color: 'var(--fg3)', margin: '6px 0 0' }}>
                 Se guardará como <strong>{ETIQUETA_CAMPO[categoria] ?? categoria}</strong>.

@@ -62,7 +62,30 @@ export async function updateDependentFeaturesPatch(
   features: DependentFeatures
 ): Promise<{ id: string | number; features: DependentFeatures }> {
   try {
-    const { data } = await api.patch(`/usuarios/dependientes/${dependienteId}/features`, features)
+    const payload = {
+      modulos: features,
+      features,
+      permisos: features,
+      ...features,
+    }
+    let data
+    try {
+      const res = await api.put(`/tutores/dependientes/${dependienteId}/permisos`, payload)
+      data = res.data
+    } catch {
+      try {
+        const res = await api.patch(`/tutores/dependientes/${dependienteId}/permisos`, payload)
+        data = res.data
+      } catch {
+        try {
+          const res = await api.put(`/usuarios/dependientes/${dependienteId}/permisos`, payload)
+          data = res.data
+        } catch {
+          const res = await api.patch(`/usuarios/dependientes/${dependienteId}/permisos`, payload)
+          data = res.data
+        }
+      }
+    }
     return data
   } catch (error) {
     throw extractError(error)
@@ -70,14 +93,42 @@ export async function updateDependentFeaturesPatch(
 }
 
 /**
- * Fetcher: actualiza las features de una cuenta PCD vinculada (PATCH).
+ * Fetcher: actualiza las features de una cuenta PCD vinculada (PATCH/PUT).
  */
 export async function updatePCDLinkedFeaturesPatch(
   pcdId: string | number,
   features: DependentFeatures
 ): Promise<{ id: string | number; features: DependentFeatures }> {
   try {
-    const { data } = await api.patch(`/usuarios/vincular-pcd/${pcdId}/features`, features)
+    const payload = {
+      modulos: features,
+      features,
+      permisos: features,
+      ...features,
+    }
+    let data
+    try {
+      const res = await api.put(`/tutores/dependientes/${pcdId}/permisos`, payload)
+      data = res.data
+    } catch {
+      try {
+        const res = await api.patch(`/tutores/dependientes/${pcdId}/permisos`, payload)
+        data = res.data
+      } catch {
+        try {
+          const res = await api.put(`/usuarios/dependientes/${pcdId}/permisos`, payload)
+          data = res.data
+        } catch {
+          try {
+            const res = await api.patch(`/usuarios/dependientes/${pcdId}/permisos`, payload)
+            data = res.data
+          } catch {
+            const res = await api.patch(`/usuarios/vincular-pcd/${pcdId}/features`, features)
+            data = res.data
+          }
+        }
+      }
+    }
     return data
   } catch (error) {
     throw extractError(error)

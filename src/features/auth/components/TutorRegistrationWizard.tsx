@@ -407,20 +407,54 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       const regRes = await api.post('/autenticacion/registro', registerPayload)
       const authResult = regRes.data
 
-      let tokenAcceso = authResult?.tokenAcceso || authResult?.token_acceso || authResult?.token || authResult?.datos?.tokenAcceso
-      let tokenRefresco = authResult?.tokenRefresco || authResult?.token_refresco || null
-      let usuarioObj = authResult?.usuario || authResult?.user || authResult?.datos?.usuario
+      let tokenAcceso =
+        authResult?.tokenAcceso ||
+        authResult?.token_acceso ||
+        authResult?.token ||
+        authResult?.datos?.tokenAcceso ||
+        authResult?.data?.tokenAcceso ||
+        authResult?.data?.token
+      let tokenRefresco =
+        authResult?.tokenRefresco ||
+        authResult?.token_refresco ||
+        authResult?.refreshToken ||
+        null
+      let usuarioObj =
+        authResult?.usuario ||
+        authResult?.user ||
+        authResult?.datos?.usuario ||
+        authResult?.data?.usuario
 
-      if (!tokenAcceso) {
+      if (!tokenAcceso && !authResult?.requiereInicioSesion) {
         try {
-          const loginRes = await api.post('/autenticacion/login', {
-            email: generalForm.email,
-            password: generalForm.password,
-          })
+          let loginRes
+          try {
+            loginRes = await api.post('/autenticacion/inicio-sesion', {
+              email: generalForm.email,
+              password: generalForm.password,
+            })
+          } catch {
+            loginRes = await api.post('/autenticacion/login', {
+              email: generalForm.email,
+              password: generalForm.password,
+            })
+          }
           const lData = loginRes.data
-          tokenAcceso = lData?.tokenAcceso || lData?.token_acceso || lData?.token
-          tokenRefresco = lData?.tokenRefresco || lData?.token_refresco || null
-          if (lData?.usuario) usuarioObj = lData.usuario
+          tokenAcceso =
+            lData?.tokenAcceso ||
+            lData?.token_acceso ||
+            lData?.token ||
+            lData?.datos?.tokenAcceso ||
+            lData?.data?.tokenAcceso ||
+            lData?.data?.token
+          tokenRefresco =
+            lData?.tokenRefresco ||
+            lData?.token_refresco ||
+            lData?.refreshToken ||
+            null
+          if (lData?.usuario || lData?.user || lData?.datos?.usuario || lData?.data?.usuario) {
+            usuarioObj = lData?.usuario || lData?.user || lData?.datos?.usuario || lData?.data?.usuario
+          }
         } catch (loginErr) {
           console.warn('[TutorRegistrationWizard] Auto-login fallback notice:', loginErr)
         }
@@ -466,6 +500,9 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         nav('/completar-perfil', { replace: true })
       } else {
         addToast('¡Cuenta creada exitosamente! Inicia sesión para continuar.', 'success')
+        if (onGoToLogin) {
+          onGoToLogin(generalForm.email)
+        }
         nav('/auth?mode=login', { replace: true })
       }
     } catch (err: any) {

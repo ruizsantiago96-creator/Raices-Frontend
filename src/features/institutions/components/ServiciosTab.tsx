@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icons } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useMiInstitucion, useUpdateMiInstitucion } from '../hooks/useInstitutions'
 import { useUiStore } from '@shared/stores/uiStore'
 
@@ -354,15 +355,11 @@ export default function ServiciosTab() {
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 6 }}>
                     Categoría
                   </label>
-                  <select
+                  <CustomSelect
                     value={formCategoria}
-                    onChange={e => setFormCategoria(e.target.value as ServicioItem['categoria'])}
-                    style={{ width: '100%', height: 42, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--border-color)', background: 'var(--bg-surface)', fontSize: 14, outline: 'none' }}
-                  >
-                    {CATEGORIAS.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                    onChange={val => setFormCategoria(val as ServicioItem['categoria'])}
+                    options={CATEGORIAS.map(cat => ({ value: cat, label: cat }))}
+                  />
                 </div>
 
                 <div>

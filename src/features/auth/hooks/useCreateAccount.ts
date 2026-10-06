@@ -358,21 +358,31 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
       // 5. Si no hay token en la respuesta del registro, intentar auto-login
       if (!authResult.tokenAcceso) {
         try {
-          const loginRes = await api.post(AUTH_ENDPOINTS.LOGIN.path, {
-            email: registerPayload.email,
-            password: registerPayload.password,
-          })
+          let loginRes
+          try {
+            loginRes = await api.post(AUTH_ENDPOINTS.LOGIN.path, {
+              email: registerPayload.email,
+              password: registerPayload.password,
+            })
+          } catch {
+            loginRes = await api.post('/autenticacion/login', {
+              email: registerPayload.email,
+              password: registerPayload.password,
+            })
+          }
           const lr = loginRes.data
-          if (lr.tokenAcceso) {
-            const usuarioLogin: User | null = lr.usuario ? {
-              id: lr.usuario.id,
-              email: lr.usuario.email,
-              role: normalizeRole(lr.usuario.rol),
-              full_name: lr.usuario.nombreCompleto,
-              features: lr.usuario.features ?? {},
+          const tokenAcceso = lr?.tokenAcceso || lr?.token_acceso || lr?.token || lr?.datos?.tokenAcceso || lr?.data?.tokenAcceso || lr?.data?.token
+          if (tokenAcceso) {
+            const uObj = lr.usuario || lr.user || lr.datos?.usuario || lr.data?.usuario
+            const usuarioLogin: User | null = uObj ? {
+              id: uObj.id,
+              email: uObj.email || registerPayload.email,
+              role: normalizeRole(uObj.rol),
+              full_name: uObj.nombreCompleto || '',
+              features: uObj.features ?? {},
             } : null
 
-            setAuth(lr.tokenAcceso, usuarioLogin, lr.tokenRefresco ?? null, rememberMe)
+            setAuth(tokenAcceso, usuarioLogin, lr.tokenRefresco ?? lr.token_refresco ?? lr.refreshToken ?? null, rememberMe)
 
             const postStepsResult: Array<{ name: string; success: boolean; error?: string; skipped?: boolean }> = []
             for (const step of postSteps) {
@@ -394,8 +404,8 @@ export function useCreateAccount<TForm = Record<string, unknown>, TExtra = Recor
               success: true,
               requiresLogin: false,
               user: usuarioLogin,
-              token: lr.tokenAcceso,
-              refreshToken: lr.tokenRefresco ?? null,
+              token: tokenAcceso,
+              refreshToken: lr.tokenRefresco ?? lr.token_refresco ?? lr.refreshToken ?? null,
               message: 'Registro completado exitosamente.',
               postStepsResult,
             }

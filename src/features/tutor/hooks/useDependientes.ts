@@ -234,9 +234,22 @@ export function useUpdateDependentFeaturesPatch() {
   return useMutation<{ id: string | number; features: DependentFeatures }, Error, { id: string | number; features: DependentFeatures }>({
     mutationFn: async ({ id, features }) =>
       (await updateDependentFeaturesPatch(String(id), features)) as { id: string | number; features: DependentFeatures },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const idStr = String(variables.id)
+      qc.invalidateQueries({ queryKey: ['permisos', idStr] })
+      qc.invalidateQueries({ queryKey: ['dependiente', idStr] })
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
+
+      qc.setQueryData(['dependientes'], (old: Dependiente[] | undefined) => {
+        if (!Array.isArray(old)) return old
+        return old.map(dep => {
+          if (String(dep.id) === idStr || String(dep.pcdUserId) === idStr) {
+            return { ...dep, features: variables.features }
+          }
+          return dep
+        })
+      })
     },
   })
 }
@@ -250,9 +263,22 @@ export function useUpdatePCDLinkedFeaturesPatch() {
   return useMutation<{ id: string | number; features: DependentFeatures }, Error, { pcdId: string | number; features: DependentFeatures }>({
     mutationFn: async ({ pcdId, features }) =>
       (await updatePCDLinkedFeaturesPatch(String(pcdId), features)) as { id: string | number; features: DependentFeatures },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const idStr = String(variables.pcdId)
+      qc.invalidateQueries({ queryKey: ['permisos', idStr] })
+      qc.invalidateQueries({ queryKey: ['dependiente', idStr] })
       qc.invalidateQueries({ queryKey: ['dependientes'] })
       qc.invalidateQueries({ queryKey: ['mis-personas'] })
+
+      qc.setQueryData(['dependientes'], (old: Dependiente[] | undefined) => {
+        if (!Array.isArray(old)) return old
+        return old.map(dep => {
+          if (String(dep.id) === idStr || String(dep.pcdUserId) === idStr) {
+            return { ...dep, features: variables.features }
+          }
+          return dep
+        })
+      })
     },
   })
 }

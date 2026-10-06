@@ -4,6 +4,7 @@ import { useDependientes } from '@features/tutor'
 import { useApplyJob } from '../hooks/useJobs'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { JOBS_TOAST, JOBS_UI } from '../constants/jobsMessages'
 import CandidateOption from './CandidateOption'
 import CvDocumentPreview from './CvDocumentPreview'
@@ -297,14 +298,16 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
                 {loadingDependents ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--bg-warm)', borderRadius: 'var(--radius-md)', color: 'var(--fg3)', fontSize: 14 }}>{Icons.loader({ s: 14 })} {JOBS_UI.CANDIDATE_LOADING}</div>
                 ) : (
-                  <select value={selectedCandidateId ? String(selectedCandidateId) : ''} onChange={(e) => setSelectedCandidateId(e.target.value || null)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    <option value="">Selecciona un dependiente...</option>
-                    {candidateType === 'managed' ? (
-                      managedProfiles.length > 0 ? managedProfiles.map(dep => <option key={dep.id} value={dep.id}>{String(dep.nombreCompleto || dep.nombre || '')} ({String(dep.parentesco || '')})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_MANAGED}</option>
-                    ) : (
-                      linkedAccounts.length > 0 ? linkedAccounts.map(dep => <option key={dep.id} value={dep.id}>{String(dep.nombreCompleto || dep.nombre || '')} ({String(dep.parentesco || '')})</option>) : <option value="" disabled>{JOBS_UI.CANDIDATE_NO_LINKED}</option>
-                    )}
-                  </select>
+                  <CustomSelect
+                    value={selectedCandidateId ? String(selectedCandidateId) : ''}
+                    onChange={val => setSelectedCandidateId(val ? String(val) : null)}
+                    placeholder="Selecciona un dependiente..."
+                    options={
+                      candidateType === 'managed'
+                        ? managedProfiles.map(dep => ({ value: String(dep.id), label: `${String(dep.nombreCompleto || dep.nombre || '')} (${String(dep.parentesco || '')})` }))
+                        : linkedAccounts.map(dep => ({ value: String(dep.id), label: `${String(dep.nombreCompleto || dep.nombre || '')} (${String(dep.parentesco || '')})` }))
+                    }
+                  />
                 )}
               </div>
             )}

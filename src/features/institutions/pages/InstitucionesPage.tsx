@@ -5,6 +5,7 @@ import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavo
 import { useRegistrarInteraccion } from '../hooks/useInteractions'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons, CategoryTag, CATEGORY_COLORS } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useAuthStore } from '@features/auth'
 import { getToken } from '@shared/lib/storage'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
@@ -207,9 +208,11 @@ export default function InstitucionesPage() {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
             <div style={{ flex: '1 1 180px', minWidth: 160 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Tipo de discapacidad</label>
-              <select value={tipoDiscapacidad} onChange={e => setTipoDiscapacidad(e.target.value)} style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-                {DISABILITY_TYPES.map(dt => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
-              </select>
+              <CustomSelect
+                value={tipoDiscapacidad}
+                onChange={val => setTipoDiscapacidad(val)}
+                options={DISABILITY_TYPES.map(dt => ({ value: dt.value, label: dt.label }))}
+              />
             </div>
             <div style={{ flex: '1 1 180px', minWidth: 160 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--fg2)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>Ciudad</label>

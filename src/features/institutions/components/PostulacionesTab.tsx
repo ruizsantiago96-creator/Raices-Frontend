@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, LeafIcon } from '@shared/components/shared'
+import { CsfRequiredModal } from '@shared/components/CsfRequiredModal'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useMyJobPostings, useCreateJobPosting, useDeleteJobPosting, useToggleJobStatus } from '../hooks/useInstitutionJobs'
 import { PORTAL_UI, PORTAL_TOAST } from '../constants/institutionPortalMessages'
 import BackendFallback from '@shared/components/BackendFallback'
@@ -32,6 +34,8 @@ function CreateJobModal({ onClose }: CreateJobModalProps) {
   const [empresa, setEmpresa] = useState(() => myInstitution?.nombre || user?.full_name || '')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [aiCardDismissed, setAiCardDismissed] = useState(false)
+  const [showCsfModal, setShowCsfModal] = useState(false)
+  const [csfMessage, setCsfMessage] = useState('')
   const [locationInput, setLocationInput] = useState(() => {
     return `${myInstitution?.ciudad || ''}${myInstitution?.state || myInstitution?.estado ? `, ${myInstitution.state || myInstitution.estado}` : ''}`
   })
@@ -120,8 +124,23 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
       addToast(PORTAL_TOAST.JOB_CREATED, 'success')
       onClose()
     } catch (err: unknown) {
-      const errorResponse = err as { response?: { data?: { message?: string } } }
-      addToast(errorResponse?.response?.data?.message ?? PORTAL_TOAST.JOB_CREATE_FAILED, 'error')
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string | string[]; mensaje?: string } } }
+      const status = axiosErr?.response?.status
+      const rawMsg = axiosErr?.response?.data?.message || axiosErr?.response?.data?.mensaje
+      const serverMsg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || ''
+
+      if (
+        status === 403 ||
+        serverMsg.toLowerCase().includes('constancia') ||
+        serverMsg.toLowerCase().includes('csf')
+      ) {
+        setCsfMessage(
+          serverMsg || 'Tu cuenta requiere cargar la Constancia de Situación Fiscal (CSF) para publicar vacantes.'
+        )
+        setShowCsfModal(true)
+      } else {
+        addToast(serverMsg || PORTAL_TOAST.JOB_CREATE_FAILED, 'error')
+      }
     }
   }
 
@@ -272,28 +291,28 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelStylePremium}>Modalidad</label>
-              <select 
-                value={form.modalidad} 
-                onChange={e => update('modalidad', e.target.value)} 
-                style={{ ...inputStylePremium, cursor: 'pointer' }}
-              >
-                <option value="presencial">Presencial</option>
-                <option value="remoto">Remoto</option>
-                <option value="híbrido">Híbrido</option>
-              </select>
+              <CustomSelect
+                value={form.modalidad ?? 'presencial'}
+                onChange={val => update('modalidad', String(val))}
+                options={[
+                  { value: 'presencial', label: 'Presencial' },
+                  { value: 'remoto', label: 'Remoto' },
+                  { value: 'híbrido', label: 'Híbrido' },
+                ]}
+              />
             </div>
             <div>
               <label style={labelStylePremium}>Horario</label>
-              <select 
-                value={form.horario} 
-                onChange={e => update('horario', e.target.value)} 
-                style={{ ...inputStylePremium, cursor: 'pointer' }}
-              >
-                <option value="Jornada completa">Jornada completa</option>
-                <option value="Media jornada">Media jornada</option>
-                <option value="Por horas">Por horas</option>
-                <option value="Flexible">Flexible</option>
-              </select>
+              <CustomSelect
+                value={form.horario ?? 'Jornada completa'}
+                onChange={val => update('horario', String(val))}
+                options={[
+                  { value: 'Jornada completa', label: 'Jornada completa' },
+                  { value: 'Media jornada', label: 'Media jornada' },
+                  { value: 'Por horas', label: 'Por horas' },
+                  { value: 'Flexible', label: 'Flexible' },
+                ]}
+              />
             </div>
           </div>
 
@@ -383,6 +402,13 @@ Ejemplo: Excelentes dotes para la comunicación oral y escrita.`
           </div>
         </form>
       </div>
+
+      <CsfRequiredModal
+        isOpen={showCsfModal}
+        message={csfMessage}
+        onClose={() => setShowCsfModal(false)}
+        redirectPath="/mi-identidad?tab=verificacion"
+      />
     </div>,
     document.body
   )

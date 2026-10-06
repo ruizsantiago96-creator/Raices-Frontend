@@ -647,6 +647,11 @@ export const MESSAGE_ENDPOINTS = {
     path: '/mensajes/no-leidos',
     response: 'number (plain text, no JSON object)',
   },
+  DELETE_CONVERSATION: {
+    method: 'DELETE',
+    path: '/mensajes/conversaciones/:userId',
+    response: { ocultado: 'boolean', socioId: 'string' },
+  },
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

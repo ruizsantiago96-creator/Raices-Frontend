@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent, ChangeEvent, CSSProperties } from 'react'
 import { Icons, inputStyle } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useEnviarContacto } from '../hooks/useEnviarContacto'
 
 /* ── Opciones del selector de motivo ──────────────────────── */
@@ -135,18 +136,15 @@ export default function ContactFormSection() {
             <label htmlFor="contacto-asunto" style={labelStyleContacto}>
               Motivo <span aria-hidden="true" style={{ color: 'var(--color-error)' }}>*</span>
             </label>
-            <select
-              id="contacto-asunto"
-              name="asunto"
+            <CustomSelect
               value={values.asunto}
-              onChange={set('asunto')}
-              aria-invalid={!!errors.asunto}
-              aria-describedby={errors.asunto ? 'error-asunto' : undefined}
-              style={{ ...inputStyle, border: bordeError('asunto') }}
-            >
-              <option value="" disabled>Selecciona el motivo…</option>
-              {ASUNTOS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-            </select>
+              onChange={val => {
+                const event = { target: { value: val } } as ChangeEvent<HTMLSelectElement>
+                set('asunto')(event)
+              }}
+              placeholder="Selecciona el motivo…"
+              options={ASUNTOS.map(a => ({ value: a.value, label: a.label }))}
+            />
             {errors.asunto && <FieldError id="error-asunto" msg={errors.asunto} />}
           </div>
 

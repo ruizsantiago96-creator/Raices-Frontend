@@ -92,14 +92,34 @@ interface RawComment {
   [key: string]: unknown
 }
 
+function getLocalJoinedGroupIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem('raices_joined_groups')
+    if (raw) {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(String))
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return new Set()
+}
+
 function mapGroup(g: RawGroup): CommunityGroup {
+  const localJoinedIds = getLocalJoinedGroupIds()
+  const gIdStr = String(g.id ?? '')
+  const isMemberBackend = Boolean(g.esMiembro ?? g.es_miembro ?? g.isMember ?? g.is_member ?? false)
+  const isMemberLocal = localJoinedIds.has(gIdStr)
+
   return {
     ...g,
     id: g.id ?? '',
     name: g.nombre ?? g.name ?? 'Sin nombre',
     description: g.descripcion ?? g.description,
     is_public: g.esPublico ?? g.is_public ?? true,
-    is_member: g.esMiembro ?? g.es_miembro ?? g.isMember ?? g.is_member ?? false,
+    is_member: isMemberBackend || isMemberLocal,
     member_count: g.cantidadMiembros ?? g.member_count ?? 1,
     owner_name: (g.institucionNombre as string) ?? (g.nombreInstitucion as string) ?? (g.creadorNombre as string) ?? (g.ownerName as string) ?? (g.owner_name as string) ?? (g.autorNombre as string) ?? 'Institución Oficial',
     owner_avatar: decodeAvatarUrl((g.avatarInstitucion as string) ?? (g.urlAvatarInstitucion as string) ?? (g.avatarCreador as string) ?? (g.owner_avatar as string) ?? null),
@@ -107,6 +127,7 @@ function mapGroup(g: RawGroup): CommunityGroup {
 }
 
 function mapPost(p: RawPost): CommunityPost {
+  const gId = (p.group_id ?? p.grupoId ?? p.grupo_id) as string | number | undefined
   return {
     ...p,
     id: p.id ?? '',
@@ -115,7 +136,9 @@ function mapPost(p: RawPost): CommunityPost {
     author_name: p.author_name ?? p.nombreCompleto ?? p.nombreAutor ?? p.autorNombre ?? p.autor?.nombre ?? 'Anónimo',
     author_avatar: decodeAvatarUrl(p.author_avatar ?? p.urlAvatar ?? p.avatarAutor ?? p.autorAvatar ?? p.autor?.avatar ?? null),
     created_at: p.created_at ?? p.fechaCreacion ?? new Date().toISOString(),
-    group_name: p.group_name ?? p.nombreGrupo,
+    group_name: p.group_name ?? p.nombreGrupo ?? (p.grupoNombre as string),
+    group_id: gId,
+    grupoId: gId,
     like_count: p.like_count ?? p.cantidadMeGustas ?? p.likesCount ?? 0,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
     liked_by_me: p.liked_by_me ?? p.usuarioMeGusta ?? p.likedByMe ?? false,
@@ -153,6 +176,7 @@ export function useGroups(buscar?: string) {
 }
 
 function mapPostFromBackend(p: RawPost): CommunityPost {
+  const gId = (p.group_id ?? p.grupoId ?? p.grupo_id) as string | number | undefined
   return {
     ...p,
     id: p.id ?? '',
@@ -164,7 +188,9 @@ function mapPostFromBackend(p: RawPost): CommunityPost {
     like_count: p.cantidadMeGustas ?? p.likesCount ?? p.like_count ?? 0,
     liked_by_me: p.usuarioMeGusta ?? p.likedByMe ?? p.liked_by_me ?? false,
     created_at: p.fechaCreacion ?? p.created_at ?? new Date().toISOString(),
-    group_name: p.group_name ?? p.nombreGrupo,
+    group_name: p.group_name ?? p.nombreGrupo ?? (p.grupoNombre as string),
+    group_id: gId,
+    grupoId: gId,
     comment_count: p.comment_count ?? p.cantidadComentarios ?? 0,
     categoriaCreativa: p.categoriaCreativa ?? p.categoria_creativa ?? p.categoria ?? p.category,
     exclusivoPadres: p.exclusivoPadres ?? false,
@@ -191,7 +217,11 @@ export function usePosts(groupIdOrOptions?: string | UsePostsOptions) {
     queryKey: ['posts', grupoId, pagina, limite, buscar, categoriaCreativa],
     queryFn: () => {
       const params: Record<string, unknown> = {}
-      if (grupoId) params.grupoId = grupoId
+      if (grupoId) {
+        params.grupoId = grupoId
+        params.grupo_id = grupoId
+        params.groupId = grupoId
+      }
       if (pagina > 1) params.pagina = pagina
       if (limite !== 10) params.limite = limite
       if (buscar?.trim()) params.buscar = buscar.trim()
@@ -309,9 +339,20 @@ export function useJoinGroup() {
   return useMutation<unknown, Error, string | number>({
     mutationFn: (groupId) => api.post(`/comunidad/grupos/${groupId}/unirse`).then(r => r.data),
     onSuccess: (_, groupId) => {
+      const idStr = String(groupId)
+      try {
+        const stored: string[] = JSON.parse(localStorage.getItem('raices_joined_groups') || '[]')
+        if (!stored.includes(idStr)) {
+          stored.push(idStr)
+          localStorage.setItem('raices_joined_groups', JSON.stringify(stored))
+        }
+      } catch {
+        // ignore
+      }
+
       qc.setQueryData<CommunityGroup[]>(['groups'], (old) => {
         if (!Array.isArray(old)) return old
-        return old.map(g => g.id === groupId ? { ...g, is_member: true, member_count: g.member_count + 1 } : g)
+        return old.map(g => String(g.id) === idStr ? { ...g, is_member: true, member_count: g.member_count + 1 } : g)
       })
       qc.invalidateQueries({ queryKey: ['groups'] })
     },
@@ -323,9 +364,18 @@ export function useLeaveGroup() {
   return useMutation<unknown, Error, string | number>({
     mutationFn: (groupId) => api.post(`/comunidad/grupos/${groupId}/salir`).then(r => r.data),
     onSuccess: (_, groupId) => {
+      const idStr = String(groupId)
+      try {
+        const stored: string[] = JSON.parse(localStorage.getItem('raices_joined_groups') || '[]')
+        const updated = stored.filter(id => id !== idStr)
+        localStorage.setItem('raices_joined_groups', JSON.stringify(updated))
+      } catch {
+        // ignore
+      }
+
       qc.setQueryData<CommunityGroup[]>(['groups'], (old) => {
         if (!Array.isArray(old)) return old
-        return old.map(g => g.id === groupId ? { ...g, is_member: false, member_count: Math.max(0, g.member_count - 1) } : g)
+        return old.map(g => String(g.id) === idStr ? { ...g, is_member: false, member_count: Math.max(0, g.member_count - 1) } : g)
       })
       qc.invalidateQueries({ queryKey: ['groups'] })
     },

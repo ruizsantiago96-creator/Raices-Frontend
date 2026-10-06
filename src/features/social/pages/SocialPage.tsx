@@ -1,4 +1,4 @@
-import { useState, useMemo, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
+import { useState, useMemo, useEffect, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import { useUiStore } from '@shared/stores/uiStore'
 import {
   useGroups,
@@ -24,7 +24,7 @@ import { Icons, RestrictedBlock, CustomSelect } from '@shared/components/shared'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
-import type { CommunityPost } from '@/types/social'
+import type { CommunityPost, CommunityGroup } from '@/types/social'
 import { EventsDiscovery } from '../components/EventsDiscovery'
 
 const relativeDate = (d: string | number | Date) => {
@@ -565,47 +565,7 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
         />
       </div>
 
-      {/* Fast access banner for joined groups */}
-      {joinedGroups.length > 0 && filterMode === 'all' && (
-        <div style={{
-          background: 'var(--primary-subtle)',
-          border: '1.5px solid var(--primary)',
-          borderRadius: 14,
-          padding: '14px 18px',
-          marginBottom: 20,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>⭐ Tus foros unidos ({joinedGroups.length}):</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {joinedGroups.map(g => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => onSelectGroup(g.id)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: '#FFFFFF',
-                  border: '1px solid var(--primary)',
-                  color: 'var(--primary)',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'transform 0.15s ease',
-                }}
-              >
-                <span>🏛️ {g.name}</span>
-                <span style={{ fontSize: 11, color: 'var(--fg3)', fontWeight: 500 }}>→ Ver publicaciones</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {isError ? (
         <BackendFallback method={COMMUNITY_ENDPOINTS.GET_GROUPS.method} endpoint={COMMUNITY_ENDPOINTS.GET_GROUPS.path} onRetry={() => refetch()} />
@@ -692,6 +652,410 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
                   </button>
                 )}
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Group Detail Section ────────────────────────────────── */
+interface GroupDetailSectionProps {
+  groupId: string | number
+  onBack: () => void
+  groups: CommunityGroup[]
+  currentUserId?: string | number
+  currentUserName?: string
+  isIncomplete?: boolean
+}
+
+function GroupDetailSection({
+  groupId,
+  onBack,
+  groups,
+  currentUserId,
+  currentUserName,
+  isIncomplete,
+}: GroupDetailSectionProps) {
+  const group = useMemo(() => {
+    return groups.find(g => String(g.id) === String(groupId)) ?? null
+  }, [groups, groupId])
+
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+  const [newPostContent, setNewPostContent] = useState('')
+  const [postCategory, setPostCategory] = useState<string>('general')
+  const [exclusivoPadres, setExclusivoPadres] = useState<boolean>(false)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const uploadMedia = useUploadMultimedia()
+  const createPost = useCreatePost()
+  const joinGroup = useJoinGroup()
+  const leaveGroup = useLeaveGroup()
+  const toggleLike = useToggleLike()
+  const { addToast } = useUiStore()
+
+  const { data: rawPosts = [], isLoading, isError, refetch } = usePosts({
+    grupoId: String(groupId),
+  })
+
+  const posts = useMemo(() => {
+    if (!categoryFilter) return rawPosts
+    return rawPosts.filter(p => (p.categoriaCreativa || '').toLowerCase() === categoryFilter.toLowerCase())
+  }, [rawPosts, categoryFilter])
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('El archivo excede 10 MB', 'error')
+      return
+    }
+    setPendingFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const handleSubmitPost = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!newPostContent.trim() && !pendingFile) return
+    if (createPost.isPending || uploadMedia.isPending) return
+
+    let mediaUrl = ''
+    if (pendingFile) {
+      try {
+        const result = await uploadMedia.mutateAsync(pendingFile)
+        mediaUrl = result?.url ?? ''
+      } catch {
+        addToast('Error al subir el archivo', 'error')
+        return
+      }
+    }
+
+    createPost.mutate(
+      {
+        content: newPostContent,
+        grupoId: String(groupId),
+        mediaUrl: mediaUrl || undefined,
+        categoriaCreativa: postCategory,
+        exclusivoPadres: exclusivoPadres,
+      },
+      {
+        onSuccess: () => {
+          setNewPostContent('')
+          setPendingFile(null)
+          setPreviewUrl(null)
+          setExclusivoPadres(false)
+          addToast(SOCIAL_TOAST.POST_CREATED, 'success')
+        },
+        onError: () => {
+          addToast(SOCIAL_TOAST.POST_CREATE_FAILED, 'error')
+        },
+      }
+    )
+  }
+
+  const groupName = group?.name || 'Foro / Grupo'
+  const isMember = Boolean(group?.is_member)
+
+  return (
+    <div style={{ maxWidth: 840, margin: '0 auto' }}>
+      {/* Volver button */}
+      <div style={{ marginBottom: 16 }}>
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 18px',
+            borderRadius: 'var(--radius-pill)',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-surface)',
+            color: 'var(--fg2)',
+            fontSize: 13.5,
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {Icons.arrowLeft({ s: 16 })} Volver a la lista de foros
+        </button>
+      </div>
+
+      {/* Hero Card for Group */}
+      <div
+        className="animate-fade-in-up"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 16,
+          padding: 24,
+          marginBottom: 24,
+          boxShadow: 'var(--shadow-md)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
+                🏛️ Foro Institucional Oficial
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)' }}>
+                {group?.is_public ? '🌐 Público' : '🔒 Privado'}
+              </span>
+              {isMember && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: '#DCFCE7', color: '#166534' }}>
+                  ✓ Eres miembro de este foro
+                </span>
+              )}
+            </div>
+
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 10px' }}>
+              {groupName}
+            </h1>
+
+            {group?.description && (
+              <p style={{ fontSize: 14, color: 'var(--fg2)', margin: '0 0 16px', lineHeight: 1.5 }}>
+                {group.description}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 13, color: 'var(--fg3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-warm)', padding: '4px 10px', borderRadius: 8 }}>
+                <Avatar name={group?.owner_name} src={group?.owner_avatar} size={20} />
+                <span>Organizado por: <strong style={{ color: 'var(--fg1)' }}>{group?.owner_name || 'Institución Oficial'}</strong></span>
+              </div>
+              <span>•</span>
+              <span>👥 <strong>{group?.member_count ?? 1}</strong> miembro{(group?.member_count ?? 1) !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+
+          <div style={{ flexShrink: 0 }}>
+            {isMember ? (
+              <button
+                type="button"
+                onClick={() => leaveGroup.mutate(groupId, { onSuccess: () => addToast('Saliste del foro', 'info') })}
+                disabled={leaveGroup.isPending}
+                style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-color)', background: 'var(--bg-warm)', color: 'var(--fg3)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Salir del Foro
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => joinGroup.mutate(groupId, { onSuccess: () => addToast('¡Te has unido al foro!', 'success') })}
+                disabled={joinGroup.isPending}
+                className="btn-primary"
+                style={{ padding: '8px 20px', borderRadius: 'var(--radius-pill)', fontSize: 13.5 }}
+              >
+                + Unirse al Foro
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Post Creation Box inside the Group */}
+      {isIncomplete ? (
+        <div style={{ marginBottom: 20 }}>
+          <RestrictedBlock
+            title="Comunidad restringida"
+            message="Completa tu perfil para poder publicar en este foro."
+            height={140}
+          />
+        </div>
+      ) : (
+        <div
+          className="animate-fade-in-up"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: 20,
+            boxShadow: 'var(--shadow-sm)',
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>✍️ Publicar en {groupName}</span>
+          </div>
+
+          <form onSubmit={handleSubmitPost}>
+            {/* Category selection */}
+            <div style={{ marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg2)', display: 'block', marginBottom: 6 }}>
+                Categoría:
+              </span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {CATEGORY_OPTIONS.map(cat => (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => setPostCategory(cat.value)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      border: postCategory === cat.value ? '1px solid transparent' : '1px solid var(--border-color)',
+                      background: postCategory === cat.value ? 'var(--primary-subtle)' : 'var(--bg-warm)',
+                      color: postCategory === cat.value ? 'var(--primary)' : 'var(--fg2)',
+                      fontWeight: postCategory === cat.value ? 700 : 500,
+                      cursor: 'pointer',
+                      fontSize: 12.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <span>{cat.icon}</span> {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              rows={3}
+              value={newPostContent}
+              onChange={e => setNewPostContent(e.target.value)}
+              placeholder={`¿Qué te gustaría preguntar o compartir en ${groupName}?`}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 14.5,
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                fontFamily: 'var(--font-body)',
+                color: 'var(--fg1)',
+                background: 'var(--bg-warm)',
+                outline: 'none',
+              }}
+            />
+
+            {previewUrl && (
+              <div style={{ position: 'relative', marginTop: 10, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-color)', display: 'inline-block' }}>
+                {pendingFile?.type?.startsWith('video/') ? (
+                  <video src={previewUrl} style={{ maxWidth: '100%', maxHeight: 160, display: 'block', borderRadius: 10 }} controls />
+                ) : (
+                  <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 160, display: 'block', borderRadius: 10, objectFit: 'cover' }} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setPendingFile(null); setPreviewUrl(null) }}
+                  style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-color)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--fg1)', cursor: 'pointer', fontWeight: 600, userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={exclusivoPadres}
+                  onChange={e => setExclusivoPadres(e.target.checked)}
+                />
+                <span>🔒 Solo para Padres/Tutores</span>
+              </label>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--fg3)', fontSize: 13, fontWeight: 600 }}>
+                  {Icons.camera({ s: 18 })}
+                  <span>Adjuntar</span>
+                  <input type="file" accept="image/*,video/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+                </label>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={(!newPostContent.trim() && !pendingFile) || createPost.isPending || uploadMedia.isPending}
+                  style={{ fontSize: 14, padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  {createPost.isPending || uploadMedia.isPending ? SOCIAL_UI.POST_BUTTON_LOADING : 'Publicar en este Foro'}
+                  {Icons.send({ s: 15 })}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Feed Header and Category Filter for this Group */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+          Conversaciones del Foro ({posts.length})
+        </h3>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter(null)}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '8px',
+              border: categoryFilter === null ? '1px solid transparent' : '1px solid var(--border-color)',
+              background: categoryFilter === null ? 'var(--primary)' : 'var(--bg-surface)',
+              color: categoryFilter === null ? '#FFFFFF' : 'var(--fg2)',
+              fontWeight: categoryFilter === null ? 700 : 500,
+              cursor: 'pointer',
+              fontSize: 12.5,
+            }}
+          >
+            Todas
+          </button>
+          {CATEGORY_OPTIONS.map(cat => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => setCategoryFilter(cat.value)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '8px',
+                border: categoryFilter === cat.value ? '1px solid transparent' : '1px solid var(--border-color)',
+                background: categoryFilter === cat.value ? 'var(--primary)' : 'var(--bg-surface)',
+                color: categoryFilter === cat.value ? '#FFFFFF' : 'var(--fg2)',
+                fontWeight: categoryFilter === cat.value ? 700 : 500,
+                cursor: 'pointer',
+                fontSize: 12.5,
+              }}
+            >
+              {cat.icon} {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Posts List */}
+      {isError ? (
+        <BackendFallback method={COMMUNITY_ENDPOINTS.GET_POSTS.method} endpoint={COMMUNITY_ENDPOINTS.GET_POSTS.path} onRetry={() => refetch()} />
+      ) : isLoading ? (
+        <>
+          <SkeletonCard />
+          <SkeletonCard />
+        </>
+      ) : posts.length === 0 ? (
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 40, textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            {Icons.message({ s: 24 })}
+          </div>
+          <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Sin publicaciones aún en este foro</h4>
+          <p style={{ fontSize: 13.5, color: 'var(--fg2)', margin: 0 }}>
+            Sé la primera persona en compartir una pregunta, aviso o experiencia en {groupName}.
+          </p>
+        </div>
+      ) : (
+        <div className="stagger-children">
+          {posts.map(post => (
+            <div key={post.id} className="animate-fade-in-up">
+              <PostCard
+                post={post}
+                onLike={() => toggleLike.mutate(post.id)}
+                currentUserId={currentUserId}
+                currentUserName={currentUserName}
+              />
             </div>
           ))}
         </div>
@@ -840,6 +1204,12 @@ export default function SocialPage() {
 
   const effectiveGroupId = feedGroupFilter ?? activeGroupId ?? undefined
 
+  useEffect(() => {
+    if (effectiveGroupId !== undefined) {
+      setPostGroupId(effectiveGroupId)
+    }
+  }, [effectiveGroupId])
+
   const selectedGroupObj = useMemo(() => {
     if (!effectiveGroupId) return null
     return groups.find(g => String(g.id) === String(effectiveGroupId)) ?? null
@@ -857,14 +1227,18 @@ export default function SocialPage() {
     }
 
     if (feedAlgorithmMode === 'mis_grupos') {
-      list = list.filter(p => p.group_id && joinedGroupIds.has(String(p.group_id)))
+      list = list.filter(p => {
+        const pGId = p.group_id ?? p.grupoId
+        return pGId !== undefined && pGId !== null && joinedGroupIds.has(String(pGId))
+      })
     }
 
     const copy = [...list]
     if (feedAlgorithmMode === 'parati') {
       const scorePost = (p: CommunityPost) => {
         let score = 100
-        if (p.group_id && joinedGroupIds.has(String(p.group_id))) score += 50
+        const pGId = p.group_id ?? p.grupoId
+        if (pGId !== undefined && pGId !== null && joinedGroupIds.has(String(pGId))) score += 50
         if (p.categoriaCreativa && userInterests.some(i => i.includes(p.categoriaCreativa!.toLowerCase()) || p.categoriaCreativa!.toLowerCase().includes(i))) {
           score += 30
         }
@@ -976,7 +1350,7 @@ export default function SocialPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMainTab('grupos')}
+            onClick={() => { setMainTab('grupos'); setActiveGroupId(null) }}
             style={{
               padding: '8px 18px',
               borderRadius: 'var(--radius-pill)',
@@ -1065,13 +1439,23 @@ export default function SocialPage() {
         </div>
 
         {mainTab === 'grupos' ? (
-          <GroupsView
-            onSelectGroup={groupId => {
-              setActiveGroupId(groupId)
-              setMainTab('comunidad')
-            }}
-            onCreateGroupClick={() => setShowCreateGroup(true)}
-          />
+          activeGroupId ? (
+            <GroupDetailSection
+              groupId={activeGroupId}
+              onBack={() => setActiveGroupId(null)}
+              groups={groups}
+              currentUserId={user?.id}
+              currentUserName={user?.full_name}
+              isIncomplete={isIncomplete}
+            />
+          ) : (
+            <GroupsView
+              onSelectGroup={groupId => {
+                setActiveGroupId(groupId)
+              }}
+              onCreateGroupClick={() => setShowCreateGroup(true)}
+            />
+          )
         ) : mainTab === 'galeria' ? (
           <ConectemosGalleryView currentUserId={user?.id} currentUserName={user?.full_name} />
         ) : mainTab === 'eventos' ? (

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { decodeAvatarUrl } from '../../../shared/lib/urlUtils'
@@ -6,12 +7,15 @@ import type {
   DirectMessage,
   MessagePartner,
   SendMessagePayload,
+  UserSearchResult,
 } from '@/types/social'
 
 interface RawSocio {
   id?: string | number
+  _id?: string | number
   email?: string
   nombreCompleto?: string
+  nombre?: string
   full_name?: string
   rol?: string
   role?: string
@@ -19,12 +23,15 @@ interface RawSocio {
   city?: string
   estado?: string
   state?: string
+  profesion?: string
   urlAvatar?: string | null
   avatar_url?: string | null
+  avatar?: string | null
   activo?: boolean
   is_active?: boolean
   verificado?: boolean
   is_verified?: boolean
+  [key: string]: unknown
 }
 
 interface RawConversation {
@@ -224,5 +231,61 @@ export function useMarcarConversacionLeida() {
       qc.invalidateQueries({ queryKey: ['messages', 'unread'] })
       qc.invalidateQueries({ queryKey: ['messages', 'conversations'] })
     },
+  })
+}
+
+/**
+ * Buscador de Usuarios para el modal "Nuevo Mensaje" (GET /api/usuarios/buscar?q={termino}).
+ * Incluye debounce de 300ms y soporta búsqueda por nombre, email, ciudad y profesión.
+ */
+export function useSearchUsers(query: string) {
+  const [debouncedQuery, setDebouncedQuery] = useState(query)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query)
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [query])
+
+  return useQuery<UserSearchResult[]>({
+    queryKey: ['users', 'search', debouncedQuery],
+    queryFn: async () => {
+      const q = debouncedQuery.trim()
+      const params: Record<string, string> = {}
+      if (q) {
+        params.q = q
+      }
+
+      return api
+        .get('/usuarios/buscar', { params })
+        .then(r => {
+          const res = r.data
+          const arr: RawSocio[] = Array.isArray(res)
+            ? res
+            : Array.isArray(res?.datos)
+              ? res.datos
+              : Array.isArray(res?.data)
+                ? res.data
+                : Array.isArray(res?.usuarios)
+                  ? res.usuarios
+                  : []
+
+          return arr.map(u => ({
+            ...u,
+            id: (u.id ?? u._id ?? '') as string | number,
+            nombreCompleto: u.nombreCompleto ?? u.full_name ?? u.nombre ?? 'Sin nombre',
+            urlAvatar: decodeAvatarUrl(u.urlAvatar ?? u.avatar_url ?? u.avatar ?? null),
+            rol: u.rol ?? u.role,
+            ciudad: u.ciudad ?? u.city,
+            profesion: (u as { profesion?: string }).profesion,
+          }))
+        })
+        .catch(err => {
+          console.warn('[useSearchUsers] Error al buscar usuarios:', err)
+          return []
+        })
+    },
+    staleTime: 5000,
   })
 }

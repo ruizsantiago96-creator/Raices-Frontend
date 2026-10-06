@@ -4,6 +4,7 @@ import { useJobs, useAppliedJobIds, useMyApplications } from '../hooks/useJobs'
 import { useMiInstitucion } from '@features/institutions/hooks/useInstitutions'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { Icons } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useMe } from '@features/auth'
 import { JOBS_UI } from '../constants/jobsMessages'
 import BackendFallback from '@shared/components/BackendFallback'
@@ -129,12 +130,15 @@ export default function JobsPage() {
               onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }} />
           </div>
           {tab === 'board' && (
-            <div style={{ position: 'relative', minWidth: 180 }}>
-              <select value={modality} onChange={e => setModality(e.target.value)}
-                style={{ width: '100%', padding: '10px 36px 10px 14px', borderRadius: 10, border: '1.5px solid var(--border-color)', outline: 'none', fontSize: 14, fontWeight: 500, fontFamily: 'var(--font-body)', background: 'var(--bg-warm)', color: 'var(--fg1)', cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}>
-                <option value="Todos">Modalidad: Todas</option>
-                {catalogos?.modalidadesEmpleo?.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+            <div style={{ position: 'relative', minWidth: 200 }}>
+              <CustomSelect
+                value={modality}
+                onChange={val => setModality(val)}
+                options={[
+                  { value: 'Todos', label: 'Modalidad: Todas' },
+                  ...(catalogos?.modalidadesEmpleo?.map(m => ({ value: m, label: m })) ?? []),
+                ]}
+              />
             </div>
           )}
         </div>

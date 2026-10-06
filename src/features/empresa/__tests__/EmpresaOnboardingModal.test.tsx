@@ -41,6 +41,14 @@ async function adjuntarCsf(usuario: ReturnType<typeof userEvent.setup>) {
   await usuario.upload(input, archivo)
 }
 
+/** Selecciona una categoría usando el componente CustomSelect. */
+async function seleccionarCategoria(usuario: ReturnType<typeof userEvent.setup>, texto: string) {
+  const trigger = screen.getByText(/Selecciona una categoría/i)
+  await usuario.click(trigger)
+  const opcion = await screen.findByText(new RegExp(texto, 'i'))
+  await usuario.click(opcion)
+}
+
 describe('EmpresaOnboardingModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -83,19 +91,22 @@ describe('EmpresaOnboardingModal', () => {
     expect(screen.getByLabelText(/Infraestructura accesible/i)).toHaveAttribute('type', 'checkbox')
   })
 
-  it('ofrece el enum de categoría que valida el backend', () => {
+  it('ofrece el enum de categoría que valida el backend', async () => {
+    const usuario = userEvent.setup()
     renderWithProviders(<EmpresaOnboardingModal open onClose={vi.fn()} />)
-    const opciones = Array.from(screen.getByRole('combobox').querySelectorAll('option'))
-      .map(o => o.getAttribute('value'))
-      .filter(Boolean)
-    expect(opciones).toEqual(expect.arrayContaining(['laboral', 'educativo', 'social', 'funcional']))
+    await usuario.click(screen.getByText(/Selecciona una categoría/i))
+
+    expect(screen.getByText(/Empleo y bolsa de trabajo/i)).toBeInTheDocument()
+    expect(screen.getByText(/Educación y capacitación/i)).toBeInTheDocument()
+    expect(screen.getByText(/Atención social y comunidad/i)).toBeInTheDocument()
+    expect(screen.getByText(/Servicios e inclusión funcional/i)).toBeInTheDocument()
   })
 
   it('exige la CSF antes de dejar guardar', async () => {
     const usuario = userEvent.setup()
     renderWithProviders(<EmpresaOnboardingModal open onClose={vi.fn()} />)
 
-    await usuario.selectOptions(screen.getByRole('combobox'), 'laboral')
+    await seleccionarCategoria(usuario, 'Empleo y bolsa de trabajo')
     await usuario.click(screen.getByLabelText(/Infraestructura accesible/i))
     await usuario.click(screen.getByRole('button', { name: BTN_GUARDAR }))
 
@@ -119,7 +130,7 @@ describe('EmpresaOnboardingModal', () => {
     const usuario = userEvent.setup()
     renderWithProviders(<EmpresaOnboardingModal open onClose={vi.fn()} />)
 
-    await usuario.selectOptions(screen.getByRole('combobox'), 'laboral')
+    await seleccionarCategoria(usuario, 'Empleo y bolsa de trabajo')
     await adjuntarCsf(usuario)
     await usuario.click(screen.getByRole('button', { name: BTN_GUARDAR }))
 
@@ -133,7 +144,7 @@ describe('EmpresaOnboardingModal', () => {
     const onClose = vi.fn()
     renderWithProviders(<EmpresaOnboardingModal open onClose={onClose} onSaved={onSaved} />)
 
-    await usuario.selectOptions(screen.getByRole('combobox'), 'educativo')
+    await seleccionarCategoria(usuario, 'Educación y capacitación')
     await usuario.click(screen.getByLabelText(/Infraestructura accesible/i))
     await usuario.click(screen.getByLabelText(/Flexibilidad laboral/i))
     await usuario.type(screen.getByLabelText(/Otra pol[ií]tica/i), 'Becas de practicas')
@@ -189,7 +200,7 @@ describe('EmpresaOnboardingModal', () => {
 
     renderWithProviders(<EmpresaOnboardingModal open onClose={vi.fn()} />)
 
-    await usuario.selectOptions(screen.getByRole('combobox'), 'laboral')
+    await seleccionarCategoria(usuario, 'Empleo y bolsa de trabajo')
     await usuario.click(screen.getByLabelText(/Infraestructura accesible/i))
     await adjuntarCsf(usuario)
     await usuario.click(screen.getByRole('button', { name: BTN_GUARDAR }))

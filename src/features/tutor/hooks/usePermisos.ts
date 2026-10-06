@@ -14,9 +14,16 @@ export function usePermisos(dependienteId: string | number) {
   const { token } = useAuthStore()
 
   return useQuery({
-    queryKey: ['permisos', dependienteId],
-    queryFn: () =>
-      api.get(`/usuarios/dependientes/${dependienteId}/permisos`).then(r => r.data),
+    queryKey: ['permisos', String(dependienteId)],
+    queryFn: async () => {
+      try {
+        const res = await api.get(`/tutores/dependientes/${dependienteId}/permisos`)
+        return res.data
+      } catch {
+        const res = await api.get(`/usuarios/dependientes/${dependienteId}/permisos`)
+        return res.data
+      }
+    },
     enabled: !!token && !!dependienteId,
     staleTime: 2 * 60 * 1000, // 2 minutos
     retry: 1,
@@ -26,8 +33,8 @@ export function usePermisos(dependienteId: string | number) {
 /**
  * Mutación: actualiza los permisos de un dependiente.
  *
- * PATCH /api/usuarios/dependientes/:id/permisos
- * Body esperado: { puedeComentar, puedeInteractuar, accesoMultimedia, ... }
+ * PATCH /api/tutores/dependientes/:id/permisos o /api/usuarios/dependientes/:id/permisos
+ * Body esperado: { acciones, permisos, puedeComentar, puedeInteractuar, ... }
  *
  * Al tener éxito, invalida la caché de permisos y dependientes.
  *
@@ -36,11 +43,36 @@ export function usePermisos(dependienteId: string | number) {
 export function useUpdatePermisos() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (variables: { id: string | number; permisos?: Record<string, boolean> }) =>
-      api.patch(`/usuarios/dependientes/${variables.id}/permisos`, variables.permisos ?? {}).then(r => r.data),
+    mutationFn: async (variables: { id: string | number; permisos?: Record<string, boolean> }) => {
+      const payload = {
+        acciones: variables.permisos,
+        permisos: variables.permisos,
+        modulos: variables.permisos,
+        ...(variables.permisos ?? {}),
+      }
+      try {
+        const res = await api.put(`/tutores/dependientes/${variables.id}/permisos`, payload)
+        return res.data
+      } catch {
+        try {
+          const res = await api.patch(`/tutores/dependientes/${variables.id}/permisos`, payload)
+          return res.data
+        } catch {
+          try {
+            const res = await api.put(`/usuarios/dependientes/${variables.id}/permisos`, payload)
+            return res.data
+          } catch {
+            const res = await api.patch(`/usuarios/dependientes/${variables.id}/permisos`, payload)
+            return res.data
+          }
+        }
+      }
+    },
     onSuccess: (_data, variables: { id: string | number; permisos?: Record<string, boolean> }) => {
-      qc.invalidateQueries({ queryKey: ['permisos', variables.id] })
+      qc.invalidateQueries({ queryKey: ['permisos', String(variables.id)] })
+      qc.invalidateQueries({ queryKey: ['dependiente', String(variables.id)] })
       qc.invalidateQueries({ queryKey: ['dependientes'] })
+      qc.invalidateQueries({ queryKey: ['mis-personas'] })
     },
   })
 }

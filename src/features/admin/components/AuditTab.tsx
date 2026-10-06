@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAdminAuditoria, useAdminAuditoriaStats } from '../hooks/useAdmin'
 import { Icons } from '@shared/components/shared'
+import { CustomSelect } from '@shared/components/CustomSelect'
 
 const ACCION_COLORS: Record<string, { bg: string; color: string }> = {
   crear: { bg: 'rgba(16,185,129,0.12)', color: '#10B981' },
@@ -140,33 +141,33 @@ export default function AuditTab({ onNavigate }: AuditTabProps = {}) {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        <select
-          className="onboarding-input auth-select"
-          style={{ height: 36, fontSize: 13, padding: '0 12px' }}
+        <CustomSelect
           value={filterAcción}
-          onChange={e => { setFilterAccion(e.target.value); setFilters(f => ({ ...f, pagina: 1 })) }}
-        >
-          <option value="">Todas las acciones</option>
-          {/* Sin "crear" ni "login": el backend no registra acciones con esos prefijos
-              (devolverían siempre 0 registros). Ver contrato con equipo backend. */}
-          <option value="actualizar">Actualizar</option>
-          <option value="eliminar">Eliminar</option>
-          <option value="aprobar">Aprobar</option>
-          <option value="rechazar">Rechazar</option>
-        </select>
-        <select
-          className="onboarding-input auth-select"
-          style={{ height: 36, fontSize: 13, padding: '0 12px' }}
+          onChange={val => { setFilterAccion(val); setFilters(f => ({ ...f, pagina: 1 })) }}
+          placeholder="Todas las acciones"
+          minWidth={170}
+          options={[
+            { value: '', label: 'Todas las acciones' },
+            { value: 'actualizar', label: 'Actualizar' },
+            { value: 'eliminar', label: 'Eliminar' },
+            { value: 'aprobar', label: 'Aprobar' },
+            { value: 'rechazar', label: 'Rechazar' },
+          ]}
+        />
+        <CustomSelect
           value={filterRecurso}
-          onChange={e => { setFilterRecurso(e.target.value); setFilters(f => ({ ...f, pagina: 1 })) }}
-        >
-          <option value="">Todos los recursos</option>
-          <option value="usuario">Usuarios</option>
-          <option value="institucion">Instituciones</option>
-          <option value="documento">Documentos</option>
-          <option value="vacante">Vacantes</option>
-          <option value="publicacion">Publicaciones</option>
-        </select>
+          onChange={val => { setFilterRecurso(val); setFilters(f => ({ ...f, pagina: 1 })) }}
+          placeholder="Todos los recursos"
+          minWidth={170}
+          options={[
+            { value: '', label: 'Todos los recursos' },
+            { value: 'usuario', label: 'Usuarios' },
+            { value: 'institucion', label: 'Instituciones' },
+            { value: 'documento', label: 'Documentos' },
+            { value: 'vacante', label: 'Vacantes' },
+            { value: 'publicacion', label: 'Publicaciones' },
+          ]}
+        />
         <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
           {total} registro{total !== 1 ? 's' : ''}
         </div>

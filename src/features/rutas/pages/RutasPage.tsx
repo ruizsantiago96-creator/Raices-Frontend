@@ -14,6 +14,7 @@ import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle, RestrictedBlock } from '@shared/components/shared'
 import { CustomDatePicker } from '@shared/components/CustomDatePicker'
+import { CustomSelect } from '@shared/components/CustomSelect'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type {
   CreateRutaPayload,
@@ -173,22 +174,30 @@ export default function RutasPage() {
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ minWidth: 160 }}>
-            <select className="onboarding-input auth-select" style={{ height: 42, padding: '0 16px 0 12px' }} value={filterEstado} onChange={e => setFilterEstado(e.target.value)}>
-              <option value="">Todos los estados</option>
-              <option value="activa">Activa</option>
-              <option value="completada">Completada</option>
-              <option value="pausada">Pausada</option>
-              <option value="cancelada">Cancelada</option>
-            </select>
+          <div style={{ minWidth: 170 }}>
+            <CustomSelect
+              value={filterEstado}
+              onChange={val => setFilterEstado(val)}
+              placeholder="Todos los estados"
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'activa', label: 'Activa' },
+                { value: 'completada', label: 'Completada' },
+                { value: 'pausada', label: 'Pausada' },
+                { value: 'cancelada', label: 'Cancelada' },
+              ]}
+            />
           </div>
-          <div style={{ minWidth: 180 }}>
-            <select className="onboarding-input auth-select" style={{ height: 42, padding: '0 16px 0 12px' }} value={filterArea} onChange={e => setFilterArea(e.target.value)}>
-              <option value="">Todas las áreas</option>
-              {listAreas.map(a => (
-                <option key={a.id} value={a.id}>{a.label}</option>
-              ))}
-            </select>
+          <div style={{ minWidth: 190 }}>
+            <CustomSelect
+              value={filterArea}
+              onChange={val => setFilterArea(val)}
+              placeholder="Todas las áreas"
+              options={[
+                { value: '', label: 'Todas las áreas' },
+                ...listAreas.map(a => ({ value: a.id, label: a.label })),
+              ]}
+            />
           </div>
         </div>
 
@@ -293,21 +302,29 @@ export default function RutasPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Área de interés *</label>
-                  <select required className="onboarding-input auth-select" value={newForm.areaInteres} onChange={e => setNewForm(f => ({ ...f, areaInteres: e.target.value }))} style={{ marginTop: 6 }}>
-                    <option value="">Selecciona...</option>
-                    {listAreas.map(a => (
-                      <option key={a.id} value={a.id}>{a.label}</option>
-                    ))}
-                  </select>
+                  <div style={{ marginTop: 6 }}>
+                    <CustomSelect
+                      value={newForm.areaInteres}
+                      onChange={val => setNewForm(f => ({ ...f, areaInteres: val }))}
+                      placeholder="Selecciona..."
+                      options={listAreas.map(a => ({ value: a.id, label: a.label }))}
+                    />
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Prioridad</label>
-                    <select className="onboarding-input auth-select" value={newForm.prioridad} onChange={e => setNewForm(f => ({ ...f, prioridad: e.target.value as RutaPrioridad }))} style={{ marginTop: 6 }}>
-                      <option value="baja">Baja</option>
-                      <option value="media">Media</option>
-                      <option value="alta">Alta</option>
-                    </select>
+                    <div style={{ marginTop: 6 }}>
+                      <CustomSelect
+                        value={newForm.prioridad ?? 'media'}
+                        onChange={val => setNewForm(f => ({ ...f, prioridad: val as RutaPrioridad }))}
+                        options={[
+                          { value: 'baja', label: 'Baja' },
+                          { value: 'media', label: 'Media' },
+                          { value: 'alta', label: 'Alta' },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Fecha límite</label>
@@ -451,20 +468,38 @@ function RouteDetailModal({ routeId, onClose, onDelete, listAreas, updateRuta }:
         <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Estado</label>
-            <select className="onboarding-input auth-select" style={{ height: 38, marginTop: 4, fontSize: 13.5 }} value={ruta.estado} onChange={handleStatusChange}>
-              <option value="activa">Activa</option>
-              <option value="completada">Completada</option>
-              <option value="pausada">Pausada</option>
-              <option value="cancelada">Cancelada</option>
-            </select>
+            <div style={{ marginTop: 4 }}>
+              <CustomSelect
+                value={ruta.estado}
+                onChange={val => {
+                  const event = { target: { value: val } } as ChangeEvent<HTMLSelectElement>
+                  handleStatusChange(event)
+                }}
+                options={[
+                  { value: 'activa', label: 'Activa' },
+                  { value: 'completada', label: 'Completada' },
+                  { value: 'pausada', label: 'Pausada' },
+                  { value: 'cancelada', label: 'Cancelada' },
+                ]}
+              />
+            </div>
           </div>
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Prioridad</label>
-            <select className="onboarding-input auth-select" style={{ height: 38, marginTop: 4, fontSize: 13.5 }} value={ruta.prioridad} onChange={handlePriorityChange}>
-              <option value="baja">Baja</option>
-              <option value="media">Media</option>
-              <option value="alta">Alta</option>
-            </select>
+            <div style={{ marginTop: 4 }}>
+              <CustomSelect
+                value={ruta.prioridad}
+                onChange={val => {
+                  const event = { target: { value: val } } as ChangeEvent<HTMLSelectElement>
+                  handlePriorityChange(event)
+                }}
+                options={[
+                  { value: 'baja', label: 'Baja' },
+                  { value: 'media', label: 'Media' },
+                  { value: 'alta', label: 'Alta' },
+                ]}
+              />
+            </div>
           </div>
         </div>
 
