@@ -45,6 +45,46 @@ export function useRutaDetail(id: string | number | null | undefined) {
 }
 
 /**
+ * Hook to retrieve the user's active route with local entities (institutions + vacancies).
+ * GET /api/rutas-desarrollo/mi-ruta
+ */
+export interface MiRutaResponse {
+  ruta: RutaDesarrollo | null
+  pasos: PasoRuta[]
+  pasoActual: PasoRuta | null
+  entidadesLocales: {
+    instituciones: Array<{ id: string | number; nombre: string; categoria: string; distancia: string }>
+    vacantes: Array<{ id: string | number; titulo: string; modalidad: string; ciudad: string }>
+  }
+  origen: string
+  perfilesSimilaresUsados: string[]
+  mensaje?: string
+}
+
+export function useMiRuta() {
+  return useQuery<MiRutaResponse>({
+    queryKey: ['rutas', 'mi-ruta'],
+    queryFn: () => api.get<MiRutaResponse>('/rutas-desarrollo/mi-ruta').then(r => r.data),
+  })
+}
+
+/**
+ * Hook to generate (or return the existing active) personalized route for the user.
+ * POST /api/rutas-desarrollo/generar-personalizada
+ */
+export function useGenerarRutaPersonalizada() {
+  const qc = useQueryClient()
+  return useMutation<MiRutaResponse, Error, void>({
+    mutationFn: () => api.post<MiRutaResponse>('/rutas-desarrollo/generar-personalizada').then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rutas', 'mi-ruta'] })
+      qc.invalidateQueries({ queryKey: ['rutas'] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'resumen'] })
+    },
+  })
+}
+
+/**
  * Hook to create a new developmental route.
  * POST /api/rutas-desarrollo
  */
