@@ -7,18 +7,17 @@ import {
   useSendMessage,
   useMarcarConversacionLeida,
   useDeleteConversation,
-  useSearchUsers,
+  useUserSearch,
   isConversacionEliminada,
   nombreParaMostrar,
 } from '../hooks/useMessages'
-import { useMiembrosDestacados } from '../hooks/useCommunity'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
 import { useMe } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { SOCIAL_UI, SOCIAL_TOAST, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
-import { FeaturedMember, MessagePartner, Conversation, UserSearchResult } from '@/types/social'
+import { MessagePartner, Conversation, UsuarioBusqueda } from '@/types/social'
 
 /** Extrae el status HTTP de un error de axios sin arrastrar el módulo al componente. */
 function statusDeError(err: unknown): number | undefined {
@@ -46,10 +45,17 @@ function hashColor(str: string = ''): string {
   return colors[Math.abs(h) % colors.length]
 }
 
+/** Traduce los roles canónicos del backend a su etiqueta visible. */
 const ROLE_LABELS: Record<string, string> = {
   pcd: 'Persona con discapacidad',
+  padre_tutor: 'Tutor / familiar',
   tutor: 'Tutor / familiar',
+  institucion: 'Institución',
   institution: 'Institución',
+  empresa: 'Empresa',
+  especialista: 'Especialista',
+  admin: 'Administrador',
+  user: 'Miembro',
 }
 
 interface ChatAvatarProps {
@@ -235,7 +241,12 @@ export function DirectMessages({
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations()
   const { data: messages = [] } = useMessages(activePartnerId)
-  const { data: searchResults = [], isLoading: isSearchingUsers } = useSearchUsers(modalSearchQuery)
+  // El buscador solo se consulta con el modal abierto: el chat flotante está
+  // montado en toda la app y no debe pedir usuarios de la comunidad en segundo plano.
+  const {
+    data: userSearch,
+    isFetching: searchingUsers,
+  } = useUserSearch(modalSearchQuery, { enabled: showNewChatModal })
   const sendMessage = useSendMessage()
   const marcarLeidos = useMarcarConversacionLeida()
   const deleteConversation = useDeleteConversation()
@@ -247,26 +258,6 @@ export function DirectMessages({
     if (activePartnerId) marcarLeidos.mutate(activePartnerId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePartnerId])
-
-  const handleDeleteChatById = (partnerId: string | number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (deleteConversation.isPending) return
-    if (!window.confirm(SOCIAL_CONFIRM.DELETE_CHAT)) return
-
-    deleteConversation.mutate(partnerId, {
-      onSuccess: () => {
-        if (String(activePartnerId) === String(partnerId)) {
-          setActivePartnerId(null)
-          setActiveNewPartner(null)
-          setText('')
-          setPendingFile(null)
-          setPendingFileName('')
-        }
-        addToast(SOCIAL_TOAST.CHAT_DELETED, 'success')
-      },
-      onError: () => addToast(SOCIAL_TOAST.CHAT_DELETE_FAILED, 'error'),
-    })
-  }
 
   // Sync floating chat partner when it changes (avoids setState-in-effect lint error)
   const floatingPartnerStr = floatingChatPartnerId !== null ? String(floatingChatPartnerId) : null
@@ -298,6 +289,14 @@ export function DirectMessages({
 
   /** El socio fue eliminado: el historial se puede leer, pero no se puede responder. */
   const partnerIsDeleted = activeConv ? isConversacionEliminada(activeConv) : false
+  /**
+   * `true` si la conversación viene del backend. Un chat recién iniciado desde el
+   * modal "Nuevo mensaje" solo existe en el estado local: no hay mensajes, así que
+   * el borrado lógico no aplica y el backend respondería 404.
+   */
+  const conversacionPersistida = conversations.some(
+    c => String(c.partner?.id) === String(activePartnerId),
+  )
   const activeName = partnerIsDeleted
     ? SOCIAL_UI.DELETED_PARTNER_LABEL
     : activeConv?.partner.full_name ?? SOCIAL_UI.USER_FALLBACK
@@ -328,13 +327,25 @@ export function DirectMessages({
   }
 
   /**
-   * "Eliminar chat" (DELETE /mensajes/conversacion/:userId).
+   * "Eliminar chat" (DELETE /mensajes/conversaciones/:userId).
    * El borrado es lógico y por usuario: la contraparte conserva su historial.
    */
   const handleDeleteChat = () => {
     if (!activePartnerId || deleteConversation.isPending) return
     setMenuAbierto(false)
     setMenuPos(null)
+
+    // Chat recién iniciado y sin mensajes: no hay nada que ocultar en el backend.
+    if (!conversacionPersistida) {
+      setActivePartnerId(null)
+      setActiveNewPartner(null)
+      setText('')
+      setPendingFile(null)
+      setPendingFileName('')
+      addToast(SOCIAL_TOAST.CHAT_DELETED, 'success')
+      return
+    }
+
     if (!window.confirm(SOCIAL_CONFIRM.DELETE_CHAT)) return
 
     deleteConversation.mutate(activePartnerId, {
@@ -441,21 +452,23 @@ export function DirectMessages({
     (conv.partner?.full_name ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredMembers = searchResults.filter(
-    (m: UserSearchResult) => String(m.id) !== String(currentUserId)
-  )
+  // El backend ya devuelve la búsqueda resuelta (nombre, email, ciudad y
+  // profesión; insensible a acentos) y excluye la cuenta propia. El filtro por
+  // `currentUserId` se mantiene como red de seguridad si la respuesta llega
+  // cacheada de una consulta hecha con otro usuario.
+  const foundUsers = (userSearch?.datos ?? []).filter(u => String(u.id) !== String(currentUserId))
 
-  const handleStartNewChat = (member: UserSearchResult) => {
+  const handleStartNewChat = (user: UsuarioBusqueda) => {
     const partnerData: MessagePartner = {
-      id: member.id,
-      full_name: member.nombreCompleto,
-      avatar_url: member.urlAvatar ?? null,
-      role: member.rol,
-      city: member.ciudad,
+      id: user.id,
+      full_name: user.nombreCompleto,
+      avatar_url: user.urlAvatar ?? null,
+      role: user.rol ?? undefined,
+      city: user.ciudad ?? undefined,
       is_active: true,
     }
     setActiveNewPartner(partnerData)
-    setActivePartnerId(member.id)
+    setActivePartnerId(user.id)
     setShowNewChatModal(false)
     setModalSearchQuery('')
   }
@@ -686,50 +699,19 @@ export function DirectMessages({
                       {conv.last_message}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {conv.unread > 0 && (
-                      <span
-                        style={{
-                          background: 'var(--color-coral)',
-                          color: '#fff',
-                          borderRadius: '50%',
-                          width: 8,
-                          height: 8,
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteChatById(conv.partner.id, e)}
-                      title="Eliminar chat"
+                  {conv.unread > 0 && (
+                    <span
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--fg3)',
-                        padding: 4,
-                        borderRadius: 6,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.6,
-                        transition: 'all 0.15s ease',
+                        background: 'var(--color-coral)',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: 8,
+                        height: 8,
+                        flexShrink: 0,
+                        marginLeft: 8,
                       }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.opacity = '1'
-                        e.currentTarget.style.color = 'var(--color-error)'
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.opacity = '0.6'
-                        e.currentTarget.style.color = 'var(--fg3)'
-                        e.currentTarget.style.background = 'none'
-                      }}
-                    >
-                      {Icons.trash({ s: 14 })}
-                    </button>
-                  </div>
+                    />
+                  )}
                 </button>
               )
             })
@@ -1679,7 +1661,7 @@ export function DirectMessages({
                   margin: 0,
                 }}
               >
-                Nuevo mensaje
+                {SOCIAL_UI.SEARCH_USERS_TITLE}
               </h3>
               <button
                 onClick={() => {
@@ -1727,7 +1709,7 @@ export function DirectMessages({
               </span>
               <input
                 type="text"
-                placeholder="Buscar miembros..."
+                placeholder={SOCIAL_UI.SEARCH_USERS_PLACEHOLDER}
                 value={modalSearchQuery}
                 onChange={e => setModalSearchQuery(e.target.value)}
                 style={{
@@ -1746,20 +1728,16 @@ export function DirectMessages({
             </div>
 
             {/* Members List */}
-            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-              {isSearchingUsers ? (
+            <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              {foundUsers.length === 0 ? (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg3)', fontSize: 13 }}>
-                  Buscando miembros de la comunidad...
-                </div>
-              ) : filteredMembers.length === 0 ? (
-                <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg3)', fontSize: 13 }}>
-                  No se encontraron miembros de la comunidad
+                  {searchingUsers ? SOCIAL_UI.SEARCH_USERS_LOADING : SOCIAL_UI.SEARCH_USERS_EMPTY}
                 </div>
               ) : (
-                filteredMembers.map(m => (
+                foundUsers.map(u => (
                   <button
-                    key={m.id}
-                    onClick={() => handleStartNewChat(m)}
+                    key={u.id}
+                    onClick={() => handleStartNewChat(u)}
                     style={{
                       width: '100%',
                       display: 'flex',
@@ -1786,10 +1764,10 @@ export function DirectMessages({
                         flexShrink: 0,
                       }}
                     >
-                      {m.urlAvatar ? (
+                      {u.urlAvatar ? (
                         <img
-                          src={m.urlAvatar}
-                          alt={m.nombreCompleto}
+                          src={u.urlAvatar}
+                          alt={u.nombreCompleto}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
@@ -1797,7 +1775,7 @@ export function DirectMessages({
                           style={{
                             width: '100%',
                             height: '100%',
-                            background: hashColor(m.nombreCompleto),
+                            background: hashColor(u.nombreCompleto),
                             color: '#fff',
                             display: 'flex',
                             alignItems: 'center',
@@ -1806,7 +1784,7 @@ export function DirectMessages({
                             fontSize: 13,
                           }}
                         >
-                          {m.nombreCompleto
+                          {u.nombreCompleto
                             .split(' ')
                             .map(w => w?.[0])
                             .filter(Boolean)
@@ -1816,7 +1794,7 @@ export function DirectMessages({
                         </div>
                       )}
                     </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ minWidth: 0 }}>
                       <div
                         style={{
                           fontWeight: 700,
@@ -1827,12 +1805,17 @@ export function DirectMessages({
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {m.nombreCompleto}
+                        {u.nombreCompleto}
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--primary)', fontWeight: 600, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span>{(m.rol && ROLE_LABELS[m.rol]) ?? m.rol ?? 'Miembro'}</span>
-                        {m.ciudad && <span style={{ color: 'var(--fg3)', fontWeight: 400 }}>• {m.ciudad}</span>}
-                        {m.profesion && <span style={{ color: 'var(--fg3)', fontWeight: 400 }}>• {m.profesion}</span>}
+                      <div style={{ fontSize: 11.5, color: 'var(--primary)', fontWeight: 600 }}>
+                        {(u.rol && ROLE_LABELS[u.rol]) ?? u.rol}
+                        {/* Ciudad y profesión también son criterios de búsqueda. */}
+                        {[u.ciudad, u.profesion].filter(Boolean).length > 0 && (
+                          <span style={{ color: 'var(--fg3)', fontWeight: 500 }}>
+                            {' · '}
+                            {[u.ciudad, u.profesion].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
