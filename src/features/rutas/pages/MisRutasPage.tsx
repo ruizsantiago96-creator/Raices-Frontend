@@ -175,12 +175,12 @@ function RutaTimeline({ pasos, pasoActual, porcentaje }: TimelineProps) {
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--primary)', color: '#fff' }}>
                       Paso actual
                     </span>
-                    {paso.categoria && <span style={{ fontSize: 11, color: 'var(--fg3)' }}>· {categoriaLabel(paso.categoria)}</span>}
+{paso.categoria ? <span style={{ fontSize: 11, color: 'var(--fg3)' }}>· {categoriaLabel(paso.categoria as string | undefined | null)}</span> : null}
                   </div>
                 )}
                 {paso.completado && paso.fechaCompletado && (
                   <div style={{ marginTop: 6, fontSize: 12, color: 'var(--fg3)' }}>
-                    Completado {timeAgo(paso.fechaCompletado)} · {categoriaLabel(paso.categoria)}
+                    Completado {timeAgo(paso.fechaCompletado)} · {categoriaLabel(paso.categoria as string | undefined | null)}
                   </div>
                 )}
               </div>
@@ -292,12 +292,12 @@ export default function MisRutasPage(): JSX.Element {
                 </button>
               )
             }
-            height={240}
+
           />
         )}
 
         {/* ── Ruta activa ── */}
-        {miRuta?.ruta && (
+        {miRuta?.ruta && ruta && (
           <>
             {/* Encabezado de la ruta */}
             <div
@@ -320,13 +320,13 @@ export default function MisRutasPage(): JSX.Element {
                       ● {ruta.estado}
                     </span>
                     <span style={{ fontSize: 12, color: 'var(--fg3)' }}>
-                      {categoriaLabel(ruta.areaInteres)} · {categoriaLabel(ruta.origen)}
+                      {categoriaLabel(ruta.areaInteres as string | undefined | null)} · {categoriaLabel(ruta.origen as string | undefined | null)}
                     </span>
-                    {ruta.origen && ORIGIN_LABELS[ruta.origen] && (
+                    {ruta.origen && ORIGIN_LABELS[ruta.origen as string] ? (
                       <span style={{ fontSize: 11.5, color: 'var(--fg3)', fontStyle: 'italic' }}>
-                        {" "}{ORIGIN_LABELS[ruta.origen]}
+                        {" "}{ORIGIN_LABELS[ruta.origen as string]}
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>

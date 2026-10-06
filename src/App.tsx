@@ -35,7 +35,7 @@ import IdentityVerificationPage from '@features/profile/pages/IdentityVerificati
 import TutorPage from '@features/tutor/pages/TutorPage'
 import JobsPage from '@features/jobs/pages/JobsPage'
 import NotificationsPage from '@features/notifications/pages/NotificationsPage'
-import { RutasPage, EscalasVidaPage } from '@features/rutas'
+import { RutasPage, EscalasVidaPage, MisRutasPage } from '@features/rutas'
 import EducacionPage from '@features/info/pages/EducacionPage'
 import SaludBienestarPage from '@features/info/pages/SaludBienestarPage'
 import EmpleoPage from '@features/info/pages/EmpleoPage'
@@ -240,6 +240,7 @@ export default function App() {
 
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                   <Route path="/rutas" element={<RutasPage />} />
+                  <Route path="/rutas/mis" element={<MisRutasPage />} />
                   <Route path="/escalas-vida" element={<EscalasVidaPage />} />
 
                   {/* ── Instituciones: índice + detalle (anidadas) ──────────

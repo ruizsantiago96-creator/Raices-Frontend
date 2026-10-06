@@ -53,7 +53,7 @@ export interface MiRutaResponse {
   pasos: PasoRuta[]
   pasoActual: PasoRuta | null
   entidadesLocales: {
-    instituciones: Array<{ id: string | number; nombre: string; categoria: string; distancia: string }>
+    instituciones: Array<{ id: string | number; nombre: string; categoria: string; distancia: string; logo_url?: string | null; ciudad?: string }>
     vacantes: Array<{ id: string | number; titulo: string; modalidad: string; ciudad: string }>
   }
   origen: string
