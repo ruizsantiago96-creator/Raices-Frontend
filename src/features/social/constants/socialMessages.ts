@@ -76,6 +76,12 @@ export const SOCIAL_UI = {
   DELETED_PARTNER_PLACEHOLDER: 'No puedes responder a esta conversación',
   DELETED_PARTNER_SUBTITLE: 'Esta cuenta fue eliminada',
   MENU_DELETE_CHAT: 'Eliminar chat',
+
+  // Modal "Nuevo mensaje" (buscador de usuarios)
+  SEARCH_USERS_TITLE: 'Nuevo mensaje',
+  SEARCH_USERS_PLACEHOLDER: 'Buscar por nombre, ciudad o profesión...',
+  SEARCH_USERS_LOADING: 'Buscando usuarios...',
+  SEARCH_USERS_EMPTY: 'No se encontraron usuarios',
   
   // Estadísticas
   ACTIVE_MEMBERS: 'Miembros activos',

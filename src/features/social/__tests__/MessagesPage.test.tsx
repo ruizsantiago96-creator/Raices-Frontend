@@ -16,11 +16,8 @@ vi.mock('@shared/lib/api', () => ({
   },
 }))
 
-// El selector de "nuevo chat" no es foco de esta prueba.
-vi.mock('../hooks/useCommunity', () => ({
-  useMiembrosDestacados: () => ({ data: [] }),
-}))
-
+// El modal "Nuevo mensaje" ya no depende de la lista de miembros destacados:
+// consulta `GET /usuarios/buscar`. El servicio de comunidad queda fuera de esta suite.
 vi.mock('../hooks/useMultimedia', () => ({
   useUploadMultimedia: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }))
@@ -66,9 +63,31 @@ function conversacionActiva() {
  */
 const state = { conversaciones: [] as unknown[] }
 
+/** Términos `q` con los que se disparó `GET /usuarios/buscar`, en orden. */
+const searchCalls: string[] = []
+
+/** Usuario de ejemplo devuelto por el buscador, tal como lo mapea el backend. */
+const JOSE = {
+  id: 'jose-1',
+  nombreCompleto: 'José Ramírez',
+  urlAvatar: null,
+  rol: 'pcd',
+  ciudad: 'Mérida',
+  profesion: 'Diseñador',
+}
+
+function paginaUsuarios(datos: unknown[]) {
+  return { datos, total: datos.length, pagina: 1, limite: 20, totalPaginas: 1 }
+}
+
 function mockGet(conversaciones: unknown[]) {
   state.conversaciones = conversaciones
-  apiMock.get.mockImplementation((url: string) => {
+  searchCalls.length = 0
+  apiMock.get.mockImplementation((url: string, config?: { params?: { q?: string } }) => {
+    if (url.includes('/usuarios/buscar')) {
+      searchCalls.push(config?.params?.q ?? '')
+      return Promise.resolve({ data: paginaUsuarios([JOSE]) })
+    }
     if (url.includes('/mensajes/conversaciones')) {
       return Promise.resolve({ data: state.conversaciones })
     }
@@ -261,5 +280,123 @@ describe('DirectMessages — menú "Eliminar chat"', () => {
     ).toBeInTheDocument()
     // La conversación sigue en la lista: no se optimizó de más.
     expect(screen.getAllByText('Ana Pérez').length).toBeGreaterThan(0)
+  })
+})
+
+describe('DirectMessages — buscador de usuarios del modal "Nuevo mensaje"', () => {
+  /** Abre el modal desde el botón "Nuevo chat" de la cabecera de la lista. */
+  async function abrirModal(user: ReturnType<typeof userEvent.setup>) {
+    renderChat()
+    await user.click(screen.getByRole('button', { name: 'Nuevo chat' }))
+    return screen.findByPlaceholderText('Buscar por nombre, ciudad o profesión...')
+  }
+
+  it('no consulta el buscador mientras el modal está cerrado', async () => {
+    mockGet(conversacionActiva())
+
+    renderChat()
+    await screen.findByText('Ana Pérez')
+
+    expect(searchCalls).toHaveLength(0)
+  })
+
+  it('consulta GET /usuarios/buscar y lista los usuarios devueltos', async () => {
+    mockGet([])
+    const user = userEvent.setup()
+
+    const input = await abrirModal(user)
+
+    await waitFor(() => expect(searchCalls).toHaveLength(1))
+    expect(apiMock.get).toHaveBeenCalledWith('/usuarios/buscar', { params: { q: '', limite: 20 } })
+    // Con el término vacío el backend devuelve la primera página de la comunidad.
+    expect(await screen.findByText('José Ramírez')).toBeInTheDocument()
+    // Ciudad y profesión también viajan en la respuesta y se muestran como contexto.
+    expect(screen.getByText(/Mérida/)).toBeInTheDocument()
+    expect(screen.getByText(/Diseñador/)).toBeInTheDocument()
+    expect(input).toBeInTheDocument()
+  })
+
+  it('aplica debounce de ~300 ms: una sola petición con el término final', async () => {
+    mockGet([])
+    const user = userEvent.setup()
+
+    await abrirModal(user)
+    await waitFor(() => expect(searchCalls).toHaveLength(1))
+    // A partir de aquí solo se cuentan las peticiones provocadas por la escritura.
+    searchCalls.length = 0
+
+    const input = screen.getByPlaceholderText('Buscar por nombre, ciudad o profesión...')
+    // Escribir rápido reinicia el temporizador: no debe disparar una petición por tecla.
+    await user.type(input, 'jose')
+
+    await waitFor(() => expect(searchCalls.length).toBeGreaterThan(0))
+    // Ninguna petición intermedia: todas llevan el término completo.
+    expect(new Set(searchCalls)).toEqual(new Set(['jose']))
+  })
+
+  it('abre la conversación con el usuario seleccionado y permite enviarle', async () => {
+    mockGet([])
+    apiMock.post.mockResolvedValue({ data: { id: 'm1' } })
+    const user = userEvent.setup()
+
+    await abrirModal(user)
+    await user.click(await screen.findByText('José Ramírez'))
+
+    // El modal se cierra y el chat queda abierto con el socio elegido.
+    await waitFor(() =>
+      expect(screen.queryByPlaceholderText('Buscar por nombre, ciudad o profesión...')).not.toBeInTheDocument(),
+    )
+    expect(await screen.findByPlaceholderText('Escribe un mensaje...')).not.toBeDisabled()
+
+    // GET /mensajes/con/:userId abre el hilo y POST /mensajes/enviar/:userId escribe.
+    await waitFor(() => expect(apiMock.get).toHaveBeenCalledWith('/mensajes/con/jose-1'))
+
+    await user.type(screen.getByPlaceholderText('Escribe un mensaje...'), 'hola')
+    await user.click(screen.getByRole('button', { name: '' }))
+
+    await waitFor(() =>
+      expect(apiMock.post).toHaveBeenCalledWith('/mensajes/enviar/jose-1', { contenido: 'hola' }),
+    )
+  })
+
+  it('filtra al usuario autenticado aunque el backend lo devuelva', async () => {
+    mockGet([])
+    const user = userEvent.setup()
+    // El backend ya excluye la cuenta propia; se cubre la red de seguridad.
+    apiMock.get.mockImplementation((url: string, config?: { params?: { q?: string } }) => {
+      if (url.includes('/usuarios/buscar')) {
+        searchCalls.push(config?.params?.q ?? '')
+        return Promise.resolve({
+          data: paginaUsuarios([
+            { id: 'yo-1', nombreCompleto: 'Yo Mismo', urlAvatar: null, rol: 'pcd' },
+            JOSE,
+          ]),
+        })
+      }
+      if (url.includes('/mensajes/conversaciones')) return Promise.resolve({ data: [] })
+      if (url.includes('/mensajes/con/')) return Promise.resolve({ data: [] })
+      return Promise.resolve({ data: 0 })
+    })
+
+    await abrirModal(user)
+
+    expect(await screen.findByText('José Ramírez')).toBeInTheDocument()
+    expect(screen.queryByText('Yo Mismo')).not.toBeInTheDocument()
+  })
+
+  it('no llama al DELETE si el chat recién iniciado no existe en el backend', async () => {
+    mockGet([])
+    const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    // Se abre un chat nuevo con José: todavía no hay mensajes ni conversación.
+    await abrirModal(user)
+    await user.click(await screen.findByText('José Ramírez'))
+    await user.click(await screen.findByRole('button', { name: 'Opciones de la conversación' }))
+    await user.click(await screen.findByRole('menuitem', { name: /Eliminar chat/ }))
+
+    // El backend respondería 404, así que solo se descarta la vista local.
+    expect(apiMock.delete).not.toHaveBeenCalled()
+    expect(await screen.findByText('Conversación eliminada')).toBeInTheDocument()
   })
 })

@@ -168,3 +168,25 @@ export interface SendMessagePayload {
   toId: string | number
   content: string
 }
+
+/**
+ * Usuario devuelto por `GET /usuarios/buscar` para iniciar una conversación.
+ * No incluye `email` a propósito: el backend lo omite para que ningún usuario
+ * autenticado pueda enumerar correos de la comunidad.
+ */
+export interface UsuarioBusqueda {
+  id: string
+  nombreCompleto: string
+  urlAvatar: string | null
+  rol: string | null
+  ciudad: string | null
+  profesion: string | null
+}
+
+export interface PaginaUsuariosBusqueda {
+  datos: UsuarioBusqueda[]
+  total: number
+  pagina: number
+  limite: number
+  totalPaginas: number
+}

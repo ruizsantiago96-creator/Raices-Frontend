@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { decodeAvatarUrl } from '../../../shared/lib/urlUtils'
@@ -5,7 +6,9 @@ import type {
   Conversation,
   DirectMessage,
   MessagePartner,
+  PaginaUsuariosBusqueda,
   SendMessagePayload,
+  UsuarioBusqueda,
 } from '@/types/social'
 
 interface RawSocio {
@@ -60,6 +63,18 @@ interface RawMessage {
   leido?: boolean
   read?: boolean
   [key: string]: unknown
+}
+
+interface RawUsuarioBusqueda {
+  id?: string | number
+  nombreCompleto?: string
+  full_name?: string
+  urlAvatar?: string | null
+  avatar_url?: string | null
+  rol?: string | null
+  role?: string | null
+  ciudad?: string | null
+  profesion?: string | null
 }
 
 /** Nombre mostrado cuando el socio fue eliminado de la plataforma. */
@@ -224,5 +239,85 @@ export function useMarcarConversacionLeida() {
       qc.invalidateQueries({ queryKey: ['messages', 'unread'] })
       qc.invalidateQueries({ queryKey: ['messages', 'conversations'] })
     },
+  })
+}
+
+/** Espera `delayMs` desde el último cambio de `valor` antes de propagarlo. */
+function useDebouncedValue(valor: string, delayMs: number): string {
+  const [debounced, setDebounced] = useState(valor)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(valor), delayMs)
+    return () => clearTimeout(timer)
+  }, [valor, delayMs])
+
+  return debounced
+}
+
+/** Espera mínima antes de pedir usuarios al backend, en ms. */
+export const USER_SEARCH_DEBOUNCE_MS = 300
+
+/** Límite por defecto de resultados del buscador de usuarios. */
+const USER_SEARCH_LIMITE = 20
+
+/**
+ * Normaliza la respuesta de `GET /usuarios/buscar` al contrato tipado. Tolera que
+ * el backend devuelva un array plano o que cada usuario use la convención
+ * `nombreCompleto` (camelCase) o `full_name` (snake_case).
+ */
+function mapPaginaUsuarios(data: unknown): PaginaUsuariosBusqueda {
+  const res = (data ?? {}) as Partial<PaginaUsuariosBusqueda> & { full_name?: unknown }
+  const crudos: RawUsuarioBusqueda[] = Array.isArray(data)
+    ? (data as RawUsuarioBusqueda[])
+    : Array.isArray(res.datos)
+      ? (res.datos as RawUsuarioBusqueda[])
+      : Array.isArray((data as { usuarios?: RawUsuarioBusqueda[] })?.usuarios)
+        ? ((data as { usuarios: RawUsuarioBusqueda[] }).usuarios)
+        : []
+
+  const datos: UsuarioBusqueda[] = crudos.map(u => ({
+    id: String(u.id ?? ''),
+    nombreCompleto: u.nombreCompleto ?? u.full_name ?? 'Usuario',
+    urlAvatar: decodeAvatarUrl(u.urlAvatar ?? u.avatar_url ?? null),
+    rol: u.rol ?? u.role ?? null,
+    ciudad: u.ciudad ?? null,
+    profesion: u.profesion ?? null,
+  }))
+
+  return {
+    datos,
+    total: typeof res.total === 'number' ? res.total : datos.length,
+    pagina: typeof res.pagina === 'number' ? res.pagina : 1,
+    limite: typeof res.limite === 'number' ? res.limite : datos.length,
+    totalPaginas: typeof res.totalPaginas === 'number' ? res.totalPaginas : 1,
+  }
+}
+
+export interface UserSearchOptions {
+  /** Permite no disparar la consulta hasta que el modal esté abierto. */
+  enabled?: boolean
+  limite?: number
+}
+
+/**
+ * Buscador de usuarios del modal "Nuevo mensaje" (GET /usuarios/buscar?q=).
+ *
+ * El backend hace la coincidencia parcial por nombre, email, ciudad y profesión,
+ * insensible a mayúsculas y acentos ("jose" encuentra a "José"), y ya excluye la
+ * cuenta autenticada. Con el término vacío devuelve la primera página de la
+ * comunidad, así que el modal abre con usuarios sugeridos.
+ *
+ * El término se despacha con un debounce de `USER_SEARCH_DEBOUNCE_MS` para no
+ * lanzar una petición por cada tecla.
+ */
+export function useUserSearch(termino: string, opciones: UserSearchOptions = {}) {
+  const { enabled = true, limite = USER_SEARCH_LIMITE } = opciones
+  const q = useDebouncedValue(termino.trim(), USER_SEARCH_DEBOUNCE_MS)
+
+  return useQuery<PaginaUsuariosBusqueda>({
+    queryKey: ['usuarios', 'buscar', q, limite],
+    queryFn: () => api.get('/usuarios/buscar', { params: { q, limite } }).then(r => mapPaginaUsuarios(r.data)),
+    enabled: enabled,
+    staleTime: 60000,
   })
 }

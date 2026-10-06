@@ -634,18 +634,55 @@ export const MESSAGE_ENDPOINTS = {
   GET_MESSAGES: {
     method: 'GET',
     path: '/mensajes/con/:partnerId',
-    response: [{ id: 'string', emisorId: 'string', receptorId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)', leido: 'boolean' }],
+    description: 'Mensajes con un socio. El backend los marca como leídos como efecto colateral.',
+    response: [{ id: 'string', remitenteId: 'string', destinatarioId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)', leido: 'boolean' }],
   },
   SEND_MESSAGE: {
     method: 'POST',
-    path: '/mensajes/enviar/:institucionOwnerId',
-    body: { contenido: 'string' },
-    response: { id: 'string', emisorId: 'string', receptorId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)' },
+    path: '/mensajes/enviar/:userId',
+    body: { contenido: 'string', mediaUrl: 'string?' },
+    response: { id: 'string', remitenteId: 'string', destinatarioId: 'string', contenido: 'string', fechaCreacion: 'string (ISO)', leido: 'boolean' },
   },
   GET_UNREAD: {
     method: 'GET',
     path: '/mensajes/no-leidos',
     response: 'number (plain text, no JSON object)',
+  },
+  MARK_CONVERSATION_READ: {
+    method: 'PATCH',
+    path: '/mensajes/leer/:userId',
+    description: 'Marca como leídos los mensajes recibidos del socio. 403 si es uno mismo.',
+    response: { actualizados: 'number' },
+  },
+  DELETE_CONVERSATION: {
+    method: 'DELETE',
+    path: '/mensajes/conversaciones/:userId',
+    description:
+      'Borrado lógico: oculta la conversación SOLO para el usuario autenticado. Si el socio envía un mensaje nuevo, la conversación reaparece. 404 si no hay mensajes entre ambos.',
+    response: { ocultado: 'boolean', socioId: 'string' },
+  },
+}
+
+/** Buscador de usuarios del modal "Nuevo mensaje" (`GET /usuarios/buscar`). */
+export const USER_SEARCH_ENDPOINT = {
+  method: 'GET',
+  path: '/usuarios/buscar',
+  description:
+    'Búsqueda parcial por nombre, email, ciudad o profesión, insensible a mayúsculas y acentos ("jose" encuentra a "José"). Excluye la cuenta autenticada. Sin término devuelve la primera página.',
+  params: { q: 'string?', pagina: 'number?', limite: 'number?' },
+  response: {
+    datos: [{
+      id: 'string',
+      nombreCompleto: 'string',
+      urlAvatar: 'string|null',
+      rol: 'string|null',
+      ciudad: 'string|null',
+      profesion: 'string|null',
+    }],
+    total: 'number',
+    pagina: 'number',
+    limite: 'number',
+    totalPaginas: 'number',
   },
 }
 
