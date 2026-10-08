@@ -9,10 +9,10 @@ import { mapErrorMessage } from '../lib/mapErrorMessage'
 import {
   OrganizationProgress,
   OrganizationThanksStep,
-  validateAccountForm,
   type OrgFormData,
   type AccountFormData,
 } from './OrganizationFormSteps'
+import { validateAccountForm } from './OrganizationFormSteps.validators'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useCreateAccount, payloadBuilders, type InstitutionFormData } from '../hooks/useCreateAccount'
 import { getPasswordStrength } from '../lib/passwordStrength'

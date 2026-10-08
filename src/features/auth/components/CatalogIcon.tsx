@@ -45,6 +45,6 @@ export function CatalogIcon({ icon: Icon, size, style }: CatalogIconProps): Reac
 }
 
 /** Helper para props de ReactNode con tamaño fijo por variante. */
-export function renderCatalogIcon(icon: FluentEmojiComponent | string, size: number): ReactNode {
+function renderCatalogIcon(icon: FluentEmojiComponent | string, size: number): ReactNode {
   return <CatalogIcon icon={icon} size={size} />
 }

@@ -47,8 +47,8 @@ export default function JobsPage() {
   const { data: appliedIds = [] } = useAppliedJobIds()
   const { data: appsPage } = useMyApplications()
 
-  const jobs = jobsPage?.datos ?? []
-  const applications = appsPage?.datos ?? []
+  const jobs = useMemo(() => jobsPage?.datos ?? [], [jobsPage?.datos])
+  const applications = useMemo(() => appsPage?.datos ?? [], [appsPage?.datos])
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {

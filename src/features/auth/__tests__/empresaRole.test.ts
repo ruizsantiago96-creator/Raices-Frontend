@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { esEmpresa, puedeAbrirEmpresa, esVistaPreviaEmpresa, tieneRol, EMPRESA_HOME, EMPRESA_EDITAR, EMPRESA_VISTA_PREVIA, RUTAS_BLOQUEADAS_EMPRESA } from '../lib/empresaRole'
-import { getCamposOnboardingFaltantes } from '../../empresa/components/EmpresaOnboardingModal'
+import { getCamposOnboardingFaltantes } from '../../empresa/components/EmpresaOnboardingModal.constants'
 import type { Institution } from '../../../types/institutions'
 
 describe('esEmpresa', () => {
