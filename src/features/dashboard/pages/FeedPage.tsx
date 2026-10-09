@@ -6,7 +6,7 @@ import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useRegistrarInteraccion, useInteraccionesPesos } from '@features/institutions/hooks/useInteractions'
 import { usePosts, useForos } from '@features/social'
-import { Icons, CATEGORY_COLORS, RestrictedOverlay } from '@shared/components/shared'
+import { Icons, CATEGORY_COLORS, RestrictedOverlay, RestrictedContent } from '@shared/components/shared'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
@@ -578,12 +578,10 @@ export default function FeedPage() {
   // no tiene expediente de onboarding ni documentación de identidad que completar.
   const isAdmin = user?.role === 'admin'
 
-  // Las instituciones validan su existencia con el registro de la institución y
-  // las empresas (personas morales) con su Constancia de Situación Fiscal (CSF):
-  // ninguno de los dos roles pasa por el onboarding de usuario estándar (CURP,
-  // perfil al 33%, candados de recomendaciones). Todo ese flujo se oculta para
-  // ellos también (banner, candados y modal).
-  const esRolSinOnboardingEstándar = isAdmin || user?.role === 'institution' || user?.role === 'empresa'
+  // Solo el administrador gestiona la plataforma y no pasa por el flujo de onboarding/perfil.
+  // Todos los roles (pcd, tutor, institución, empresa) deben completar su perfil o
+  // validar su documentación para desbloquear las recomendaciones y secciones protegidas.
+  const esRolSinOnboardingEstándar = isAdmin
 
   // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
   const isIncomplete = !esRolSinOnboardingEstándar && Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
@@ -781,19 +779,19 @@ export default function FeedPage() {
 
         {/* 🤖 AI Cards 🤖 */}
         {!isLoading && (
-          <div style={{ marginBottom: 4, position: 'relative' }}>
-            {isIncomplete && (
-              <RestrictedOverlay 
-                title="Desbloquea el Matchmaking" 
-                message="Completa tu perfil para recibir recomendaciones."
-              />
-            )}
-            <NextStepsCard />
-            <div style={{ marginBottom: 14 }}>
-              <VerificationBadgeCard compact />
-            </div>
-            <ProfileSummaryCard />
-            <BehaviorWeightsCard />
+          <div style={{ marginBottom: 4 }}>
+            <RestrictedContent
+              isRestricted={isIncomplete}
+              title="Desbloquea el Matchmaking"
+              message="Completa tu perfil para recibir recomendaciones personalizadas."
+            >
+              <NextStepsCard />
+              <div style={{ marginBottom: 14 }}>
+                <VerificationBadgeCard compact />
+              </div>
+              <ProfileSummaryCard />
+              <BehaviorWeightsCard />
+            </RestrictedContent>
           </div>
         )}
 
@@ -810,7 +808,7 @@ export default function FeedPage() {
         {!especialistasLoading && especialistas.length > 0 && (
           <div style={{ marginBottom: 24, position: 'relative' }}>
             {isIncomplete && (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--bg-surface)', opacity: 0.94, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
+              <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
                 <div style={{ fontSize: 32, marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>🔒</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', maxWidth: 280 }}>Desbloquea recomendaciones</div>
                 <div style={{ fontSize: 13, color: 'var(--fg2)', textAlign: 'center', maxWidth: 280, marginTop: 4, fontWeight: 500 }}>Completa tu perfil para ver especialistas adaptados a ti</div>

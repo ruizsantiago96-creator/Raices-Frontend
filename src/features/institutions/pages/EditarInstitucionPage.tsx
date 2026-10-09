@@ -120,7 +120,17 @@ export default function EditarInstitucionPage() {
       edadMaxima: institution.edadMaxima ?? 99,
       horarioAtencion: institution.horarioAtencion ?? '',
       tipoPlan: institution.tipoPlan ?? 'gratuito',
-      servicios: (institution.servicios ?? []).map(s => typeof s === 'string' ? s : (s.nombre ?? '')).filter(Boolean),
+      servicios: (institution.servicios ?? []).map(s => {
+        if (typeof s === 'string') {
+          try {
+            const p = JSON.parse(s)
+            return p.nombre || s
+          } catch {
+            return s
+          }
+        }
+        return (s as { nombre?: string })?.nombre ?? ''
+      }).filter(Boolean),
     })
   }
 

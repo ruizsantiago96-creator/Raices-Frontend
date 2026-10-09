@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Icons } from '@shared/components/shared'
 import { CustomSelect } from '@shared/components/CustomSelect'
@@ -15,29 +15,6 @@ export interface ServicioItem {
   accesibilidad: string[]
   activo: boolean
 }
-
-const DEFAULT_SERVICES: ServicioItem[] = [
-  {
-    id: 's1',
-    nombre: 'Terapia Ocupacional e Inclusión',
-    categoria: 'Salud y Terapia',
-    descripcion: 'Sesiones personalizadas de desarrollo de habilidades motoras, sensoriales y autonomía.',
-    costo: 'Cuota de recuperación',
-    horario: 'Lunes a Viernes, 9:00 - 15:00 hrs',
-    accesibilidad: ['Intérprete LSM', 'Rampa de acceso', 'Espacio sensorial amigable'],
-    activo: true,
-  },
-  {
-    id: 's2',
-    nombre: 'Talleres de Habilidades Sociales',
-    categoria: 'Educación',
-    descripcion: 'Grupos de apoyo y desarrollo socioemocional para jóvenes y personas neurodivergentes.',
-    costo: 'Gratuito',
-    horario: 'Sábados, 10:00 - 13:00 hrs',
-    accesibilidad: ['Rampa de acceso', 'Estacionamiento accesible'],
-    activo: true,
-  },
-]
 
 const CATEGORIAS = ['Salud y Terapia', 'Educación', 'Recreación', 'Asistencia Social', 'Otro'] as const
 const ETIQUETAS_ACCESIBILIDAD = [
@@ -57,6 +34,59 @@ function generateServiceId(): string {
   return `s-${serviceIdCounter}`
 }
 
+function parseServicio(raw: unknown, idx: number): ServicioItem {
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object' && parsed.nombre) {
+        return {
+          id: parsed.id ? String(parsed.id) : `s-${idx}`,
+          nombre: String(parsed.nombre),
+          categoria: parsed.categoria ?? 'Salud y Terapia',
+          descripcion: parsed.descripcion ?? '',
+          costo: parsed.costo ? String(parsed.costo) : 'Gratuito',
+          horario: parsed.horario ?? '',
+          accesibilidad: Array.isArray(parsed.accesibilidad) ? parsed.accesibilidad : [],
+          activo: parsed.activo !== false,
+        }
+      }
+    } catch {
+      return {
+        id: `s-${idx}`,
+        nombre: raw,
+        categoria: 'Salud y Terapia',
+        descripcion: '',
+        costo: 'Gratuito',
+        horario: '',
+        accesibilidad: [],
+        activo: true,
+      }
+    }
+  } else if (raw && typeof raw === 'object') {
+    const s = raw as Record<string, unknown>
+    return {
+      id: s.id ? String(s.id) : `s-${idx}`,
+      nombre: (s.nombre as string) || (s.name as string) || '',
+      categoria: (s.categoria as ServicioItem['categoria']) ?? 'Salud y Terapia',
+      descripcion: (s.descripcion as string) ?? '',
+      costo: (s.costo as string) ?? 'Gratuito',
+      horario: (s.horario as string) ?? '',
+      accesibilidad: Array.isArray(s.accesibilidad) ? (s.accesibilidad as string[]) : [],
+      activo: s.activo !== false,
+    }
+  }
+  return {
+    id: `s-${idx}`,
+    nombre: '',
+    categoria: 'Salud y Terapia',
+    descripcion: '',
+    costo: 'Gratuito',
+    horario: '',
+    accesibilidad: [],
+    activo: true,
+  }
+}
+
 export default function ServiciosTab() {
   const { data: institution } = useMiInstitucion()
   const updateMutation = useUpdateMiInstitucion()
@@ -64,19 +94,19 @@ export default function ServiciosTab() {
 
   const [servicios, setServicios] = useState<ServicioItem[]>(() => {
     if (institution?.servicios && Array.isArray(institution.servicios) && institution.servicios.length > 0) {
-      return (institution.servicios as unknown as ServicioItem[]).map((s, idx) => ({
-        id: s.id ? String(s.id) : `s-${idx}`,
-        nombre: s.nombre ?? 'Servicio Institucional',
-        categoria: s.categoria ?? 'Salud y Terapia',
-        descripcion: s.descripcion ?? '',
-        costo: s.costo ? String(s.costo) : 'Gratuito',
-        horario: s.horario ?? 'Horario flexible',
-        accesibilidad: s.accesibilidad ?? ['Rampa de acceso'],
-        activo: s.activo !== false,
-      }))
+      return (institution.servicios as unknown[]).map(parseServicio).filter(s => Boolean(s.nombre))
     }
-    return DEFAULT_SERVICES
+    return []
   })
+
+  useEffect(() => {
+    if (institution?.servicios && Array.isArray(institution.servicios)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setServicios(
+        (institution.servicios as unknown[]).map(parseServicio).filter(s => Boolean(s.nombre))
+      )
+    }
+  }, [institution?.servicios])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ServicioItem | null>(null)
@@ -174,12 +204,23 @@ export default function ServiciosTab() {
   }
 
   const saveServicios = (lista: ServicioItem[]) => {
-    if (institution?.id) {
-      updateMutation.mutate({
-        id: institution.id,
-        servicios: lista as unknown as Record<string, unknown>[],
-      })
-    }
+    // El backend valida que cada elemento en servicios sea string (@IsString({ each: true })).
+    // Serializamos como JSON strings para preservar todos los atributos del servicio.
+    const payloadServicios: string[] = lista.map(s => JSON.stringify(s))
+
+    updateMutation.mutate(
+      {
+        servicios: payloadServicios,
+      },
+      {
+        onError: (err: unknown) => {
+          const apiErr = err as { response?: { data?: { message?: string | string[] } } }
+          const msg = apiErr?.response?.data?.message
+          const errMsg = Array.isArray(msg) ? msg.join(', ') : msg || 'Error al guardar los servicios'
+          addToast(errMsg, 'error')
+        },
+      }
+    )
   }
 
   return (
@@ -208,7 +249,53 @@ export default function ServiciosTab() {
       </div>
 
       {/* Services List */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+      {servicios.length === 0 ? (
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1.5px dashed var(--border-color)',
+            borderRadius: 16,
+            padding: '48px 24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'color-mix(in oklch, var(--primary) 12%, transparent)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 4,
+            }}
+          >
+            {Icons.building({ s: 28 })}
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0, fontFamily: 'var(--font-display)' }}>
+            Aún no tienes servicios registrados
+          </h3>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0, maxWidth: 440, lineHeight: 1.5 }}>
+            Publica las terapias, talleres, asesorías o actividades que tu institución ofrece para que los usuarios puedan conocerlas y contactarte.
+          </p>
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            className="btn-primary"
+            style={{ marginTop: 8, padding: '10px 22px', fontSize: 14, fontWeight: 700, borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            {Icons.plus({ s: 18 })} Agregar mi primer servicio
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
         {servicios.map(servicio => (
           <div
             key={servicio.id}
@@ -308,6 +395,7 @@ export default function ServiciosTab() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal: Agregar / Editar servicio */}
       {isModalOpen && createPortal(

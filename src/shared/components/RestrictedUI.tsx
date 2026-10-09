@@ -42,8 +42,9 @@ export function RestrictedOverlay({
     <div style={{ 
       position: 'absolute', 
       top: 0, left: 0, right: 0, bottom: 0, 
-      background: 'var(--bg-surface)', 
-      opacity: 0.92,
+      background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)', 
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       zIndex: 10, 
       display: 'flex', 
       flexDirection: 'column', 
