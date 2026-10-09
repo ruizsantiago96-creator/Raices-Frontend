@@ -23,7 +23,7 @@ vi.mock('@features/notifications', () => ({
 
 import FeedPage from '../pages/FeedPage'
 import { useAuthStore, } from '@features/auth/store/authStore'
-import { useOnboardingStatus, fetchOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
+import { useOnboardingStatus, fetchOnboardingStatus, CLAVE_CIERRE_ONBOARDING_TUTOR } from '@features/institutions/hooks/useRecommendations'
 import { preloadSessionState } from '@features/auth/hooks/useAuth'
 import { queryClient as singletonClient } from '@shared/lib/queryClient'
 
@@ -166,6 +166,24 @@ describe('Modal "Completa tu perfil" en el Feed tras auto-login', () => {
   it('E) si el backend falla por completo, no se cachea un estado vacío como si fuera válido', async () => {
     failAuth = true
     await expect(fetchOnboardingStatus({ rol: 'pcd' })).rejects.toBeTruthy()
+  }, 20000)
+
+  it('H) TUTOR que ya finalizó el wizard: estado 100% en local y el modal NO vuelve a aparecer', async () => {
+    localStorage.setItem(CLAVE_CIERRE_ONBOARDING_TUTOR, 'true')
+    try {
+      // El backend del mock sigue respondiendo 33% con campos faltantes
+      const estadoTutor = await fetchOnboardingStatus({ rol: 'tutor' })
+      expect(estadoTutor.onboardingCompleto).toBe(true)
+      expect(estadoTutor.porcentajeProgreso).toBe(100)
+      expect(estadoTutor.camposFaltantes).toEqual([])
+
+      // Regla estricta: el cierre local NO aplica al rol PCD (sigue al 33%)
+      const estadoPcd = await fetchOnboardingStatus({ rol: 'pcd' })
+      expect(estadoPcd.onboardingCompleto).toBe(false)
+      expect(estadoPcd.porcentajeProgreso).toBe(33)
+    } finally {
+      localStorage.removeItem(CLAVE_CIERRE_ONBOARDING_TUTOR)
+    }
   }, 20000)
 
   it('F) "Más tarde" solo oculta en la vista activa: al remontar el Feed el modal vuelve a aparecer', async () => {

@@ -5,7 +5,7 @@ import { useUiStore } from '@shared/stores/uiStore'
 import { useUpdateProfile, useUpdateNeedsProfile, useMe, useAuthStore } from '@features/auth'
 import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
-import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
+import { useOnboardingStatus, useSaveOnboardingBorrador, CLAVE_CIERRE_ONBOARDING_TUTOR } from '@features/institutions/hooks/useRecommendations'
 import { useEstadoValidacion } from '../hooks/useDocumentoIdentidad'
 import {
   LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
@@ -504,13 +504,47 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         }
       }
 
-      // 4. Invalidate queries (el estado de onboarding se lee SIEMPRE del
+      // 4. Cierre del onboarding: 200 OK del backend que sella el progreso
+      // (POST /onboarding/completar consolida el 100% para el rol Tutor).
+      try {
+        await api.post('/onboarding/completar')
+      } catch (completarErr) {
+        console.warn('[TutorProfileWizard] Cierre de onboarding no confirmado:', completarErr)
+      }
+
+      // Cierre local del Tutor: registra en este navegador que el formulario
+      // ya se finalizó, para que el modal "Completa tu perfil" y el banner del
+      // Feed no vuelvan a pedirlo aunque el backend (p. ej. despliegue
+      // anterior) responda todavía un porcentaje parcial. Solo aplica al rol
+      // Tutor; el wizard sigue siendo accesible desde /completar-perfil.
+      try {
+        localStorage.setItem(CLAVE_CIERRE_ONBOARDING_TUTOR, 'true')
+      } catch { /* almacenamiento no disponible (modo privado) */ }
+
+      // 5. Invalidate queries (el estado de onboarding se lee SIEMPRE del
       // backend: sin bandera local que declare el onboarding completo, para que
       // el modal del Feed refleje el progreso real en cada recarga).
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
       qc.invalidateQueries({ queryKey: ['dependientes'] })
+
+      // 6. Estado global en MEMORIA: se fija el 100% (y la lista de faltantes
+      // vacía) ANTES de desmontar el modal, para que el Feed no vuelva a
+      // disparar "Completa tu perfil" al renderizar. Es la misma clave que
+      // usa useOnboardingStatus (esEmpresa=false para el rol Tutor).
+      qc.setQueryData(['onboarding-status', false], {
+        onboardingCompleto: true,
+        completado: true,
+        porcentajeProgreso: 100,
+        porcentaje: 100,
+        ultimoPasoCompletado: 6,
+        pasosPendientes: [],
+        seccionesFaltantes: [],
+        camposFaltantes: [],
+        destinatarioPerfil: destinatarioPerfil || 'PARA_MI_HIJO',
+        nombrePcd: effectiveNombrePcd,
+      })
       const isExplorarSolo = acompanamiento === 'explorar_solo'
       saveOnboardingData({
         interests: isExplorarSolo ? [] : selectedInterests,

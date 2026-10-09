@@ -94,6 +94,14 @@ export interface OnboardingStatusQueryOptions {
 }
 
 /**
+ * Clave local que registra que el TUTOR ya finalizó el wizard (200 OK).
+ * Solo se lee para el rol Tutor y NO declare completo a otros roles: evita
+ * que el modal "Completa tu perfil" y el banner del Feed vuelvan a pedir el
+ * formulario cuando el backend desplegado aún reporta un porcentaje parcial.
+ */
+export const CLAVE_CIERRE_ONBOARDING_TUTOR = 'raices_onboarding_tutor_completado'
+
+/**
  * Estado de onboarding + validación de identidad de la sesión actual.
  * GET /api/onboarding/estado (con fallback a /api/usuarios/onboarding)
  *
@@ -158,6 +166,19 @@ export async function fetchOnboardingStatus(
   }
 
   if (isTutor && (porcentajeProgreso >= 75 || pasosPendientes.length === 0)) {
+    onboardingCompleto = true
+    porcentajeProgreso = 100
+    pasosPendientes = []
+  }
+
+  // TUTOR que ya finalizó el wizard en este navegador: el cierre local manda
+  // (solo para tutor) para que el formulario no vuelva a aparecer aunque el
+  // backend (p. ej. un despliegue anterior) responda todavía un % parcial.
+  if (
+    isTutor &&
+    typeof window !== 'undefined' &&
+    localStorage.getItem(CLAVE_CIERRE_ONBOARDING_TUTOR) === 'true'
+  ) {
     onboardingCompleto = true
     porcentajeProgreso = 100
     pasosPendientes = []
