@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Icons } from '@shared/components/shared'
 import { useMiInstitucion } from '../hooks/useInstitutions'
@@ -14,36 +14,31 @@ export interface ResenaItem {
   fechaRespuesta?: string
 }
 
-const MOCK_RESENAS: ResenaItem[] = [
-  {
-    id: 'r1',
-    usuarioNombre: 'María Elena Ramos',
-    calificacion: 5,
-    comentario: 'Excelente atención en los talleres de terapia ocupacional. Las instalaciones son muy accesibles y el personal es sumamente paciente y profesional.',
-    fecha: 'Hace 3 días',
-    respuestaOficial: '¡Muchas gracias María Elena! Nos alegra profundamente poder acompañar el desarrollo y bienestar de tu familia.',
-    fechaRespuesta: 'Hace 2 días',
-  },
-  {
-    id: 'r2',
-    usuarioNombre: 'Carlos Mendoza (Tutor)',
-    calificacion: 4,
-    comentario: 'Muy buena orientación sobre becas y programas de asistencia. Sería genial que ampliaran los horarios los fines de semana.',
-    fecha: 'Hace 1 semana',
-  },
-]
-
 export default function ResenasTab() {
   const { data: institution } = useMiInstitucion()
   const { addToast } = useUiStore()
 
-  const [resenas, setResenas] = useState<ResenaItem[]>(MOCK_RESENAS)
+  const [resenas, setResenas] = useState<ResenaItem[]>(() => {
+    if (institution?.resenas && Array.isArray(institution.resenas)) {
+      return institution.resenas as unknown as ResenaItem[]
+    }
+    return []
+  })
+
+  useEffect(() => {
+    if (institution?.resenas && Array.isArray(institution.resenas)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResenas(institution.resenas as unknown as ResenaItem[])
+    }
+  }, [institution?.resenas])
 
   // Modal response state
   const [selectedResena, setSelectedResena] = useState<ResenaItem | null>(null)
   const [respuestaText, setRespuestaText] = useState('')
 
-  const avgRating = (resenas.reduce((acc, r) => acc + r.calificacion, 0) / (resenas.length || 1)).toFixed(1)
+  const avgRating = resenas.length > 0
+    ? (resenas.reduce((acc, r) => acc + r.calificacion, 0) / resenas.length).toFixed(1)
+    : '0.0'
 
   const handleOpenResponder = (resena: ResenaItem) => {
     setSelectedResena(resena)
@@ -119,8 +114,47 @@ export default function ResenasTab() {
         </div>
       </div>
 
-      {/* Reviews list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Reviews list / Empty State */}
+      {resenas.length === 0 ? (
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1.5px dashed var(--border-color)',
+            borderRadius: 16,
+            padding: '48px 24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'color-mix(in oklch, var(--primary) 12%, transparent)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              marginBottom: 4,
+            }}
+          >
+            ⭐
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0, fontFamily: 'var(--font-display)' }}>
+            Aún no tienes opiniones registradas
+          </h3>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: 0, maxWidth: 440, lineHeight: 1.5 }}>
+            Cuando los usuarios y familias conozcan tus servicios y califiquen su experiencia en tu perfil público, podrás consultarlas y responderles desde aquí.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {resenas.map(resena => (
           <div
             key={resena.id}
@@ -202,7 +236,8 @@ export default function ResenasTab() {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Modal: Responder a Reseña */}
       {selectedResena && createPortal(
