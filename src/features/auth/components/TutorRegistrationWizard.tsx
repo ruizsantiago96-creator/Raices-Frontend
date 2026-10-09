@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
+import { useUpdateProfile, useUpdateNeedsProfile, preloadSessionState } from '../hooks/useAuth'
 import type { UserRole } from '../../../types/auth'
 import { Icons } from '@shared/components/shared'
 import { CustomDatePicker } from '@shared/components/CustomDatePicker'
@@ -171,6 +172,7 @@ const TOTAL_STEPS = 10
 export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: TutorRegistrationWizardProps) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
+  const queryClient = useQueryClient()
   const nav = useNavigate()
   const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
@@ -425,7 +427,7 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         authResult?.datos?.usuario ||
         authResult?.data?.usuario
 
-      if (!tokenAcceso && !authResult?.requiereInicioSesion) {
+      if (!tokenAcceso) {
         try {
           let loginRes
           try {
@@ -496,6 +498,11 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
           }
         }
         
+        // Auto-login: cargar el estado de sesión completo (perfil + progreso
+        // de onboarding) en la caché global ANTES de navegar, para que el Feed
+        // —y su modal "Completa tu perfil"— lea datos reales al llegar.
+        await preloadSessionState(queryClient, { rol: 'tutor' })
+
         addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
         nav('/completar-perfil', { replace: true })
       } else {

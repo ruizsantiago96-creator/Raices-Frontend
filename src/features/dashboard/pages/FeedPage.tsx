@@ -574,26 +574,22 @@ export default function FeedPage() {
   const isRejected = Boolean(identidadStatus?.estado === 'rechazado')
   const isOnboardingComplete = Boolean(onboardingStatus?.onboardingCompleto)
 
-  // Un administrador gestiona la plataforma, no usa el ecosistema como beneficiario:
-  // no tiene expediente de onboarding ni documentación de identidad que completar.
-  const isAdmin = user?.role === 'admin'
+  // Quién no debe pasar por el modal de completar perfil (admin, institución, empresa).
+  const isRolSinOnboardingEstándar = user?.role === 'admin' || user?.role === 'institution' || user?.role === 'empresa'
 
-  // Las instituciones validan su existencia con el registro de la institución y
-  // las empresas (personas morales) con su Constancia de Situación Fiscal (CSF):
-  // ninguno de los dos roles pasa por el onboarding de usuario estándar (CURP,
-  // perfil al 33%, candados de recomendaciones). Todo ese flujo se oculta para
-  // ellos también (banner, candados y modal).
-  const esRolSinOnboardingEstándar = isAdmin || user?.role === 'institution' || user?.role === 'empresa'
+  // El perfil sigue incompleto cuando hay estado de onboarding, aún no está completo
+  // y no hay documentación de identidad en revisión ni aprobada.
+  const isIncomplete = !isRolSinOnboardingEstándar && Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
 
-  // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
-  const isIncomplete = !esRolSinOnboardingEstándar && Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
-
-  // Debe salir si fue rechazado por el admin, o si aún no está verificado y su perfil está incompleto.
-  const [modalDismissed, setModalDismissed] = useState<boolean>(false)
-  const shouldShowProfileModal = !esRolSinOnboardingEstándar && !modalDismissed && (isRejected || (!isVerified && isIncomplete))
+  // El modal debe volver a aparecer siempre que el perfil sigue incompleto o fue
+  // rechazado, aunque el usuario lo haya cerrado antes. No usamos modalDismissed como
+  // bloqueo permanente, sino solo para evitar parpadeos de apertura/cierre en el mismo
+  // render mientras el usuario decide.
+  const [modalDismissedThisSession, setModalDismissedThisSession] = useState<boolean>(false)
+  const shouldShowProfileModal = !isRolSinOnboardingEstándar && !modalDismissedThisSession && (isRejected || (!isVerified && isIncomplete))
 
   const handleDismissModal = () => {
-    setModalDismissed(true)
+    setModalDismissedThisSession(true)
   }
 
   // ── User interests from localStorage or profile (used silently for sorting)
@@ -716,7 +712,7 @@ export default function FeedPage() {
   return (
     <main className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>        {/* ── Progress Bar ── */}
-        {isIncomplete && !isRejected && !((esRolSinOnboardingEstándar && location.pathname === '/feed') && onboardingStatus?.onboardingCompleto && !isPendingDocs && !isApproved) && (
+        {isIncomplete && !isRejected && !isRolSinOnboardingEstándar && (onboardingStatus?.onboardingCompleto !== true || isPendingDocs || isApproved) && (
           <div className="animate-fade-in-up" style={{
             background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
             border: '1px solid rgba(34,155,88,0.2)',

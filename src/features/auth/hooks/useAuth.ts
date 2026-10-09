@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, useMutation, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation, type UseQueryResult, type UseMutationResult, type QueryClient } from '@tanstack/react-query'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
@@ -7,6 +7,7 @@ import { setRememberMe, saveUser, getRememberMe } from '@shared/lib/storage'
 import { decodeAvatarUrl } from '@shared/lib/urlUtils'
 import { firebaseBridgeLogin, isBridgeAvailable } from '../lib/firebaseBridge'
 import { EMPRESA_HOME } from '../lib/empresaRole'
+import { fetchOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type { User, UserRole, BackendUser } from '../../../types/auth'
 
 /**
@@ -161,6 +162,7 @@ export interface RegisterApiResponse {
 
 export function useRegister(): UseMutationResult<RegisterApiResponse, Error, RegisterVariables> {
   const { setAuth } = useAuthStore()
+  const queryClient = useQueryClient()
   const nav = useNavigate()
   const { addToast } = useUiStore()
   return useMutation<RegisterApiResponse, Error, RegisterVariables>({
@@ -179,7 +181,7 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
       // multer en esta ruta): enviar multipart deja el body sin parsear → 400.
       return api.post('/autenticacion/registro', body).then(r => r.data)
     },
-    onSuccess: (raw: RegisterApiResponse, variables: RegisterVariables) => {
+    onSuccess: async (raw: RegisterApiResponse, variables: RegisterVariables) => {
       const rememberMe = variables?._rememberMe ?? true
       const role = variables?.role
 
@@ -211,6 +213,12 @@ export function useRegister(): UseMutationResult<RegisterApiResponse, Error, Reg
         hasRefreshToken: Boolean(refresh),
         storageType: rememberMe ? 'localStorage' : 'sessionStorage',
       })
+
+      // Sesión creada: traer el estado completo del perfil (yo + progreso de
+      // onboarding) ANTES de redirigir, para que el Feed lea datos reales y
+      // el modal "Completa tu perfil" reaccione desde el primer render.
+      await preloadSessionState(queryClient, { rol: user?.rol ?? role ?? null })
+
       nav(getHomePathByRole(role), { replace: true })
     },
   })
@@ -221,33 +229,68 @@ export interface MeResponse extends User {
   is_verified?: boolean
 }
 
+/**
+ * GET /autenticacion/yo — perfil completo de la sesión actual.
+ * Misma consulta que usa `useMe`, extraída para poder precargarla tras el
+ * registro con auto-login ANTES de redirigir al Feed.
+ */
+export async function fetchMeQuery(): Promise<MeResponse> {
+  const r = await api.get('/autenticacion/yo')
+  const d = r.data
+  return {
+    id: d.id,
+    email: d.email,
+    role: normalizeRole(d.rol),
+    rol: d.rol,
+    tipo: d.tipo,
+    full_name: d.nombreCompleto,
+    city: d.ciudad,
+    state: d.estado,
+    country: d.pais,
+    codigoPostal: d.codigoPostal,
+    avatar_url: decodeAvatarUrl(d.urlAvatar),
+    is_verified: d.verificado,
+    features: d.features ?? {},
+    destinatarioRegistro: d.destinatarioRegistro ?? null,
+    curp: d.curp ?? null,
+    curpSubida: Boolean(d.curpSubida || d.verificado || d.curp || d.documentoCsf || d.documentoCurp),
+    telefonoContacto: d.telefonoContacto ?? null,
+    preferenciasAcompanamiento: d.preferenciasAcompanamiento ?? null,
+  } as MeResponse
+}
+
+/**
+ * Carga (o recarga) el estado de sesión completo en la caché de React Query
+ * antes de redirigir: perfil (`/autenticacion/yo`) y progreso de onboarding.
+ *
+ * Es la misma "acción que obtiene los datos del perfil" que ocurría en el
+ * login manual, ahora disparada también por el registro con auto-login. Sin
+ * ella el Feed montaba con una caché de onboarding vacía y el modal
+ * "Completa tu perfil" no aparecía para los usuarios recién registrados.
+ *
+ * `Promise.allSettled`: un fallo de red no debe impedir la redirección.
+ */
+export async function preloadSessionState(
+  queryClient: QueryClient,
+  { rol = null }: { rol?: string | null } = {},
+): Promise<void> {
+  const esEmpresa = normalizeRole(rol) === 'empresa'
+
+  await Promise.allSettled([
+    queryClient.prefetchQuery({ queryKey: ['me'], queryFn: fetchMeQuery, staleTime: 60_000 }),
+    queryClient.prefetchQuery({
+      queryKey: ['onboarding-status', esEmpresa],
+      queryFn: () => fetchOnboardingStatus({ rol, esEmpresa }),
+      staleTime: 60_000,
+    }),
+  ])
+}
+
 export function useMe(): UseQueryResult<MeResponse, Error> {
   const { token } = useAuthStore()
   return useQuery<MeResponse, Error>({
     queryKey: ['me'],
-    queryFn: () => api.get('/autenticacion/yo').then(r => {
-      const d = r.data
-      return {
-        id: d.id,
-        email: d.email,
-        role: normalizeRole(d.rol),
-        rol: d.rol,
-        tipo: d.tipo,
-        full_name: d.nombreCompleto,
-        city: d.ciudad,
-        state: d.estado,
-        country: d.pais,
-        codigoPostal: d.codigoPostal,
-        avatar_url: decodeAvatarUrl(d.urlAvatar),
-        is_verified: d.verificado,
-        features: d.features ?? {},
-        destinatarioRegistro: d.destinatarioRegistro ?? null,
-        curp: d.curp ?? null,
-        curpSubida: Boolean(d.curpSubida || d.verificado || d.curp || d.documentoCsf || d.documentoCurp),
-        telefonoContacto: d.telefonoContacto ?? null,
-        preferenciasAcompanamiento: d.preferenciasAcompanamiento ?? null,
-      }
-    }),
+    queryFn: fetchMeQuery,
     enabled: Boolean(token),
     refetchInterval: 2 * 60 * 1000,
     refetchOnWindowFocus: true,

@@ -334,9 +334,10 @@ describe('Contrato de registro — PCD', () => {
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH_USER) ?? '{}')).toMatchObject({ full_name: NOMBRE_COMPLETO })
   }, 20000)
 
-  it('2) con requiereInicioSesion:true: registra SIN auto-login ni persistencia', async () => {
+  it('2) con requiereInicioSesion:true: registra, auto-login y persiste la sesión', async () => {
     stubApi({
       'post /autenticacion/registro': { requiereInicioSesion: true, mensaje: 'Cuenta creada' },
+      'post /autenticacion/inicio-sesion': PCD_TOKEN_RESPONSE,
     })
 
     renderWithProviders(<RegistrationWizard onBackToRoles={() => {}} onGoToLogin={() => {}} />)
@@ -345,11 +346,13 @@ describe('Contrato de registro — PCD', () => {
     await waitFor(() => expect(callsFor('post', '/autenticacion/registro')).toHaveLength(1))
     expect(lastCallFor('post', '/autenticacion/registro')).toMatchObject({ rol: 'pcd' })
 
-    // Sin auto-login
-    expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(0)
+    // Auto-login: sin token en el registro, el wizard llama a inicio-sesion
+    // con las mismas credenciales y guarda la sesión (nuevo contrato).
+    expect(callsFor('post', '/autenticacion/inicio-sesion')).toHaveLength(1)
+    expect(lastCallFor('post', '/autenticacion/inicio-sesion')).toMatchObject({ email: EMAIL, password: PASSWORD })
 
-    // Sin sesión persistida
-    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBeNull()
+    // Sesión persistida (setAuth)
+    expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe('tk-123')
   }, 20000)
 })
 

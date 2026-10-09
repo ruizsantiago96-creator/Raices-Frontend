@@ -10,6 +10,7 @@ import {
   clearAllAuth,
 } from '../../../shared/lib/storage'
 import { closeNotificationStream, suspendStream, resumeStream } from '@features/notifications'
+import { queryClient } from '../../../shared/lib/queryClient'
 
 /**
  * STORE GLOBAL DE AUTENTICACIÓN (Fase 3 · Migración TS)
@@ -45,6 +46,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     saveRefreshToken(refresh, rememberMe)
     saveUser(user, rememberMe)
     set({ token, user: user ?? null, refreshToken: refresh ?? null })
+
+    // ── Nueva sesión (login manual o registro con auto-login) ──────────────
+    // Todo lo cacheado antes de existir esta sesión pertenece a otra sesión
+    // (o se obtuvo sin token y quedó vacío): se marca obsoleto para que las
+    // consultas de perfil/progreso se refresquen con el token nuevo. Sin esto,
+    // el Feed leía un estado de onboarding sin datos y el modal "Completa tu
+    // perfil" no volvía a aparecer para los usuarios recién registrados.
+    for (const queryKey of [
+      ['me'],
+      ['profile'],
+      ['perfil'],
+      ['onboarding-status'],
+      ['documento-identidad'],
+    ]) {
+      void queryClient.invalidateQueries({ queryKey })
+    }
   },
   logout: () => {
     // 🛡️ Evitar bucles infinitos de redirección si ya estamos deslogueados (solo en el navegador real)

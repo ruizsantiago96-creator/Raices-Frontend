@@ -86,87 +86,117 @@ export function useRecomendacionesEspecialistas({ pagina = 1, limite = 20 } = {}
  * - nombrePcd: string
  * - pasosPendientes: string[]
  */
+export interface OnboardingStatusQueryOptions {
+  /** Rol del usuario en sesión (crudo o normalizado): aplica las reglas de tutor/empresa. */
+  rol?: string | null
+  /** `true` si la cuenta es empresa (misma regla que aplica el hook). */
+  esEmpresa?: boolean
+}
+
+/**
+ * Estado de onboarding + validación de identidad de la sesión actual.
+ * GET /api/onboarding/estado (con fallback a /api/usuarios/onboarding)
+ *
+ * Es la MISMA consulta que ejecuta `useOnboardingStatus`, extraída para poder
+ * precargarla desde el registro con auto-login ANTES de redirigir al Feed:
+ * así la caché de React Query ya contiene el progreso real del perfil y el
+ * modal "Completa tu perfil" reacciona desde el primer render.
+ *
+ * Si AMBAS rutas de onboarding fallan se propaga el error en vez de devolver
+ * `{}`: un fallo no debe cachearse como un estado vacío válido durante
+ * `staleTime` (5 min), porque el Feed entonces lee "sin datos" y el modal queda
+ * oculto aunque el perfil esté incompleto. React Query lo trata como error y
+ * reintenta en el próximo mount.
+ */
+export async function fetchOnboardingStatus(
+  { rol = null, esEmpresa = false }: OnboardingStatusQueryOptions = {},
+): Promise<OnboardingEstadoResponse> {
+  // Obtenemos estado de onboarding y de validación de identidad en paralelo
+  const [onboardingRes, identidadRes] = await Promise.all([
+    api.get('/onboarding/estado')
+      .catch(() => api.get('/usuarios/onboarding')),
+    api.get('/usuarios/estado-validacion-identidad')
+      .catch(() => ({ data: { estado: 'no_subido' } }))
+  ])
+
+  const rawData = onboardingRes.data || {}
+  const estado = identidadRes.data?.estado
+
+  let porcentajeProgreso = typeof rawData.porcentajeProgreso === 'number'
+    ? rawData.porcentajeProgreso
+    : typeof rawData.porcentaje === 'number'
+      ? rawData.porcentaje
+      : 0
+
+  const ultimoPasoCompletado = typeof rawData.ultimoPasoCompletado === 'number'
+    ? rawData.ultimoPasoCompletado
+    : 0
+
+  const destinatarioPerfil = rawData.destinatarioPerfil || 'PARA_MI'
+  const nombrePcd = rawData.nombrePcd || ''
+  let pasosPendientes = Array.isArray(rawData.pasosPendientes)
+    ? rawData.pasosPendientes
+    : Array.isArray(rawData.camposFaltantes)
+      ? rawData.camposFaltantes
+      : []
+
+  let onboardingCompleto = Boolean(rawData.onboardingCompleto)
+
+  const isTutor = rol === 'tutor' || rol === 'padre_tutor' || destinatarioPerfil === 'PARA_MI_HIJO'
+  const hasCompletedLocally = localStorage.getItem('raices_onboarding_completed_tutor') === 'true' || localStorage.getItem('raices_onboarding_completed_pcd') === 'true'
+
+  // Normalización para tutores: acreditacionTutor es una verificación secundaria/opcional que NO debe estancar el 75%
+  pasosPendientes = pasosPendientes.filter((f: string) => f !== 'acreditacionTutor' && (esEmpresa ? f !== 'curp' && f !== 'fechaNacimiento' : true))
+
+  if (esEmpresa && pasosPendientes.length === 0) {
+    onboardingCompleto = true
+    porcentajeProgreso = 100
+  }
+
+  if (isTutor && (porcentajeProgreso >= 75 || hasCompletedLocally || pasosPendientes.length === 0)) {
+    onboardingCompleto = true
+    porcentajeProgreso = 100
+    pasosPendientes = []
+  }
+
+  if (hasCompletedLocally) {
+    onboardingCompleto = true
+    porcentajeProgreso = 100
+    pasosPendientes = []
+  }
+
+  // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
+  // para desbloquear todas las vistas globalmente.
+  if (estado === 'aprobado' || estado === 'pendiente') {
+    onboardingCompleto = true
+    porcentajeProgreso = 100
+  }
+
+  return {
+    ...rawData,
+    onboardingCompleto,
+    porcentajeProgreso,
+    porcentaje: porcentajeProgreso,
+    ultimoPasoCompletado,
+    destinatarioPerfil,
+    nombrePcd,
+    pasosPendientes,
+    camposFaltantes: pasosPendientes,
+  } as OnboardingEstadoResponse
+}
+
 export function useOnboardingStatus() {
   const rol = useAuthStore(s => s.user?.role)
+  const token = useAuthStore(s => s.token)
   const esEmpresa = rol === 'empresa'
 
   return useQuery<OnboardingEstadoResponse>({
     queryKey: ['onboarding-status', esEmpresa],
-    queryFn: async () => {
-      // Obtenemos estado de onboarding y de validación de identidad en paralelo
-      const [onboardingRes, identidadRes] = await Promise.all([
-        api.get('/onboarding/estado')
-          .catch(() => api.get('/usuarios/onboarding'))
-          .catch(() => ({ data: {} })),
-        api.get('/usuarios/estado-validacion-identidad')
-          .catch(() => ({ data: { estado: 'no_subido' } }))
-      ])
-
-      const rawData = onboardingRes.data || {}
-      const estado = identidadRes.data?.estado
-
-      let porcentajeProgreso = typeof rawData.porcentajeProgreso === 'number'
-        ? rawData.porcentajeProgreso
-        : typeof rawData.porcentaje === 'number'
-          ? rawData.porcentaje
-          : 0
-
-      const ultimoPasoCompletado = typeof rawData.ultimoPasoCompletado === 'number'
-        ? rawData.ultimoPasoCompletado
-        : 0
-
-      const destinatarioPerfil = rawData.destinatarioPerfil || 'PARA_MI'
-      const nombrePcd = rawData.nombrePcd || ''
-      let pasosPendientes = Array.isArray(rawData.pasosPendientes)
-        ? rawData.pasosPendientes
-        : Array.isArray(rawData.camposFaltantes)
-          ? rawData.camposFaltantes
-          : []
-
-      let onboardingCompleto = Boolean(rawData.onboardingCompleto)
-
-      const isTutor = rol === 'tutor' || rol === 'padre_tutor' || destinatarioPerfil === 'PARA_MI_HIJO'
-      const hasCompletedLocally = localStorage.getItem('raices_onboarding_completed_tutor') === 'true' || localStorage.getItem('raices_onboarding_completed_pcd') === 'true'
-
-      // Normalización para tutores: acreditacionTutor es una verificación secundaria/opcional que NO debe estancar el 75%
-      pasosPendientes = pasosPendientes.filter((f: string) => f !== 'acreditacionTutor' && (esEmpresa ? f !== 'curp' && f !== 'fechaNacimiento' : true))
-
-      if (esEmpresa && pasosPendientes.length === 0) {
-        onboardingCompleto = true
-        porcentajeProgreso = 100
-      }
-
-      if (isTutor && (porcentajeProgreso >= 75 || hasCompletedLocally || pasosPendientes.length === 0)) {
-        onboardingCompleto = true
-        porcentajeProgreso = 100
-        pasosPendientes = []
-      }
-
-      if (hasCompletedLocally) {
-        onboardingCompleto = true
-        porcentajeProgreso = 100
-        pasosPendientes = []
-      }
-
-      // Si los documentos están en revisión o aprobados, asumimos el onboarding como completo 
-      // para desbloquear todas las vistas globalmente.
-      if (estado === 'aprobado' || estado === 'pendiente') {
-        onboardingCompleto = true
-        porcentajeProgreso = 100
-      }
-
-      return {
-        ...rawData,
-        onboardingCompleto,
-        porcentajeProgreso,
-        porcentaje: porcentajeProgreso,
-        ultimoPasoCompletado,
-        destinatarioPerfil,
-        nombrePcd,
-        pasosPendientes,
-        camposFaltantes: pasosPendientes,
-      }
-    },
+    queryFn: () => fetchOnboardingStatus({ rol, esEmpresa }),
+    // Solo con sesión: sin token las rutas responden 401 y, al tragar ese
+    // error, se cacheaba un estado vacío que dejaba al Feed sin datos de
+    // progreso (el modal "Completa tu perfil" dejaba de aparecer).
+    enabled: Boolean(token),
     staleTime: 1000 * 60 * 5, // 5 minutos
   })
 }

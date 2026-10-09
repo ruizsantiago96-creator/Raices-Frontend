@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore } from '../store/authStore'
-import { useUpdateProfile, useUpdateNeedsProfile } from '../hooks/useAuth'
+import { useUpdateProfile, useUpdateNeedsProfile, preloadSessionState } from '../hooks/useAuth'
 import { Icons } from '@shared/components/shared'
 import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
@@ -94,6 +95,7 @@ const TOTAL_STEPS = 5
 export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: RegistrationWizardProps) {
   const { addToast } = useUiStore()
   const { setAuth } = useAuthStore()
+  const queryClient = useQueryClient()
   const nav = useNavigate()
   const updateProfile = useUpdateProfile()
   const updateNeedsProfile = useUpdateNeedsProfile()
@@ -223,7 +225,7 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
         authResult?.datos?.usuario ||
         authResult?.data?.usuario
 
-      if (!tokenAcceso && !authResult?.requiereInicioSesion) {
+      if (!tokenAcceso) {
         try {
           let loginRes
           try {
@@ -268,6 +270,11 @@ export default function RegistrationWizard({ onBackToRoles, onGoToLogin }: Regis
         setRememberMe(true)
         setAuth(tokenAcceso, userObj, tokenRefresco, true)
         saveUser(userObj, true)
+
+        // Auto-login: antes de navegar, cargar el estado de sesión completo
+        // (perfil + progreso de onboarding) en la caché global, para que el
+        // Feed —y su modal "Completa tu perfil"— lea datos reales al llegar.
+        await preloadSessionState(queryClient, { rol: 'pcd' })
 
         addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
         nav('/completar-perfil', { replace: true })
