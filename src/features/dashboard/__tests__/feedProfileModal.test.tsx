@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactNode } from 'react'
@@ -166,5 +166,43 @@ describe('Modal "Completa tu perfil" en el Feed tras auto-login', () => {
   it('E) si el backend falla por completo, no se cachea un estado vacío como si fuera válido', async () => {
     failAuth = true
     await expect(fetchOnboardingStatus({ rol: 'pcd' })).rejects.toBeTruthy()
+  }, 20000)
+
+  it('F) "Más tarde" solo oculta en la vista activa: al remontar el Feed el modal vuelve a aparecer', async () => {
+    autoLogin()
+
+    const client = makeClient()
+    const first = render(<Wrapper client={client}><FeedPage /></Wrapper>)
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument(), { timeout: 5000 })
+
+    // El usuario cierra con "Más tarde": debe ocultarse solo en esta vista
+    fireEvent.click(screen.getByRole('button', { name: 'Más tarde' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument(), { timeout: 5000 })
+
+    // Salir y volver al Feed (remontar el componente): el modal reaparece,
+    // porque la bandera de descarte vive solo en memoria y no persiste
+    first.unmount()
+    render(<Wrapper client={client}><FeedPage /></Wrapper>)
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument(), { timeout: 5000 })
+    expect(screen.getByText('Completa tu perfil')).toBeInTheDocument()
+  }, 20000)
+
+  it('G) una bandera residual de onboarding en localStorage NO oculta el modal (la validación es del backend)', async () => {
+    localStorage.setItem('raices_onboarding_completed_pcd', 'true')
+    localStorage.setItem('raices_onboarding_completed_tutor', 'true')
+
+    try {
+      autoLogin()
+      const client = makeClient()
+      render(<Wrapper client={client}><FeedPage /></Wrapper>)
+
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument(), { timeout: 5000 })
+      expect(screen.getByText('Completa tu perfil')).toBeInTheDocument()
+    } finally {
+      localStorage.removeItem('raices_onboarding_completed_pcd')
+      localStorage.removeItem('raices_onboarding_completed_tutor')
+    }
   }, 20000)
 })

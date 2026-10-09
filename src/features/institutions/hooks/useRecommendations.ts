@@ -142,8 +142,12 @@ export async function fetchOnboardingStatus(
 
   let onboardingCompleto = Boolean(rawData.onboardingCompleto)
 
+  // NOTA: la visibilidad del modal "Completa tu perfil" y los candados del Feed
+  // dependen ÚNICAMENTE de la validación real del backend. No se usa ninguna
+  // bandera local (localStorage) que declare el onboarding como completo: una
+  // bandera persistente sobrevive a recargas y sesiones y ocultaba el modal
+  // aunque el perfil siguiera incompleto.
   const isTutor = rol === 'tutor' || rol === 'padre_tutor' || destinatarioPerfil === 'PARA_MI_HIJO'
-  const hasCompletedLocally = localStorage.getItem('raices_onboarding_completed_tutor') === 'true' || localStorage.getItem('raices_onboarding_completed_pcd') === 'true'
 
   // Normalización para tutores: acreditacionTutor es una verificación secundaria/opcional que NO debe estancar el 75%
   pasosPendientes = pasosPendientes.filter((f: string) => f !== 'acreditacionTutor' && (esEmpresa ? f !== 'curp' && f !== 'fechaNacimiento' : true))
@@ -153,13 +157,7 @@ export async function fetchOnboardingStatus(
     porcentajeProgreso = 100
   }
 
-  if (isTutor && (porcentajeProgreso >= 75 || hasCompletedLocally || pasosPendientes.length === 0)) {
-    onboardingCompleto = true
-    porcentajeProgreso = 100
-    pasosPendientes = []
-  }
-
-  if (hasCompletedLocally) {
+  if (isTutor && (porcentajeProgreso >= 75 || pasosPendientes.length === 0)) {
     onboardingCompleto = true
     porcentajeProgreso = 100
     pasosPendientes = []

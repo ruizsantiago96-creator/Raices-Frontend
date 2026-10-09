@@ -504,8 +504,9 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         }
       }
 
-      // 4. Invalidate queries and set completion flag
-      localStorage.setItem('raices_onboarding_completed_tutor', 'true')
+      // 4. Invalidate queries (el estado de onboarding se lee SIEMPRE del
+      // backend: sin bandera local que declare el onboarding completo, para que
+      // el modal del Feed refleje el progreso real en cada recarga).
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
