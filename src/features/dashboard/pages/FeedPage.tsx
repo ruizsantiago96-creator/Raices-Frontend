@@ -593,7 +593,7 @@ export default function FeedPage() {
   // bloqueo permanente, sino solo para evitar parpadeos de apertura/cierre en el mismo
   // render mientras el usuario decide.
   const [modalDismissedThisSession, setModalDismissedThisSession] = useState<boolean>(false)
-  const shouldShowProfileModal = !isRolSinOnboardingEstándar && !modalDismissedThisSession && (isRejected || (!isVerified && isIncomplete))
+  const shouldShowProfileModal = !esRolSinOnboardingEstándar && !modalDismissedThisSession && (isRejected || (!isVerified && isIncomplete))
 
   const handleDismissModal = () => {
     setModalDismissedThisSession(true)
@@ -719,7 +719,7 @@ export default function FeedPage() {
   return (
     <main className="responsive-main" style={{ '--main-max-width': '1100px' } as React.CSSProperties}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>        {/* ── Progress Bar ── */}
-        {isIncomplete && !isRejected && !isRolSinOnboardingEstándar && (onboardingStatus?.onboardingCompleto !== true || isPendingDocs || isApproved) && (
+        {isIncomplete && !isRejected && !esRolSinOnboardingEstándar && (onboardingStatus?.onboardingCompleto !== true || isPendingDocs || isApproved) && (
           <div className="animate-fade-in-up" style={{
             background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
             border: '1px solid rgba(34,155,88,0.2)',
