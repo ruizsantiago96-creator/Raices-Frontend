@@ -174,12 +174,13 @@ function decodeAndExtract(content: string) {
     .replace(/&#39;/g, "'")
     .replace(/&#x27;/g, "'")
 
-  const urlRegex = /(https:\/\/firebasestorage\.googleapis\.com[^\s]+)/
+  const urlRegex = /(https?:\/\/[^\s]+(?:\.(?:jpe?g|png|gif|webp|svg|bmp)|firebasestorage|cloudinary|\/uploads\/)[^\s]*)/i
   const match = decoded.match(urlRegex)
   
   if (match) {
-    const imageUrl = match[1]
-    const text = decoded.replace(imageUrl, '').trim()
+    const rawUrl = match[1]
+    const imageUrl = rawUrl.replace(/[),;.]+$/, '')
+    const text = decoded.replace(rawUrl, '').trim()
     return { text, imageUrl, originalDecoded: decoded }
   }
   

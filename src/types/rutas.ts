@@ -93,14 +93,14 @@ export type EscalaVidaKey =
   | 'nivelEmocional'
 
 export interface EscalasVidaValues {
-  nivelAutonomia: number
-  nivelIndependencia: number
-  nivelComunicacion: number
-  nivelComprension: number
-  nivelEnergia: number
-  nivelMovilidad: number
-  nivelSocial: number
-  nivelEmocional: number
+  nivelAutonomia?: number
+  nivelIndependencia?: number
+  nivelComunicacion?: number
+  nivelComprension?: number
+  nivelEnergia?: number
+  nivelMovilidad?: number
+  nivelSocial?: number
+  nivelEmocional?: number
   tieneDiagnostico?: boolean
   diagnosticoEspecifico?: string
   temporalidadOrigen?: string

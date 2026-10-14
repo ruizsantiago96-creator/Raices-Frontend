@@ -27,6 +27,96 @@ const PlantEmoji: React.FC = () => (
   </svg>
 )
 
+const TutorDoodle: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 74 74" fill="none" style={{ display: 'block' }}>
+    {/* Sun rays */}
+    <g stroke="#0C3B4B" strokeWidth="3.5" strokeLinecap="round">
+      <line x1="37" y1="6" x2="37" y2="13" />
+      <line x1="37" y1="61" x2="37" y2="68" />
+      <line x1="6" y1="37" x2="13" y2="37" />
+      <line x1="61" y1="37" x2="68" y2="37" />
+      <line x1="15" y1="15" x2="20" y2="20" />
+      <line x1="54" y1="54" x2="59" y2="59" />
+      <line x1="15" y1="59" x2="20" y2="54" />
+      <line x1="54" y1="20" x2="59" y2="15" />
+    </g>
+    {/* Sun body */}
+    <circle cx="37" cy="37" r="19" fill="#FDE674" stroke="#0C3B4B" strokeWidth="3.5" />
+    {/* Eyes */}
+    <circle cx="31.5" cy="34" r="2.2" fill="#0C3B4B" />
+    <circle cx="42.5" cy="34" r="2.2" fill="#0C3B4B" />
+    {/* Smile */}
+    <path d="M32 41 C34.5 45, 39.5 45, 42 41" fill="none" stroke="#0C3B4B" strokeWidth="2.6" strokeLinecap="round" />
+    {/* Cheeks */}
+    <ellipse cx="28" cy="39" rx="2.5" ry="1.5" fill="#FF4D68" opacity="0.6" />
+    <ellipse cx="46" cy="39" rx="2.5" ry="1.5" fill="#FF4D68" opacity="0.6" />
+  </svg>
+)
+
+const InstitutionDoodle: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 64 64" fill="none" style={{ display: 'block' }}>
+    {/* Roof */}
+    <path d="M12 26 L32 10 L52 26 Z" fill="#2F80ED" stroke="#0C3B4B" strokeWidth="3.5" strokeLinejoin="round" />
+    {/* Building Body */}
+    <rect x="16" y="25" width="32" height="30" rx="3" fill="#FBF6EE" stroke="#0C3B4B" strokeWidth="3.5" />
+    {/* Arched Door */}
+    <path d="M26 55 L26 40 C26 36, 38 36, 38 40 L38 55 Z" fill="#CA918E" stroke="#0C3B4B" strokeWidth="3" />
+    {/* Round attic window */}
+    <circle cx="32" cy="20" r="3.5" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2" />
+    {/* Side windows */}
+    <rect x="20" y="32" width="7" height="7" rx="1.5" fill="#A8B86B" stroke="#0C3B4B" strokeWidth="2" />
+    <rect x="37" y="32" width="7" height="7" rx="1.5" fill="#A8B86B" stroke="#0C3B4B" strokeWidth="2" />
+    {/* Little flagpole and heart on top */}
+    <path d="M32 10 L32 4" stroke="#0C3B4B" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="32" cy="4" r="2.5" fill="#FF4D68" stroke="#0C3B4B" strokeWidth="1.5" />
+  </svg>
+)
+
+const EmpresaDoodle: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 64 64" fill="none" style={{ display: 'block' }}>
+    {/* Handle */}
+    <path d="M24 22 L24 16 C24 13, 40 13, 40 16 L40 22" stroke="#0C3B4B" strokeWidth="3.5" strokeLinecap="round" />
+    {/* Briefcase Body */}
+    <rect x="11" y="21" width="42" height="31" rx="6" fill="#138A8A" stroke="#0C3B4B" strokeWidth="3.5" strokeLinejoin="round" />
+    {/* Flap */}
+    <path d="M11 25 L32 38 L53 25" stroke="#0C3B4B" strokeWidth="3" fill="none" strokeLinejoin="round" />
+    {/* Star / Clasp in center */}
+    <circle cx="32" cy="37" r="4.5" fill="#FDE674" stroke="#0C3B4B" strokeWidth="2.5" />
+    {/* Corner reinforcement accents */}
+    <rect x="13" y="44" width="8" height="6" rx="2" fill="#F4C84A" stroke="#0C3B4B" strokeWidth="1.8" />
+    <rect x="43" y="44" width="8" height="6" rx="2" fill="#F4C84A" stroke="#0C3B4B" strokeWidth="1.8" />
+  </svg>
+)
+
+const AdminDoodle: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 64 64" fill="none" style={{ display: 'block' }}>
+    {/* Shield Base */}
+    <path
+      d="M32 9 L51 16 C51 36, 42 49, 32 55 C22 49, 13 36, 13 16 Z"
+      fill="#213052"
+      stroke="#0C3B4B"
+      strokeWidth="3.5"
+      strokeLinejoin="round"
+    />
+    {/* Inner shield layer */}
+    <path
+      d="M32 14 L46 20 C46 34, 39 44, 32 49 C25 44, 18 34, 18 20 Z"
+      fill="#2F80ED"
+    />
+    {/* Magic Star inside */}
+    <path
+      d="M32 23 L34 29 L40 31 L34 33 L32 39 L30 33 L24 31 L30 29 Z"
+      fill="#FDE674"
+      stroke="#0C3B4B"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+    {/* Sparkles */}
+    <circle cx="25" cy="24" r="1.5" fill="#FF4D68" />
+    <circle cx="39" cy="40" r="1.5" fill="#A8B86B" />
+  </svg>
+)
+
 export interface AppSidebarStats {
   activeJobs?: number
   pendingApplicants?: number
@@ -98,7 +188,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
   let title = 'Raíces'
 
   if (modoEfectivo === 'admin') {
-    logoIcon = Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    logoIcon = <AdminDoodle />
     title = 'Admin'
     items = [
       { id: 'overview',      label: 'Inicio',         icon: Icons.home },
@@ -112,7 +202,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       { id: 'settings',      label: 'Config',         icon: Icons.target },
     ]
   } else if (modoEfectivo === 'institution') {
-    logoIcon = Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    logoIcon = <InstitutionDoodle />
     title = 'Panel'
     items = [
       { id: 'servicios', label: 'Servicios y Programas', icon: Icons.briefcase },
@@ -121,7 +211,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       { id: 'editar', label: 'Editar institución', icon: Icons.edit, path: '/institution-portal/editar' },
     ]
   } else if (modoEfectivo === 'empresa') {
-    logoIcon = Icons.briefcase({ s: 18, color: 'rgba(255,255,255,0.9)' })
+    logoIcon = <EmpresaDoodle />
     title = 'Panel'
     items = [
       { id: 'bolsa', label: 'Bolsa de Trabajo', icon: Icons.briefcase },
@@ -130,9 +220,10 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       { id: 'editar', label: 'Editar empresa', icon: Icons.edit, path: EMPRESA_EDITAR },
     ]
   } else {
-    logoIcon = user?.role === 'admin' ? Icons.shield({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-               user?.role === 'institution' ? Icons.building({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
-               user?.role === 'tutor' ? Icons.users({ s: 18, color: 'rgba(255,255,255,0.9)' }) :
+    logoIcon = user?.role === 'admin' ? <AdminDoodle /> :
+               user?.role === 'institution' ? <InstitutionDoodle /> :
+               user?.role === 'empresa' ? <EmpresaDoodle /> :
+               user?.role === 'tutor' ? <TutorDoodle /> :
                <PlantEmoji />
     title = 'Raíces'
     // ── Filtrar items según features del usuario ────────────────────
@@ -187,10 +278,12 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
           <div style={{ position: 'relative', width: 36, height: 36 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 'var(--radius-md)',
-              background: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '#FBF6EE' : 'var(--primary)',
-              border: (mode !== 'admin' && mode !== 'institution' && user?.role !== 'admin' && user?.role !== 'institution' && user?.role !== 'tutor') ? '1.5px solid #EFE5D8' : 'none',
+              background: '#FBF6EE',
+              border: '1.5px solid #EFE5D8',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxSizing: 'border-box',
+              overflow: 'hidden',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
             }}>
               {logoIcon}
             </div>
@@ -432,7 +525,14 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
           {/* Header with logo & close button */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '0 8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 'var(--radius-md)',
+                background: '#FBF6EE',
+                border: '1.5px solid #EFE5D8',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+              }}>
                 {logoIcon}
               </div>
               <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{title}</span>

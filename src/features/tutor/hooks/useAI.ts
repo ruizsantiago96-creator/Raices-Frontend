@@ -117,7 +117,23 @@ export function useAIResumen() {
   const cached = qc.getQueryData<AIResumenResponse>(['ai', 'resumen'])
 
   const mutation = useMutation<AIResumenResponse, AxiosError>({
-    mutationFn: () => api.post('/ia/resumen', {}).then(r => r.data),
+    mutationFn: () => {
+      const user = useAuthStore.getState().user
+      const depName = localStorage.getItem('raices_dep_name')?.trim() || ''
+      const dest = localStorage.getItem('raices_destinatario')?.trim() || 'hijo'
+      const isTutor = user?.role === 'tutor' || user?.role === 'padre_tutor' || user?.rol === 'padre_tutor' || Boolean(depName)
+
+      const body: Record<string, unknown> = {}
+      if (isTutor) {
+        body.rol = 'tutor'
+        if (user?.full_name) body.nombreTutor = user.full_name
+        if (depName) {
+          body.nombreDependiente = depName
+          body.parentesco = dest
+        }
+      }
+      return api.post('/ia/resumen', body).then(r => r.data)
+    },
     onSuccess: (data) => {
       qc.setQueryData(['ai', 'resumen'], data)
     },

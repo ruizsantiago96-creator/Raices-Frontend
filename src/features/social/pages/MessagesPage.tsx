@@ -12,6 +12,7 @@ import {
   nombreParaMostrar,
 } from '../hooks/useMessages'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react'
 import { useMe } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 import { SOCIAL_UI, SOCIAL_TOAST, SOCIAL_CONFIRM } from '../constants/socialMessages'
@@ -193,6 +194,154 @@ const WelcomeIllustration: React.FC = () => (
   </svg>
 )
 
+// ─── Utilidades de Multimedia y Emojis en Mensajería ──────────────────────────
+
+export function extractMediaFromMessage(content: string): {
+  text: string
+  mediaUrl: string | null
+  isVideo: boolean
+} {
+  if (!content || typeof content !== 'string') {
+    return { text: '', mediaUrl: null, isVideo: false }
+  }
+
+  const decoded = content
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+
+  const urlRegex = /(https?:\/\/[^\s]+|\/uploads\/[^\s]+|data:image\/[^\s]+)/gi
+  const matches = decoded.match(urlRegex)
+
+  if (!matches || matches.length === 0) {
+    return { text: decoded, mediaUrl: null, isVideo: false }
+  }
+
+  for (const rawUrl of matches) {
+    const cleanUrl = rawUrl.replace(/[),;.]+$/, '')
+    const isVideo = /\.(mp4|webm|mov|quicktime)(\?.*)?$/i.test(cleanUrl)
+    const isImage =
+      /\.(jpe?g|png|gif|webp|svg|bmp)(\?.*)?$/i.test(cleanUrl) ||
+      /cloudinary\.com/i.test(cleanUrl) ||
+      /firebasestorage\.googleapis\.com/i.test(cleanUrl) ||
+      /\/uploads\//i.test(cleanUrl) ||
+      /^data:image\//i.test(cleanUrl)
+
+    if (isImage || isVideo) {
+      const textWithoutUrl = decoded.replace(rawUrl, '').trim()
+      return {
+        text: textWithoutUrl,
+        mediaUrl: cleanUrl,
+        isVideo,
+      }
+    }
+  }
+
+  return { text: decoded, mediaUrl: null, isVideo: false }
+}
+
+export function formatLastMessage(content?: string): string {
+  if (!content) return ''
+  const { text, mediaUrl, isVideo } = extractMediaFromMessage(content)
+  if (mediaUrl) {
+    if (text) return `📷 ${text}`
+    return isVideo ? '🎥 Video' : '📷 Foto'
+  }
+  return content
+}
+
+
+function ChatMessageBubble({
+  content,
+  isMine,
+  isFloating = false,
+}: {
+  content: string
+  isMine: boolean
+  isFloating?: boolean
+}) {
+  const { text, mediaUrl, isVideo } = extractMediaFromMessage(content)
+
+  if (!mediaUrl) {
+    return (
+      <div style={{ wordBreak: 'break-word', lineHeight: 1.5 }}>
+        {text || content}
+      </div>
+    )
+  }
+
+  const isMediaOnly = !text
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          borderRadius: isMediaOnly
+            ? isMine
+              ? '16px 16px 4px 16px'
+              : '16px 16px 16px 4px'
+            : '10px 10px 4px 4px',
+          overflow: 'hidden',
+          background: 'rgba(0,0,0,0.03)',
+          cursor: isVideo ? 'default' : 'pointer',
+          position: 'relative',
+        }}
+        onClick={() => {
+          if (!isVideo && mediaUrl) {
+            window.open(mediaUrl, '_blank', 'noopener,noreferrer')
+          }
+        }}
+      >
+        {isVideo ? (
+          <video
+            src={mediaUrl}
+            controls
+            style={{
+              display: 'block',
+              maxWidth: '100%',
+              maxHeight: isFloating ? 220 : 280,
+              borderRadius: 'inherit',
+            }}
+          />
+        ) : (
+          <img
+            src={mediaUrl}
+            alt="Imagen adjunta"
+            loading="lazy"
+            style={{
+              display: 'block',
+              maxWidth: '100%',
+              maxHeight: isFloating ? 220 : 280,
+              width: 'auto',
+              height: 'auto',
+              objectFit: 'contain',
+              borderRadius: 'inherit',
+              transition: 'transform 0.15s ease',
+            }}
+          />
+        )}
+      </div>
+
+      {text && (
+        <div
+          style={{
+            marginTop: 8,
+            wordBreak: 'break-word',
+            lineHeight: 1.45,
+            fontSize: 14.5,
+          }}
+        >
+          {text}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export interface DirectMessagesProps {
   currentUserId?: string
   isFloating?: boolean
@@ -222,6 +371,11 @@ export function DirectMessages({
   const [searchQuery, setSearchQuery] = useState('')
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingFileName, setPendingFileName] = useState('')
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const emojiPickerRef = useRef<HTMLDivElement | null>(null)
+  const emojiBtnRef = useRef<HTMLButtonElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const uploadMedia = useUploadMultimedia()
   const [showNewChatModal, setShowNewChatModal] = useState(false)
   const [activeNewPartner, setActiveNewPartner] = useState<MessagePartner | null>(null)
@@ -398,13 +552,56 @@ export function DirectMessages({
     }
   }, [menuAbierto])
 
-  // Cambiar de conversación cierra el menú para que no quede flotando descolgado.
+  // Cierre del selector de emojis al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    if (!showEmojiPicker) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(e.target as Node) &&
+        emojiBtnRef.current &&
+        !emojiBtnRef.current.contains(e.target as Node)
+      ) {
+        setShowEmojiPicker(false)
+      }
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowEmojiPicker(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showEmojiPicker])
+
+  // Selección de archivo adjunto con generación de preview si es imagen
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 10 * 1024 * 1024) return
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('El archivo excede el límite de 10 MB', 'warning')
+      return
+    }
     setPendingFile(file)
     setPendingFileName(file.name)
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file)
+      setPendingPreviewUrl(url)
+    } else {
+      setPendingPreviewUrl(null)
+    }
+    e.target.value = ''
+  }
+
+  const handleRemovePendingFile = () => {
+    setPendingFile(null)
+    setPendingFileName('')
+    if (pendingPreviewUrl) {
+      URL.revokeObjectURL(pendingPreviewUrl)
+      setPendingPreviewUrl(null)
+    }
   }
 
   const handleSend = async (e: FormEvent<HTMLFormElement>) => {
@@ -435,6 +632,11 @@ export function DirectMessages({
       setText('')
       setPendingFile(null)
       setPendingFileName('')
+      if (pendingPreviewUrl) {
+        URL.revokeObjectURL(pendingPreviewUrl)
+        setPendingPreviewUrl(null)
+      }
+      setShowEmojiPicker(false)
     } catch (err) {
       // El backend responde 403 ("Usuario destinatario no existe") si la cuenta se
       // eliminó entre la carga de la lista y este envío. La UI no se rompe: se avisa
@@ -483,8 +685,10 @@ export function DirectMessages({
         overflow: 'hidden',
         boxShadow: isFloating ? 'none' : 'var(--shadow-md)',
         height: isFloating ? '100%' : 'calc(100vh - 200px)',
+        minHeight: 0,
         display: 'grid',
         gridTemplateColumns: isFloating ? '210px 1fr' : '280px 1fr',
+        gridTemplateRows: '100%',
       }}
     >
       {/* Columna izquierda: Lista de chats */}
@@ -494,6 +698,9 @@ export function DirectMessages({
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--bg-surface)',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
         {/* Chats Header - Reddit Style */}
@@ -596,7 +803,7 @@ export function DirectMessages({
         </div>
 
         {/* Chats List */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           {convsLoading ? (
             <div style={{ padding: 20, color: 'var(--fg3)', fontSize: 13 }}>{SOCIAL_UI.LOADING}</div>
           ) : filteredConversations.length === 0 ? (
@@ -696,7 +903,7 @@ export function DirectMessages({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {conv.last_message}
+                      {formatLastMessage(conv.last_message)}
                     </div>
                   </div>
                   {conv.unread > 0 && (
@@ -721,12 +928,22 @@ export function DirectMessages({
 
       {/* Columna derecha: Conversación activa / Bienvenido */}
       {activePartnerId ? (
-        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-surface)',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
           {/* Header del Chat */}
           <div
             {...(isFloating ? dragHandleProps : {})}
             style={{
               height: 56,
+              flexShrink: 0,
               padding: '0 20px',
               borderBottom: '1px solid var(--border-color)',
               display: 'flex',
@@ -1111,11 +1328,12 @@ export function DirectMessages({
           <div
             style={{
               flex: 1,
+              minHeight: 0,
               overflowY: 'auto',
-              padding: 24,
+              padding: isFloating ? '12px 14px' : '20px 24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 20,
+              gap: isFloating ? 10 : 16,
               background: 'var(--bg-surface)',
             }}
           >
@@ -1127,6 +1345,8 @@ export function DirectMessages({
                     minute: '2-digit',
                   })
                 : ''
+              const { mediaUrl, text } = extractMediaFromMessage(msg.content)
+              const isMediaOnly = Boolean(mediaUrl && !text)
 
               if (mine) {
                 return (
@@ -1141,18 +1361,20 @@ export function DirectMessages({
                   >
                     <div
                       style={{
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        borderRadius: '12px 12px 4px 12px',
-                        padding: '10px 14px',
+                        background: isMediaOnly ? 'transparent' : 'var(--primary)',
+                        color: isMediaOnly ? 'var(--fg1)' : '#fff',
+                        borderRadius: '16px 16px 4px 16px',
+                        padding: isMediaOnly ? 0 : mediaUrl ? '6px 6px 10px 6px' : '10px 14px',
                         fontSize: 14.5,
-                        maxWidth: '70%',
+                        maxWidth: isFloating ? '80%' : '70%',
                         lineHeight: 1.5,
                         wordBreak: 'break-word',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                        boxShadow: isMediaOnly ? '0 2px 10px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)',
+                        border: isMediaOnly ? '1px solid rgba(0,0,0,0.08)' : 'none',
+                        overflow: 'hidden',
                       }}
                     >
-                      {msg.content}
+                      <ChatMessageBubble content={msg.content} isMine={true} isFloating={isFloating} />
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 4, marginRight: 2 }}>
                       {timeStr}
@@ -1179,19 +1401,20 @@ export function DirectMessages({
                     >
                       <div
                         style={{
-                          background: '#F1F5F9',
+                          background: isMediaOnly ? 'transparent' : '#F1F5F9',
                           color: '#0F172A',
-                          borderRadius: '12px 12px 12px 4px',
-                          padding: '10px 14px',
+                          borderRadius: '16px 16px 16px 4px',
+                          padding: isMediaOnly ? 0 : mediaUrl ? '6px 6px 10px 6px' : '10px 14px',
                           fontSize: 14.5,
-                          maxWidth: '70%',
+                          maxWidth: isFloating ? '80%' : '70%',
                           lineHeight: 1.5,
                           wordBreak: 'break-word',
-                          border: '1px solid #E2E8F0',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                          border: isMediaOnly ? '1px solid rgba(0,0,0,0.08)' : '1px solid #E2E8F0',
+                          boxShadow: isMediaOnly ? '0 2px 10px rgba(0,0,0,0.06)' : '0 1px 2px rgba(0,0,0,0.02)',
+                          overflow: 'hidden',
                         }}
                       >
-                        {msg.content}
+                        <ChatMessageBubble content={msg.content} isMine={false} isFloating={isFloating} />
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--fg3)', marginTop: 4, marginLeft: 2 }}>
                         {partnerFirstName}, {timeStr}
@@ -1207,58 +1430,70 @@ export function DirectMessages({
           {/* Formulario de Envío de Mensaje */}
           <div
             style={{
-              padding: '16px 24px',
+              flexShrink: 0,
+              padding: isFloating ? '10px 14px' : '16px 24px',
               borderTop: '1px solid var(--border-color)',
               background: 'var(--bg-surface)',
             }}
           >
-            {/* Pending file indicator */}
+            {/* Pending file indicator con vista previa de imagen */}
             {pendingFile && (
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 8,
-                  padding: '6px 12px',
-                  borderRadius: 8,
+                  gap: 10,
+                  marginBottom: 10,
+                  padding: '8px 12px',
+                  borderRadius: 12,
                   background: 'var(--bg-warm)',
                   border: '1px solid var(--border-color)',
                   fontSize: 13,
                 }}
               >
-                <span style={{ color: 'var(--primary)' }}>📎</span>
-                <span
-                  style={{
-                    flex: 1,
-                    color: 'var(--fg2)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {pendingFileName}
-                </span>
+                {pendingPreviewUrl ? (
+                  <img
+                    src={pendingPreviewUrl}
+                    alt="Vista previa"
+                    style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>📎</span>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: 'var(--fg1)',
+                      fontWeight: 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {pendingFileName}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--fg3)' }}>
+                    {(pendingFile.size / 1024).toFixed(1)} KB — Listo para enviar
+                  </div>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setPendingFile(null)
-                    setPendingFileName('')
-                  }}
+                  onClick={handleRemovePendingFile}
+                  title="Eliminar archivo"
                   style={{
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--fg3)',
-                    fontSize: 14,
-                    padding: 0,
+                    fontSize: 16,
+                    padding: 4,
                   }}
                 >
                   ✕
                 </button>
               </div>
             )}
-            <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
               {/* Pill Container */}
               <div
                 style={{
@@ -1272,24 +1507,64 @@ export function DirectMessages({
                   background: 'var(--bg-surface)',
                   height: 46,
                   transition: 'border-color 0.2s',
+                  position: 'relative',
                 }}
               >
+                {/* Selector de Emojis Popover con librería emoji-picker-react */}
+                {showEmojiPicker && (
+                  <div
+                    ref={emojiPickerRef}
+                    role="dialog"
+                    aria-label="Selector de emojis"
+                    style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 10px)',
+                      left: 0,
+                      zIndex: 2000,
+                      boxShadow: '0 12px 32px rgba(0,0,0,0.22)',
+                      borderRadius: 16,
+                      overflow: 'hidden',
+                      animation: 'fadeIn 0.15s ease-out',
+                    }}
+                  >
+                    <EmojiPicker
+                      onEmojiClick={(emojiData: EmojiClickData) => {
+                        setText(prev => prev + emojiData.emoji)
+                        inputRef.current?.focus()
+                      }}
+                      autoFocusSearch={false}
+                      theme={Theme.AUTO}
+                      searchPlaceHolder="Buscar emojis..."
+                      width={isFloating ? 290 : 320}
+                      height={isFloating ? 310 : 380}
+                      previewConfig={{ showPreview: false }}
+                      lazyLoadEmojis={true}
+                    />
+                  </div>
+                )}
+
                 <button
+                  ref={emojiBtnRef}
                   type="button"
                   title="Emojis"
+                  aria-label="Emojis"
+                  onClick={() => setShowEmojiPicker(prev => !prev)}
                   style={{
                     background: 'none',
                     border: 'none',
-                    fontSize: 18,
+                    fontSize: 20,
                     cursor: 'pointer',
                     padding: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    transform: showEmojiPicker ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'transform 0.15s ease',
                   }}
                 >
                   😊
                 </button>
                 <input
+                  ref={inputRef}
                   value={text}
                   onChange={e => setText(e.target.value)}
                   disabled={partnerIsDeleted}
@@ -1412,12 +1687,22 @@ export function DirectMessages({
         </div>
       ) : (
         /* Empty State - Reddit style */
-        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-surface)',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
           {/* Header of Empty State with window controls if isFloating */}
           <div
             {...(isFloating ? dragHandleProps : {})}
             style={{
               height: 56,
+              flexShrink: 0,
               padding: '0 20px',
               borderBottom: '1px solid var(--border-color)',
               display: 'flex',
@@ -1562,6 +1847,8 @@ export function DirectMessages({
           <div
             style={{
               flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

@@ -11,6 +11,7 @@ import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { setRememberMe, saveUser } from '@shared/lib/storage'
 import { mapErrorMessage } from '../lib/mapErrorMessage'
 import { getPasswordStrength, checkPasswordCriteria } from '../lib/passwordStrength'
+import { CLAVE_CIERRE_ONBOARDING_TUTOR } from '@features/institutions/hooks/useRecommendations'
 import {
   LIST_ACOMPANAMIENTO_TUTOR as LIST_ACOMPANAMIENTO,
   CONDICIONES_PCD,
@@ -383,12 +384,28 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
       if (destinatario) {
         localStorage.setItem('raices_destinatario', destinatario)
       }
+      if (generalForm.acompanamiento) {
+        localStorage.setItem('raices_acompanamiento', generalForm.acompanamiento)
+      }
+      if (conditionData.conditions && conditionData.conditions.length > 0) {
+        localStorage.setItem('raices_conditions', JSON.stringify(conditionData.conditions))
+      }
       saveOnboardingStepProgress('tutor', 'accommodation', {
         destinatario,
         nombreDependiente: nombreDependiente.trim(),
         fechaNacimientoDependiente,
+        acompanamiento: generalForm.acompanamiento,
         conditionData,
       })
+      if (generalForm.acompanamiento === 'explorar_solo') {
+        try {
+          localStorage.setItem(CLAVE_CIERRE_ONBOARDING_TUTOR, 'true')
+          localStorage.setItem('raices_onboarding_completed_tutor', 'true')
+          await api.post('/onboarding/completar').catch(() => {})
+        } catch {
+          // ignore
+        }
+      }
 
       const nombreCompleto = (generalForm.nombres + ' ' + generalForm.apellidoPaterno + ' ' + generalForm.apellidoMaterno).trim().replace(/\s+/g, ' ')
       const registerPayload = {
@@ -503,8 +520,25 @@ export default function TutorRegistrationWizard({ onBackToRoles, onGoToLogin }: 
         // —y su modal "Completa tu perfil"— lea datos reales al llegar.
         await preloadSessionState(queryClient, { rol: 'tutor' })
 
-        addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
-        nav('/completar-perfil', { replace: true })
+        if (generalForm.acompanamiento === 'explorar_solo') {
+          queryClient.setQueryData(['onboarding-status', false], {
+            onboardingCompleto: true,
+            completado: true,
+            porcentajeProgreso: 100,
+            porcentaje: 100,
+            ultimoPasoCompletado: 6,
+            pasosPendientes: [],
+            seccionesFaltantes: [],
+            camposFaltantes: [],
+            destinatarioPerfil: destinatario || 'PARA_MI_HIJO',
+            nombrePcd: nombreDependiente.trim(),
+          })
+          addToast('¡Cuenta creada exitosamente! Bienvenido a Raíces.', 'success')
+          nav('/feed', { replace: true })
+        } else {
+          addToast('¡Cuenta creada exitosamente! Completemos tu perfil.', 'success')
+          nav('/completar-perfil', { replace: true })
+        }
       } else {
         addToast('¡Cuenta creada exitosamente! Inicia sesión para continuar.', 'success')
         if (onGoToLogin) {

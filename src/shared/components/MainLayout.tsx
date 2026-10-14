@@ -158,8 +158,11 @@ export default function MainLayout() {
     const dx = clientX - startX
     const dy = clientY - startY
 
-    const newRight = Math.max(-100, Math.min(window.innerWidth - 100, startRight - dx))
-    const newBottom = Math.max(-300, Math.min(window.innerHeight - 100, startBottom - dy))
+    // Limit so window is always within visible viewport (never cut off at top or sides)
+    const maxBottom = Math.max(0, window.innerHeight - dimensions.height - 70)
+    const newBottom = Math.max(0, Math.min(maxBottom, startBottom - dy))
+    const maxRight = Math.max(0, window.innerWidth - dimensions.width - 20)
+    const newRight = Math.max(0, Math.min(maxRight, startRight - dx))
 
     setPosition({ right: newRight, bottom: newBottom })
   }
@@ -327,6 +330,8 @@ export default function MainLayout() {
             right: floatingChatMaximized ? 24 : position.right,
             width: floatingChatMaximized ? 'calc(100vw - 48px)' : dimensions.width,
             height: floatingChatMaximized ? 'calc(100vh - 100px)' : dimensions.height,
+            maxWidth: 'calc(100vw - 32px)',
+            maxHeight: 'calc(100vh - 70px)',
             background: 'var(--bg-surface)',
             border: '1.5px solid var(--border-color)',
             borderBottom: floatingChatMaximized ? '1.5px solid var(--border-color)' : 'none',
@@ -369,7 +374,7 @@ export default function MainLayout() {
               </>
             )}
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <DirectMessages 
                 currentUserId={user?.id} 
                 isFloating={true} 
