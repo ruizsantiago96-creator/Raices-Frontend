@@ -570,6 +570,64 @@ html[data-theme="dark"] .btn-secondary:hover {
   cursor: not-allowed; 
 }
 
+.auth-btn-primary {
+  width: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--radius-btn, 10px) !important;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 13px 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(34, 155, 88, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-btn-primary:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 155, 88, 0.35);
+}
+
+.auth-btn-primary:active {
+  transform: translateY(0);
+}
+
+.auth-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-btn-secondary {
+  width: 100%;
+  background: var(--bg-surface) !important;
+  color: var(--fg1) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-btn, 10px) !important;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 12px 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.auth-btn-secondary:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
 
 /* Password Toggle Button */
 .btn-pass-toggle {

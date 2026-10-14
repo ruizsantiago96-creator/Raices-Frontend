@@ -5,6 +5,7 @@ import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendat
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle } from '@shared/components/shared'
+import OnboardingStageCover from '@features/profile/components/OnboardingStageCover'
 import type {
   EscalaVidaItem,
   EscalasVidaValues,
@@ -132,12 +133,28 @@ const LEVEL_LABELS: Record<number, { title: string; color: string; bg: string }>
   4: { title: 'Nivel 4: Autónomo', color: 'var(--secondary)', bg: 'var(--secondary-subtle)' },
 }
 
+export function hasValidScales(data?: Partial<EscalasVidaValues> | null): boolean {
+  if (!data || typeof data !== 'object') return false
+  const keys: Array<keyof EscalasVidaValues> = [
+    'nivelAutonomia',
+    'nivelIndependencia',
+    'nivelComunicacion',
+    'nivelComprension',
+    'nivelEnergia',
+    'nivelMovilidad',
+    'nivelSocial',
+    'nivelEmocional',
+  ]
+  const answered = keys.filter(k => typeof data[k] === 'number' && Number(data[k]) >= 1).length
+  return answered >= 4
+}
+
 function getStoredScales(): EscalasVidaValues | null {
   try {
     const raw = localStorage.getItem('raices_user_scales')
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === 'object' && hasValidScales(parsed)) {
         return {
           nivelAutonomia: typeof parsed.nivelAutonomia === 'number' ? parsed.nivelAutonomia : undefined,
           nivelIndependencia: typeof parsed.nivelIndependencia === 'number' ? parsed.nivelIndependencia : undefined,
@@ -173,11 +190,11 @@ export default function EscalasVidaPage() {
   // 1. Resolver escalas guardadas (de localStorage o de perfil)
   const initialData = useMemo(() => {
     const stored = getStoredScales()
-    if (stored) return { data: stored, hasExisting: true }
+    if (stored && hasValidScales(stored)) return { data: stored, hasExisting: true }
 
     const rawProfile = profile as unknown as Record<string, unknown> | undefined
     const backendScales = rawProfile?.escalasVida as Record<string, unknown> | undefined
-    if (backendScales && typeof backendScales === 'object') {
+    if (backendScales && typeof backendScales === 'object' && hasValidScales(backendScales as Partial<EscalasVidaValues>)) {
       return {
         data: {
           nivelAutonomia: typeof backendScales.nivelAutonomia === 'number' ? backendScales.nivelAutonomia : undefined,
@@ -199,48 +216,19 @@ export default function EscalasVidaPage() {
       }
     }
 
-    // Si tiene perfilado existente o el onboarding completado, se considera que ya completó escalas
-    const hasProfileOrOnboarding = Boolean(
-      profile?.profiling ||
-      onboardingStatus?.onboardingCompleto ||
-      (onboardingStatus?.porcentajeProgreso ?? 0) >= 60 ||
-      profile?.interests?.length
-    )
-
-    if (hasProfileOrOnboarding) {
-      const p = profile?.profiling as Record<string, unknown> | undefined
-      const disabilityTypes = Array.isArray(p?.disability_types)
-        ? (p.disability_types as string[])
-        : Array.isArray(p?.disabilities)
-        ? (p.disabilities as string[])
-        : []
-      const disability = disabilityTypes.join(', ')
-      const goals = Array.isArray(p?.goals)
-        ? (p.goals as string[])
-        : Array.isArray(profile?.interests)
-        ? (profile?.interests as string[])
-        : []
-
-      return {
-        data: {
-          nivelAutonomia: undefined,
-          nivelIndependencia: undefined,
-          nivelComunicacion: undefined,
-          nivelComprension: undefined,
-          nivelEnergia: undefined,
-          nivelMovilidad: undefined,
-          nivelSocial: undefined,
-          nivelEmocional: undefined,
-          tieneDiagnostico: Boolean(disability),
-          diagnosticoEspecifico: disability,
-          temporalidadOrigen: '',
-          preferenciaFormato: '',
-          areasInteres: goals,
-          viabilidadEconomica: '',
-        },
-        hasExisting: true,
-      }
-    }
+    // Si NO tiene escalas contestadas, extraer información previa del perfil si existe (diagnóstico, áreas) pero hasExisting = false
+    const p = profile?.profiling as Record<string, unknown> | undefined
+    const disabilityTypes = Array.isArray(p?.disability_types)
+      ? (p.disability_types as string[])
+      : Array.isArray(p?.disabilities)
+      ? (p.disabilities as string[])
+      : []
+    const disability = disabilityTypes.join(', ')
+    const goals = Array.isArray(p?.goals)
+      ? (p.goals as string[])
+      : Array.isArray(profile?.interests)
+      ? (profile?.interests as string[])
+      : []
 
     return {
       data: {
@@ -252,29 +240,28 @@ export default function EscalasVidaPage() {
         nivelMovilidad: undefined,
         nivelSocial: undefined,
         nivelEmocional: undefined,
-        tieneDiagnostico: false,
-        diagnosticoEspecifico: '',
+        tieneDiagnostico: Boolean(disability),
+        diagnosticoEspecifico: disability,
         temporalidadOrigen: '',
         preferenciaFormato: '',
-        areasInteres: [],
+        areasInteres: goals,
         viabilidadEconomica: '',
       },
       hasExisting: false,
     }
-  }, [profile, onboardingStatus])
+  }, [profile])
 
   const isDataLoading = (isProfileLoading || isOnboardingLoading) && !getStoredScales()
 
   const [form, setForm] = useState<EscalasVidaValues>(initialData.data)
-  // Si ya tiene escalas contestadas, arranca en la vista de Resumen / Dashboard. Si no, en modo edición.
-  const [isEditing, setIsEditing] = useState<boolean>(!initialData.hasExisting)
+  // Si no ha contestado, se muestra la portada de conocerte (no el formulario). isEditing solo se activa cuando el usuario decide editar/evaluar directamente.
+  const [isEditing, setIsEditing] = useState<boolean>(false)
   const [userToggledEdit, setUserToggledEdit] = useState<boolean>(false)
   const [activeStep, setActiveStep] = useState<number>(1) // 1: Scales, 2: Metadata
 
   useEffect(() => {
-    // Si el usuario no ha forzado el botón de editar, sincronizar con el resultado real de la API
+    // Si el usuario no ha forzado el modo edición, sincronizar con el resultado real de la API
     if (!userToggledEdit && !isDataLoading) {
-      setIsEditing(!initialData.hasExisting)
       setForm(initialData.data)
     }
   }, [initialData, userToggledEdit, isDataLoading])
@@ -353,24 +340,31 @@ export default function EscalasVidaPage() {
 
   // Cálculo de promedio general para el resumen
   const avgLevel = useMemo(() => {
-    const sum =
-      Number(form.nivelAutonomia || 3) +
-      Number(form.nivelIndependencia || 3) +
-      Number(form.nivelComunicacion || 3) +
-      Number(form.nivelComprension || 3) +
-      Number(form.nivelEnergia || 3) +
-      Number(form.nivelMovilidad || 3) +
-      Number(form.nivelSocial || 3) +
-      Number(form.nivelEmocional || 3)
-    return Math.round((sum / 8) * 10) / 10
+    const values = [
+      form.nivelAutonomia,
+      form.nivelIndependencia,
+      form.nivelComunicacion,
+      form.nivelComprension,
+      form.nivelEnergia,
+      form.nivelMovilidad,
+      form.nivelSocial,
+      form.nivelEmocional,
+    ].filter((v): v is number => typeof v === 'number' && !isNaN(v))
+
+    if (values.length === 0) return 0
+    const sum = values.reduce((acc, curr) => acc + curr, 0)
+    return Math.round((sum / values.length) * 10) / 10
   }, [form])
 
   const globalStatus = useMemo(() => {
     if (avgLevel >= 3.5) return { label: 'Autonomía alta / Fluida', desc: 'Independencia mayoritaria en actividades cotidianas.', color: 'var(--secondary)', bg: 'var(--secondary-subtle)' }
     if (avgLevel >= 2.5) return { label: 'Autonomía moderada', desc: 'Desempeño con apoyos puntuales o adaptaciones sencillas.', color: 'var(--primary)', bg: 'var(--primary-subtle)' }
     if (avgLevel >= 1.8) return { label: 'Apoyo sustancial', desc: 'Requiere supervisión o asistencia en varias dimensiones.', color: 'var(--color-amarillo)', bg: 'color-mix(in oklch, var(--color-amarillo) 16%, transparent)' }
-    return { label: 'Acompañamiento integral', desc: 'Asistencia constante y apoyos especializados directos.', color: 'var(--color-coral)', bg: 'color-mix(in oklch, var(--color-coral) 12%, transparent)' }
+    if (avgLevel > 0) return { label: 'Acompañamiento integral', desc: 'Asistencia constante y apoyos especializados directos.', color: 'var(--color-coral)', bg: 'color-mix(in oklch, var(--color-coral) 12%, transparent)' }
+    return { label: 'Sin evaluación', desc: 'Responde las 8 dimensiones para calibrar tu autonomía.', color: 'var(--fg3)', bg: 'var(--bg-cool)' }
   }, [avgLevel])
+
+  const hasAnswered = hasValidScales(form)
 
   if (isDataLoading) {
     return (
@@ -392,9 +386,80 @@ export default function EscalasVidaPage() {
     <main id="main" className="responsive-main" style={{ '--main-max-width': '960px' } as CSSProperties}>
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 64px' }}>
       {/* ─────────────────────────────────────────────────────────────
-          VISTA 1: DASHBOARD / RESULTADOS (Cuando no se está editando)
+          VISTA 0: PORTADA DE CONOCERTE (Cuando no ha contestado)
           ───────────────────────────────────────────────────────────── */}
-      {!isEditing ? (
+      {!hasAnswered && !isEditing ? (
+        <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+          {/* Header motivacional */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginBottom: 24,
+              padding: '24px 20px',
+              background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
+              borderRadius: 16,
+              border: '1px solid rgba(34,155,88,0.15)',
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🌱</div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 24,
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #229B58 0%, #073B4C 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                margin: '0 0 6px',
+              }}
+            >
+              Completa tu perfil
+            </h1>
+            <p
+              style={{
+                fontSize: 14,
+                color: 'var(--fg2)',
+                margin: 0,
+                lineHeight: 1.5,
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              Mientras más sepamos sobre ti, mejores recomendaciones podremos darte.<br />
+              <strong style={{ color: 'var(--fg1)' }}>Solo te tomará unos minutos.</strong>
+            </p>
+          </div>
+
+          <OnboardingStageCover
+            onStart={() => navigate('/completar-perfil')}
+            stageNumber={1}
+            stageTitle="1. Conocer quién eres."
+            subtitle="Tres pasos para conocerte mejor"
+          />
+
+          <div style={{ textAlign: 'center', marginTop: 18 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setUserToggledEdit(true)
+                setIsEditing(true)
+                setActiveStep(1)
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                textDecoration: 'underline',
+              }}
+            >
+              O responder directamente la evaluación de las 8 dimensiones aquí
+            </button>
+          </div>
+        </div>
+      ) : !isEditing ? (
         <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
           {/* Header del Dashboard */}
           <div
@@ -425,14 +490,14 @@ export default function EscalasVidaPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 700,
-                    color: 'var(--secondary)',
-                    background: 'var(--secondary-subtle)',
+                    color: hasAnswered ? 'var(--secondary)' : 'var(--color-amarillo)',
+                    background: hasAnswered ? 'var(--secondary-subtle)' : 'color-mix(in oklch, var(--color-amarillo) 16%, transparent)',
                     padding: '4px 10px',
                     borderRadius: 'var(--radius-sm)',
                     fontFamily: 'var(--font-body)',
                   }}
                 >
-                  ✓ Evaluación guardada
+                  {hasAnswered ? '✓ Evaluación guardada' : '⚠️ Pendiente de evaluación'}
                 </span>
               </div>
               <p style={{ fontSize: 14.5, color: 'var(--fg2)', margin: 0, lineHeight: 1.5, maxWidth: 560, fontFamily: 'var(--font-body)' }}>
@@ -445,17 +510,6 @@ export default function EscalasVidaPage() {
                 setUserToggledEdit(true)
                 setIsEditing(true)
                 setActiveStep(1)
-                setForm(f => ({
-                  ...f,
-                  nivelAutonomia: undefined,
-                  nivelIndependencia: undefined,
-                  nivelComunicacion: undefined,
-                  nivelComprension: undefined,
-                  nivelEnergia: undefined,
-                  nivelMovilidad: undefined,
-                  nivelSocial: undefined,
-                  nivelEmocional: undefined,
-                }))
               }}
               style={{
                 display: 'flex',
@@ -482,8 +536,8 @@ export default function EscalasVidaPage() {
                 e.currentTarget.style.color = 'var(--fg1)'
               }}
             >
-              <span>✏️</span>
-              Actualizar respuestas
+              <span>{hasAnswered ? '✏️' : '📝'}</span>
+              {hasAnswered ? 'Actualizar respuestas' : 'Responder evaluación'}
             </button>
           </div>
 
@@ -833,46 +887,44 @@ export default function EscalasVidaPage() {
               </p>
             </div>
 
-            {initialData.hasExisting && (
-              <button
-                type="button"
-                onClick={() => {
-                  setUserToggledEdit(true)
-                  setIsEditing(false)
-                }}
-                title="Cancelar"
-                aria-label="Cancelar"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--fg2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0,
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--border-strong)'
-                  e.currentTarget.style.color = 'var(--fg1)'
-                  e.currentTarget.style.background = 'var(--bg-cool)'
-                  e.currentTarget.style.transform = 'scale(1.05)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)'
-                  e.currentTarget.style.color = 'var(--fg2)'
-                  e.currentTarget.style.background = 'var(--bg-surface)'
-                  e.currentTarget.style.transform = 'scale(1)'
-                }}
-              >
-                {Icons.x({ s: 18 })}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setUserToggledEdit(true)
+                setIsEditing(false)
+              }}
+              title="Volver"
+              aria-label="Volver"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--fg2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'all 0.15s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--border-strong)'
+                e.currentTarget.style.color = 'var(--fg1)'
+                e.currentTarget.style.background = 'var(--bg-cool)'
+                e.currentTarget.style.transform = 'scale(1.05)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border-color)'
+                e.currentTarget.style.color = 'var(--fg2)'
+                e.currentTarget.style.background = 'var(--bg-surface)'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              {Icons.x({ s: 18 })}
+            </button>
           </div>
 
           {/* Stepper Tabs */}

@@ -259,7 +259,6 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <button
           type="button"
-          className="auth-btn-primary"
           onClick={onStart}
           style={{
             width: '100%',
@@ -267,12 +266,28 @@ export const OnboardingStageCover: React.FC<OnboardingStageCoverProps> = ({
             padding: '15px 24px',
             fontSize: 15,
             fontWeight: 700,
-            borderRadius: 14,
+            borderRadius: 'var(--radius-btn, 12px)',
+            background: 'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%)',
+            color: '#ffffff',
+            border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 10,
-            boxShadow: '0 4px 14px rgba(34, 155, 88, 0.25)',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(34, 155, 88, 0.28)',
+            fontFamily: 'var(--font-body)',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.94'
+            e.currentTarget.style.transform = 'translateY(-1.5px)'
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(34, 155, 88, 0.38)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '1'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 4px 14px rgba(34, 155, 88, 0.28)'
           }}
         >
           <span>Comenzar preguntas</span>

@@ -2,6 +2,7 @@ import { useMe } from '@features/auth'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import FocusTrap from 'focus-trap-react'
+import { useA11yStore } from '@features/a11y/store/a11yStore'
 import PcdProfileWizard from '../components/PcdProfileWizard'
 import TutorProfileWizard from '../components/TutorProfileWizard'
 import InstitutionProfileWizard from '../components/InstitutionProfileWizard'
@@ -32,6 +33,7 @@ export default function CompleteProfilePage() {
   const { data: user } = useMe()
   const nav = useNavigate()
   const [isDone, setIsDone] = useState(false)
+  const { textScale, cycleTextScale } = useA11yStore()
 
   const { userRole, birthDate } = getUserProfileData(user)
 
@@ -85,6 +87,45 @@ export default function CompleteProfilePage() {
             position: 'relative',
           }}
         >
+          {/* Botón rápido de accesibilidad / tamaño de texto */}
+          <button
+            type="button"
+            onClick={cycleTextScale}
+            aria-label={`Tamaño de texto actual: ${textScale === 'xl' ? 'Extra grande (A++)' : textScale === 'lg' ? 'Grande (A+)' : 'Normal (A)'}. Clic para cambiar.`}
+            title={`Tamaño de texto: ${textScale === 'xl' ? 'Extra grande (A++)' : textScale === 'lg' ? 'Grande (A+)' : 'Normal (A)'}. Clic para agrandar.`}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 56,
+              background: textScale !== 'base' ? 'var(--primary-subtle)' : 'transparent',
+              border: '1px solid var(--border-color)',
+              cursor: 'pointer',
+              color: textScale !== 'base' ? 'var(--primary)' : 'var(--fg2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              padding: '0 10px',
+              height: 32,
+              borderRadius: 16,
+              zIndex: 10,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-warm)'
+              e.currentTarget.style.borderColor = 'var(--primary)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = textScale !== 'base' ? 'var(--primary-subtle)' : 'transparent'
+              e.currentTarget.style.borderColor = 'var(--border-color)'
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 800 }}>Aa</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--secondary)' }}>
+              {textScale === 'xl' ? 'A++' : textScale === 'lg' ? 'A+' : 'A'}
+            </span>
+          </button>
+
           <button
             onClick={handleClose}
             aria-label="Cerrar modal"

@@ -141,6 +141,20 @@ export default function AccessibilityBar() {
     }
   }, [open])
 
+  /* Cerrar panel con tecla Escape prioritaria */
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setOpen(false)
+        btnRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [open])
+
   /* Aplica preferencias al <html> cada vez que cambian */
   useEffect(() => { applyA11yAttributes(a11y) }, [a11y])
 
@@ -349,7 +363,7 @@ export default function AccessibilityBar() {
 
     const panelStyle: CSSProperties = {
       position: 'fixed',
-      zIndex: 1500,
+      zIndex: 10050,
       width: 320,
       maxWidth: 'calc(100vw - 40px)',
       maxHeight: 'calc(100vh - 120px)',
@@ -385,7 +399,7 @@ export default function AccessibilityBar() {
         position: 'fixed',
         right: minimized ? 0 : position.right,
         bottom: position.bottom,
-        zIndex: 1500,
+        zIndex: 10050,
         display: 'flex',
         alignItems: 'center',
         transition: isDragging ? 'none' : 'right 0.3s ease, bottom 0.3s ease, transform 0.3s ease',
@@ -409,7 +423,7 @@ export default function AccessibilityBar() {
               cursor: 'pointer',
               marginRight: minimized ? 4 : -8,
               boxShadow: 'var(--shadow-sm)',
-              zIndex: 1510,
+              zIndex: 10060,
               padding: 0,
             }}
           >
@@ -597,7 +611,7 @@ export default function AccessibilityBar() {
             borderTop: '2px solid rgba(0,78,82,0.4)',
             borderBottom: '2px solid rgba(0,78,82,0.4)',
             pointerEvents: 'none',
-            zIndex: 9999,
+            zIndex: 10070,
             opacity: 0,
             transition: 'opacity 0.15s ease',
           }}
@@ -614,7 +628,7 @@ export default function AccessibilityBar() {
             border: '6px solid var(--color-warning)',
             boxShadow: 'inset 0 0 80px rgba(241,250,63,0.4)',
             pointerEvents: 'none',
-            zIndex: 10000,
+            zIndex: 10080,
             opacity: 0,
             transition: 'opacity 0.15s ease',
           }}

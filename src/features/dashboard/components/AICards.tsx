@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   useAINextSteps,
   useAIResumen,
@@ -122,6 +123,7 @@ export function NextStepsCard() {
    ProfileSummaryCard — Resumen narrativo del perfil
    ═══════════════════════════════════════════════════════════ */
 export function ProfileSummaryCard() {
+  const navigate = useNavigate()
   const { data: rawData, isLoading, canFetch, fetch, isRateLimited } = useAIResumen()
   const [expanded, setExpanded] = useState(false)
   const user = useAuthStore(s => s.user)
@@ -137,6 +139,12 @@ export function ProfileSummaryCard() {
     parentesco: dest,
     isTutor,
   })
+
+  const isInsufficient = Boolean(
+    data?.resumenUnParrafo?.toLowerCase().includes('datos insuficientes') ||
+    data?.resumenUnParrafo?.toLowerCase().includes('completa tu perfil') ||
+    data?.resumenUnParrafo?.toLowerCase().includes('insuficiente')
+  )
 
   if (!canFetch() && !data) return null
 
@@ -190,41 +198,79 @@ export function ProfileSummaryCard() {
             &ldquo;{data.resumenUnParrafo}&rdquo;
           </p>
 
-          {expanded && data.resumenTresParrafos && (
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { key: 'quienEres', label: 'Quién eres', icon: '👤' },
-                { key: 'contexto', label: 'Tu contexto', icon: '🌍' },
-                { key: 'intereses', label: 'Intereses y aspiraciones', icon: '✨' },
-              ].map(({ key, label, icon }) => {
-                const parrafos = data.resumenTresParrafos as Record<string, string | undefined>
-                return parrafos && parrafos[key] ? (
-                  <div key={key} style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                      {icon} {label}
-                    </div>
-                    <div style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.55 }}>
-                      {parrafos[key]}
-                    </div>
-                  </div>
-                ) : null
-              })}
+          {isInsufficient ? (
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => navigate('/completar-perfil')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 'var(--radius-btn, 10px)',
+                  background: 'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 3px 10px rgba(34, 155, 88, 0.25)',
+                  fontFamily: 'var(--font-body)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.opacity = '0.94'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.opacity = '1'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <span>Contestar preguntas de mi perfil</span>
+                {Icons.arrowRight({ s: 15 })}
+              </button>
             </div>
-          )}
+          ) : (
+            <>
+              {expanded && data.resumenTresParrafos && (
+                <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    { key: 'quienEres', label: 'Quién eres', icon: '👤' },
+                    { key: 'contexto', label: 'Tu contexto', icon: '🌍' },
+                    { key: 'intereses', label: 'Intereses y aspiraciones', icon: '✨' },
+                  ].map(({ key, label, icon }) => {
+                    const parrafos = data.resumenTresParrafos as Record<string, string | undefined>
+                    return parrafos && parrafos[key] ? (
+                      <div key={key} style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-warm)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                          {icon} {label}
+                        </div>
+                        <div style={{ fontSize: 14, color: 'var(--fg2)', lineHeight: 1.55 }}>
+                          {parrafos[key]}
+                        </div>
+                      </div>
+                    ) : null
+                  })}
+                </div>
+              )}
 
-          {data.resumenTresParrafos && (
-            <button
-              onClick={() => setExpanded(v => !v)}
-              style={{
-                marginTop: 12, background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--primary)', fontSize: 13, fontWeight: 600,
-                fontFamily: 'var(--font-body)', padding: 0,
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}
-            >
-              {expanded ? 'Ver menos' : 'Leer historia completa'}
-              {Icons.arrowRight({ s: 13 })}
-            </button>
+              {data.resumenTresParrafos && (
+                <button
+                  onClick={() => setExpanded(v => !v)}
+                  style={{
+                    marginTop: 12, background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--primary)', fontSize: 13, fontWeight: 600,
+                    fontFamily: 'var(--font-body)', padding: 0,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  {expanded ? 'Ver menos' : 'Leer historia completa'}
+                  {Icons.arrowRight({ s: 13 })}
+                </button>
+              )}
+            </>
           )}
         </div>
       ) : (
