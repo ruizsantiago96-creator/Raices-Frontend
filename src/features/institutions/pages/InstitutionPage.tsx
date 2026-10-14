@@ -1,8 +1,8 @@
 /**
  * InstitutionPage — Página de detalle de una institución.
  *
- * Muestra información completa de la institución, chat con asistente IA,
- * y sistema de reseñas.
+ * Muestra información completa de la institución, su catálogo de servicios
+ * y programas, chat con asistente IA, y sistema de reseñas.
  */
 
 import { useParams, Link } from 'react-router-dom'
@@ -14,6 +14,7 @@ import { useAuthStore } from '@features/auth'
 // Componentes extraídos
 import Skeleton from '../components/Skeleton'
 import InstitutionHeader from '../components/InstitutionHeader'
+import InstitutionServices from '../components/InstitutionServices'
 import InstitutionAIChat from '../components/InstitutionAIChat'
 import InstitutionReviews from '../components/InstitutionReviews'
 
@@ -85,13 +86,16 @@ export default function InstitutionPage() {
           <span style={{ color: 'var(--fg2)' }}>{institution.name}</span>
         </div>
 
-        {/* 1. Header card */}
+        {/* 1. Header card (información general + ubicación) */}
         <InstitutionHeader institution={institution} isFav={isFav} />
 
-        {/* 2. AI Chat panel */}
+        {/* 2. Servicios y Programas (catálogo público, solo activos) */}
+        <InstitutionServices institution={institution} />
+
+        {/* 3. AI Chat panel */}
         <InstitutionAIChat institutionName={institution.name} />
 
-        {/* 3 & 4. Reviews section */}
+        {/* 4 & 5. Reviews section */}
         <InstitutionReviews
           institutionId={institution.id}
           reviews={reviews}

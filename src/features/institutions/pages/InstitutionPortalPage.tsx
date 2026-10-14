@@ -16,6 +16,9 @@ const TAB_TITLES: Record<string, string> = {
 export default function InstitutionPortalPage() {
   const navigate = useNavigate()
   const tab = useUiStore(s => s.instPortalTab)
+  // Borrador de foro sugerido (p. ej. "Crear foro" desde los inscritos de un servicio)
+  const foroBorrador = useUiStore(s => s.instPortalForoBorrador)
+  const setForoBorrador = useUiStore(s => s.setInstPortalForoBorrador)
 
   const { data: institution, isLoading: loadingInst } = useMiInstitucion()
 
@@ -81,7 +84,14 @@ export default function InstitutionPortalPage() {
           <div key={`content-${currentTab}`} className="animate-tab-in">
             {currentTab === 'servicios' && <ServiciosTab />}
             {currentTab === 'resenas' && <ResenasTab />}
-            {currentTab === 'foros' && <ForosExplorer showHeader={false} />}
+            {currentTab === 'foros' && (
+              <ForosExplorer
+                showHeader={false}
+                tituloInicial={foroBorrador?.titulo}
+                descripcionInicial={foroBorrador?.descripcion}
+                onBorradorConsumido={() => setForoBorrador(null)}
+              />
+            )}
           </div>
         </>
       )}

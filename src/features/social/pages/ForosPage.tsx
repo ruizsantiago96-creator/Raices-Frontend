@@ -308,12 +308,20 @@ function ForumDetail({ forumId, onBack }: { forumId: string | number; onBack: ()
 }
 
 /* ── Create Forum Modal ──────────────────────────────────── */
-function CreateForumModal({ onClose }: { onClose: () => void }) {
+interface CreateForumModalProps {
+  onClose: () => void
+  /** Título precargado (p. ej. desde el catálogo de servicios del portal). */
+  tituloInicial?: string
+  /** Descripción precargada (p. ej. desde el catálogo de servicios). */
+  descripcionInicial?: string
+}
+
+function CreateForumModal({ onClose, tituloInicial, descripcionInicial }: CreateForumModalProps) {
   const { addToast } = useUiStore()
   const createForo = useCreateForo()
   const [form, setForm] = useState({
-    titulo: '',
-    descripcion: '',
+    titulo: tituloInicial ?? '',
+    descripcion: descripcionInicial ?? '',
     preguntasDetonantes: [''],
     exclusivoPadres: false,
   })
@@ -463,13 +471,26 @@ function CreateForumModal({ onClose }: { onClose: () => void }) {
 /* ═══ Se usa en /foros y dentro del Portal de Institución ═ */
 /* ═══════════════════════════════════════════════════════════ */
 
-export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
+export function ForosExplorer({
+  showHeader = true,
+  tituloInicial,
+  descripcionInicial,
+  onBorradorConsumido,
+}: {
+  showHeader?: boolean
+  tituloInicial?: string
+  descripcionInicial?: string
+  /** Se invoca al cerrar/crear el formulario (para limpiar el borrador). */
+  onBorradorConsumido?: () => void
+}) {
   const { user } = useAuthStore()
   const { data: onboardingStatus } = useOnboardingStatus()
   const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
 
   const [selectedForoId, setSelectedForoId] = useState<string | number | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
+  // Si llega un borrador (p. ej. "Crear foro" desde los inscritos de un
+  // servicio), el formulario nace abierto con esos datos precargados.
+  const [showCreate, setShowCreate] = useState(Boolean(tituloInicial || descripcionInicial))
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar, setBuscar] = useState('')
   const [pagina, setPagina] = useState(1)
@@ -642,7 +663,13 @@ export function ForosExplorer({ showHeader = true }: { showHeader?: boolean }) {
         </>
       )}
 
-      {showCreate && <CreateForumModal onClose={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreateForumModal
+          onClose={() => { setShowCreate(false); onBorradorConsumido?.() }}
+          tituloInicial={tituloInicial}
+          descripcionInicial={descripcionInicial}
+        />
+      )}
 
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }

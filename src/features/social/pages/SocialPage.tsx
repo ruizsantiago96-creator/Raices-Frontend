@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useUiStore } from '@shared/stores/uiStore'
 import {
   useGroups,
@@ -1164,13 +1165,19 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function SocialPage() {
+  const location = useLocation()
   const [activeGroupId, setActiveGroupId] = useState<string | number | null>(null)
   const [feedCategoryFilter, setFeedCategoryFilter] = useState<string | null>(null)
   const [feedGroupFilter, setFeedGroupFilter] = useState<string | number | null>(null)
   const [feedAlgorithmMode, setFeedAlgorithmMode] = useState<'parati' | 'recientes' | 'mis_grupos'>('parati')
 
   // Creation form state
-  const [newPost, setNewPost] = useState('')
+  // `borradorPublicacion` (router state) permite precargar el composer, p. ej.
+  // desde el botón "Crear publicación" de los inscritos a un servicio.
+  const [newPost, setNewPost] = useState(() => {
+    const borrador = (location.state as { borradorPublicacion?: unknown } | null)?.borradorPublicacion
+    return typeof borrador === 'string' ? borrador : ''
+  })
   const [postCategory, setPostCategory] = useState<string>('general')
   const [exclusivoPadres, setExclusivoPadres] = useState<boolean>(false)
   const [postGroupId, setPostGroupId] = useState<string | number | null>(null)

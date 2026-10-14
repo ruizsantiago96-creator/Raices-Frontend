@@ -6,6 +6,12 @@ export interface Toast {
   type: 'info' | 'success' | 'warning' | 'error' | string
 }
 
+/** Borrador de foro sugerido (p. ej. desde el catálogo de servicios del portal). */
+export interface BorradorForo {
+  titulo: string
+  descripcion: string
+}
+
 export interface UiState {
   toasts: Toast[]
   addToast: (msg: string, type?: Toast['type']) => void
@@ -17,6 +23,9 @@ export interface UiState {
   setAdminTab: (tab: string) => void
   instPortalTab: string
   setInstPortalTab: (tab: string) => void
+  /** Borrador de foro para precargar el formulario (no persiste entre sesiones). */
+  instPortalForoBorrador: BorradorForo | null
+  setInstPortalForoBorrador: (borrador: BorradorForo | null) => void
   empresaPortalTab: string
   setEmpresaPortalTab: (tab: string) => void
   floatingChatOpen: boolean
@@ -53,6 +62,8 @@ export const useUiStore = create<UiState>((set) => ({
     localStorage.setItem('inst-portal-tab', tab)
     set({ instPortalTab: tab })
   },
+  instPortalForoBorrador: null,
+  setInstPortalForoBorrador: (borrador: BorradorForo | null) => set({ instPortalForoBorrador: borrador }),
   empresaPortalTab: localStorage.getItem('empresa-portal-tab') ?? 'bolsa',
   setEmpresaPortalTab: (tab: string) => {
     localStorage.setItem('empresa-portal-tab', tab)

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { Icons } from '@shared/components/shared'
 import { CustomSelect } from '@shared/components/CustomSelect'
 import { useMiInstitucion, useUpdateMiInstitucion } from '../hooks/useInstitutions'
+import { useResumenInscripcionesServicio } from '../hooks/useInscripcionesServicio'
+import ServiciosInscripcionesModal from './ServiciosInscripcionesModal'
 import { useUiStore } from '@shared/stores/uiStore'
 
 export interface ServicioItem {
@@ -91,6 +94,16 @@ export default function ServiciosTab() {
   const { data: institution } = useMiInstitucion()
   const updateMutation = useUpdateMiInstitucion()
   const { addToast } = useUiStore()
+  const navigate = useNavigate()
+  const setInstPortalTab = useUiStore(s => s.setInstPortalTab)
+  const setForoBorrador = useUiStore(s => s.setInstPortalForoBorrador)
+
+  // Conteo de inscritos/pendientes por servicio (badges del catálogo)
+  const { data: resumenInscripciones } = useResumenInscripcionesServicio()
+  const conteos = new Map((resumenInscripciones?.datos ?? []).map(r => [r.servicioId, r]))
+
+  // Servicio cuya lista de inscritos está abierta en el modal
+  const [inscripcionesDe, setInscripcionesDe] = useState<ServicioItem | null>(null)
 
   const [servicios, setServicios] = useState<ServicioItem[]>(() => {
     if (institution?.servicios && Array.isArray(institution.servicios) && institution.servicios.length > 0) {
@@ -296,7 +309,11 @@ export default function ServiciosTab() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-        {servicios.map(servicio => (
+        {servicios.map(servicio => {
+          const conteo = conteos.get(servicio.id)
+          const pendientesInscripcion = conteo?.pendientes ?? 0
+          const inscritos = conteo?.activas ?? 0
+          return (
           <div
             key={servicio.id}
             style={{
@@ -320,6 +337,31 @@ export default function ServiciosTab() {
                 {servicio.categoria}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setInscripcionesDe(servicio)}
+                  title="Ver personas inscritas a este servicio"
+                  style={{
+                    background: pendientesInscripcion > 0
+                      ? 'color-mix(in oklch, var(--primary) 12%, transparent)'
+                      : 'var(--bg-warm)',
+                    border: `1px solid ${pendientesInscripcion > 0 ? 'var(--primary)' : 'var(--border-color)'}`,
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700,
+                    color: pendientesInscripcion > 0 ? 'var(--primary)' : 'var(--fg3)',
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  👥 Inscritos {inscritos}
+                  {pendientesInscripcion > 0 && (
+                    <span style={{
+                      background: 'rgba(212, 148, 76, 0.18)', color: '#D4944C',
+                      borderRadius: 999, padding: '1px 7px', fontSize: 11,
+                    }}>
+                      {pendientesInscripcion} pend.
+                    </span>
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={() => handleToggleActive(servicio.id)}
@@ -393,8 +435,37 @@ export default function ServiciosTab() {
               </div>
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
+      )}
+
+      {/* Modal: inscritos del servicio (con atajos a publicación/foro) */}
+      {inscripcionesDe && (
+        <ServiciosInscripcionesModal
+          institucionId={String(institution?.id ?? '')}
+          servicioId={inscripcionesDe.id}
+          servicioNombre={inscripcionesDe.nombre}
+          onCrearPublicacion={() => {
+            const nombre = inscripcionesDe.nombre
+            setInscripcionesDe(null)
+            navigate('/social', {
+              state: { borradorPublicacion: nombre ? `Novedades del servicio "${nombre}": ` : '' },
+            })
+          }}
+          onCrearForo={() => {
+            const nombre = inscripcionesDe.nombre
+            setInscripcionesDe(null)
+            setForoBorrador(nombre
+              ? {
+                  titulo: `Foro: ${nombre}`,
+                  descripcion: `Espacio de discusión del servicio "${nombre}" para las personas inscritas y sus familias.`,
+                }
+              : null)
+            setInstPortalTab('foros')
+          }}
+          onClose={() => setInscripcionesDe(null)}
+        />
       )}
 
       {/* Modal: Agregar / Editar servicio */}
