@@ -117,79 +117,219 @@ interface TimelineProps {
   porcentaje: number
 }
 
-function RutaTimeline({ pasos, pasoActual, porcentaje }: TimelineProps) {
+function RutaTimeline({ pasos, pasoActual }: { pasos: MiRutaResponse['pasos']; pasoActual: MiRutaResponse['pasoActual'] }) {
   const completados = pasos.filter(p => p.completado).length
   const total = pasos.length
 
+  if (pasos.length === 0) {
+    return (
+      <div style={{ background: 'var(--bg-warm)', borderRadius: 10, padding: '16px 18px', color: 'var(--fg3)', fontSize: 13.5, textAlign: 'center' }}>
+        Esta ruta aún no tiene pasos definidos.
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {pasos.length === 0 ? (
-        <div style={{ background: 'var(--bg-warm)', borderRadius: 10, padding: '16px 18px', color: 'var(--fg3)', fontSize: 13.5, textAlign: 'center' }}>
-          Esta ruta aún no tiene pasos definidos.
-        </div>
-      ) : (
-        pasos.map((paso, idx) => {
-          const isCurrent = paso === pasoActual
-          return (
+      {pasos.map((paso, idx) => {
+        const isCurrent = paso === pasoActual
+        const recursosDelPaso = (paso as Record<string, unknown>).recursosLocales as Array<{
+          id: string | number
+          tipo: string
+          nombre: string
+          categoria?: string
+          detalle?: string
+          ciudad?: string
+          institucionId?: string | number
+        }> | undefined
+
+        return (
+          <div
+            key={paso.id}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '36px 1fr',
+              gap: 12,
+              alignItems: 'start',
+              padding: '12px 14px',
+              background: paso.completado ? 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))' : isCurrent ? 'var(--bg-warm)' : 'var(--bg-surface)',
+              border: `1px solid ${isCurrent ? 'var(--primary)' : 'var(--border-color)'}`,
+              borderRadius: 10,
+              transition: 'background 0.2s',
+              cursor: 'default',
+            }}
+          >
+            {/* Nodo */}
             <div
-              key={paso.id}
               style={{
-                display: 'grid',
-                gridTemplateColumns: '36px 1fr',
-                gap: 12,
-                alignItems: 'start',
-                padding: '12px 14px',
-                background: paso.completado ? 'color-mix(in oklch, var(--primary) 4%, var(--bg-surface))' : isCurrent ? 'var(--bg-warm)' : 'var(--bg-surface)',
-                border: `1px solid ${isCurrent ? 'var(--primary)' : 'var(--border-color)'}`,
-                borderRadius: 10,
-                transition: 'background 0.2s',
-                cursor: 'default',
+                width: 36, height: 36, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginTop: 2,
+                background: paso.completado ? 'var(--primary)' : isCurrent ? 'var(--primary)' : 'var(--bg-warm)',
+                border: '2px solid var(--primary)',
+                color: paso.completado || isCurrent ? '#fff' : 'var(--fg2)',
               }}
             >
-              {/* Nodo */}
-              <div
-                style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginTop: 2,
-                  background: paso.completado ? 'var(--primary)' : isCurrent ? 'var(--primary)' : 'var(--bg-warm)',
-                  border: '2px solid var(--primary)',
-                  color: paso.completado || isCurrent ? '#fff' : 'var(--fg2)',
-                }}
-              >
-                {paso.completado ? <Icons.check s={18} /> : idx + 1}
-              </div>
-
-              {/* Contenido */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', marginBottom: 2, lineHeight: 1.35 }}>
-                  {paso.titulo}
-                </div>
-                {paso.descripcion && (
-                  <div style={{ fontSize: 13, color: 'var(--fg2)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {paso.descripcion}
-                  </div>
-                )}
-                {isCurrent && (
-                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--primary)', color: '#fff' }}>
-                      Paso actual
-                    </span>
-{paso.categoria ? <span style={{ fontSize: 11, color: 'var(--fg3)' }}>· {categoriaLabel(paso.categoria as string | undefined | null)}</span> : null}
-                  </div>
-                )}
-                {paso.completado && paso.fechaCompletado && (
-                  <div style={{ marginTop: 6, fontSize: 12, color: 'var(--fg3)' }}>
-                    Completado {timeAgo(paso.fechaCompletado)} · {categoriaLabel(paso.categoria as string | undefined | null)}
-                  </div>
-                )}
-              </div>
+              {paso.completado ? <Icons.check s={18} /> : idx + 1}
             </div>
-          )
-        })
-      )}
+
+            {/* Contenido */}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', marginBottom: 2, lineHeight: 1.35 }}>
+                {paso.titulo}
+              </div>
+              {paso.descripcion && (
+                <div style={{ fontSize: 13, color: 'var(--fg2)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {paso.descripcion}
+                </div>
+              )}
+              {isCurrent && (
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--primary)', color: '#fff' }}>
+                    Paso actual
+                  </span>
+                  {paso.categoria ? <span style={{ fontSize: 11, color: 'var(--fg3)' }}>· {categoriaLabel(paso.categoria as string | undefined | null)}</span> : null}
+                </div>
+              )}
+              {paso.completado && paso.fechaCompletado && (
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--fg3)' }}>
+                  Completado {timeAgo(paso.fechaCompletado)} · {categoriaLabel(paso.categoria as string | undefined | null)}
+                </div>
+              )}
+
+              {/* ── Fase 3: recursos locales por paso ── */}
+              {recursosDelPaso && recursosDelPaso.length > 0 && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* Encabezado sutillo */}
+                  <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--fg3)', marginBottom: 2 }}>
+                    Recursos locales
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+                    {recursosDelPaso.map(r => (
+                      <PasoRecursoCard key={`${r.id}-${r.tipo}`} recurso={r} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {recursosDelPaso && recursosDelPaso.length === 0 && (
+                <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--fg3)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                  Aún explorando especialistas locales para este paso.
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
+}
+
+// ─── Fase 3: tarjeta compacta de recurso por paso ────────────────────────────────
+
+interface RecursoDelPaso {
+  id: string | number
+  tipo: string
+  nombre: string
+  categoria?: string
+  detalle?: string
+  ciudad?: string
+  institucionId?: string | number
+}
+
+function PasoRecursoCard({ recurso }: { recurso: RecursoDelPaso }) {
+  const { addToast } = useUiStore()
+  const esInstitucion = recurso.tipo === 'institucion'
+  const esServicio = recurso.tipo === 'servicio'
+  const esVacante = recurso.tipo === 'vacante'
+
+  const categoriaTexto = categoriaLabel(recurso.categoria as string | undefined | null)
+  const detalleTexto = esServicio && recurso.detalle ? `${recurso.detalle}` : (recurso.detalle ?? (esVacante ? recurso.ciudad : (recurso.ciudad ?? '')))
+
+  const labelColor = esInstitucion
+    ? { bg: 'var(--bg-warm)', fg: 'var(--fg2)' }
+    : esServicio
+      ? { bg: 'rgba(251, 133, 0, 0.12)', fg: '#FB8500' }
+      : { bg: 'rgba(1, 173, 255, 0.12)', fg: '#01ADFF' }
+
+  return (
+    <div
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 10,
+        padding: '10px 12px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        minWidth: 0,
+      }}
+      onClick={() => {
+        const destino = esInstitucion ? `/instituciones/${recurso.id}`
+          : esServicio ? `/instituciones/${recurso.institucionId ?? recurso.id}/servicios/${recurso.id}`
+          : esVacante ? `/vacantes/${recurso.id}`
+          : '#'
+        addToast(`Abriendo ${recurso.nombre}`, 'info')
+      }}
+      title={`Ver ${recurso.tipo}`}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <div
+          style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: esInstitucion ? 'var(--bg-cool)' : esServicio ? 'rgba(251, 133, 0, 0.14)' : 'rgba(1, 173, 255, 0.14)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {esVacante ? <Icons.work s={15} /> : <Icons.compass s={15} />}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {recurso.nombre}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: labelColor.bg, color: labelColor.fg }}>
+              {categoriaTexto}
+            </span>
+            {detalleTexto && (
+              <span style={{ fontSize: 11, color: 'var(--fg3)', textTransform: esVacante ? 'none' : 'none' }}>
+                {esVacante && detalleTexto ? `· ${detalleTexto}` : (detalleTexto ? `· ${detalleTexto}` : '')}
+              </span>
+            )}
+            {recurso.ciudad && leerCiudadLocalizada(recurso.ciudad) && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--fg3)' }}>
+                <Icons.mapPin s={11} /> {recurso.ciudad}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer de acción secundaria */}
+      <div style={{ marginTop: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            fontSize: 11.5, fontWeight: 700, color: 'var(--primary)', padding: 0, textAlign: 'right',
+            lineHeight: 1.3,
+          }}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); addToast(`Explorando ${recurso.nombre}`, 'info') }}
+          title="Ver detalles"
+        >
+          Ver detalles <Icons.arrowRight s={13} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Decide si un texto de ciudad se muestra crudo para no confundir con "en tu ciudad" (Fase 2/3). */
+function leerCiudadLocalizada(ciudad: string | undefined | null): ciudad is string {
+  if (!ciudad) return false
+  if (ciudad.toLowerCase().trim() === 'en tu ciudad') return false
+  return true
 }
 
 // ─── Vista principal ───────────────────────────────────────────────────────
@@ -386,7 +526,7 @@ export default function MisRutasPage(): JSX.Element {
                   {pasos.filter(p => p.completado).length} completados de {pasos.length}
                 </span>
               </div>
-              <RutaTimeline pasos={pasos} pasoActual={pasoActual} porcentaje={porcentaje} />
+              <RutaTimeline pasos={pasos} pasoActual={pasoActual} />
             </section>
 
             {/* ── Entidades locales recomendadas ── */}

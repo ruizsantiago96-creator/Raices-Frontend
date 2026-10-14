@@ -1,8 +1,8 @@
-import { useState, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
+import { useState, useRef, useEffect, type FormEvent, type ChangeEvent, type CSSProperties } from 'react'
 import {
   useRutas,
   useRutasSummary,
-  useCreateRuta,
+  useGenerarRutaPersonalizada,
   useUpdateRuta,
   useDeleteRuta,
   useRutaDetail,
@@ -13,11 +13,9 @@ import {
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { Icons, labelStyle, RestrictedBlock } from '@shared/components/shared'
-import { CustomDatePicker } from '@shared/components/CustomDatePicker'
 import { CustomSelect } from '@shared/components/CustomSelect'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import type {
-  CreateRutaPayload,
   PasoRuta,
   RutaPrioridad,
   RutaEstado,
@@ -48,6 +46,60 @@ interface AreaItem {
   label: string
 }
 
+// ─── Estado de generación automática (motor de recomendación) ─────────────
+
+/**
+ * Se muestra mientras el motor genera la ruta personalizada (puede tardar
+ * unos segundos por la IA). Reemplaza al empty state tradicional para no
+ * ofrecer una creación manual que ya no existe.
+ */
+function GenerandoRutaState() {
+  return (
+    <div
+      style={{
+        background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+        borderRadius: 14, padding: 48, textAlign: 'center', boxShadow: 'var(--shadow-sm)',
+      }}
+    >
+      {/* Spinner con ícono central */}
+      <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 18px' }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: '3px solid var(--border-color)', borderTopColor: 'var(--primary)',
+          borderRadius: '50%', animation: 'spin 0.9s linear infinite',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)',
+        }}>
+          {Icons.compass({ s: 24 })}
+        </div>
+      </div>
+
+      <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>
+        Preparando tu ruta de desarrollo
+      </h3>
+      <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.6 }}>
+        Analizando tu perfil e integrando especialistas reales para tu ruta ideal...
+      </p>
+
+      {/* Skeletons sutiles mientras la IA trabaja */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 26, textAlign: 'left' }}>
+        {[1, 2, 3].map(i => (
+          <div
+            key={i}
+            style={{
+              height: 54, borderRadius: 10,
+              background: 'var(--bg-warm)', border: '1px solid var(--border-color)',
+              animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.15}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function RutasPage() {
   const { addToast } = useUiStore()
   const { data: catalogos } = useCatalogos()
@@ -65,41 +117,40 @@ export default function RutasPage() {
   })
   const { data: summary } = useRutasSummary()
 
+  // Motor de recomendación automatizado (reemplaza al CRUD manual de creación)
+  const generar = useGenerarRutaPersonalizada()
+  const rutasActivas = routes.filter(r => r.estado === 'activa').length
+  // Ref (no state) para disparar la generación solo una vez por montaje sin
+  // provocar renders en cascada dentro del effect.
+  const generacionDisparada = useRef(false)
+
+  const dispararGeneracion = () => {
+    generar.mutate(undefined, {
+      onSuccess: () => addToast('Tu ruta personalizada está lista', 'success'),
+      onError: () => addToast('No pudimos generar tu ruta automáticamente', 'error'),
+    })
+  }
+
+  // ── Auto-Fetch: sin rutas activas → el motor genera la ruta ──────────────
+  useEffect(() => {
+    // Solo una vez por montaje, y únicamente cuando el listado ya terminó de
+    // cargar (así sabemos con certeza que no hay rutas activas).
+    if (generacionDisparada.current || loadingRoutes || isIncomplete) return
+    if (rutasActivas > 0) return
+
+    generacionDisparada.current = true
+    generar.mutate(undefined, {
+      onSuccess: () => addToast('Tu ruta personalizada está lista', 'success'),
+      onError: () => addToast('No pudimos generar tu ruta automáticamente', 'error'),
+    })
+  }, [loadingRoutes, rutasActivas, isIncomplete, generar, addToast])
+
   // Modals state
-  const [createOpen, setCreateOpen] = useState(false)
   const [selectedRouteId, setSelectedRouteId] = useState<string | number | null>(null)
 
-  // Hooks CRUD
-  const createRuta = useCreateRuta()
+  // Hooks CRUD (edición/eliminación de rutas existentes)
   const updateRuta = useUpdateRuta(selectedRouteId)
   const deleteRuta = useDeleteRuta(selectedRouteId)
-
-  // Creation form state
-  const [newForm, setNewForm] = useState<CreateRutaPayload>({
-    nombre: '',
-    descripcion: '',
-    metaFinal: '',
-    areaInteres: '',
-    prioridad: 'media',
-    fechaLimite: '',
-  })
-
-  // Handle route creation
-  const handleCreate = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!newForm.nombre || !newForm.areaInteres) {
-      addToast('Nombre y Área de interés son requeridos', 'error')
-      return
-    }
-    try {
-      await createRuta.mutateAsync(newForm)
-      addToast('Ruta de desarrollo creada', 'success')
-      setCreateOpen(false)
-      setNewForm({ nombre: '', descripcion: '', metaFinal: '', areaInteres: '', prioridad: 'media', fechaLimite: '' })
-    } catch {
-      addToast('Error al crear la ruta', 'error')
-    }
-  }
 
   // Handle route deletion
   const handleDelete = async () => {
@@ -121,23 +172,20 @@ export default function RutasPage() {
     { id: 'comunidad', label: 'Comunidad y Recreación' },
   ]
 
+  // Mientras la generación inicial está en curso se ocupa toda la zona de
+  // contenido con el estado estratégico (sin empty state ni skeletons de lista).
+  const generandoRutaInicial = generar.isPending
+
   return (
     <main className="responsive-main" style={{ '--main-max-width': '1100px' } as CSSProperties}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 20px 48px' }}>
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
-              Mis Rutas de Desarrollo
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0' }}>Planifica tus metas y haz un seguimiento paso a paso</p>
-          </div>
-          {!isIncomplete && (
-            <button onClick={() => setCreateOpen(true)} className="auth-btn-primary" style={{ width: 'auto', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              {Icons.plus({ s: 18 })} Nueva Ruta
-            </button>
-          )}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>
+            Mis Rutas de Desarrollo
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0' }}>Tu camino personalizado, generado automáticamente para ti</p>
         </div>
 
         {isIncomplete ? (
@@ -208,16 +256,23 @@ export default function RutasPage() {
               <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 24, height: 160, animation: 'pulse 1.5s infinite' }} />
             ))}
           </div>
+        ) : generandoRutaInicial ? (
+          /* Motor de recomendación en curso: se oculta el empty state tradicional */
+          <GenerandoRutaState />
         ) : routes.length === 0 ? (
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 48, textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
               {Icons.compass({ s: 24 })}
             </div>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 8px' }}>Aún no tienes rutas de desarrollo</h3>
-            <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: 20 }}>Crea una ruta personalizada para dar seguimiento a tus hitos terapéuticos, educativos o laborales.</p>
-            <button onClick={() => setCreateOpen(true)} className="btn-primary" style={{ padding: '10px 24px' }}>
-              Crear mi primera ruta
-            </button>
+            <p style={{ fontSize: 14, color: 'var(--fg2)', marginBottom: generar.isError ? 20 : 0, maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+              Estamos preparando tu primera ruta personalizada a partir de tu perfil. Si no aparece en unos segundos, puedes reintentar.
+            </p>
+            {generar.isError && (
+              <button onClick={dispararGeneracion} className="btn-primary" style={{ padding: '10px 24px' }}>
+                Reintentar generación
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
@@ -274,77 +329,6 @@ export default function RutasPage() {
                 </div>
               )
             })}
-          </div>
-        )}
-
-        {/* ── CREATE ROUTE MODAL ── */}
-        {createOpen && (
-          <div onClick={() => setCreateOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-            <form onClick={e => e.stopPropagation()} onSubmit={handleCreate} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 500, width: '100%', position: 'relative' }}>
-              <button type="button" onClick={() => setCreateOpen(false)} style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                {Icons.x({ s: 16 })}
-              </button>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>Nueva Ruta de Desarrollo</h3>
-              <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '0 0 20px' }}>Establece un plan y agrega hitos para dar seguimiento.</p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={labelStyle}>Nombre de la ruta *</label>
-                  <input required className="onboarding-input" value={newForm.nombre} onChange={e => setNewForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Terapia física de marcha" style={{ marginTop: 6 }} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Descripción</label>
-                  <textarea className="onboarding-input" value={newForm.descripcion} onChange={e => setNewForm(f => ({ ...f, descripcion: e.target.value }))} placeholder="Hitos y enfoque actual..." style={{ marginTop: 6, height: 60, resize: 'none' }} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Meta final</label>
-                  <input className="onboarding-input" value={newForm.metaFinal} onChange={e => setNewForm(f => ({ ...f, metaFinal: e.target.value }))} placeholder="Ej. Caminar 50 metros sin andadera" style={{ marginTop: 6 }} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Área de interés *</label>
-                  <div style={{ marginTop: 6 }}>
-                    <CustomSelect
-                      value={newForm.areaInteres}
-                      onChange={val => setNewForm(f => ({ ...f, areaInteres: val }))}
-                      placeholder="Selecciona..."
-                      options={listAreas.map(a => ({ value: a.id, label: a.label }))}
-                    />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Prioridad</label>
-                    <div style={{ marginTop: 6 }}>
-                      <CustomSelect
-                        value={newForm.prioridad ?? 'media'}
-                        onChange={val => setNewForm(f => ({ ...f, prioridad: val as RutaPrioridad }))}
-                        options={[
-                          { value: 'baja', label: 'Baja' },
-                          { value: 'media', label: 'Media' },
-                          { value: 'alta', label: 'Alta' },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Fecha límite</label>
-                    <div style={{ marginTop: 6 }}>
-                      <CustomDatePicker
-                        value={newForm.fechaLimite}
-                        onChange={val => setNewForm(f => ({ ...f, fechaLimite: val }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-                <button type="button" className="btn-secondary" onClick={() => setCreateOpen(false)}>Cancelar</button>
-                <button type="submit" disabled={createRuta.isPending} className="btn-primary" style={{ padding: '10px 24px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, borderRadius: 8, cursor: 'pointer' }}>
-                  {createRuta.isPending ? 'Guardando...' : 'Crear Ruta'}
-                </button>
-              </div>
-            </form>
           </div>
         )}
 
