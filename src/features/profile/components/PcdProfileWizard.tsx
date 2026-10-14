@@ -360,7 +360,13 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
         areasInteres: selectedInterests,
         viabilidadEconomica: viabilidad,
       }
-      try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (err) { console.warn('Scales save notice:', err) }
+      try { 
+        await api.post('/usuarios/escalas-vida', scalesPayload) 
+        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      } catch (err) { 
+        console.warn('Scales save notice:', err) 
+        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      }
 
       // 2. Save profile and needs
       try {

@@ -148,14 +148,10 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const savedProgress = getOnboardingStepProgress('tutor')
   const savedData = (savedProgress?.data as Record<string, unknown>) || {}
 
-  const [step, setStep] = useState<TutorProfileStep>(() => (savedProgress?.step && savedProgress.step !== 'done' ? (savedProgress.step as TutorProfileStep) : 'cover'))
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-
   const meRecord = me as Record<string, unknown> | undefined
   const onboardingRecord = onboardingStatus as Record<string, unknown> | undefined
   const [curpInput, setCurpInput] = useState<string>(() => (savedData.curpInput as string) || (meRecord?.curp as string) || '')
-  const [destinatario, setDestinatario] = useState<string>(() => (savedData.destinatario as string) || 'hijo')
+  const [destinatario, setDestinatario] = useState<string>(() => (savedData.destinatario as string) || localStorage.getItem('raices_destinatario') || 'hijo')
   const [nombreDependiente, setNombreDependiente] = useState<string>(() => {
     return (
       (savedData.nombreDependiente as string) ||
@@ -176,12 +172,46 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       ''
     )
   })
-  const [acompanamiento, setAcompanamiento] = useState<string>(() => (savedData.acompanamiento as string) || 'recomendaciones_paso')
+  const [acompanamiento, setAcompanamiento] = useState<string>(() => {
+    return (
+      (savedData.acompanamiento as string) ||
+      (meRecord?.preferenciasAcompanamiento as string) ||
+      (meRecord?.preferencias_acompanamiento as string) ||
+      localStorage.getItem('raices_acompanamiento') ||
+      'recomendaciones_paso'
+    )
+  })
   
-  const [conditionData, setConditionData] = useState<ConditionData>(() => (savedData.conditionData as ConditionData) || {
-    conditions: [], neurodivergencias: [], neuroOtro: '',
-    tieneDiagnostico: 'si', diagnosticoEspecifico: '',
-    redFlagDiagnostico: false, temporalidad: 'nacimiento',
+  const [conditionData, setConditionData] = useState<ConditionData>(() => {
+    const fromProgress = savedData.conditionData as ConditionData | undefined
+    if (fromProgress && Array.isArray(fromProgress.conditions) && fromProgress.conditions.length > 0) {
+      return fromProgress
+    }
+    let localConds: string[] = []
+    try {
+      const raw = localStorage.getItem('raices_conditions')
+      if (raw) localConds = JSON.parse(raw)
+    } catch {}
+    if (localConds.length > 0) {
+      return {
+        conditions: localConds,
+        neurodivergencias: [],
+        neuroOtro: '',
+        tieneDiagnostico: 'si',
+        diagnosticoEspecifico: '',
+        redFlagDiagnostico: false,
+        temporalidad: 'nacimiento',
+      }
+    }
+    return {
+      conditions: [],
+      neurodivergencias: [],
+      neuroOtro: '',
+      tieneDiagnostico: 'si',
+      diagnosticoEspecifico: '',
+      redFlagDiagnostico: false,
+      temporalidad: 'nacimiento',
+    }
   })
   const [scales, setScales] = useState<ScalesState>(() => (savedData.scales as ScalesState) || {
     autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
@@ -234,13 +264,49 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
     nombreDependiente.trim()
   )
 
+  const hasAcompanamientoInfo = Boolean(
+    savedData.acompanamiento ||
+    (meRecord?.preferenciasAcompanamiento as string) ||
+    (meRecord?.preferencias_acompanamiento as string) ||
+    localStorage.getItem('raices_acompanamiento')
+  )
+
+  const hasConditionInfo = Boolean(
+    (conditionData.conditions && conditionData.conditions.length > 0) ||
+    (savedData.conditionData as ConditionData | undefined)?.conditions?.length ||
+    Boolean(localStorage.getItem('raices_conditions'))
+  )
+
   const activeSteps: TutorProfileStep[] = STEP_ORDER.filter(s =>
     (s !== 'relationship' || !hasRelationshipInfo) &&
+    (s !== 'accommodation' || !hasAcompanamientoInfo) &&
+    (s !== 'condition' || !hasConditionInfo) &&
     (s !== 'neurodivergence' || hasNeurodivergence) &&
     (s !== 'identity_curp' || !hasCurp)
   )
+
+  const [step, setStep] = useState<TutorProfileStep>(() => {
+    const rawStep = savedProgress?.step as TutorProfileStep | undefined
+    if (rawStep && rawStep !== 'done' && rawStep !== 'cover') {
+      if (['relationship', 'accommodation', 'condition'].includes(rawStep) && !activeSteps.includes(rawStep)) {
+        return 'cover'
+      }
+      return rawStep
+    }
+    return 'cover'
+  })
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
   const stepIndex = activeSteps.indexOf(step)
   const totalSteps = activeSteps.length
+
+  // Si el paso actual ya no está activo (por estar ya respondido), redirigir al primer paso activo
+  useEffect(() => {
+    if (step !== 'cover' && (step as string) !== 'done' && !activeSteps.includes(step)) {
+      setStep(activeSteps[0] || 'cover')
+    }
+  }, [activeSteps, step])
 
   // Reanudación automática en ultimoPasoCompletado + 1
   useEffect(() => {
@@ -336,15 +402,34 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
   const removeZone = (zone: string) => setPreferredZones(prev => prev.filter(z => z !== zone))
 
   // ── Step navigation ───────────────────────────────────────────
-  const goNext = (nextStep: TutorProfileStep) => { setError(''); setStep(nextStep); scrollTop() }
-  const goBack = () => { const idx = activeSteps.indexOf(step); if (idx > 0) { setStep(activeSteps[idx - 1]); scrollTop() } }
+  const goNext = () => {
+    setError('')
+    const idx = activeSteps.indexOf(step)
+    if (idx >= 0 && idx < activeSteps.length - 1) {
+      setStep(activeSteps[idx + 1])
+    } else if (idx === -1 && activeSteps.length > 0) {
+      setStep(activeSteps[0])
+    }
+    scrollTop()
+  }
+  const goBack = () => {
+    setError('')
+    const idx = activeSteps.indexOf(step)
+    if (idx > 0) {
+      setStep(activeSteps[idx - 1])
+      scrollTop()
+    } else if (idx === 0) {
+      setStep('cover')
+      scrollTop()
+    }
+  }
 
   // ── Submit handlers ───────────────────────────────────────────
   const handleRelationshipSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!nombreDependiente.trim()) { setError(`Escribe el nombre de ${destinatario === 'hijo' ? 'tu hijo/a' : 'tu familiar'}.`); return }
     if (!fechaNacimientoDependiente) { setError('Ingresa la fecha de nacimiento.'); return }
-    goNext('accommodation')
+    goNext()
   }
   const handleAccommodationSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -352,23 +437,22 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       handleFinalSubmit(e)
       return
     }
-    goNext('condition')
+    goNext()
   }
   const handleConditionSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (conditionData.conditions.length === 0) { setError('Selecciona al menos una opción.'); return }
-    if (hasNeurodivergence) goNext('neurodivergence')
-    else goNext('diagnosis')
+    goNext()
   }
-  const handleNeuroSubmit = (e: FormEvent) => { e.preventDefault(); if (conditionData.neurodivergencias.length === 0) { setError('Selecciona al menos una.'); return } goNext('diagnosis') }
-  const handleDiagnosisSubmit = (e: FormEvent) => { e.preventDefault(); goNext('history_edu') }
-  const handleHistoryEduSubmit = (e: FormEvent) => { e.preventDefault(); goNext('history_therapy') }
-  const handleHistoryTherapySubmit = (e: FormEvent) => { e.preventDefault(); goNext('support_needs') }
-  const handleSupportNeedsSubmit = (e: FormEvent) => { e.preventDefault(); goNext('scales1') }
-  const handleScales1Submit = (e: FormEvent) => { e.preventDefault(); goNext('scales2') }
-  const handleScales2Submit = (e: FormEvent) => { e.preventDefault(); goNext('formats') }
-  const handleFormatsSubmit = (e: FormEvent) => { e.preventDefault(); if (formatos.length === 0) { setError('Selecciona al menos uno.'); return } goNext('interests') }
-  const handleInterestsSubmit = (e: FormEvent) => { e.preventDefault(); if (selectedInterests.length === 0) { setError('Selecciona al menos uno.'); return } goNext('viability') }
+  const handleNeuroSubmit = (e: FormEvent) => { e.preventDefault(); if (conditionData.neurodivergencias.length === 0) { setError('Selecciona al menos una.'); return } goNext() }
+  const handleDiagnosisSubmit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleHistoryEduSubmit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleHistoryTherapySubmit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleSupportNeedsSubmit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleScales1Submit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleScales2Submit = (e: FormEvent) => { e.preventDefault(); goNext() }
+  const handleFormatsSubmit = (e: FormEvent) => { e.preventDefault(); if (formatos.length === 0) { setError('Selecciona al menos uno.'); return } goNext() }
+  const handleInterestsSubmit = (e: FormEvent) => { e.preventDefault(); if (selectedInterests.length === 0) { setError('Selecciona al menos uno.'); return } goNext() }
 
   // ── Final submit ──────────────────────────────────────────────
   const handleFinalSubmit = async (e: FormEvent) => {
@@ -404,7 +488,13 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         areasInteres: selectedInterests,
         viabilidadEconomica: viabilidad,
       }
-      try { await api.post('/usuarios/escalas-vida', scalesPayload) } catch (err) { console.warn('Scales err:', err) }
+      try { 
+        await api.post('/usuarios/escalas-vida', scalesPayload) 
+        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      } catch (err) { 
+        console.warn('Scales err:', err) 
+        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      }
 
       // 2. Actualizar perfil y necesidades del tutor
       try {
@@ -579,7 +669,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       {/* ── STEP: COVER (PORTADA DE ETAPA 1) ── */}
       {step === 'cover' && (
         <OnboardingStageCover
-          onStart={() => goNext('relationship')}
+          onStart={() => goNext()}
           stageNumber={1}
           stageTitle="1. Conocer quién eres."
           subtitle="Tres pasos para conocerte mejor"
@@ -610,7 +700,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 5 }}>Fecha de nacimiento de {personName} <span style={{ color: '#ef4444' }}>*</span></label>
             <CustomDatePicker required max={getMaxBirthDate()} min={MIN_BIRTH_DATE} value={fechaNacimientoDependiente} onChange={val => setFechaNacimientoDependiente(val)} />
           </div>
-          <WizardNavButtons onBack={() => nav('/feed')} onSaveLater={handleSaveLater} submitLabel="Continuar" />
+          <WizardNavButtons onBack={goBack} onSaveLater={handleSaveLater} submitLabel="Continuar" />
         </form>
       )}
 
@@ -941,7 +1031,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
 
       {/* ── STEP: VIABILITY ── */}
       {step === 'viability' && (
-        <form onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(e) }} style={formStyle}>
+        <form onSubmit={(e) => { e.preventDefault(); if (activeSteps.includes('identity_curp')) { goNext() } else { handleFinalSubmit(e) } }} style={formStyle}>
           <div><h2 style={headingStyle}>Viabilidad económica</h2><p style={descStyle}>Esto nos ayuda a priorizar programas o recursos convenientes para ti y {personName}.</p></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {LIST_VIABILIDAD.map(opt => (
@@ -958,7 +1048,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           <WizardNavButtons
             onBack={goBack}
             onSaveLater={handleSaveLater}
-            submitLabel={sending ? 'Guardando...' : '¡Finalizar perfil!'}
+            submitLabel={sending ? 'Guardando...' : activeSteps.includes('identity_curp') ? 'Continuar' : '¡Finalizar perfil!'}
             submitIcon={sending ? null : <CatalogIcon icon={FluentEmoji.destello} size={14} />}
             submitDisabled={sending}
           />

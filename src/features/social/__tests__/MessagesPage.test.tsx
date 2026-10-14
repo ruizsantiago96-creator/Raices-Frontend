@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@test/renderWithProviders'
-import { DirectMessages } from '../pages/MessagesPage'
+import { DirectMessages, extractMediaFromMessage } from '../pages/MessagesPage'
 import { useUiStore } from '@shared/stores/uiStore'
 import ToastContainer from '@shared/components/Toast'
 import api from '@shared/lib/api'
@@ -20,6 +20,17 @@ vi.mock('@shared/lib/api', () => ({
 // consulta `GET /usuarios/buscar`. El servicio de comunidad queda fuera de esta suite.
 vi.mock('../hooks/useMultimedia', () => ({
   useUploadMultimedia: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}))
+
+vi.mock('emoji-picker-react', () => ({
+  default: ({ onEmojiClick }: { onEmojiClick?: (data: { emoji: string }) => void }) => (
+    <div data-testid="emoji-picker-mock">
+      <button type="button" onClick={() => onEmojiClick?.({ emoji: '😀' })}>
+        😀
+      </button>
+    </div>
+  ),
+  Theme: { AUTO: 'auto', LIGHT: 'light', DARK: 'dark' },
 }))
 
 const apiMock = api as unknown as {
@@ -80,7 +91,7 @@ function paginaUsuarios(datos: unknown[]) {
   return { datos, total: datos.length, pagina: 1, limite: 20, totalPaginas: 1 }
 }
 
-function mockGet(conversaciones: unknown[]) {
+function mockGet(conversaciones: unknown[], mensajes: unknown[] = []) {
   state.conversaciones = conversaciones
   searchCalls.length = 0
   apiMock.get.mockImplementation((url: string, config?: { params?: { q?: string } }) => {
@@ -92,7 +103,7 @@ function mockGet(conversaciones: unknown[]) {
       return Promise.resolve({ data: state.conversaciones })
     }
     if (url.includes('/mensajes/con/')) {
-      return Promise.resolve({ data: [] })
+      return Promise.resolve({ data: mensajes })
     }
     return Promise.resolve({ data: 0 })
   })
@@ -398,5 +409,68 @@ describe('DirectMessages — buscador de usuarios del modal "Nuevo mensaje"', ()
     // El backend respondería 404, así que solo se descarta la vista local.
     expect(apiMock.delete).not.toHaveBeenCalled()
     expect(await screen.findByText('Conversación eliminada')).toBeInTheDocument()
+  })
+
+  describe('extractMediaFromMessage', () => {
+    it('detecta URLs de imagen y separa el texto si lo hay', () => {
+      const single = extractMediaFromMessage('https://res.cloudinary.com/raices/image/upload/v1234/foto.png')
+      expect(single.mediaUrl).toBe('https://res.cloudinary.com/raices/image/upload/v1234/foto.png')
+      expect(single.text).toBe('')
+      expect(single.isVideo).toBe(false)
+
+      const withText = extractMediaFromMessage('Mira esta imagen:\nhttps://firebasestorage.googleapis.com/v0/b/app/o/pic.jpg?alt=media')
+      expect(withText.mediaUrl).toBe('https://firebasestorage.googleapis.com/v0/b/app/o/pic.jpg?alt=media')
+      expect(withText.text).toBe('Mira esta imagen:')
+    })
+
+    it('devuelve null en mediaUrl si no es imagen ni video', () => {
+      const normal = extractMediaFromMessage('Hola, ¿cómo estás?')
+      expect(normal.mediaUrl).toBeNull()
+      expect(normal.text).toBe('Hola, ¿cómo estás?')
+    })
+  })
+
+  it('abre el selector de emojis al hacer clic en el botón de emoji y permite insertar un emoji', async () => {
+    mockGet(conversacionActiva())
+    const user = userEvent.setup()
+
+    renderChat()
+
+    await user.click(await screen.findByText('Ana Pérez'))
+    const emojiBtn = await screen.findByRole('button', { name: 'Emojis' })
+    await user.click(emojiBtn)
+
+    // El diálogo de emojis debe aparecer
+    const dialog = await screen.findByRole('dialog', { name: 'Selector de emojis' })
+    expect(dialog).toBeInTheDocument()
+
+    // Clic en un emoji
+    const emojiOption = within(dialog).getByRole('button', { name: '😀' })
+    await user.click(emojiOption)
+
+    const input = screen.getByPlaceholderText('Escribe un mensaje...') as HTMLInputElement
+    expect(input.value).toContain('😀')
+  })
+
+  it('renderiza la imagen en lugar de texto plano cuando el mensaje contiene una URL de imagen', async () => {
+    mockGet(conversacionActiva(), [
+      {
+        id: 'msg-img-1',
+        from_id: 'ana-1',
+        to_id: 'yo-1',
+        content: 'https://res.cloudinary.com/raices/image/upload/sample.jpg',
+        created_at: new Date().toISOString(),
+      },
+    ])
+
+    renderChat()
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByText('Ana Pérez'))
+
+    // Debe renderizarse un elemento <img> con alt="Imagen adjunta"
+    const img = await screen.findByAltText('Imagen adjunta')
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute('src', 'https://res.cloudinary.com/raices/image/upload/sample.jpg')
   })
 })

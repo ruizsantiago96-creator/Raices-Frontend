@@ -1,7 +1,14 @@
 /**
  * Utilidades para normalización y generación contextual de recomendaciones IA.
  */
-import type { Dependiente } from '@/types/tutor'
+import type { Dependiente, AIResumenResponse } from '@/types/tutor'
+
+export interface TutorResumenContext {
+  tutorName?: string
+  dependentName?: string
+  parentesco?: string
+  isTutor?: boolean
+}
 
 export interface NormalizedAIRecommendations {
   steps: string[]
@@ -160,3 +167,152 @@ export function generateContextualRecommendations(dep: Dependiente | null | unde
 
   return recs.slice(0, 4)
 }
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Normaliza el resumen narrativo de IA para tutores, asegurando que el sujeto
+ * principal sea el tutor y la persona a cargo sea el hijo/dependiente, evitando
+ * que el backend confunda al tutor como el menor con discapacidad.
+ */
+export function normalizeAIResumen(
+  data: AIResumenResponse | null | undefined,
+  ctx?: TutorResumenContext
+): AIResumenResponse | null {
+  if (!data) return null
+  if (!ctx?.isTutor) return data
+
+  const tutorName = ctx.tutorName?.trim() || 'Tutor'
+  const tutorFirstName = tutorName.split(' ')[0]
+  const dependentName = ctx.dependentName?.trim() || 'su familiar'
+  const dependentFirstName = dependentName.split(' ')[0]
+  const parentescoRaw = (ctx.parentesco || 'hijo').toLowerCase()
+  const relWord = parentescoRaw.includes('hijo') ? 'hijo' : parentescoRaw.includes('familiar') ? 'familiar' : 'persona a su cuidado'
+  const parentescoLabel = `su ${relWord}`
+
+  const adaptText = (text?: string): string => {
+    if (!text || typeof text !== 'string') return ''
+
+    let s = text
+
+    // 1. "Lou Qtar es un niño valiente que reside en Mérida, Yucatán, junto a su padre tutor."
+    // -> "Lou Qtar es tutor de su hijo Mateo, un niño valiente que reside en Mérida, Yucatán."
+    s = s.replace(
+      new RegExp(`(${escapeRegex(tutorName)}|${escapeRegex(tutorFirstName)})\\s+es un(?:a)?\\s+(valiente\\s+)?(niño|niña|joven|persona|chico|chica)(\\s+valiente)?\\s+que reside en\\s+([^.]+?)(?:,\\s*junto a su (?:padre )?tutor|\\s+junto a su (?:padre )?tutor|\\s+junto con su (?:padre )?tutor)\\.?`, 'gi'),
+      (match, p1, p2, p3, p4, p5) => {
+        const valiente = (p2 || p4 || '').trim() ? ' valiente' : ''
+        return `${p1} es tutor de ${parentescoLabel} ${dependentName}, un ${p3}${valiente} que reside en ${p5.trim()}.`
+      }
+    )
+
+    // 2. "Lou Qtar, radicado en Mérida, Yucatán, es un valiente niño..."
+    // -> "Lou Qtar, radicado en Mérida, Yucatán, es tutor de su hijo Mateo, un valiente niño..."
+    s = s.replace(
+      new RegExp(`(${escapeRegex(tutorName)}|${escapeRegex(tutorFirstName)})([\\s,]+(?:radicado|residente)?\\s*(?:en\\s+[^,]+(?:,\\s*[^,]+)?)?,?\\s*)es un(?:a)?\\s+(valiente\\s+)?(niño|niña|joven|persona|chico|chica)`, 'gi'),
+      (match, p1, p2, p3, p4) => {
+        const valiente = p3 ? 'valiente ' : ''
+        return `${p1}${p2}es tutor de ${parentescoLabel} ${dependentName}, un ${valiente}${p4}`
+      }
+    )
+
+    // 3. "Acompañado por su padre tutor, Lou muestra..."
+    // -> "Con el respaldo y acompañamiento de Lou, Mateo muestra..."
+    s = s.replace(
+      new RegExp(`Acompañado por su padre tutor,?\\s*(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+muestra`, 'gi'),
+      `Con el respaldo y acompañamiento de ${tutorFirstName}, ${dependentFirstName} muestra`
+    )
+    s = s.replace(
+      /,?\s*junto a su (?:padre )?tutor\.?/gi,
+      '.'
+    )
+
+    // 4. "Cuenta con un diagnóstico formal..." -> "Mateo cuenta con un diagnóstico formal..."
+    s = s.replace(
+      /\bCuenta con un diagnóstico formal\b/gi,
+      `${dependentFirstName} cuenta con un diagnóstico formal`
+    )
+
+    // 4. "Actualmente, Lou se encuentra en una situación donde cuenta con el respaldo necesario para su desarrollo..."
+    // -> "Actualmente, Mateo cuenta con el respaldo y cuidado activo de Lou para su desarrollo..."
+    s = s.replace(
+      new RegExp(`Actualmente,?\\s*(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+se encuentra en una situación donde cuenta con el respaldo`, 'gi'),
+      `Actualmente, ${dependentFirstName} cuenta con el respaldo y cuidado activo de ${tutorFirstName}`
+    )
+    s = s.replace(
+      new RegExp(`Actualmente,?\\s*(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+se encuentra`, 'gi'),
+      `Actualmente, ${dependentFirstName} se encuentra`
+    )
+
+    // 5. "Lou se encuentra en una etapa vital de crecimiento y exploración..."
+    // -> "Mateo se encuentra en una etapa vital de crecimiento y exploración..."
+    s = s.replace(
+      new RegExp(`\\b(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+se encuentra en una etapa vital`, 'gi'),
+      `${dependentFirstName} se encuentra en una etapa vital`
+    )
+
+    // 6. "Lou tiene un fuerte interés por..." -> "Mateo tiene un fuerte interés por..."
+    s = s.replace(
+      new RegExp(`\\b(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+tiene un fuerte interés`, 'gi'),
+      `${dependentFirstName} tiene un fuerte interés`
+    )
+
+    // 7. "Es admirable ver su entusiasmo... y su interés..."
+    s = s.replace(
+      /Es admirable ver su entusiasmo por integrarse/gi,
+      `Es admirable ver el compromiso de ${tutorFirstName} como tutor y el entusiasmo de ${dependentFirstName} por integrarse`
+    )
+
+    // 8. En esta etapa fundamental de su infancia, Lou demuestra...
+    s = s.replace(
+      new RegExp(`(etapa fundamental de su infancia,?\\s*)(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})`, 'gi'),
+      `$1${dependentFirstName}`
+    )
+
+    // 9. "Lou muestra un desarrollo..."
+    s = s.replace(
+      new RegExp(`\\b(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+muestra un desarrollo`, 'gi'),
+      `${dependentFirstName} muestra un desarrollo`
+    )
+
+    // 10. "su familia se enfoca en brindarle..."
+    s = s.replace(
+      new RegExp(`su familia se enfoca en brindarle`, 'gi'),
+      `${tutorFirstName} y su familia se enfocan en brindarle a ${dependentFirstName}`
+    )
+
+    // 11. Cualquier otra mención donde el tutor aparezca como sujeto del menor
+    s = s.replace(
+      new RegExp(`\\b(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\s+(cuenta con|presenta|requiere|asiste a|participa en|demuestra)\\b`, 'gi'),
+      `${dependentFirstName} $2`
+    )
+
+    // 12. "para Lou" cuando refiere a servicios del menor -> "para Mateo"
+    s = s.replace(
+      new RegExp(`para\\s+(${escapeRegex(tutorFirstName)}|${escapeRegex(tutorName)})\\b`, 'gi'),
+      `para ${dependentFirstName}`
+    )
+
+    return s
+  }
+
+  const newUnParrafo = adaptText(data.resumenUnParrafo)
+  const parrafos = data.resumenTresParrafos as Record<string, string | undefined> | undefined
+  const newTresParrafos: Record<string, string | undefined> = parrafos ? { ...parrafos } : {}
+
+  if (parrafos) {
+    for (const key of Object.keys(parrafos)) {
+      if (parrafos[key]) {
+        newTresParrafos[key] = adaptText(parrafos[key])
+      }
+    }
+  }
+
+  return {
+    ...data,
+    resumenUnParrafo: newUnParrafo || data.resumenUnParrafo,
+    resumenTresParrafos: newTresParrafos,
+  }
+}
+

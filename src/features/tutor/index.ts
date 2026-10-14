@@ -26,5 +26,6 @@ export { usePermisos, useUpdatePermisos, useRegisterDependiente, DEFAULT_PERMISO
 export { default as PermissionsModal } from './components/PermissionsModal'
 
 // ── Utils ──────────────────────────────────────────────────────────
-export { normalizeAIRecommendations, generateContextualRecommendations } from './utils/aiHelpers'
+export { normalizeAIRecommendations, generateContextualRecommendations, normalizeAIResumen } from './utils/aiHelpers'
+export type { TutorResumenContext } from './utils/aiHelpers'
 

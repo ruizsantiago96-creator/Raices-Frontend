@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { useAINextSteps, useAIResumen, normalizeAIRecommendations } from '@features/tutor'
+import {
+  useAINextSteps,
+  useAIResumen,
+  normalizeAIRecommendations,
+  normalizeAIResumen,
+  useDependientes,
+} from '@features/tutor'
+import { useAuthStore } from '@features/auth'
 import { Icons } from '@shared/components/shared'
 
 /* ═══════════════════════════════════════════════════════════
@@ -115,8 +122,21 @@ export function NextStepsCard() {
    ProfileSummaryCard — Resumen narrativo del perfil
    ═══════════════════════════════════════════════════════════ */
 export function ProfileSummaryCard() {
-  const { data, isLoading, canFetch, fetch, isRateLimited } = useAIResumen()
+  const { data: rawData, isLoading, canFetch, fetch, isRateLimited } = useAIResumen()
   const [expanded, setExpanded] = useState(false)
+  const user = useAuthStore(s => s.user)
+  const { data: dependents = [] } = useDependientes()
+
+  const isTutor = user?.role === 'tutor' || user?.role === 'padre_tutor' || user?.rol === 'padre_tutor' || Boolean(localStorage.getItem('raices_dep_name'))
+  const depName = dependents[0]?.nombreCompleto || dependents[0]?.nombre || localStorage.getItem('raices_dep_name') || ''
+  const dest = dependents[0]?.parentesco || localStorage.getItem('raices_destinatario') || 'hijo'
+
+  const data = normalizeAIResumen(rawData, {
+    tutorName: user?.full_name,
+    dependentName: depName,
+    parentesco: dest,
+    isTutor,
+  })
 
   if (!canFetch() && !data) return null
 
