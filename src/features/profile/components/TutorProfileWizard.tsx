@@ -213,11 +213,42 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       temporalidad: 'nacimiento',
     }
   })
-  const [scales, setScales] = useState<ScalesState>(() => (savedData.scales as ScalesState) || {
-    autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
-    energia: 3, movilidad: 3, social: 3, emocional: 3,
+  const [scales, setScales] = useState<ScalesState>(() => {
+    if (savedData.scales) return savedData.scales as ScalesState
+    try {
+      const raw = localStorage.getItem('raices_user_scales')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return {
+          autonomia: Number(parsed.autonomia ?? parsed.nivelAutonomia ?? 3),
+          independencia: Number(parsed.independencia ?? parsed.nivelIndependencia ?? 3),
+          comunicacion: Number(parsed.comunicacion ?? parsed.nivelComunicacion ?? 4),
+          comprension: Number(parsed.comprension ?? parsed.nivelComprension ?? 3),
+          energia: Number(parsed.energia ?? parsed.nivelEnergia ?? 3),
+          movilidad: Number(parsed.movilidad ?? parsed.nivelMovilidad ?? 3),
+          social: Number(parsed.social ?? parsed.nivelSocial ?? 3),
+          emocional: Number(parsed.emocional ?? parsed.nivelEmocional ?? 3),
+        }
+      }
+    } catch {}
+    return {
+      autonomia: 3, independencia: 3, comunicacion: 4, comprension: 3,
+      energia: 3, movilidad: 3, social: 3, emocional: 3,
+    }
   })
-  const [formatos, setFormatos] = useState<string[]>(() => (savedData.formatos as string[]) || ['texto', 'imagenes'])
+  const [formatos, setFormatos] = useState<string[]>(() => {
+    if (savedData.formatos && Array.isArray(savedData.formatos) && savedData.formatos.length > 0) {
+      return savedData.formatos as string[]
+    }
+    try {
+      const raw = localStorage.getItem('raices_user_scales')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed.preferenciaFormato) return [parsed.preferenciaFormato]
+      }
+    } catch {}
+    return ['texto', 'imagenes']
+  })
   const [selectedInterests, setSelectedInterests] = useState<string[]>(() => (savedData.selectedInterests as string[]) || [])
   const [selectedTemas, setSelectedTemas] = useState<string[]>(() => (savedData.selectedTemas as string[]) || [])
   const [experienciaPorTema, setExperienciaPorTema] = useState<Record<string, string>>(() => (savedData.experienciaPorTema as Record<string, string>) || {})

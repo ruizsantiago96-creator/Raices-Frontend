@@ -269,6 +269,22 @@ export default function EscalasVidaSection() {
       ? (profile?.interests as string[])
       : []
 
+    let userTemporalidad = 'nacimiento'
+    let userFormato = 'texto'
+    let userViabilidad = 'sin_restricciones'
+    try {
+      const rawProg = localStorage.getItem('raices_onboarding_progress_pcd') || localStorage.getItem('raices_onboarding_progress_tutor')
+      if (rawProg) {
+        const prog = JSON.parse(rawProg)
+        const d = prog?.data
+        if (d?.conditionData?.temporalidad) userTemporalidad = d.conditionData.temporalidad
+        if (Array.isArray(d?.formatos) && d.formatos[0]) {
+          userFormato = d.formatos[0] === 'persona' ? 'presencial' : d.formatos[0]
+        }
+        if (d?.viabilidad) userViabilidad = d.viabilidad
+      }
+    } catch {}
+
     return {
       data: {
         nivelAutonomia: undefined,
@@ -281,10 +297,10 @@ export default function EscalasVidaSection() {
         nivelEmocional: undefined,
         tieneDiagnostico: Boolean(disability),
         diagnosticoEspecifico: disability,
-        temporalidadOrigen: 'nacimiento',
-        preferenciaFormato: 'texto',
+        temporalidadOrigen: userTemporalidad,
+        preferenciaFormato: userFormato,
         areasInteres: goals,
-        viabilidadEconomica: 'sin_restricciones',
+        viabilidadEconomica: userViabilidad,
       },
       hasExisting: false,
     }
