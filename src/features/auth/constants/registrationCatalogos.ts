@@ -176,7 +176,7 @@ export const LIST_FORMATOS = [
   { id: 'imagenes', label: 'Con imágenes o pictogramas', icon: FluentEmoji.formatoImagenes },
   { id: 'audio', label: 'Escuchando explicaciones', icon: FluentEmoji.formatoAudio },
   { id: 'video', label: 'Viendo videos demostrativos', icon: FluentEmoji.formatoVideo },
-  { id: 'persona', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
+  { id: 'presencial', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
 ]
 
 // ── FORMATOS (TUTOR) ───────────────────────────────────────────────
@@ -185,7 +185,7 @@ export const LIST_FORMATOS_TUTOR = [
   { id: 'imagenes', label: 'Con imágenes o pictogramas', icon: FluentEmoji.formatoImagenes },
   { id: 'audio', label: 'Escuchando explicaciones', icon: FluentEmoji.formatoAudio },
   { id: 'video', label: 'Viendo videos demostrativos', icon: FluentEmoji.formatoVideo },
-  { id: 'persona', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
+  { id: 'presencial', label: 'Con la explicación o el apoyo de otra persona', icon: FluentEmoji.apoyo },
 ]
 
 // ── BARRERAS SOCIALES (G. SOCIAL) ──────────────────────────────────

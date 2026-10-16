@@ -140,6 +140,8 @@ export function useAddPaso(rutaId: string | number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rutas'] })
       qc.invalidateQueries({ queryKey: ['rutas', 'detail', rutaId] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'mi-ruta'] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'resumen'] })
     },
   })
 }
@@ -155,6 +157,8 @@ export function useCompletarPaso(rutaId: string | number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rutas'] })
       qc.invalidateQueries({ queryKey: ['rutas', 'detail', rutaId] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'mi-ruta'] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'resumen'] })
     },
   })
 }
@@ -170,6 +174,8 @@ export function useDescompletarPaso(rutaId: string | number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rutas'] })
       qc.invalidateQueries({ queryKey: ['rutas', 'detail', rutaId] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'mi-ruta'] })
+      qc.invalidateQueries({ queryKey: ['rutas', 'resumen'] })
     },
   })
 }

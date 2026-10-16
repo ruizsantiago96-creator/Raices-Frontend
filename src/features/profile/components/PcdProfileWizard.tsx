@@ -342,38 +342,61 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
       const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
       const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
 
-      const finalBarrerasSociales = scales.social === 3
+      const isExplorarSolo = acompanamiento === 'explorar_solo'
+
+      const finalBarrerasSociales = !isExplorarSolo && scales.social === 3
         ? Array.from(new Set([...barrerasSociales, ...(otraBarreraSocial.trim() ? [otraBarreraSocial.trim()] : [])]))
         : []
 
-      // 1. Save scales
-      const scalesPayload = {
-        nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
-        nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
-        nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
-        nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
-        barrerasSociales: finalBarrerasSociales,
-        tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
-        diagnosticoEspecifico: conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null,
-        temporalidadOrigen: conditionData.temporalidad,
-        preferenciaFormato: formatos[0] || 'texto',
-        areasInteres: selectedInterests,
-        viabilidadEconomica: viabilidad,
-      }
-      try { 
-        await api.post('/usuarios/escalas-vida', scalesPayload) 
-        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
-      } catch (err) { 
-        console.warn('Scales save notice:', err) 
-        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      // 1. Save scales (solo si no eligió explorar_solo)
+      if (!isExplorarSolo) {
+        const validTemporalidades = ['nacimiento', 'infancia', 'adolescencia', 'vida_adulta', 'progresiva', 'en_evaluacion']
+        const validFormatos = ['texto', 'imagenes', 'audio', 'video', 'presencial']
+
+        let temporalidad = String(conditionData.temporalidad || '').trim()
+        if (!validTemporalidades.includes(temporalidad)) {
+          temporalidad = 'nacimiento'
+        }
+
+        let formato = String(formatos[0] || '').trim()
+        if (formato === 'persona') {
+          formato = 'presencial'
+        }
+        if (!validFormatos.includes(formato)) {
+          formato = 'texto'
+        }
+
+        const scalesPayload = {
+          nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
+          nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
+          nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
+          nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
+          barrerasSociales: finalBarrerasSociales,
+          tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+          diagnosticoEspecifico: conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null,
+          temporalidadOrigen: temporalidad,
+          preferenciaFormato: formato,
+          areasInteres: selectedInterests,
+          viabilidadEconomica: viabilidad || 'sin_restricciones',
+        }
+        try { 
+          await api.post('/usuarios/escalas-vida', scalesPayload) 
+          localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+        } catch (err) { 
+          console.warn('Scales save notice:', err) 
+          localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+        }
       }
 
       // 2. Save profile and needs
       try {
+        if (acompanamiento) {
+          localStorage.setItem('raices_acompanamiento', acompanamiento)
+        }
         await updateProfile.mutateAsync({
+          preferenciasAcompanamiento: acompanamiento,
           ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
         })
-        const isExplorarSolo = acompanamiento === 'explorar_solo'
         const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
         const specDiag = conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null
         await updateNeedsProfile.mutateAsync({
@@ -392,7 +415,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
             gradoEstudios: isExplorarSolo ? '' : gradoEstudios,
             therapy_history: isExplorarSolo ? [] : terapiaHistory,
             life_stage: etapa || null,
-            current_concerns: isExplorarSolo ? [] : (specDiag ? [specDiag] : []),
+            current_concerns: isExplorarSolo ? '' : (specDiag || ''),
             diagnostico_especifico: specDiag,
             diagnosticoEspecifico: specDiag,
             barreras_sociales: isExplorarSolo ? [] : finalBarrerasSociales,
@@ -404,7 +427,6 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
       } catch (profErr) { console.warn('Profile save notice:', profErr) }
 
       // 3. Save local data
-      const isExplorarSolo = acompanamiento === 'explorar_solo'
       saveOnboardingData({
         interests: isExplorarSolo ? [] : selectedInterests,
         viability: isExplorarSolo ? '' : viabilidad,

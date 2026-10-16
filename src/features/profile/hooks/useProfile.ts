@@ -37,7 +37,44 @@ export function useProfile(): UseQueryResult<UserProfile, CustomError> {
 
   const query = useQuery<UserProfile, CustomError>({
     queryKey: ['perfil'],
-    queryFn: () => api.get('/usuarios/perfil').then((r) => r.data),
+    queryFn: async () => {
+      const res = await api.get('/usuarios/perfil')
+      const data = res.data
+      if (data && typeof data === 'object') {
+        const rawScales = ((data as Record<string, unknown>).escalasVida ||
+          ((data as Record<string, unknown>).perfilesExtendidos as Record<string, unknown> | undefined)?.escalasVida) as Record<string, unknown> | undefined
+
+        if (rawScales && typeof rawScales === 'object') {
+          // Normalizar llaves para soportar tanto formato backend (autonomia) como frontend (nivelAutonomia)
+          const normalizedScales = {
+            ...rawScales,
+            nivelAutonomia: rawScales.nivelAutonomia ?? rawScales.autonomia,
+            nivelIndependencia: rawScales.nivelIndependencia ?? rawScales.independencia,
+            nivelComunicacion: rawScales.nivelComunicacion ?? rawScales.comunicacion,
+            nivelComprension: rawScales.nivelComprension ?? rawScales.comprension,
+            nivelEnergia: rawScales.nivelEnergia ?? rawScales.energia,
+            nivelMovilidad: rawScales.nivelMovilidad ?? rawScales.movilidad,
+            nivelSocial: rawScales.nivelSocial ?? rawScales.social,
+            nivelEmocional: rawScales.nivelEmocional ?? rawScales.emocional,
+            autonomia: rawScales.autonomia ?? rawScales.nivelAutonomia,
+            independencia: rawScales.independencia ?? rawScales.nivelIndependencia,
+            comunicacion: rawScales.comunicacion ?? rawScales.nivelComunicacion,
+            comprension: rawScales.comprension ?? rawScales.nivelComprension,
+            energia: rawScales.energia ?? rawScales.nivelEnergia,
+            movilidad: rawScales.movilidad ?? rawScales.nivelMovilidad,
+            social: rawScales.social ?? rawScales.nivelSocial,
+            emocional: rawScales.emocional ?? rawScales.nivelEmocional,
+          }
+          ;(data as Record<string, unknown>).escalasVida = normalizedScales
+          try {
+            localStorage.setItem('raices_user_scales', JSON.stringify(normalizedScales))
+          } catch {
+            // omitir
+          }
+        }
+      }
+      return data
+    },
     enabled: !!token,
   })
 
@@ -89,8 +126,31 @@ export function useSaveEscalasVida(): UseMutationResult<
 > {
   const qc = useQueryClient()
   return useMutation<unknown, CustomError, EscalasVidaPayload>({
-    mutationFn: (payload: EscalasVidaPayload) =>
-      api.post('/usuarios/escalas-vida', payload).then((r) => r.data),
+    mutationFn: (payload: EscalasVidaPayload) => {
+      const validTemporalidades = ['nacimiento', 'infancia', 'adolescencia', 'vida_adulta', 'progresiva', 'en_evaluacion']
+      const validFormatos = ['texto', 'imagenes', 'audio', 'video', 'presencial']
+
+      let temporalidad = String(payload.temporalidadOrigen || '').trim()
+      if (!validTemporalidades.includes(temporalidad)) {
+        temporalidad = 'nacimiento'
+      }
+
+      let formato = String(payload.preferenciaFormato || '').trim()
+      if (formato === 'persona') {
+        formato = 'presencial'
+      }
+      if (!validFormatos.includes(formato)) {
+        formato = 'texto'
+      }
+
+      const cleanPayload = {
+        ...payload,
+        temporalidadOrigen: temporalidad,
+        preferenciaFormato: formato,
+      }
+
+      return api.post('/usuarios/escalas-vida', cleanPayload).then((r) => r.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })

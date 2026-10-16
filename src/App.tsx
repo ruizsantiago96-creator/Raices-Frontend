@@ -240,8 +240,9 @@ export default function App() {
 
                   <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
                   <Route path="/rutas" element={<RutasPage />} />
+                  <Route path="/mi-camino" element={<RutasPage />} />
                   <Route path="/rutas/mis" element={<MisRutasPage />} />
-                  <Route path="/escalas-vida" element={<EscalasVidaPage />} />
+                  <Route path="/escalas-vida" element={<Navigate to="/profile" replace />} />
 
                   {/* ── Instituciones: índice + detalle (anidadas) ──────────
                       La ruta padre renderiza el grid del catálogo y la ruta

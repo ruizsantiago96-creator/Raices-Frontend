@@ -470,38 +470,61 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
 
       const specDiag = conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null
 
-      const finalBarrerasSociales = scales.social === 3
+      const isExplorarSolo = acompanamiento === 'explorar_solo'
+
+      const finalBarrerasSociales = !isExplorarSolo && scales.social === 3
         ? Array.from(new Set([...barrerasSociales, ...(otraBarreraSocial.trim() ? [otraBarreraSocial.trim()] : [])]))
         : []
 
-      // 1. Guardar escalas
-      const scalesPayload = {
-        nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
-        nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
-        nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
-        nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
-        barrerasSociales: finalBarrerasSociales,
-        tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
-        diagnosticoEspecifico: conditionData.diagnosticoEspecifico.trim() || null,
-        temporalidadOrigen: conditionData.temporalidad,
-        preferenciaFormato: formatos[0] || 'texto',
-        areasInteres: selectedInterests,
-        viabilidadEconomica: viabilidad,
-      }
-      try { 
-        await api.post('/usuarios/escalas-vida', scalesPayload) 
-        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
-      } catch (err) { 
-        console.warn('Scales err:', err) 
-        localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+      // 1. Guardar escalas (solo si no eligió explorar_solo)
+      if (!isExplorarSolo) {
+        const validTemporalidades = ['nacimiento', 'infancia', 'adolescencia', 'vida_adulta', 'progresiva', 'en_evaluacion']
+        const validFormatos = ['texto', 'imagenes', 'audio', 'video', 'presencial']
+
+        let temporalidad = String(conditionData.temporalidad || '').trim()
+        if (!validTemporalidades.includes(temporalidad)) {
+          temporalidad = 'nacimiento'
+        }
+
+        let formato = String(formatos[0] || '').trim()
+        if (formato === 'persona') {
+          formato = 'presencial'
+        }
+        if (!validFormatos.includes(formato)) {
+          formato = 'texto'
+        }
+
+        const scalesPayload = {
+          nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
+          nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
+          nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
+          nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
+          barrerasSociales: finalBarrerasSociales,
+          tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+          diagnosticoEspecifico: conditionData.diagnosticoEspecifico.trim() || null,
+          temporalidadOrigen: temporalidad,
+          preferenciaFormato: formato,
+          areasInteres: selectedInterests,
+          viabilidadEconomica: viabilidad || 'sin_restricciones',
+        }
+        try { 
+          await api.post('/usuarios/escalas-vida', scalesPayload) 
+          localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+        } catch (err) { 
+          console.warn('Scales err:', err) 
+          localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
+        }
       }
 
       // 2. Actualizar perfil y necesidades del tutor
       try {
-        if (curpInput.trim()) {
-          await updateProfile.mutateAsync({ curp: curpInput.trim() })
+        if (acompanamiento) {
+          localStorage.setItem('raices_acompanamiento', acompanamiento)
         }
-        const isExplorarSolo = acompanamiento === 'explorar_solo'
+        await updateProfile.mutateAsync({
+          preferenciasAcompanamiento: acompanamiento,
+          ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
+        })
         const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
         await updateNeedsProfile.mutateAsync({
           profiling: {
@@ -635,7 +658,6 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
         destinatarioPerfil: destinatarioPerfil || 'PARA_MI_HIJO',
         nombrePcd: effectiveNombrePcd,
       })
-      const isExplorarSolo = acompanamiento === 'explorar_solo'
       saveOnboardingData({
         interests: isExplorarSolo ? [] : selectedInterests,
         viability: isExplorarSolo ? '' : viabilidad,

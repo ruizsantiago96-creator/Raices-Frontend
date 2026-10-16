@@ -331,7 +331,7 @@ export interface ProfilingFrontend {
   education_history: string[]
   therapy_history: string[]
   life_stage: string | null
-  current_concerns: string | null
+  current_concerns: string | string[] | null
   support_level: string | null
   age?: number | null
   birth_date?: string | null
@@ -384,6 +384,13 @@ function mapPerfilNecesidadesToFrontend(p?: PerfilNecesidadesBackend | null): Pr
 }
 
 function mapPerfilNecesidadesToBackend(profiling: Partial<ProfilingFrontend>): PerfilNecesidadesBackend {
+  let preocupaciones = ''
+  if (Array.isArray(profiling.current_concerns)) {
+    preocupaciones = (profiling.current_concerns as unknown[]).filter(Boolean).map(String).join(', ').trim()
+  } else if (typeof profiling.current_concerns === 'string') {
+    preocupaciones = profiling.current_concerns.trim()
+  }
+
   return {
     tiposDiscapacidad: profiling.disability_types ?? [],
     severidadDiscapacidad: profiling.severity ?? null,
@@ -397,7 +404,7 @@ function mapPerfilNecesidadesToBackend(profiling: Partial<ProfilingFrontend>): P
     historialEducacion: profiling.education_history ?? [],
     historialTerapia: profiling.therapy_history ?? [],
     etapaVida: profiling.life_stage ?? null,
-    preocupacionesActuales: profiling.current_concerns ?? null,
+    preocupacionesActuales: preocupaciones,
     nivelApoyo: profiling.support_level ?? null,
     edad: profiling.age ?? null,
     fechaNacimiento: profiling.birth_date ?? null,
@@ -440,6 +447,7 @@ export interface UpdateProfileVariables {
   country?: string
   postalCode?: string
   curp?: string
+  preferenciasAcompanamiento?: string
   profiling?: Partial<ProfilingFrontend>
 }
 
@@ -456,6 +464,10 @@ export function useUpdateProfile(): UseMutationResult<BackendUser, Error, Update
       if (data.country !== undefined) body.pais = data.country
       if (data.postalCode !== undefined) body.codigoPostal = data.postalCode
       if (data.curp !== undefined) body.curp = data.curp
+      if (data.preferenciasAcompanamiento !== undefined) {
+        body.preferenciasAcompanamiento = data.preferenciasAcompanamiento
+        body.preferencias_acompanamiento = data.preferenciasAcompanamiento
+      }
       if (Object.keys(body).length > 0) {
         const res = await api.put('/usuarios/perfil', body)
         resultUser = res.data

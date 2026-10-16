@@ -243,8 +243,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       ...(user?.role === 'tutor' ? [{ id: 'tutor', label: 'Mis personas', icon: Icons.users, path: '/personas' }] : []),
 
       // ── Etapa 2: Conocer tu día a día ────────────────
-      { id: 'rutas', label: 'Mis Rutas', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas'), sectionHeader: '2. Conocer tu día a día' },
-      { id: 'escalas-vida', label: 'Escalas de Vida', icon: Icons.barChart, path: '/escalas-vida', hidden: !hasFeature('rutas') },
+      { id: 'rutas', label: 'Mi camino', icon: Icons.compass, path: '/rutas', hidden: !hasFeature('rutas'), sectionHeader: '2. Conocer tu día a día' },
       { id: 'jobs', label: 'Oportunidades', icon: Icons.briefcase, path: '/jobs', hidden: !hasFeature('postulaciones') },
       { id: 'instituciones', label: 'Instituciones', icon: Icons.building, path: '/instituciones' },
 

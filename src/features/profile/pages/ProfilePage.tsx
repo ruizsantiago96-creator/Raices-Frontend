@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar, useMe } from '@features/auth'
+import { useProfile, useUpdateProfile, useActualizarAvatar, useEliminarAvatar } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useCatalogos } from '@shared/hooks/useCatalogos'
-import { Icons, CATEGORY_COLORS, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
+import { Icons, labelStyle, inputStyle, hashColor } from '@shared/components/shared'
+import EscalasVidaSection from '../components/EscalasVidaSection'
 import { PROFILE_TOAST, PROFILE_UI, PROFILE_VALIDATION, ROLE_LABELS } from '../constants/profileMessages'
 
 function splitSpanishFullName(fullName = '') {
@@ -37,44 +37,19 @@ interface PersonalInfoForm {
   avatar_url: string
 }
 
-interface ProfilingForm {
-  disability_types: string[]
-  life_stage: string | null
-  communication_modes: string[]
-  mobility_needs: string[]
-  goals: string[]
-  current_concerns: string
-}
-
-interface LifeStageItem {
-  id: string
-  label: string
-}
-
-interface DisabilityItem {
-  value?: string
-  label?: string
-}
-
 export default function ProfilePage() {
-  const { data: me } = useMe()
   const { data, isLoading, isError } = useProfile()
-  const { data: rawCatalogos } = useCatalogos()
-  const catalogos = rawCatalogos as { etapasVida?: LifeStageItem[]; tiposDiscapacidad?: (DisabilityItem | string)[] } | undefined
-  const LIFE_STAGES: LifeStageItem[] = catalogos?.etapasVida ?? []
-  const DISABILITY_TYPES: (DisabilityItem | string)[] = catalogos?.tiposDiscapacidad ?? []
   const update = useUpdateProfile()
   const uploadAvatar = useActualizarAvatar()
   const deleteAvatar = useEliminarAvatar()
   const { addToast } = useUiStore()
 
-  const [editingMode, setEditingMode] = useState<'profile' | 'profiling' | null>(null)
+  const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false)
   const [form, setForm] = useState<PersonalInfoForm | null>(null)
-  const [profilingForm, setProfilingForm] = useState<ProfilingForm | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const startEdit = (mode: 'profile') => {
+  const startEdit = () => {
     const fullNameVal = data?.full_name ?? ''
     const { firstName: fName, lastName: lName } = splitSpanishFullName(fullNameVal)
     setForm({
@@ -85,7 +60,7 @@ export default function ProfilePage() {
       state: data?.state ?? '',
       avatar_url: avatarPreview || data?.avatar_url || '',
     })
-    setEditingMode(mode)
+    setIsEditingProfile(true)
   }
 
   const handleAvatarClick = () => {
@@ -134,42 +109,7 @@ export default function ProfilePage() {
         state: form.state,
       })
       addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
-      setEditingMode(null)
-    } catch {
-      addToast(PROFILE_TOAST.PROFILE_UPDATE_ERROR, 'error')
-    }
-  }
-
-  const startProfilingEdit = () => {
-    const p = data?.profiling
-    setProfilingForm({
-      disability_types: p?.disability_types ?? [],
-      life_stage: p?.life_stage ?? null,
-      communication_modes: p?.communication_modes ?? [],
-      mobility_needs: p?.mobility_needs ?? [],
-      goals: p?.goals ?? [],
-      current_concerns: p?.current_concerns ?? '',
-    })
-    setEditingMode('profiling')
-  }
-
-  const toggleArrayItem = (field: 'disability_types' | 'communication_modes' | 'mobility_needs' | 'goals', value: string) => {
-    setProfilingForm((f) => {
-      if (!f) return f
-      const arr = f[field]
-      return {
-        ...f,
-        [field]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
-      }
-    })
-  }
-
-  const handleSaveProfiling = async () => {
-    if (!profilingForm) return
-    try {
-      await update.mutateAsync({ profiling: profilingForm })
-      addToast(PROFILE_TOAST.PROFILE_UPDATED, 'success')
-      setEditingMode(null)
+      setIsEditingProfile(false)
     } catch {
       addToast(PROFILE_TOAST.PROFILE_UPDATE_ERROR, 'error')
     }
@@ -195,18 +135,10 @@ export default function ProfilePage() {
 
   const avatarColor = hashColor(data?.full_name ?? '')
   const initials = (data?.full_name ?? '?').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-  const disabilities = data?.profiling?.disability_types ?? []
-  const stage = LIFE_STAGES.find((l) => l.id === data?.profiling?.life_stage)
 
   const s = {
     card: { background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: 20 },
     sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: 'var(--fg1)', margin: '0 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    chip: (color: string) => ({
-      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-      borderRadius: 8, fontSize: 13, fontWeight: 600,
-      background: `color-mix(in oklch, ${color} 15%, transparent)`,
-      color, border: `1px solid color-mix(in oklch, ${color} 30%, transparent)`,
-    }),
     roleBadge: {
       display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px',
       borderRadius: 12, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' as const,
@@ -224,7 +156,7 @@ export default function ProfilePage() {
           {/* Header */}
           <div className="animate-fade-in-up" style={{ marginBottom: 24 }}>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--fg1)', margin: 0 }}>Mi perfil</h1>
-            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Gestiona tu información personal</p>
+            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '4px 0 0', fontWeight: 400 }}>Gestiona tu información personal y tu camino de vida</p>
           </div>
 
           {isLoading ? (
@@ -249,13 +181,13 @@ export default function ProfilePage() {
               <div className="profile-card animate-fade-in-up delay-1" style={s.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
-                    Mi Perfil
+                    Información personal
                   </h3>
                   <button
                     type="button"
                     className="btn-secondary"
                     style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}
-                    onClick={() => startEdit('profile')}
+                    onClick={startEdit}
                   >
                     {Icons.edit({ s: 13 })} Editar
                   </button>
@@ -313,219 +245,9 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Preferencias seleccionadas en registro */}
-              {(() => {
-                const isExplorarSolo = me?.preferenciasAcompanamiento === 'explorar_solo' ||
-                  localStorage.getItem('raices_onboarding_progress_tutor')?.includes('explorar_solo') ||
-                  localStorage.getItem('raices_onboarding_progress_pcd')?.includes('explorar_solo')
-
-                let regInterests: string[] = []
-                if (isExplorarSolo) {
-                  localStorage.removeItem('raices_user_interests')
-                  regInterests = []
-                } else {
-                  try {
-                    regInterests = JSON.parse(localStorage.getItem('raices_user_interests') || '[]')
-                  } catch {}
-                  if (regInterests.length === 0 && Array.isArray(data?.profiling?.goals)) {
-                    regInterests = (data.profiling.goals as string[]).filter(Boolean)
-                  }
-                }
-
-                const DEFAULT_FALLBACK_8 = [
-                  'Atención médica especializada',
-                  'Deporte recreativo',
-                  'Reintegración laboral',
-                  'Negocio propio',
-                  'Pintura / dibujo',
-                  'Movilidad',
-                  'Relaciones',
-                  'Nuevas experiencias'
-                ]
-                const isExactFallback8 = regInterests.length === 8 && DEFAULT_FALLBACK_8.every(item => regInterests.includes(item))
-                if (isExactFallback8) {
-                  regInterests = []
-                  localStorage.removeItem('raices_user_interests')
-                }
-
-                const hasInterests = regInterests.length > 0
-                const hasLifeStage = Boolean(data?.profiling?.life_stage && stage)
-                const hasDisabilities = disabilities.length > 0
-                const hasCommModes = Boolean(data?.profiling?.communication_modes && data.profiling.communication_modes.length > 0)
-                const hasMobility = Boolean(data?.profiling?.mobility_needs && data.profiling.mobility_needs.length > 0)
-
-                const hasAnyPreferences = hasInterests || hasLifeStage || hasDisabilities || hasCommModes || hasMobility
-
-                if (!hasAnyPreferences) return null
-                return (
-                  <div className="profile-card animate-fade-in-up delay-2" style={s.card}>
-                    <div style={s.sectionTitle}>
-                      <span>Tus preferencias</span>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', background: 'var(--bg-surface)', fontWeight: 600 }}
-                        onClick={startProfilingEdit}
-                      >
-                        {Icons.edit({ s: 13 })} Editar preferencias
-                      </button>
-                    </div>
-                    {regInterests.length > 0 && (
-                      <div style={{ marginBottom: data?.profiling ? 16 : 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Intereses seleccionados</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {regInterests.map((interest, i) => (
-                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['social'] ?? 'var(--primary)')}>{interest}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {data?.profiling?.life_stage && stage && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.LIFE_STAGE_LABEL}</div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <span style={s.chip('var(--primary)')}>{stage.label}</span>
-                          {data.profiling.age && (
-                            <span style={s.chip('#4A5568')}>{data.profiling.age} años</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {disabilities.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.DISABILITY_TYPES_LABEL}</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {disabilities.map((d, i) => (
-                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Salud'] ?? 'var(--primary)')}>{d}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {data?.profiling?.communication_modes && data.profiling.communication_modes.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.COMMUNICATION_MODES_LABEL}</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {data.profiling.communication_modes.map((m, i) => (
-                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Educación'] ?? '#8B6BAE')}>{m}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {data?.profiling?.mobility_needs && data.profiling.mobility_needs.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{PROFILE_UI.MOBILITY_NEEDS_LABEL}</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {data.profiling.mobility_needs.map((m, i) => (
-                            <span key={i} style={s.chip((CATEGORY_COLORS as Record<string, string>)['Empleo'] ?? '#D4944C')}>{m}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
-
-              {/* Tarjeta: Editar Preferencias (inline) */}
-              {editingMode === 'profiling' && profilingForm && (
-                <div className="profile-card animate-fade-in-up" style={s.card}>
-                  <div style={s.sectionTitle}>
-                    <span>Editar Preferencias</span>
-                  </div>
-
-                  {/* Tipos de discapacidad */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Tipos de discapacidad</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {DISABILITY_TYPES.map((d) => {
-                        const val = typeof d === 'object' && d !== null ? (d.value ?? d.label ?? '') : d
-                        const label = typeof d === 'object' && d !== null ? (d.label ?? d.value ?? '') : d
-                        const active = profilingForm.disability_types.includes(val)
-                        return (
-                          <button
-                            type="button"
-                            key={val}
-                            onClick={() => toggleArrayItem('disability_types', val)}
-                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
-                          >
-                            {label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Etapa de vida */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Etapa de vida</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {LIFE_STAGES.map((ls) => {
-                        const active = profilingForm.life_stage === ls.id
-                        return (
-                          <button
-                            type="button"
-                            key={ls.id}
-                            onClick={() => setProfilingForm((f) => (f ? { ...f, life_stage: active ? null : ls.id } : null))}
-                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`, background: active ? 'var(--primary-subtle)' : 'transparent', color: active ? 'var(--primary)' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
-                          >
-                            {ls.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Necesidades de movilidad */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Necesidades de movilidad</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {['Silla de ruedas', 'Bastón', 'Andadera', 'Prótesis', 'Ninguna', 'Otra'].map((m) => {
-                        const active = profilingForm.mobility_needs.includes(m)
-                        return (
-                          <button
-                            type="button"
-                            key={m}
-                            onClick={() => toggleArrayItem('mobility_needs', m)}
-                            style={{ padding: '6px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1.5px solid ${active ? '#D4944C' : 'var(--border-color)'}`, background: active ? 'color-mix(in oklch, #D4944C 12%, transparent)' : 'transparent', color: active ? '#D4944C' : 'var(--fg2)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}
-                          >
-                            {m}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Preocupaciones actuales */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', marginBottom: 8 }}>Cuéntanos sobre ti (opcional)</div>
-                    <textarea
-                      rows={3}
-                      value={profilingForm.current_concerns}
-                      onChange={(e) => setProfilingForm((f) => (f ? { ...f, current_concerns: e.target.value } : null))}
-                      placeholder="Ej: Busco apoyo para terapia de lenguaje, me interesa empleo inclusivo..."
-                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 10, fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--fg1)', background: 'var(--bg-warm)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-                    />
-                  </div>
-
-                  {/* Botones */}
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      onClick={() => setEditingMode(null)}
-                      style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--fg2)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveProfiling}
-                      disabled={update.isPending}
-                      className="btn-primary"
-                      style={{ padding: '8px 20px', fontSize: 13 }}
-                    >
-                      {update.isPending ? 'Guardando...' : 'Guardar preferencias'}
-                    </button>
-                  </div>
-                </div>
+              {/* Escalas de Vida integradas en el perfil */}
+              {data?.role !== 'institution' && data?.role !== 'empresa' && (
+                <EscalasVidaSection />
               )}
             </>
           )}
@@ -533,13 +255,13 @@ export default function ProfilePage() {
       </main>
 
       {/* Edit Personal Information Modal Overlay */}
-      {editingMode === 'profile' && form && (
-        <div onClick={() => setEditingMode(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+      {isEditingProfile && form && (
+        <div onClick={() => setIsEditingProfile(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 32, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', animation: 'fade-in 0.12s ease-out', position: 'relative' }}>
             {/* Close Button */}
             <button
               type="button"
-              onClick={() => setEditingMode(null)}
+              onClick={() => setIsEditingProfile(false)}
               style={{ position: 'absolute', top: 20, right: 20, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-color)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-warm)')}
@@ -629,7 +351,7 @@ export default function ProfilePage() {
                 type="button"
                 className="btn-secondary"
                 style={{ fontSize: 13.5, padding: '10px 20px', borderRadius: 8 }}
-                onClick={() => setEditingMode(null)}
+                onClick={() => setIsEditingProfile(false)}
               >
                 Cerrar
               </button>
