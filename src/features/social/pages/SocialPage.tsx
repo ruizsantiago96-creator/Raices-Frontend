@@ -21,7 +21,7 @@ import {
 import { useAuthStore } from '@features/auth'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { useUploadMultimedia } from '../hooks/useMultimedia'
-import { Icons, RestrictedBlock, CustomSelect } from '@shared/components/shared'
+import { Icons, RestrictedBlock, CustomSelect, FriendlyIcons } from '@shared/components/shared'
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
@@ -187,18 +187,18 @@ function decodeAndExtract(content: string) {
   return { text: decoded, imageUrl: null, originalDecoded: decoded }
 }
 
-const CATEGORY_MAP: Record<string, { label: string; icon: string; bg: string; color: string }> = {
-  arte: { label: 'Arte', icon: '🎨', bg: '#FEF3C7', color: '#92400E' },
-  dibujo: { label: 'Dibujo', icon: '✏️', bg: '#E0E7FF', color: '#3730A3' },
-  historia: { label: 'Historia', icon: '📖', bg: '#FCE7F3', color: '#9D174D' },
-  general: { label: 'General', icon: '💬', bg: 'var(--primary-subtle)', color: 'var(--primary)' },
+const CATEGORY_MAP: Record<string, { label: string; icon: React.ReactNode; bg: string; color: string }> = {
+  arte: { label: 'Arte', icon: Icons.palette({ s: 13 }), bg: '#FEF3C7', color: '#92400E' },
+  dibujo: { label: 'Dibujo', icon: Icons.edit({ s: 13 }), bg: '#E0E7FF', color: '#3730A3' },
+  historia: { label: 'Historia', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
+  general: { label: 'General', icon: Icons.message({ s: 13 }), bg: 'var(--primary-subtle)', color: 'var(--primary)' },
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'general', label: 'General', icon: '💬' },
-  { value: 'arte', label: 'Arte', icon: '🎨' },
-  { value: 'dibujo', label: 'Dibujo', icon: '✏️' },
-  { value: 'historia', label: 'Historia', icon: '📖' },
+const CATEGORY_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode }> = [
+  { value: 'general', label: 'General', icon: Icons.message({ s: 14 }) },
+  { value: 'arte', label: 'Arte', icon: Icons.palette({ s: 14 }) },
+  { value: 'dibujo', label: 'Dibujo', icon: Icons.edit({ s: 14 }) },
+  { value: 'historia', label: 'Historia', icon: Icons.book({ s: 14 }) },
 ]
 
 function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProps) {
@@ -249,13 +249,13 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--fg1)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span>{post.author_name}</span>
                 {categoryMeta && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: categoryMeta.bg, color: categoryMeta.color }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: categoryMeta.bg, color: categoryMeta.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     {categoryMeta.icon} {categoryMeta.label}
                   </span>
                 )}
                 {post.exclusivoPadres && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: '#FEE2E2', color: '#991B1B' }}>
-                    🔒 Solo Padres/Tutores
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-pill)', background: '#FEE2E2', color: '#991B1B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {Icons.lock({ s: 12 })} Solo Padres/Tutores
                   </span>
                 )}
               </div>
@@ -600,11 +600,11 @@ function GroupsView({ onSelectGroup, onCreateGroupClick }: GroupsViewProps) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>{g.name}</h3>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
-                      🏛️ Institucional
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {Icons.building({ s: 12 })} Institucional
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)' }}>
-                      {g.is_public ? '🌐 Público' : '🔒 Privado'}
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {g.is_public ? <>{Icons.globe({ s: 12 })} Público</> : <>{Icons.lock({ s: 12 })} Privado</>}
                     </span>
                   </div>
                 </div>
@@ -802,11 +802,11 @@ function GroupDetailSection({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ flex: 1, minWidth: 260 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
-                🏛️ Foro Institucional Oficial
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {Icons.building({ s: 12 })} Foro Institucional Oficial
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)' }}>
-                {group?.is_public ? '🌐 Público' : '🔒 Privado'}
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: 'var(--bg-warm)', color: 'var(--fg3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {group?.is_public ? <>{Icons.globe({ s: 12 })} Público</> : <>{Icons.lock({ s: 12 })} Privado</>}
               </span>
               {isMember && (
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8, background: '#DCFCE7', color: '#166534' }}>
@@ -961,7 +961,9 @@ function GroupDetailSection({
                   checked={exclusivoPadres}
                   onChange={e => setExclusivoPadres(e.target.checked)}
                 />
-                <span>🔒 Solo para Padres/Tutores</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  {Icons.lock({ s: 13 })} Solo para Padres/Tutores
+                </span>
               </label>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1111,11 +1113,11 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
       {/* Category Pills */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, justifyContent: 'center' }}>
         {[
-          { label: 'Todas las creaciones', icon: '🎨', value: null },
-          { label: 'Arte', icon: '🎨', value: 'arte' },
-          { label: 'Dibujo', icon: '✏️', value: 'dibujo' },
-          { label: 'Historia', icon: '📖', value: 'historia' },
-          { label: 'General', icon: '💬', value: 'general' },
+          { label: 'Todas las creaciones', icon: Icons.layers({ s: 14 }), value: null },
+          { label: 'Arte', icon: Icons.palette({ s: 14 }), value: 'arte' },
+          { label: 'Dibujo', icon: Icons.edit({ s: 14 }), value: 'dibujo' },
+          { label: 'Historia', icon: Icons.book({ s: 14 }), value: 'historia' },
+          { label: 'General', icon: Icons.message({ s: 14 }), value: 'general' },
         ].map(cat => (
           <button
             key={cat.value ?? 'all'}
@@ -1131,6 +1133,9 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
               cursor: 'pointer',
               fontSize: 13,
               whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
             }}
           >
             {cat.icon} {cat.label}
@@ -1354,7 +1359,7 @@ export default function SocialPage() {
               transition: 'all 0.15s ease',
             }}
           >
-            {Icons.message({ s: 16 })} Publicaciones
+            {FriendlyIcons.chat({ size: 18 })} Publicaciones
           </button>
           <button
             type="button"
@@ -1371,12 +1376,12 @@ export default function SocialPage() {
               fontSize: 14,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 7,
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
-            {Icons.users({ s: 16 })} Grupos ({groups.length})
+            {FriendlyIcons.users({ size: 18 })} Grupos ({groups.length})
           </button>
           <button
             type="button"
@@ -1393,12 +1398,12 @@ export default function SocialPage() {
               fontSize: 14,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 7,
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
-            🎨 Galería Conectemos
+            {FriendlyIcons.palette({ size: 18 })} Galería Conectemos
           </button>
           <button
             type="button"
@@ -1415,12 +1420,12 @@ export default function SocialPage() {
               fontSize: 14,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 7,
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
-            {Icons.calendar({ s: 16 })} Eventos
+            {FriendlyIcons.calendar({ size: 18 })} Eventos
           </button>
           <button
             type="button"
@@ -1437,12 +1442,12 @@ export default function SocialPage() {
               fontSize: 14,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 7,
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
             }}
           >
-            ℹ️ Acerca de la comunidad
+            {FriendlyIcons.info({ size: 18 })} Acerca de la comunidad
           </button>
         </div>
 
@@ -1567,7 +1572,9 @@ export default function SocialPage() {
                             checked={exclusivoPadres}
                             onChange={e => setExclusivoPadres(e.target.checked)}
                           />
-                          <span>🔒 Solo para Padres/Tutores</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            {Icons.lock({ s: 13 })} Solo para Padres/Tutores
+                          </span>
                         </label>
                       </div>
 
@@ -1610,7 +1617,7 @@ export default function SocialPage() {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  ✨ Para ti (Algoritmo)
+                  {Icons.sparkles({ s: 15 })} Para ti (Algoritmo)
                 </button>
                 <button
                   type="button"
@@ -1631,7 +1638,7 @@ export default function SocialPage() {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  ⏱️ Más recientes
+                  {Icons.clock({ s: 15 })} Más recientes
                 </button>
                 <button
                   type="button"
@@ -1652,7 +1659,7 @@ export default function SocialPage() {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  👥 De mis foros unidos
+                  {Icons.users({ s: 15 })} De mis foros unidos
                 </button>
               </div>
 
@@ -1692,7 +1699,7 @@ export default function SocialPage() {
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    ☀️ Todas
+                    {Icons.layers({ s: 14 })} Todas
                   </button>
                   {CATEGORY_OPTIONS.map(cat => (
                     <button

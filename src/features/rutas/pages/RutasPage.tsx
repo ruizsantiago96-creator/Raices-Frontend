@@ -17,7 +17,7 @@ import api from '@shared/lib/api'
 import { useCatalogos } from '@shared/hooks/useCatalogos'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAuthStore, useProfile } from '@features/auth'
-import { Icons, RestrictedBlock } from '@shared/components/shared'
+import { Icons, RestrictedBlock, FriendlyIcons } from '@shared/components/shared'
 import { CustomSelect } from '@shared/components/CustomSelect'
 import { useOnboardingStatus } from '@features/institutions/hooks/useRecommendations'
 import { hasValidScales, getStoredScales } from '@features/profile/components/EscalasVidaSection'
@@ -703,7 +703,7 @@ export default function RutasPage() {
         {/* Header Principal */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 24 }}>🧭</span>
+            <FriendlyIcons.compass size={30} />
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
               Mi Camino
             </h1>
@@ -752,7 +752,7 @@ export default function RutasPage() {
                   fontSize: isExplorarSolo ? 18 : 16,
                 }}
               >
-                {isExplorarSolo ? '🧭' : Icons.compass({ s: 20 })}
+                {FriendlyIcons.compass({ size: 22 })}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
@@ -805,8 +805,8 @@ export default function RutasPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, maxWidth: 820, margin: '0 auto 24px', textAlign: 'left' }}>
                       <div style={{ background: 'var(--bg-warm)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                            🧭 Camino base de exploración
+                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <FriendlyIcons.compass size={18} /> Camino base de exploración
                           </div>
                           <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
                             Una guía estándar (no personalizada) con 4 pasos prácticos para conocer y usar las áreas del sistema: instituciones, empleo, comunidad y perfil.
@@ -1457,7 +1457,7 @@ export default function RutasPage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <span style={{ fontSize: 22 }}>🧭</span>
+                    <FriendlyIcons.compass size={24} />
                     <div>
                       <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
                         Herramientas de Raíces para acompañar tu camino

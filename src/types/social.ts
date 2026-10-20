@@ -200,3 +200,61 @@ export interface PaginaUsuariosBusqueda {
   limite: number
   totalPaginas: number
 }
+
+// ─── Feed Mixto (Comunidad + Recomendaciones de Ruta) ──────────────
+export type FeedMixtoTipo = 'publicacion' | 'institucion' | 'vacante'
+
+export interface FeedMixtoItemPublicacion {
+  tipo: 'publicacion'
+  id: string | number
+  titulo?: string
+  contenido: string
+  autor: string
+  autorId?: string | number
+  rol?: string | null
+  etiquetaRol?: string | null
+  urlAvatar?: string | null
+  mediaUrl?: string | null
+  categoria?: string
+  categoriaLabel?: string
+  fechaCreacion?: string
+  usuarioMeGusta?: boolean
+  cantidadMeGustas?: number
+  fuenteRuta: false
+  [key: string]: unknown
+}
+
+export interface FeedMixtoItemInstitucion {
+  tipo: 'institucion'
+  id: string | number
+  titulo: string
+  categoria: string
+  categoriaLabel?: string
+  distancia?: string
+  fuenteRuta: true
+  pasoActualTitulo?: string
+  [key: string]: unknown
+}
+
+export interface FeedMixtoItemVacante {
+  tipo: 'vacante'
+  id: string | number
+  titulo: string
+  modalidad: string
+  ciudad: string
+  fuenteRuta: true
+  pasoActualTitulo?: string
+  [key: string]: unknown
+}
+
+export type FeedMixtoItem = FeedMixtoItemPublicacion | FeedMixtoItemInstitucion | FeedMixtoItemVacante
+
+export interface FeedMixtoResponse {
+  items: FeedMixtoItem[]
+  pagina: number
+  limite: number
+  total: number
+  totalPublicaciones: number
+  totalEntidades: number
+}
+

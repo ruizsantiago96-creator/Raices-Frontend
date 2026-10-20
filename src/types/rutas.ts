@@ -3,15 +3,39 @@
  */
 
 // ─── Rutas de Desarrollo e Hitos ──────────────────────────────────
+export interface RecursoLocalDto {
+  id: string | number
+  tipo: 'institucion' | 'servicio' | 'vacante' | string
+  nombre: string
+  categoria?: string
+  detalle?: string
+  ciudad?: string
+  institucionId?: string | number
+}
+
 export interface PasoRuta {
   id: string | number
   rutaId?: string | number
   ruta_id?: string | number
   titulo: string
   descripcion?: string
+  orden?: number
+  categoria?:
+    | 'habla'
+    | 'motricidad'
+    | 'visual'
+    | 'auditiva'
+    | 'tea'
+    | 'cognitiva'
+    | 'educacion'
+    | 'laboral'
+    | 'social'
+    | 'funcional'
+    | 'general'
+    | string
   completado: boolean
   fechaCompletado?: string
-  orden?: number
+  recursosLocales?: RecursoLocalDto[]
   [key: string]: unknown
 }
 
@@ -78,6 +102,7 @@ export interface CreatePasoPayload {
   titulo: string
   descripcion?: string
   orden?: number
+  categoria?: string
   [key: string]: unknown
 }
 

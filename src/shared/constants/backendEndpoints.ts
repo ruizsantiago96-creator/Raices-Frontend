@@ -536,6 +536,19 @@ export const COMMUNITY_ENDPOINTS = {
       meta: { total: 'number', pagina: 'number', limite: 'number', totalPaginas: 'number' },
     },
   },
+  FEED_MIXTO: {
+    method: 'GET',
+    path: '/comunidad/feed-mixto',
+    params: { pagina: 'number?', limite: 'number?' },
+    response: {
+      items: 'Array<FeedMixtoItem>',
+      pagina: 'number',
+      limite: 'number',
+      total: 'number',
+      totalPublicaciones: 'number',
+      totalEntidades: 'number',
+    },
+  },
   CREATE_POST: {
     method: 'POST',
     path: '/comunidad/publicaciones',

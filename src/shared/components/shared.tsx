@@ -55,6 +55,11 @@ import {
   Trash2,
   BadgeCheck,
   Sprout,
+  Palette,
+  Clock,
+  BookOpen,
+  Lock,
+  Layers,
 } from 'lucide-react'
 
 export interface LeafIconProps {
@@ -143,6 +148,11 @@ export const Icons: Record<string, (p?: IconProps) => React.JSX.Element> = {
   trash: (p) => <IconWrapper style={p?.style}><Trash2 size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
   plant: (p) => <IconWrapper style={p?.style}><Sprout size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
   verifiedBadge: (p) => <IconWrapper style={p?.style}><BadgeCheck size={p?.s || 16} color={p?.color || 'currentColor'} /></IconWrapper>,
+  palette: (p) => <IconWrapper style={p?.style}><Palette size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  clock: (p) => <IconWrapper style={p?.style}><Clock size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  book: (p) => <IconWrapper style={p?.style}><BookOpen size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  lock: (p) => <IconWrapper style={p?.style}><Lock size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  layers: (p) => <IconWrapper style={p?.style}><Layers size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -337,3 +347,4 @@ export * from './TextToSpeechButton'
 export * from './Breadcrumbs'
 export * from './SupportCardModal'
 export * from './CustomSelect'
+export * from './FriendlyDoodleIcons'

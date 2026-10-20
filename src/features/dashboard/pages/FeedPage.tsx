@@ -5,10 +5,11 @@ import { useRecomendaciones, useRecomendacionesEspecialistas, useOnboardingStatu
 import { useInstitutions } from '@features/institutions/hooks/useInstitutions'
 import { useFavoriteIds, useToggleFavorite } from '../../favorites/hooks/useFavorites'
 import { useRegistrarInteraccion, useInteraccionesPesos } from '@features/institutions/hooks/useInteractions'
-import { usePosts, useForos } from '@features/social'
-import { Icons, CATEGORY_COLORS, RestrictedOverlay, RestrictedContent } from '@shared/components/shared'
+import { usePosts, useForos, useFeedMixto } from '@features/social'
+import { useMiRuta } from '@features/rutas/hooks/useRutas'
+import { Icons, CATEGORY_COLORS, RestrictedOverlay, RestrictedContent, TextToSpeechButton, FriendlyIcons } from '@shared/components/shared'
 import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@shared/lib/feedPreferences'
-import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton } from './FeedCards'
+import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton, RouteRecommendationCard, CommunityHighlightCard, type RouteRecommendationItem } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
 import VerificationBadgeCard from '../components/VerificationBadgeCard'
 import ProfileCompletionModal from '../components/ProfileCompletionModal'
@@ -69,7 +70,7 @@ export interface ForoItem {
 }
 
 export interface UnifiedFeedItem {
-  _type: 'institution' | 'post' | 'forum'
+  _type: 'institution' | 'route_recommendation'
   _id: string
   _score: number
   _createdAt?: string
@@ -343,14 +344,21 @@ function FeedCard({ inst, isFav, onToggleFav }: FeedCardProps) {
           </span>
         )}
 
+        <TextToSpeechButton
+          text={`${inst.name}. ${inst.description || ''}. ${inst.city ? 'Ubicada en ' + inst.city : ''}`}
+          size="sm"
+        />
+
         <Link
           to={`/institution/${inst.id}`}
+          aria-label={`Ver más información de ${inst.name}`}
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '8px 18px', borderRadius: 'var(--radius-btn)',
             background: 'var(--primary)', color: '#fff',
             fontSize: 14, fontWeight: 700, textDecoration: 'none',
+            minHeight: 42,
             transition: 'all 0.15s ease',
           }}
         >
@@ -501,9 +509,9 @@ function BehaviorWeightsCard() {
    Sort tabs configuration
    ═══════════════════════════════════════════════════════════ */
 const SORT_TABS = [
-  { key: 'relevantes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.fuego} size={16} /> Relevantes</span> },
-  { key: 'recientes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.reloj} size={16} /> Recientes</span> },
-  { key: 'populares', label: <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CatalogIcon icon={FluentEmoji.estrella} size={16} /> Populares</span> },
+  { key: 'relevantes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>{FriendlyIcons.sparkle({ size: 18 })} Relevantes</span> },
+  { key: 'recientes', label: <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>{FriendlyIcons.clock({ size: 18 })} Recientes</span> },
+  { key: 'populares', label: <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>{FriendlyIcons.star({ size: 18 })} Destacadas</span> },
 ]
 
 function sortFeed(items: UnifiedFeedItem[], mode: string): UnifiedFeedItem[] {
@@ -551,6 +559,8 @@ export default function FeedPage() {
   const { data: forosData, isLoading: forosLoading } = useForos()
   const forosList = forosData as { foros?: ForoItem[] } | undefined
   const foros = useMemo<ForoItem[]>(() => forosList?.foros ?? [], [forosList?.foros])
+  const { data: feedMixtoData, isLoading: feedMixtoLoading } = useFeedMixto({ limite: 20 })
+  const { data: miRuta, isLoading: miRutaLoading } = useMiRuta()
   const { data: rawFavIds = [] } = useFavoriteIds()
   const favIds = useMemo(() => {
     const raw = rawFavIds as unknown
@@ -631,10 +641,127 @@ export default function FeedPage() {
   const unifiedFeed = useMemo(() => {
     const items: UnifiedFeedItem[] = []
     const recs = Array.isArray(recommendations) ? recommendations : []
-    const postList = Array.isArray(posts) ? posts : []
-    const forumList = Array.isArray(foros) ? foros : []
 
-    // Institutions → filtered by active categories from user interests
+    // ── 1. Route recommendations from active developmental route (Highest priority)
+    if (miRuta?.ruta && miRuta?.pasoActual) {
+      const pasoTitulo = miRuta.pasoActual.titulo
+
+      // Recommended institutions for the current developmental step
+      const institucionesRuta = miRuta.entidadesLocales?.instituciones ?? []
+      for (const inst of institucionesRuta) {
+        const idKey = `route-inst-${inst.id}`
+        if (!items.some(it => it._id === idKey)) {
+          items.push({
+            _type: 'route_recommendation',
+            _id: idKey,
+            _score: 120,
+            _category: inst.categoria || 'funcional',
+            _title: inst.nombre,
+            _description: `Recomendado para tu paso actual: ${pasoTitulo}`,
+            _likes: 0,
+            _comments: 0,
+            _raw: {
+              tipo: 'institucion',
+              id: inst.id,
+              titulo: inst.nombre,
+              categoria: inst.categoria,
+              categoriaLabel: CATEGORY_BADGE_LABEL[inst.categoria] ?? inst.categoria,
+              distancia: inst.distancia || 'en tu ciudad',
+              ciudad: inst.ciudad,
+              pasoActualTitulo: pasoTitulo,
+            },
+          })
+        }
+      }
+
+      // Recommended vacancies for the current developmental step
+      const vacantesRuta = miRuta.entidadesLocales?.vacantes ?? []
+      for (const vac of vacantesRuta) {
+        const idKey = `route-vac-${vac.id}`
+        if (!items.some(it => it._id === idKey)) {
+          items.push({
+            _type: 'route_recommendation',
+            _id: idKey,
+            _score: 115,
+            _category: 'laboral',
+            _title: vac.titulo,
+            _description: `Vacante inclusiva para tu paso: ${pasoTitulo}`,
+            _likes: 0,
+            _comments: 0,
+            _raw: {
+              tipo: 'vacante',
+              id: vac.id,
+              titulo: vac.titulo,
+              modalidad: vac.modalidad,
+              ciudad: vac.ciudad,
+              pasoActualTitulo: pasoTitulo,
+            },
+          })
+        }
+      }
+
+      // Specific local resources registered in current step
+      const recursos = miRuta.pasoActual.recursosLocales ?? []
+      for (const rec of recursos) {
+        const idKey = `route-rec-${rec.id}`
+        if (!items.some(it => it._id === idKey)) {
+          items.push({
+            _type: 'route_recommendation',
+            _id: idKey,
+            _score: 112,
+            _category: rec.categoria || rec.tipo || 'educativo',
+            _title: rec.nombre,
+            _description: rec.detalle || `Recurso sugerido en tu ruta`,
+            _likes: 0,
+            _comments: 0,
+            _raw: {
+              tipo: rec.tipo === 'vacante' ? 'vacante' : 'institucion',
+              id: rec.id,
+              titulo: rec.nombre,
+              categoria: rec.categoria || rec.tipo,
+              distancia: rec.ciudad || 'en tu zona',
+              pasoActualTitulo: pasoTitulo,
+            },
+          })
+        }
+      }
+    }
+
+    // Route recommendations from backend feed mixto (GET /comunidad/feed-mixto)
+    const feedMixtoItems = feedMixtoData?.items ?? []
+    for (const rItem of feedMixtoItems) {
+      if (rItem.fuenteRuta) {
+        const rTipo = String(rItem.tipo ?? 'institucion')
+        const rId = String(rItem.id ?? '')
+        const idKey = `route-mixto-${rTipo}-${rId}`
+        if (!items.some(it => it._id === idKey)) {
+          items.push({
+            _type: 'route_recommendation',
+            _id: idKey,
+            _score: 110,
+            _createdAt: typeof rItem.fechaCreacion === 'string' ? rItem.fechaCreacion : undefined,
+            _category: typeof rItem.categoria === 'string' ? rItem.categoria : 'ruta',
+            _title: String(rItem.titulo ?? ''),
+            _description: rItem.pasoActualTitulo ? `Recomendado por tu paso actual: ${rItem.pasoActualTitulo}` : undefined,
+            _likes: 0,
+            _comments: 0,
+            _raw: {
+              tipo: rTipo,
+              id: rId,
+              titulo: String(rItem.titulo ?? ''),
+              categoria: typeof rItem.categoria === 'string' ? rItem.categoria : undefined,
+              categoriaLabel: typeof rItem.categoriaLabel === 'string' ? rItem.categoriaLabel : undefined,
+              distancia: typeof rItem.distancia === 'string' ? rItem.distancia : undefined,
+              modalidad: typeof rItem.modalidad === 'string' ? rItem.modalidad : undefined,
+              ciudad: typeof rItem.ciudad === 'string' ? rItem.ciudad : undefined,
+              pasoActualTitulo: typeof rItem.pasoActualTitulo === 'string' ? rItem.pasoActualTitulo : undefined,
+            },
+          })
+        }
+      }
+    }
+
+    // ── 2. Institutions → filtered by active categories from user interests
     for (const inst of recs) {
       if (!inst) continue
       // If user has preferences, only show institutions matching their categories
@@ -654,47 +781,15 @@ export default function FeedPage() {
       })
     }
 
-    // Community posts → always shown (community is social, everyone sees it)
-    for (const post of postList) {
-      if (!post) continue
-      items.push({
-        _type: 'post',
-        _id: `post-${post.id}`,
-        _score: 0,
-        _createdAt: post.created_at,
-        _category: 'social',
-        _title: post.title || '',
-        _description: post.content,
-        _likes: post.like_count ?? 0,
-        _comments: post.comment_count ?? 0,
-        _raw: post,
-      })
-    }
-
-    // Forums → always shown (community content)
-    for (const forum of forumList) {
-      if (!forum) continue
-      items.push({
-        _type: 'forum',
-        _id: `forum-${forum.id}`,
-        _score: 0,
-        _createdAt: forum.fechaCreacion,
-        _category: 'social',
-        _title: forum.titulo,
-        _description: forum.preguntaDetonante,
-        _likes: 0,
-        _comments: forum.respuestasCount ?? 0,
-        _raw: forum,
-      })
-    }
-
-    // Score each item
+    // Score institutions using engagement & interests
     for (const item of items) {
-      item._score = scoreItem(item, userInterests, interestWeights, engagementWeights)
+      if (item._type === 'institution') {
+        item._score = scoreItem(item, userInterests, interestWeights, engagementWeights)
+      }
     }
 
     return items
-  }, [recommendations, posts, foros, userInterests, interestWeights, engagementWeights, activeCategories, hasPreferences])
+  }, [recommendations, feedMixtoData, miRuta, userInterests, interestWeights, engagementWeights, activeCategories, hasPreferences])
 
   // ── Sort the feed
   const feed = useMemo(() => sortFeed(unifiedFeed, sortMode), [unifiedFeed, sortMode])
@@ -706,7 +801,7 @@ export default function FeedPage() {
     }
   }, [trackInteraccion])
 
-  const isLoading = (instLoading && !discoveryError) || postsLoading || forosLoading || especialistasLoading
+  const isLoading = (instLoading && !discoveryError) || postsLoading || forosLoading || especialistasLoading || feedMixtoLoading || miRutaLoading
   const hasAnyContent = feed.length > 0
 
   // ── Track engagement when user saves
@@ -814,7 +909,9 @@ export default function FeedPage() {
           <div style={{ marginBottom: 24, position: 'relative' }}>
             {isIncomplete && (
               <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>
-                <div style={{ fontSize: 32, marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>🔒</div>
+                <div style={{ marginBottom: 10, color: 'var(--primary)' }}>
+                  {Icons.lock({ s: 36 })}
+                </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', maxWidth: 280 }}>Desbloquea recomendaciones</div>
                 <div style={{ fontSize: 13, color: 'var(--fg2)', textAlign: 'center', maxWidth: 280, marginTop: 4, fontWeight: 500 }}>Completa tu perfil para ver especialistas adaptados a ti</div>
                 <Link to="/completar-perfil" style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 'var(--radius-btn)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>Completar perfil</Link>
@@ -900,7 +997,9 @@ export default function FeedPage() {
             borderRadius: 12, padding: '14px 20px', marginBottom: 16,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: 18 }}>⚠️</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              {Icons.shieldAlert({ s: 22, color: '#DC3545' })}
+            </span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#DC3545' }}>No se pudieron cargar las recomendaciones</div>
               <div style={{ fontSize: 12, color: 'var(--fg3)' }}>El feed de comunidades sigue disponible más abajo.</div>
@@ -908,6 +1007,141 @@ export default function FeedPage() {
             <button onClick={() => refetchDiscovery()} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #DC3545', background: 'transparent', color: '#DC3545', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               Reintentar
             </button>
+          </div>
+        )}
+
+        {/* ── Active Route Banner or Discovery Card ── */}
+        {!isLoading && miRuta?.ruta && miRuta.pasoActual && (
+          <div
+            className="animate-fade-in-up"
+            style={{
+              background: 'linear-gradient(135deg, rgba(34,155,88,0.12) 0%, rgba(7,59,76,0.06) 100%)',
+              border: '1px solid rgba(34,155,88,0.3)',
+              borderRadius: 16,
+              padding: '18px 22px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              flexWrap: 'wrap',
+              boxShadow: '0 2px 10px rgba(34,155,88,0.08)',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  {Icons.milestone({ s: 12, color: '#fff' })} Tu Ruta Activa
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>
+                  {miRuta.ruta.nombre}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg2)' }}>
+                Paso actual: <strong>{miRuta.pasoActual.titulo}</strong>
+                {miRuta.pasoActual.categoria && (
+                  <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--fg3)' }}>
+                    • {miRuta.pasoActual.categoria}
+                  </span>
+                )}
+              </p>
+            </div>
+            <Link
+              to="/rutas"
+              style={{
+                padding: '9px 18px',
+                borderRadius: 'var(--radius-btn)',
+                background: 'var(--primary)',
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 3px 10px rgba(34,155,88,0.2)',
+              }}
+            >
+              Ver mi Ruta {Icons.arrowRight({ s: 13 })}
+            </Link>
+          </div>
+        )}
+
+        {!isLoading && !miRuta?.ruta && (
+          <div
+            className="animate-fade-in-up"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-color)',
+              borderLeft: '4px solid var(--primary)',
+              borderRadius: 14,
+              padding: '16px 20px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              flexWrap: 'wrap',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50% 50% 50% 14%',
+                  background: 'var(--primary-subtle)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {Icons.milestone({ s: 20 })}
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>
+                  ¿Aún no has explorado tus Rutas de Desarrollo?
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--fg3)' }}>
+                  Genera tu ruta clínica (CENETEC/OMS) para recibir recomendaciones de instituciones y vacantes en tu feed.
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/rutas"
+              style={{
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-btn)',
+                background: 'var(--primary)',
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 12.5,
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Explorar Rutas {Icons.arrowRight({ s: 12 })}
+            </Link>
           </div>
         )}
 
@@ -963,24 +1197,19 @@ export default function FeedPage() {
                 )
               }
 
-              if (item._type === 'post') {
+              if (item._type === 'route_recommendation') {
                 return (
                   <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
-                    <CommunityPostCard post={item._raw as CommunityPost} />
-                  </div>
-                )
-              }
-
-              if (item._type === 'forum') {
-                return (
-                  <div key={item._id} className="animate-fade-in-up" style={{ animationDelay: delay }}>
-                    <ForumFeedCard forum={item._raw as ForoItem} />
+                    <RouteRecommendationCard item={item._raw as RouteRecommendationItem} />
                   </div>
                 )
               }
 
               return null
             })}
+
+            {/* ── Community Invitation Highlight Card ── */}
+            <CommunityHighlightCard postCount={posts.length} />
           </div>
         )}
 
@@ -990,10 +1219,10 @@ export default function FeedPage() {
             textAlign: 'center', padding: '32px 0 16px',
             fontSize: 13, color: 'var(--fg3)',
           }}>
-            Has visto las {feed.length} publicaciones disponibles
+            Has visto las recomendaciones seleccionadas para ti
             <br />
             <Link to="/instituciones" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
-              Explorar más instituciones {Icons.arrowRight({ s: 12 })}
+              Explorar el directorio completo {Icons.arrowRight({ s: 12 })}
             </Link>
           </div>
         )}

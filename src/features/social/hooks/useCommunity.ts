@@ -13,6 +13,8 @@ import type {
   ForoRespuesta,
   ForoDetalle,
   PreguntaConRespuestas,
+  FeedMixtoResponse,
+  FeedMixtoItem,
 } from '@/types/social'
 
 interface RawGroup {
@@ -243,6 +245,39 @@ export function usePostsLegacy(groupId?: string | number) {
       const arr: RawPost[] = Array.isArray(res) ? res : (res?.datos ?? [])
       return arr.map(mapPost)
     }),
+  })
+}
+
+/**
+ * Hook para el feed mixto: 50% publicaciones de comunidad + 50% recomendaciones de ruta activa.
+ * GET /api/comunidad/feed-mixto
+ */
+export interface UseFeedMixtoOptions {
+  pagina?: number
+  limite?: number
+  enabled?: boolean
+}
+
+export function useFeedMixto(options: UseFeedMixtoOptions = {}) {
+  const { pagina = 1, limite = 12, enabled = true } = options
+  return useQuery<FeedMixtoResponse>({
+    queryKey: ['feed-mixto', pagina, limite],
+    queryFn: async () => {
+      const params: Record<string, unknown> = {}
+      if (pagina > 1) params.pagina = pagina
+      if (limite !== 12) params.limite = limite
+      const r = await api.get('/comunidad/feed-mixto', { params })
+      const res = r.data
+      return {
+        items: res?.items ?? [],
+        pagina: res?.pagina ?? pagina,
+        limite: res?.limite ?? limite,
+        total: res?.total ?? 0,
+        totalPublicaciones: res?.totalPublicaciones ?? 0,
+        totalEntidades: res?.totalEntidades ?? 0,
+      }
+    },
+    enabled,
   })
 }
 

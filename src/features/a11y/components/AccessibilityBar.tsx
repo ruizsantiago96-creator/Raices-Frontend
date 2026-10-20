@@ -414,7 +414,7 @@ export default function AccessibilityBar() {
               width: 24,
               height: 24,
               borderRadius: '50%',
-              background: 'var(--primary-dark)',
+              background: 'var(--color-matcha, #A8B86B)',
               border: '2px solid #fff',
               color: '#fff',
               display: 'flex',
@@ -711,16 +711,17 @@ export default function AccessibilityBar() {
         }
 
         .liquid-glass-trigger {
-          background: #213052 !important;
-          border: 1px solid rgba(255, 255, 255, 0.25) !important;
-          box-shadow: 0 4px 14px rgba(33, 48, 82, 0.25);
+          background: var(--color-matcha, #A8B86B) !important;
+          border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+          box-shadow: 0 6px 20px rgba(168, 184, 107, 0.45), 0 2px 6px rgba(0, 0, 0, 0.08);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          color: #ffffff !important;
         }
 
         .liquid-glass-trigger:hover {
-          transform: translateY(-2px) scale(1.04);
-          background: #16223D !important;
-          box-shadow: 0 12px 35px rgba(33, 48, 82, 0.35);
+          transform: translateY(-2px) scale(1.06);
+          background: #96A75A !important;
+          box-shadow: 0 10px 28px rgba(168, 184, 107, 0.6);
         }
 
         .liquid-glass-trigger:active {
@@ -728,10 +729,11 @@ export default function AccessibilityBar() {
         }
 
         html[data-theme="dark"] .liquid-glass-trigger {
+          background: var(--color-matcha, #A8B86B) !important;
           box-shadow: 
-            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.15),
+            inset 0 1.5px 0 0 rgba(255, 255, 255, 0.3),
             0 8px 30px rgba(0, 0, 0, 0.5);
-          border-color: rgba(255, 255, 255, 0.1) !important;
+          border-color: rgba(255, 255, 255, 0.2) !important;
         }
 
         .glass-switch {

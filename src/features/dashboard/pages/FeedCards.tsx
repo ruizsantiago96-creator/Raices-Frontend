@@ -234,12 +234,12 @@ export function ForumFeedCard({ forum }: { forum: ForumFeedCardItem }) {
             </div>
             <div style={{ fontSize: 12, color: 'var(--fg3)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 3,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '2px 8px', borderRadius: 8,
                 background: 'rgba(99, 102, 241, 0.1)',
                 color: 'var(--primary, #6366f1)', fontWeight: 600, fontSize: 11,
               }}>
-                💬 Foro
+                {Icons.message({ s: 12 })} Foro
               </span>
             </div>
           </div>
@@ -331,5 +331,220 @@ export function FeedItemSkeleton() {
         ))}
       </div>
     </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RouteRecommendationCard — Cards recommended by user's active route
+   ═══════════════════════════════════════════════════════════ */
+export interface RouteRecommendationItem {
+  tipo: 'institucion' | 'vacante' | string
+  id: string | number
+  titulo: string
+  categoria?: string
+  categoriaLabel?: string
+  distancia?: string
+  modalidad?: string
+  ciudad?: string
+  pasoActualTitulo?: string
+  [key: string]: unknown
+}
+
+export function RouteRecommendationCard({ item }: { item: RouteRecommendationItem }) {
+  const isInst = item.tipo === 'institucion'
+  const isVac = item.tipo === 'vacante'
+  const link = isInst ? `/instituciones/${item.id}` : `/empleo`
+
+  return (
+    <article
+      className="card-hover"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderLeft: '5px solid var(--primary)',
+        borderRadius: 16,
+        padding: '20px 22px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        transition: 'all 0.2s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              padding: '3px 10px',
+              borderRadius: 8,
+              background: 'var(--primary-subtle)',
+              color: 'var(--primary)',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            {Icons.milestone({ s: 13, color: 'var(--primary)' })} Recomendado por tu Ruta activa
+          </span>
+          {item.pasoActualTitulo && (
+            <span style={{ fontSize: 13, color: 'var(--fg2)', fontWeight: 600 }}>
+              Paso actual: <strong style={{ color: 'var(--fg1)' }}>{item.pasoActualTitulo}</strong>
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize: 12.5, color: 'var(--fg3)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          {isInst ? (
+            <>{Icons.building({ s: 13 })} Institución aliada</>
+          ) : (
+            <>{Icons.briefcase({ s: 13 })} Empleo inclusivo</>
+          )}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.3 }}>
+            {item.titulo}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, color: 'var(--fg2)' }}>
+            {isInst && (
+              <>
+                <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg-warm)', fontWeight: 600 }}>
+                  {item.categoriaLabel ?? item.categoria ?? 'General'}
+                </span>
+                <span>•</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {Icons.mapPin({ s: 12 })} {item.distancia ?? 'en tu ciudad'}
+                </span>
+              </>
+            )}
+            {isVac && (
+              <>
+                <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg-warm)', fontWeight: 600 }}>
+                  Modalidad: {item.modalidad ?? 'Presencial'}
+                </span>
+                <span>•</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {Icons.mapPin({ s: 12 })} {item.ciudad ?? 'En tu zona'}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TextToSpeechButton
+            text={`${item.titulo}. Recomendado por tu ruta de desarrollo. ${item.pasoActualTitulo ? 'Paso actual: ' + item.pasoActualTitulo + '. ' : ''}${isInst ? (item.categoriaLabel || item.categoria || '') + ' en tu ciudad' : 'Vacante ' + (item.modalidad || '')}`}
+            size="sm"
+          />
+          <Link
+            to={link}
+            aria-label={`${isInst ? 'Ver Institución' : 'Ver Vacante'} ${item.titulo}`}
+            style={{
+              minHeight: 44,
+              padding: '9px 18px',
+              borderRadius: 'var(--radius-btn)',
+              background: 'var(--primary)',
+              color: '#fff',
+              textDecoration: 'none',
+              fontSize: 13.5,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 3px 10px rgba(34,155,88,0.2)',
+            }}
+          >
+            {isInst ? 'Ver Institución' : 'Ver Vacante'} {Icons.arrowRight({ s: 13 })}
+          </Link>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CommunityHighlightCard — Accessible invitation to Conectemos
+   ═══════════════════════════════════════════════════════════ */
+export function CommunityHighlightCard({ postCount }: { postCount?: number }) {
+  return (
+    <article
+      className="card-hover animate-fade-in-up"
+      style={{
+        background: 'linear-gradient(135deg, rgba(7, 59, 76, 0.04) 0%, rgba(34, 155, 88, 0.08) 100%)',
+        border: '1px solid var(--border-color)',
+        borderLeft: '5px solid #073B4C',
+        borderRadius: 16,
+        padding: '22px 24px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginTop: 10,
+        marginBottom: 10,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 260, flex: 1 }}>
+        <div
+          style={{
+            width: 46,
+            height: 46,
+            borderRadius: '50% 50% 50% 14%',
+            background: 'rgba(7, 59, 76, 0.1)',
+            color: '#073B4C',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {Icons.message({ s: 22 })}
+        </div>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--fg1)' }}>
+              Comunidad Conectemos
+            </h3>
+            {postCount && postCount > 0 ? (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--primary-subtle)', color: 'var(--primary)' }}>
+                {postCount} aportes
+              </span>
+            ) : null}
+          </div>
+          <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg2)', lineHeight: 1.4 }}>
+            Comparte tus experiencias, creaciones artísticas, únete a foros de apoyo con la comunidad y descubre eventos inclusivos.
+          </p>
+        </div>
+      </div>
+
+      <Link
+        to="/social"
+        aria-label="Ir al espacio social Conectemos"
+        style={{
+          minHeight: 44,
+          padding: '10px 20px',
+          borderRadius: 'var(--radius-btn)',
+          background: '#073B4C',
+          color: '#fff',
+          textDecoration: 'none',
+          fontSize: 14,
+          fontWeight: 700,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          boxShadow: '0 3px 10px rgba(7, 59, 76, 0.2)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Ir a Conectemos {Icons.arrowRight({ s: 14 })}
+      </Link>
+    </article>
   )
 }

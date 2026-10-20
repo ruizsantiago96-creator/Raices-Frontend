@@ -133,15 +133,7 @@ function RutaTimeline({ pasos, pasoActual }: { pasos: MiRutaResponse['pasos']; p
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {pasos.map((paso, idx) => {
         const isCurrent = paso === pasoActual
-        const recursosDelPaso = (paso as Record<string, unknown>).recursosLocales as Array<{
-          id: string | number
-          tipo: string
-          nombre: string
-          categoria?: string
-          detalle?: string
-          ciudad?: string
-          institucionId?: string | number
-        }> | undefined
+        const recursosDelPaso = paso.recursosLocales
 
         return (
           <div
