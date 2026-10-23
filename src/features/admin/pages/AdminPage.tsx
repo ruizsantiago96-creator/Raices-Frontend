@@ -19,7 +19,6 @@ type AdminTabKey =
   | 'identities'
   | 'reviews'
   | 'alerts'
-  | 'settings'
   | 'audit'
 
 const TAB_TITLES: Record<string, string> = {
@@ -30,13 +29,13 @@ const TAB_TITLES: Record<string, string> = {
   identities: 'Verificación de identidad',
   reviews: 'Moderación de reseñas',
   alerts: 'Alertas de riesgo',
-  settings: 'Configuración de plataforma',
   audit: 'Auditoría',
 }
 
 export default function AdminPage() {
   const { data: user } = useMe()
-  const tab = useUiStore(s => s.adminTab) as AdminTabKey
+  const rawTab = useUiStore(s => s.adminTab)
+  const tab: AdminTabKey = (rawTab === 'settings' || !(rawTab in TAB_TITLES)) ? 'overview' : (rawTab as AdminTabKey)
   const onTab = useUiStore(s => s.setAdminTab)
   const { data: alerts = [] } = useAdminAlerts()
 
@@ -55,7 +54,6 @@ export default function AdminPage() {
         {tab === 'identities' && <IdentitiesTab />}
         {tab === 'reviews' && <ReviewsTab />}
         {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
-        {tab === 'settings' && <SettingsTab />}
         {tab === 'audit' && <AuditTab onNavigate={onTab} />}
       </div>
     </main>

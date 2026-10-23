@@ -258,3 +258,81 @@ export interface FeedMixtoResponse {
   totalEntidades: number
 }
 
+// ─── Eventos de la Comunidad ───────────────────────────────────────
+export type CategoriaEvento = 'taller' | 'deporte' | 'cultural' | 'encuentro' | 'voluntariado' | 'otro'
+export type ModalidadEvento = 'presencial' | 'virtual' | 'hibrido'
+
+export interface EventoOrganizador {
+  id?: string
+  nombre?: string | null
+  avatar?: string | null
+}
+
+export interface EventoItem {
+  id: string
+  titulo: string
+  descripcion?: string
+  categoria: CategoriaEvento | string
+  fechaInicio: string
+  fechaFin?: string
+  ubicacion?: string
+  urlImagen?: string | null
+  ciudad?: string
+  modalidad?: ModalidadEvento
+  latitud?: number
+  longitud?: number
+  cupoMaximo?: number
+  etiquetasAccesibilidad?: string[]
+  cantidadAsistentes?: number
+  asisto?: boolean
+  creadorId?: string
+  nombreCreador?: string | null
+  urlAvatarCreador?: string | null
+  organizador?: EventoOrganizador
+  activo?: boolean
+  fechaCreacion?: string
+  creadoEn?: string | Date
+  actualizadoEn?: string | Date
+  [key: string]: unknown
+}
+
+export interface ListarEventosFiltros {
+  pagina?: number
+  limite?: number
+  ciudad?: string
+  categoria?: string
+  modalidad?: ModalidadEvento | ''
+  proximos?: boolean
+  buscar?: string
+  fecha?: string
+  desde?: string
+}
+
+export interface RespuestaPaginadaEventos {
+  datos: EventoItem[]
+  meta: {
+    total: number
+    pagina: number
+    limite: number
+    totalPaginas: number
+    tieneMas: boolean
+  }
+}
+
+export interface CrearEventoPayload {
+  titulo: string
+  descripcion?: string
+  categoria: string
+  fechaInicio: string
+  fechaFin?: string
+  ubicacion?: string
+  urlImagen?: string
+  ciudad?: string
+  modalidad?: ModalidadEvento
+  latitud?: number
+  longitud?: number
+  cupoMaximo?: number
+  etiquetasAccesibilidad?: string[]
+}
+
+

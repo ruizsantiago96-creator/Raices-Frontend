@@ -155,7 +155,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 }) => {
   const { user } = useAuthStore()
   const { isFetching } = useMe()
-  const { sidebarOpen, setSidebarOpen } = useUiStore()
+  const { sidebarOpen, setSidebarOpen, toggleA11yPanel } = useUiStore()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -199,7 +199,6 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
       { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
       { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
-      { id: 'settings',      label: 'Config',         icon: Icons.target },
     ]
   } else if (modoEfectivo === 'institution') {
     logoIcon = <InstitutionDoodle />
@@ -664,6 +663,40 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
             </React.Fragment>
           )
             })}
+          </div>
+
+          {/* Accesibilidad Shortcut in mobile drawer */}
+          <div style={{ padding: '8px 4px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+            <button
+              onClick={() => {
+                setSidebarOpen(false)
+                toggleA11yPanel()
+              }}
+              style={{
+                width: '100%',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-matcha, #A8B86B)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="4.5" r="2.5" />
+                <path d="m4.5 9.5 7.5 1 7.5-1" />
+                <path d="M12 10.5V17l-3 4.5" />
+                <path d="m12 17 3 4.5" />
+              </svg>
+              <span style={{ color: '#fff' }}>Accesibilidad</span>
+            </button>
           </div>
 
           {/* Bottom user / portal controls */}

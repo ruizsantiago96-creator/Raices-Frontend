@@ -4,6 +4,7 @@ import EasySpeech from 'easy-speech'
 import '@fontsource/atkinson-hyperlegible'
 import '@fontsource/atkinson-hyperlegible/700.css'
 import { useA11yStore, applyA11yAttributes } from '../store/a11yStore'
+import { useUiStore } from '@shared/stores/uiStore'
 import type { TextScale, ColorblindMode } from '@/types/a11y'
 
 /* ── Iconos locales (trazo consistente, decorativos → aria-hidden) ── */
@@ -86,7 +87,8 @@ function useSpeech() {
 
 export default function AccessibilityBar() {
   const a11y = useA11yStore()
-  const [open, setOpen] = useState(false)
+  const open = useUiStore(s => s.a11yPanelOpen)
+  const setOpen = useUiStore(s => s.setA11yPanelOpen)
   const [minimized, setMinimized] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   
@@ -105,7 +107,8 @@ export default function AccessibilityBar() {
       setIsMobile(mobile)
       setPosition(pos => ({
         ...pos,
-        bottom: mobile ? 80 : 20
+        bottom: mobile ? 24 : 20,
+        right: mobile ? 18 : 20
       }))
     }
     checkMobile()
@@ -358,12 +361,30 @@ export default function AccessibilityBar() {
   }, [handleDragMove])
 
   const getPanelStyle = (): CSSProperties => {
+    if (isMobile) {
+      return {
+        position: 'fixed',
+        zIndex: 2147483640,
+        top: 68,
+        right: 14,
+        left: 14,
+        width: 'auto',
+        maxWidth: 'calc(100vw - 28px)',
+        maxHeight: 'calc(100vh - 84px)',
+        overflowY: 'auto',
+        borderRadius: '16px',
+        padding: 20,
+        fontFamily: 'var(--font-body)',
+        animation: 'slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      }
+    }
+
     const isTopHalf = position.bottom > window.innerHeight / 2
     const isLeftHalf = position.right > window.innerWidth / 2
 
     const panelStyle: CSSProperties = {
       position: 'fixed',
-      zIndex: 10050,
+      zIndex: 2147483640,
       width: 320,
       maxWidth: 'calc(100vw - 40px)',
       maxHeight: 'calc(100vh - 120px)',
@@ -399,7 +420,7 @@ export default function AccessibilityBar() {
         position: 'fixed',
         right: minimized ? 0 : position.right,
         bottom: position.bottom,
-        zIndex: 10050,
+        zIndex: 2147483640,
         display: 'flex',
         alignItems: 'center',
         transition: isDragging ? 'none' : 'right 0.3s ease, bottom 0.3s ease, transform 0.3s ease',
@@ -423,7 +444,7 @@ export default function AccessibilityBar() {
               cursor: 'pointer',
               marginRight: minimized ? 4 : -8,
               boxShadow: 'var(--shadow-sm)',
-              zIndex: 10060,
+              zIndex: 2147483645,
               padding: 0,
             }}
           >
@@ -452,7 +473,7 @@ export default function AccessibilityBar() {
             if (minimized) {
               setMinimized(false)
             } else {
-              setOpen(o => !o)
+              setOpen((prev: boolean) => !prev)
             }
           }}
           aria-expanded={open}
@@ -611,7 +632,7 @@ export default function AccessibilityBar() {
             borderTop: '2px solid rgba(0,78,82,0.4)',
             borderBottom: '2px solid rgba(0,78,82,0.4)',
             pointerEvents: 'none',
-            zIndex: 10070,
+            zIndex: 2147483646,
             opacity: 0,
             transition: 'opacity 0.15s ease',
           }}
@@ -628,7 +649,7 @@ export default function AccessibilityBar() {
             border: '6px solid var(--color-warning)',
             boxShadow: 'inset 0 0 80px rgba(241,250,63,0.4)',
             pointerEvents: 'none',
-            zIndex: 10080,
+            zIndex: 2147483647,
             opacity: 0,
             transition: 'opacity 0.15s ease',
           }}

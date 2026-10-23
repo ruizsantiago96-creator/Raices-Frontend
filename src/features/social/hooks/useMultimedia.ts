@@ -28,9 +28,7 @@ export function useUploadMultimedia() {
       }
       const formData = new FormData()
       formData.append('archivo', file)
-      const { data } = await api.post<UploadMultimediaResponse>('/multimedia', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const { data } = await api.post<UploadMultimediaResponse>('/multimedia', formData)
       return data
     },
   })

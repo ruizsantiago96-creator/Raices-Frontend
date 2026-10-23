@@ -12,10 +12,13 @@ export interface CustomSelectProps<T = string | number> {
   onChange: (val: T) => void
   placeholder?: string
   style?: CSSProperties
+  buttonStyle?: CSSProperties
   className?: string
   minWidth?: number | string
   placement?: 'auto' | 'up' | 'down'
   borderRadius?: string | number
+  disabled?: boolean
+  accentColor?: string
 }
 
 export function CustomSelect<T extends string | number>({
@@ -24,10 +27,13 @@ export function CustomSelect<T extends string | number>({
   onChange,
   placeholder = 'Selecciona una opción',
   style,
+  buttonStyle,
   className = '',
   minWidth = 180,
   placement = 'auto',
   borderRadius = 10,
+  disabled = false,
+  accentColor,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
@@ -84,26 +90,35 @@ export function CustomSelect<T extends string | number>({
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(prev => !prev)}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) setIsOpen(prev => !prev)
+        }}
         style={{
           width: '100%',
-          minHeight: 44,
+          minHeight: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 10,
-          background: 'var(--bg-surface, #FFFFFF)',
-          border: isOpen ? '1.5px solid var(--primary, #073B4C)' : '1.5px solid var(--border-color, #E2E8F0)',
+          background: disabled ? 'var(--bg-warm, #F8FAFC)' : 'var(--bg-surface, #FFFFFF)',
+          border: isOpen
+            ? `1.5px solid ${accentColor || 'var(--primary, #073B4C)'}`
+            : '1.5px solid var(--border-color, #E2E8F0)',
           borderRadius: borderRadius,
-          padding: '10px 14px',
+          padding: '9px 14px',
           fontSize: '13.5px',
           fontWeight: selectedOption ? 600 : 500,
-          color: selectedOption ? 'var(--fg1, #073B4C)' : 'var(--fg3, #94A3B8)',
-          cursor: 'pointer',
+          color: disabled ? 'var(--fg3, #94A3B8)' : selectedOption ? 'var(--fg1, #073B4C)' : 'var(--fg3, #94A3B8)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           outline: 'none',
-          boxShadow: isOpen ? '0 0 0 3px var(--primary-subtle, rgba(7,59,76,0.15))' : '0 1px 2px rgba(7, 59, 76, 0.04)',
+          boxShadow: isOpen
+            ? `0 0 0 3px ${accentColor ? `${accentColor}26` : 'var(--primary-subtle, rgba(7,59,76,0.15))'}`
+            : '0 1px 2px rgba(7, 59, 76, 0.04)',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           boxSizing: 'border-box',
+          opacity: disabled ? 0.65 : 1,
+          ...buttonStyle,
         }}
       >
         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -121,7 +136,7 @@ export function CustomSelect<T extends string | number>({
           height="14"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="var(--primary, #073B4C)"
+          stroke={isOpen ? (accentColor || 'var(--primary, #073B4C)') : 'var(--fg3, #94a3b8)'}
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -173,8 +188,10 @@ export function CustomSelect<T extends string | number>({
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: 'none',
-                  background: isSelected ? 'var(--primary-subtle, rgba(7,59,76,0.12))' : 'transparent',
-                  color: isSelected ? 'var(--primary, #073B4C)' : 'var(--fg1, #073B4C)',
+                  background: isSelected
+                    ? (accentColor ? `${accentColor}1f` : 'var(--primary-subtle, rgba(7,59,76,0.12))')
+                    : 'transparent',
+                  color: isSelected ? (accentColor || 'var(--primary, #073B4C)') : 'var(--fg1, #073B4C)',
                   fontWeight: isSelected ? 700 : 500,
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -198,7 +215,7 @@ export function CustomSelect<T extends string | number>({
                   {opt.label}
                 </span>
                 {isSelected && (
-                  <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 800, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 13, color: accentColor || 'var(--primary)', fontWeight: 800, flexShrink: 0 }}>✓</span>
                 )}
               </button>
             )

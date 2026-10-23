@@ -50,7 +50,7 @@ export default function ToastContainer(): React.JSX.Element {
     <div
       aria-live="polite"
       aria-atomic="false"
-      style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 'min(380px, calc(100vw - 48px))' }}
+      style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 2147483647, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 'min(380px, calc(100vw - 48px))' }}
     >
       {toasts.map((t: ToastData) => {
         const isKnownType = t.type === 'success' || t.type === 'error' || t.type === 'warning' || t.type === 'info'

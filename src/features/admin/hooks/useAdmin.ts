@@ -21,14 +21,22 @@ import type {
    ═══════════════════════════════════════════════════════════════════ */
 
 /** Helper: returns true only if the current user is an admin. */
-const useIsAdmin = () => useAuthStore(s => s.user?.role === 'admin')
+const useIsAdmin = () =>
+  useAuthStore(s => {
+    const r = String(s.user?.role ?? (s.user as { rol?: string })?.rol ?? '').toLowerCase()
+    return r === 'admin'
+  })
 
 export function useAdminStats(opts?: Omit<UseQueryOptions<AdminStats>, 'queryKey' | 'queryFn'>) {
   const isAdmin = useIsAdmin()
   const { enabled: callerEnabled, ...restOpts } = opts ?? {}
   return useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
-    queryFn: () => api.get('/administracion/estadisticas').then(r => r.data),
+    queryFn: () =>
+      api.get('/administracion/estadisticas').then(r => {
+        const d = r.data
+        return (d?.datos ?? d?.data ?? d) as AdminStats
+      }),
     staleTime: 1000 * 60 * 5,
     enabled: isAdmin && callerEnabled !== false,
     ...restOpts,

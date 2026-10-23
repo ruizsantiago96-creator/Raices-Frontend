@@ -189,7 +189,7 @@ function decodeAndExtract(content: string) {
 
 const CATEGORY_MAP: Record<string, { label: string; icon: React.ReactNode; bg: string; color: string }> = {
   arte: { label: 'Arte', icon: Icons.palette({ s: 13 }), bg: '#FEF3C7', color: '#92400E' },
-  dibujo: { label: 'Dibujo', icon: Icons.edit({ s: 13 }), bg: '#E0E7FF', color: '#3730A3' },
+  dibujo: { label: 'Arte', icon: Icons.palette({ s: 13 }), bg: '#FEF3C7', color: '#92400E' },
   historia: { label: 'Historia', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
   general: { label: 'General', icon: Icons.message({ s: 13 }), bg: 'var(--primary-subtle)', color: 'var(--primary)' },
 }
@@ -197,7 +197,6 @@ const CATEGORY_MAP: Record<string, { label: string; icon: React.ReactNode; bg: s
 const CATEGORY_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode }> = [
   { value: 'general', label: 'General', icon: Icons.message({ s: 14 }) },
   { value: 'arte', label: 'Arte', icon: Icons.palette({ s: 14 }) },
-  { value: 'dibujo', label: 'Dibujo', icon: Icons.edit({ s: 14 }) },
   { value: 'historia', label: 'Historia', icon: Icons.book({ s: 14 }) },
 ]
 
@@ -1093,7 +1092,7 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
           Galería Conectemos
         </h2>
         <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
-          Explora obras de arte, dibujos e historias compartidas por la comunidad
+          Explora obras de arte e historias compartidas por la comunidad
         </p>
       </div>
 
@@ -1115,7 +1114,6 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
         {[
           { label: 'Todas las creaciones', icon: Icons.layers({ s: 14 }), value: null },
           { label: 'Arte', icon: Icons.palette({ s: 14 }), value: 'arte' },
-          { label: 'Dibujo', icon: Icons.edit({ s: 14 }), value: 'dibujo' },
           { label: 'Historia', icon: Icons.book({ s: 14 }), value: 'historia' },
           { label: 'General', icon: Icons.message({ s: 14 }), value: 'general' },
         ].map(cat => (
@@ -1236,7 +1234,11 @@ export default function SocialPage() {
     let list = rawPosts
 
     if (feedCategoryFilter) {
-      list = list.filter(p => (p.categoriaCreativa || '').toLowerCase() === feedCategoryFilter.toLowerCase())
+      list = list.filter(p => {
+        const cat = (p.categoriaCreativa || '').toLowerCase()
+        if (feedCategoryFilter.toLowerCase() === 'arte') return cat === 'arte' || cat === 'dibujo'
+        return cat === feedCategoryFilter.toLowerCase()
+      })
     }
 
     if (feedAlgorithmMode === 'mis_grupos') {

@@ -37,6 +37,9 @@ export interface UiState {
   setFloatingChatMaximized: (max: boolean) => void
   floatingChatPartnerId: string | number | null
   setFloatingChatPartnerId: (id: string | number | null) => void
+  a11yPanelOpen: boolean
+  setA11yPanelOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleA11yPanel: () => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -50,6 +53,11 @@ export const useUiStore = create<UiState>((set) => ({
   sidebarOpen: false,
   setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
   toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
+  a11yPanelOpen: false,
+  setA11yPanelOpen: (open) => set(s => ({
+    a11yPanelOpen: typeof open === 'function' ? open(s.a11yPanelOpen) : open
+  })),
+  toggleA11yPanel: () => set(s => ({ a11yPanelOpen: !s.a11yPanelOpen })),
   
   // Tab states for administrative and institution portals
   adminTab: localStorage.getItem('admin-tab') ?? 'overview',
