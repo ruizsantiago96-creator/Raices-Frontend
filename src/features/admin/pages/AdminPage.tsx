@@ -10,6 +10,7 @@ import IdentitiesTab from '../components/IdentitiesTab'
 import SettingsTab from '../components/SettingsTab'
 import AlertsTab from '../components/AlertsTab'
 import AuditTab from '../components/AuditTab'
+import ModeracionTab from '../components/ModeracionTab'
 
 type AdminTabKey =
   | 'overview'
@@ -18,6 +19,7 @@ type AdminTabKey =
   | 'users'
   | 'identities'
   | 'reviews'
+  | 'moderacion'
   | 'alerts'
   | 'audit'
 
@@ -28,6 +30,7 @@ const TAB_TITLES: Record<string, string> = {
   users: 'Gestión de usuarios',
   identities: 'Verificación de identidad',
   reviews: 'Moderación de reseñas',
+  moderacion: 'Moderación de publicaciones',
   alerts: 'Alertas de riesgo',
   audit: 'Auditoría',
 }
@@ -53,6 +56,7 @@ export default function AdminPage() {
         {tab === 'users' && <UsersTab currentUserId={user?.id} />}
         {tab === 'identities' && <IdentitiesTab />}
         {tab === 'reviews' && <ReviewsTab />}
+        {tab === 'moderacion' && <ModeracionTab />}
         {tab === 'alerts' && <AlertsTab alerts={alerts} onNavigate={onTab} />}
         {tab === 'audit' && <AuditTab onNavigate={onTab} />}
       </div>

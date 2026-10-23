@@ -276,3 +276,41 @@ export interface AuditoriaFilters {
   limite?: number
   [key: string]: unknown
 }
+
+// ─── Moderación de Publicaciones (Admin) ──────────────────────────
+export interface PublicacionRechazadaAdmin {
+  id: string
+  autorId: string
+  contenido: string
+  grupoId?: string | null
+  mediaUrl?: string | null
+  categoriaCreativa?: string | null
+  estado: 'rechazada' | string
+  fechaCreacion: string
+  moderacion: {
+    categoria: string
+    razon: string
+    sugerenciaMejora?: string | null
+    fuente: 'gemini' | 'reglas' | 'admin' | string
+    fecha: string
+  }
+  nombreAutor: string
+  emailAutor: string
+  rolAutor: string
+  resueltaPor?: string | null
+  fechaResolucion?: string | null
+  [key: string]: unknown
+}
+
+export interface ModerarPublicacionPayload {
+  decision: 'aprobar' | 'rechazar'
+  nota?: string
+}
+
+export interface PublicacionesRechazadasPaginadas {
+  datos: PublicacionRechazadaAdmin[]
+  total: number
+  pagina: number
+  limite: number
+  totalPaginas: number
+}

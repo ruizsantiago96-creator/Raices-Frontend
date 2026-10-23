@@ -4,11 +4,13 @@ import { Icons, EmptyState } from '@shared/components/shared'
 import BackendFallback from '@shared/components/BackendFallback'
 import { NOTIFICATION_UI } from '../constants/notificationMessages'
 
-const TYPE_META = {
+const TYPE_META: Record<string, { color: string; icon: (props?: { s?: number }) => React.ReactNode; label: string }> = {
   info: { color: '#01ADFF', icon: Icons.info, label: 'Info' },
   success: { color: '#7BA05B', icon: Icons.check, label: 'Éxito' },
   warning: { color: '#D4944C', icon: Icons.shieldAlert, label: 'Advertencia' },
   error: { color: '#D46A6A', icon: Icons.x, label: 'Error' },
+  publicacion_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.check, label: 'Publicación Aprobada' },
+  publicacion_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.shieldAlert, label: 'Moderación' },
 }
 
 function relativeDate(d: string | number | Date) {

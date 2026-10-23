@@ -5,7 +5,7 @@ import { useOutlet, useLocation } from 'react-router-dom'
 import { useAuthStore, useMe, AppSidebar, TopNav, esVistaPreviaEmpresa } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { usePendingInstitutions, useMyJobPostings, useAllJobApplicants, useMiInstitucion } from '@features/institutions'
-import { useAdminAlerts } from '@features/admin'
+import { useAdminAlerts, usePublicacionesRechazadas } from '@features/admin'
 import { initScrollReveal } from '@shared/lib/scrollReveal'
 import { DirectMessages } from '@features/social/pages/MessagesPage'
 
@@ -67,8 +67,10 @@ export default function MainLayout() {
   // Consultas de React Query para los contadores de la barra lateral (seguras según el modo)
   const { data: pendingInsts = [] } = usePendingInstitutions({ enabled: isAdmin })
   const { data: adminAlerts = [] } = useAdminAlerts({ enabled: isAdmin })
+  const { data: rejectedPostsData } = usePublicacionesRechazadas({}, { enabled: isAdmin })
   const totalPendingCount = pendingInsts.length
   const criticalCount = adminAlerts.filter(a => a.severity === 'critical' || a.severity === 'high').length
+  const pendingModeracionCount = rejectedPostsData?.total ?? 0
 
   // La entidad institución sostiene tanto el portal institucional como el de empresa
   const isPortal = isInstPortal || isEmpresaPortal
@@ -272,6 +274,7 @@ export default function MainLayout() {
         onTab={handleTabChange}
         pendingCount={totalPendingCount}
         alertCritical={criticalCount}
+        pendingModeracionCount={pendingModeracionCount}
         stats={instStats}
       />
 

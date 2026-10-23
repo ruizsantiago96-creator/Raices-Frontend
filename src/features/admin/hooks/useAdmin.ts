@@ -14,6 +14,9 @@ import type {
   AuditoriaLog,
   AuditoriaStats,
   AuditoriaFilters,
+  PublicacionRechazadaAdmin,
+  PublicacionesRechazadasPaginadas,
+  ModerarPublicacionPayload,
 } from '@/types/admin'
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -271,3 +274,60 @@ export function useAdminAuditoriaStats(opts?: Omit<UseQueryOptions<AuditoriaStat
     ...restOpts,
   })
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Moderación Automática de Publicaciones (Admin Queue)
+   ═══════════════════════════════════════════════════════════════════ */
+
+export function usePublicacionesRechazadas(
+  filters: { pagina?: number; limite?: number } = {},
+  opts?: Omit<UseQueryOptions<PublicacionesRechazadasPaginadas>, 'queryKey' | 'queryFn'>
+) {
+  const isAdmin = useIsAdmin()
+  const { enabled: callerEnabled, ...restOpts } = opts ?? {}
+  const pagina = filters.pagina ?? 1
+  const limite = filters.limite ?? 20
+
+  return useQuery<PublicacionesRechazadasPaginadas>({
+    queryKey: ['admin', 'publicaciones-rechazadas', pagina, limite],
+    queryFn: () =>
+      api
+        .get('/administracion/publicaciones-rechazadas', { params: { pagina, limite } })
+        .then(r => {
+          const d = r.data
+          if (Array.isArray(d)) {
+            return {
+              datos: d,
+              total: d.length,
+              pagina: 1,
+              limite: d.length,
+              totalPaginas: 1,
+            }
+          }
+          return {
+            datos: Array.isArray(d?.datos) ? d.datos : [],
+            total: d?.total ?? 0,
+            pagina: d?.pagina ?? pagina,
+            limite: d?.limite ?? limite,
+            totalPaginas: d?.totalPaginas ?? 1,
+          }
+        }),
+    staleTime: 1000 * 60 * 2,
+    enabled: isAdmin && callerEnabled !== false,
+    ...restOpts,
+  })
+}
+
+export function useModerarPublicacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string | number; payload: ModerarPublicacionPayload }) =>
+      api.patch(`/administracion/publicaciones/${id}/moderacion`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'publicaciones-rechazadas'] })
+      qc.invalidateQueries({ queryKey: ['posts'] })
+      qc.invalidateQueries({ queryKey: ['conectemos'] })
+    },
+  })
+}
+

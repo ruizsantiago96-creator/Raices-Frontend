@@ -1219,12 +1219,26 @@ export const ADMIN_ENDPOINTS = {
     description: 'Resumen de auditorÃ­a (contadores por acciÃ³n, usuarios mÃ¡s activos, etc.)',
     response: 'AuditoriaEstadisticas',
   },
-  // â”€â”€ VerificaciÃ³n identidad instituciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  GET_INSTITUTION_VERIFICATION: {
+  // ── Moderación automática de publicaciones ──────────────────
+  GET_REJECTED_POSTS: {
     method: 'GET',
-    path: '/administracion/instituciones/:id/verificacion-identidad',
-    description: 'Estado de verificaciÃ³n de identidad de la instituciÃ³n (CURP + ID del representante legal)',
-    response: { estado: 'string', tieneCurp: 'boolean', tieneIdentificacion: 'boolean', verificada: 'boolean' },
+    path: '/administracion/publicaciones-rechazadas',
+    params: { pagina: 'number?', limite: 'number?' },
+    description: 'Cola de publicaciones rechazadas pendientes de moderación',
+    response: {
+      datos: 'PublicacionRechazadaAdmin[]',
+      total: 'number',
+      pagina: 'number',
+      limite: 'number',
+      totalPaginas: 'number',
+    },
+  },
+  MODERATE_POST: {
+    method: 'PATCH',
+    path: '/administracion/publicaciones/:id/moderacion',
+    body: { decision: "'aprobar' | 'rechazar'", nota: 'string?' },
+    description: 'Aprobar o rechazar manualmente una publicación en la cola',
+    response: { exito: 'boolean', id: 'string', estado: 'string' },
   },
 }
 

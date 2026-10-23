@@ -129,6 +129,7 @@ export interface AppSidebarProps {
   onTab?: (tabId: string) => void
   pendingCount?: number
   alertCritical?: number
+  pendingModeracionCount?: number
   stats?: AppSidebarStats
 }
 
@@ -151,6 +152,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onTab,
   pendingCount,
   alertCritical,
+  pendingModeracionCount,
   stats,
 }) => {
   const { user } = useAuthStore()
@@ -197,6 +199,7 @@ const modoEfectivo: AppSidebarProps['mode'] = mode ?? 'app'
       { id: 'users',         label: 'Usuarios',       icon: Icons.users },
       { id: 'identities',    label: 'Identidades',    icon: Icons.shieldCheck },
       { id: 'reviews',       label: 'Reseñas',        icon: Icons.star },
+      { id: 'moderacion',    label: 'Moderación',     icon: Icons.shieldAlert, badge: pendingModeracionCount, badgeColor: 'var(--color-coral, #FF4D68)' },
       { id: 'alerts',        label: 'Alertas',        icon: Icons.shieldAlert, badge: alertCritical, badgeColor: 'var(--color-error)' },
       { id: 'audit',         label: 'Auditoría',      icon: Icons.barChart },
     ]

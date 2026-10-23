@@ -18,6 +18,17 @@ export interface CommunityGroup {
   [key: string]: unknown
 }
 
+// ─── Moderación de Publicaciones ──────────────────────────────────
+export type EstadoPublicacion = 'aprobada' | 'rechazada'
+
+export interface ModeracionInfo {
+  categoria: 'spam' | 'lenguaje_inapropiado' | 'desinformacion' | 'datos_sensibles' | 'comunidad' | 'duda_tramite' | 'logro_personal' | 'recurso_util' | string
+  razon: string
+  sugerenciaMejora?: string | null
+  fuente: 'gemini' | 'reglas' | 'admin' | string
+  fecha: string
+}
+
 // ─── Publicaciones y Comentarios ──────────────────────────────────
 export interface CommunityPost {
   id: string | number
@@ -36,6 +47,8 @@ export interface CommunityPost {
   categoriaCreativa?: string
   exclusivoPadres?: boolean
   mediaUrl?: string
+  estado?: EstadoPublicacion
+  moderacion?: ModeracionInfo
   [key: string]: unknown
 }
 

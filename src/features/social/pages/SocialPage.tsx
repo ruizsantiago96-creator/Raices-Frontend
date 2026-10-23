@@ -25,8 +25,9 @@ import { Icons, RestrictedBlock, CustomSelect, FriendlyIcons } from '@shared/com
 import { SOCIAL_TOAST, SOCIAL_UI, SOCIAL_CONFIRM } from '../constants/socialMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { COMMUNITY_ENDPOINTS } from '@shared/constants/backendEndpoints'
-import type { CommunityPost, CommunityGroup } from '@/types/social'
+import type { CommunityPost, CommunityGroup, ModeracionInfo } from '@/types/social'
 import { EventsDiscovery } from '../components/EventsDiscovery'
+import { ModeracionFeedbackModal } from '../components/ModeracionFeedbackModal'
 
 const relativeDate = (d: string | number | Date) => {
   const diff = Date.now() - new Date(d).getTime()
@@ -208,6 +209,8 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
   const [editContent, setEditContent] = useState(originalDecoded)
   const [liked, setLiked] = useState(!!post.liked_by_me)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
+  const [modModalOpen, setModModalOpen] = useState(false)
+  const [modInfo, setModInfo] = useState<ModeracionInfo | null>(null)
   const updatePost = useUpdatePost(post.id)
   const deletePost = useDeletePost(post.id)
   const { addToast } = useUiStore()
@@ -225,7 +228,22 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
   const handleSaveEdit = () => {
     if (!editContent.trim()) return
     updatePost.mutate({ content: editContent }, {
-      onSuccess: () => { setEditing(false); addToast(SOCIAL_TOAST.POST_UPDATED, 'success') },
+      onSuccess: (data: unknown) => {
+        const res = data as { estado?: string; moderacion?: ModeracionInfo }
+        setEditing(false)
+        if (res?.estado === 'rechazada') {
+          setModInfo(res.moderacion ?? {
+            categoria: 'spam',
+            razon: 'La versión editada ha sido retenida por moderación.',
+            sugerenciaMejora: null,
+            fuente: 'gemini',
+            fecha: new Date().toISOString()
+          })
+          setModModalOpen(true)
+        } else {
+          addToast(SOCIAL_TOAST.POST_UPDATED, 'success')
+        }
+      },
       onError: () => addToast(SOCIAL_TOAST.POST_UPDATE_FAILED, 'error'),
     })
   }
@@ -313,6 +331,13 @@ function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProp
       </div>
 
       {showComments && <CommentSection postId={post.id} currentUser={{ id: currentUserId, name: currentUserName }} />}
+
+      <ModeracionFeedbackModal
+        isOpen={modModalOpen}
+        onClose={() => setModModalOpen(false)}
+        moderacion={modInfo}
+        onEditAgain={() => setEditing(true)}
+      />
     </div>
   )
 }
@@ -689,6 +714,8 @@ function GroupDetailSection({
   const [exclusivoPadres, setExclusivoPadres] = useState<boolean>(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [moderacionModalOpen, setModeracionModalOpen] = useState(false)
+  const [moderacionInfo, setModeracionInfo] = useState<ModeracionInfo | null>(null)
 
   const uploadMedia = useUploadMultimedia()
   const createPost = useCreatePost()
@@ -742,12 +769,24 @@ function GroupDetailSection({
         exclusivoPadres: exclusivoPadres,
       },
       {
-        onSuccess: () => {
-          setNewPostContent('')
-          setPendingFile(null)
-          setPreviewUrl(null)
-          setExclusivoPadres(false)
-          addToast(SOCIAL_TOAST.POST_CREATED, 'success')
+        onSuccess: (data: unknown) => {
+          const res = data as { estado?: string; moderacion?: ModeracionInfo }
+          if (res?.estado === 'rechazada') {
+            setModeracionInfo(res.moderacion ?? {
+              categoria: 'spam',
+              razon: 'Tu publicación ha sido retenida para revisión comunitaria.',
+              sugerenciaMejora: null,
+              fuente: 'gemini',
+              fecha: new Date().toISOString(),
+            })
+            setModeracionModalOpen(true)
+          } else {
+            setNewPostContent('')
+            setPendingFile(null)
+            setPreviewUrl(null)
+            setExclusivoPadres(false)
+            addToast(SOCIAL_TOAST.POST_CREATED, 'success')
+          }
         },
         onError: () => {
           addToast(SOCIAL_TOAST.POST_CREATE_FAILED, 'error')
@@ -1063,6 +1102,12 @@ function GroupDetailSection({
           ))}
         </div>
       )}
+
+      <ModeracionFeedbackModal
+        isOpen={moderacionModalOpen}
+        onClose={() => setModeracionModalOpen(false)}
+        moderacion={moderacionInfo}
+      />
     </div>
   )
 }
@@ -1187,6 +1232,8 @@ export default function SocialPage() {
   const [postGroupId, setPostGroupId] = useState<string | number | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [feedModModalOpen, setFeedModModalOpen] = useState(false)
+  const [feedModInfo, setFeedModInfo] = useState<ModeracionInfo | null>(null)
 
   const { data: onboardingStatus } = useOnboardingStatus()
   const isIncomplete = Boolean(onboardingStatus && !(onboardingStatus as { onboardingCompleto?: boolean }).onboardingCompleto)
@@ -1315,12 +1362,24 @@ export default function SocialPage() {
         exclusivoPadres: exclusivoPadres,
       },
       {
-        onSuccess: () => {
-          setNewPost('')
-          setPendingFile(null)
-          setPreviewUrl(null)
-          setExclusivoPadres(false)
-          addToast(SOCIAL_TOAST.POST_CREATED, 'success')
+        onSuccess: (data: unknown) => {
+          const res = data as { estado?: string; moderacion?: ModeracionInfo }
+          if (res?.estado === 'rechazada') {
+            setFeedModInfo(res.moderacion ?? {
+              categoria: 'spam',
+              razon: 'Tu publicación ha sido retenida para revisión comunitaria.',
+              sugerenciaMejora: null,
+              fuente: 'gemini',
+              fecha: new Date().toISOString(),
+            })
+            setFeedModModalOpen(true)
+          } else {
+            setNewPost('')
+            setPendingFile(null)
+            setPreviewUrl(null)
+            setExclusivoPadres(false)
+            addToast(SOCIAL_TOAST.POST_CREATED, 'success')
+          }
         },
         onError: () => {
           addToast(SOCIAL_TOAST.POST_CREATE_FAILED, 'error')
@@ -1836,6 +1895,12 @@ export default function SocialPage() {
       </main>
 
       {showCreateGroup && <CreateGroupModal onClose={() => setShowCreateGroup(false)} />}
+
+      <ModeracionFeedbackModal
+        isOpen={feedModModalOpen}
+        onClose={() => setFeedModModalOpen(false)}
+        moderacion={feedModInfo}
+      />
     </>
   )
 }
