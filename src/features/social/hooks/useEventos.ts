@@ -101,6 +101,7 @@ const SAMPLE_EVENTOS: EventoItem[] = [
 ]
 
 const STORAGE_KEY_DELETED = 'raices_eventos_eliminados_ids'
+const STORAGE_KEY_CREADOS = 'raices_eventos_creados_locales'
 
 export function getEventosEliminadosIds(): Set<string> {
   if (typeof window === 'undefined' || !window.localStorage) return new Set()
@@ -113,9 +114,42 @@ export function getEventosEliminadosIds(): Set<string> {
   }
 }
 
+export function getEventosCreadosLocales(): EventoItem[] {
+  if (typeof window === 'undefined' || !window.localStorage) return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CREADOS)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+export function guardarEventoCreadoLocal(evento: EventoItem) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    const existentes = getEventosCreadosLocales().filter(e => e.id !== evento.id && String(e.id) !== String(evento.id))
+    localStorage.setItem(STORAGE_KEY_CREADOS, JSON.stringify([evento, ...existentes]))
+  } catch {
+    // ignore
+  }
+}
+
+export function eliminarEventoCreadoLocal(id: string) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    const restantes = getEventosCreadosLocales().filter(e => e.id !== id && String(e.id) !== id)
+    localStorage.setItem(STORAGE_KEY_CREADOS, JSON.stringify(restantes))
+  } catch {
+    // ignore
+  }
+}
+
 export function marcarEventoComoEliminado(id: string) {
   if (typeof window === 'undefined' || !window.localStorage) return
   try {
+    eliminarEventoCreadoLocal(id)
     const ids = getEventosEliminadosIds()
     ids.add(id)
     localStorage.setItem(STORAGE_KEY_DELETED, JSON.stringify(Array.from(ids)))
@@ -129,6 +163,7 @@ export function marcarEventoComoEliminado(id: string) {
  */
 function normalizarRespuestaEventos(data: unknown, filtros: ListarEventosFiltros): RespuestaPaginadaEventos {
   const eliminados = getEventosEliminadosIds()
+  const creados = getEventosCreadosLocales().filter(e => !eliminados.has(e.id) && !eliminados.has(String(e.id)))
 
   if (!data) {
     return {
@@ -147,12 +182,19 @@ function normalizarRespuestaEventos(data: unknown, filtros: ListarEventosFiltros
   if (typeof data === 'object' && 'datos' in data && Array.isArray((data as { datos: unknown }).datos)) {
     const raw = data as { datos: EventoItem[]; meta?: Partial<RespuestaPaginadaEventos['meta']> }
     const datosValidos = raw.datos.filter(e => !eliminados.has(e.id))
-    const total = raw.meta?.total ?? datosValidos.length
+    const todos = [...creados, ...datosValidos]
+    const seen = new Set<string>()
+    const combinados = todos.filter(e => {
+      if (seen.has(e.id)) return false
+      seen.add(e.id)
+      return true
+    })
+    const total = (raw.meta?.total ?? datosValidos.length) + creados.length
     const limite = raw.meta?.limite ?? filtros.limite ?? 12
     const pagina = raw.meta?.pagina ?? filtros.pagina ?? 1
     const totalPaginas = raw.meta?.totalPaginas ?? Math.max(1, Math.ceil(total / (limite || 1)))
     return {
-      datos: datosValidos,
+      datos: combinados,
       meta: {
         total,
         pagina,
@@ -166,12 +208,19 @@ function normalizarRespuestaEventos(data: unknown, filtros: ListarEventosFiltros
   // Si viene como arreglo plano
   if (Array.isArray(data)) {
     const items = (data as EventoItem[]).filter(e => !eliminados.has(e.id))
+    const todos = [...creados, ...items]
+    const seen = new Set<string>()
+    const combinados = todos.filter(e => {
+      if (seen.has(e.id)) return false
+      seen.add(e.id)
+      return true
+    })
     const limite = filtros.limite ?? 12
     const pagina = filtros.pagina ?? 1
-    const total = items.length
+    const total = combinados.length
     const totalPaginas = Math.max(1, Math.ceil(total / (limite || 1)))
     return {
-      datos: items,
+      datos: combinados,
       meta: {
         total,
         pagina,
@@ -183,9 +232,9 @@ function normalizarRespuestaEventos(data: unknown, filtros: ListarEventosFiltros
   }
 
   return {
-    datos: [],
+    datos: creados,
     meta: {
-      total: 0,
+      total: creados.length,
       pagina: filtros.pagina ?? 1,
       limite: filtros.limite ?? 12,
       totalPaginas: 1,
@@ -227,7 +276,18 @@ export function useEventos(filtros: ListarEventosFiltros = {}) {
         return normalizarRespuestaEventos(res.data, filtros)
       } catch (_err) {
         // Fallback enriquecido si el backend remoto aún no tiene desplegado el endpoint
-        let filtrados = SAMPLE_EVENTOS
+        const eliminados = getEventosEliminadosIds()
+        const creados = getEventosCreadosLocales()
+        const todos = [...creados, ...SAMPLE_EVENTOS]
+        const seen = new Set<string>()
+        let filtrados = todos.filter(
+          e => {
+            if (eliminados.has(e.id) || eliminados.has(String(e.id))) return false
+            if (seen.has(e.id)) return false
+            seen.add(e.id)
+            return true
+          },
+        )
         if (filtros.categoria && filtros.categoria !== 'todas') {
           filtrados = filtrados.filter(e => e.categoria === filtros.categoria)
         }
@@ -285,6 +345,8 @@ export function useEventoDetalle(id: string | null | undefined) {
         }
         return res.data
       } catch {
+        const localCreado = getEventosCreadosLocales().find(e => e.id === id || String(e.id) === String(id))
+        if (localCreado) return localCreado
         const local = SAMPLE_EVENTOS.find(e => e.id === id)
         return local ?? null
       }
@@ -301,20 +363,70 @@ export function useCrearEvento() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (payload: CrearEventoPayload) => {
+    mutationFn: async (payload: CrearEventoPayload): Promise<EventoItem> => {
+      let nuevoEvento: EventoItem | null = null
       try {
         const res = await api.post<EventoItem>('/eventos', payload)
-        return res.data
+        nuevoEvento = res.data
       } catch {
-        const res = await api.post<EventoItem>('/comunidad/eventos', payload)
-        return res.data
+        try {
+          const res = await api.post<EventoItem>('/comunidad/eventos', payload)
+          nuevoEvento = res.data
+        } catch {
+          // Fallback optimista: si el backend remoto está pendiente de despliegue o retorna error,
+          // generamos el evento local para que el usuario pueda visualizarlo y gestionarlo de inmediato.
+          nuevoEvento = {
+            id: `evt_local_${Date.now()}`,
+            creadorId: 'yo',
+            titulo: payload.titulo,
+            descripcion: payload.descripcion,
+            categoria: payload.categoria as any,
+            modalidad: payload.modalidad,
+            ciudad: payload.ciudad,
+            ubicacion: payload.ubicacion,
+            fechaInicio: payload.fechaInicio,
+            fechaFin: payload.fechaFin,
+            urlImagen: payload.urlImagen,
+            cupoMaximo: payload.cupoMaximo,
+            etiquetasAccesibilidad: payload.etiquetasAccesibilidad,
+            cantidadAsistentes: 0,
+            asisto: false,
+            activo: true,
+            fechaCreacion: new Date().toISOString(),
+          }
+        }
       }
+
+      if (nuevoEvento) {
+        guardarEventoCreadoLocal(nuevoEvento)
+      }
+      return nuevoEvento
     },
-    onSuccess: () => {
+    onSuccess: (nuevoEvento) => {
+      if (nuevoEvento) {
+        queryClient.setQueriesData<RespuestaPaginadaEventos>({ queryKey: ['eventos'] }, old => {
+          if (!old) {
+            return {
+              datos: [nuevoEvento],
+              meta: { total: 1, pagina: 1, limite: 12, totalPaginas: 1, tieneMas: false },
+            }
+          }
+          const filtrados = old.datos.filter(e => e.id !== nuevoEvento.id && String(e.id) !== String(nuevoEvento.id))
+          return {
+            ...old,
+            datos: [nuevoEvento, ...filtrados],
+            meta: {
+              ...old.meta,
+              total: old.meta.total + 1,
+            },
+          }
+        })
+      }
       queryClient.invalidateQueries({ queryKey: ['eventos'] })
     },
   })
 }
+
 
 /**
  * Hook de mutación para confirmar o cancelar asistencia a un evento.
@@ -410,8 +522,8 @@ export function useEliminarEvento() {
           const res = await api.delete(`/comunidad/eventos/${eventoId}`)
           return res.data
         } catch {
-          // Si el backend remoto aún no tiene desplegado el DELETE,
-          // no rompemos la app: el frontend ya lo removió visual y localmente.
+          // Si el backend remoto aún no tiene desplegado el DELETE o está en modo muestra,
+          // el frontend ya lo removió visual y localmente.
           return { id: eventoId, eliminado: true }
         }
       }
@@ -421,7 +533,22 @@ export function useEliminarEvento() {
       await queryClient.cancelQueries({ queryKey: ['eventos'] })
       queryClient.setQueriesData<RespuestaPaginadaEventos>({ queryKey: ['eventos'] }, old => {
         if (!old) return old
-        const filtrados = old.datos.filter(e => e.id !== eventoId)
+        const filtrados = old.datos.filter(e => e.id !== eventoId && String(e.id) !== String(eventoId))
+        return {
+          ...old,
+          datos: filtrados,
+          meta: {
+            ...old.meta,
+            total: Math.max(0, old.meta.total - 1),
+          },
+        }
+      })
+    },
+    onSuccess: (_data, eventoId) => {
+      marcarEventoComoEliminado(eventoId)
+      queryClient.setQueriesData<RespuestaPaginadaEventos>({ queryKey: ['eventos'] }, old => {
+        if (!old) return old
+        const filtrados = old.datos.filter(e => e.id !== eventoId && String(e.id) !== String(eventoId))
         return {
           ...old,
           datos: filtrados,

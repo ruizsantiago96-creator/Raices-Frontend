@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Calendar as CalendarIcon,
@@ -57,7 +57,8 @@ export const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
-  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, width: 340 })
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, width: 360 })
+  const [mobileTab, setMobileTab] = useState<'fecha' | 'hora'>('fecha')
 
   // Parsear la fecha y hora actual recibida
   const parsedDateTime = useMemo(() => {
@@ -97,30 +98,47 @@ export const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
     }
   }, [parsedDateTime])
 
-  // Calcular posición del popover respecto al contenedor
+  // Calcular posición del popover respecto al contenedor disparador
   const updatePopoverPosition = useCallback(() => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
-    const popoverWidth = Math.max(340, Math.min(rect.width, 380))
-    const popoverHeight = 440
+    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 420
+    const popoverWidth = isNarrow ? Math.min(300, window.innerWidth - 24) : 365
 
-    const spaceBelow = window.innerHeight - rect.bottom
-    let top = rect.bottom + 8
+    const measuredHeight = popoverRef.current?.offsetHeight || (isNarrow ? 290 : 260)
+    const spaceBelow = window.innerHeight - rect.bottom - 10
+    const spaceAbove = rect.top - 10
 
-    if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
-      top = rect.top - popoverHeight - 8
+    let top: number
+    // Si cabe abajo:
+    if (spaceBelow >= measuredHeight) {
+      top = rect.bottom + 6
     }
-
-    top = Math.max(16, Math.min(top, window.innerHeight - popoverHeight - 16))
+    // Si no cabe abajo pero sí arriba:
+    else if (spaceAbove >= measuredHeight) {
+      top = rect.top - measuredHeight - 6
+    }
+    // Si no cabe completo en ninguno, colocar donde haya más espacio SIN cubrir el input
+    else if (spaceBelow >= spaceAbove) {
+      top = rect.bottom + 6
+    } else {
+      top = Math.max(10, rect.top - measuredHeight - 6)
+    }
 
     let left = rect.left
-    if (left + popoverWidth > window.innerWidth - 16) {
-      left = window.innerWidth - popoverWidth - 16
+    if (left + popoverWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popoverWidth - 12
     }
-    left = Math.max(16, left)
+    left = Math.max(12, left)
 
     setPopoverPos({ top, left, width: popoverWidth })
   }, [])
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      updatePopoverPosition()
+    }
+  }, [isOpen, updatePopoverPosition])
 
   useEffect(() => {
     if (!isOpen) return
@@ -246,343 +264,420 @@ export const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
   const isPM = selectedHour >= 12
   const display12Hour = selectedHour % 12 === 0 ? 12 : selectedHour % 12
 
+  const isNarrow = typeof window !== 'undefined' && window.innerWidth < 420
+
   const popoverContent = isOpen ? (
     <div
       ref={popoverRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Selector moderno de fecha y hora"
+      aria-label="Selector de fecha y hora"
       style={{
         position: 'fixed',
         top: popoverPos.top,
         left: popoverPos.left,
         width: popoverPos.width,
+        maxHeight: 'min(360px, calc(100vh - 20px))',
+        overflowY: 'auto',
         zIndex: 2147483647,
         background: '#ffffff',
-        borderRadius: 20,
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 20px 48px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08)',
-        padding: '18px 20px',
+        borderRadius: 14,
+        border: '1px solid #cbd5e1',
+        boxShadow: '0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.06)',
+        padding: '10px 12px',
         fontFamily: 'var(--font-body, system-ui, sans-serif)',
         color: '#0f172a',
         animation: 'fadeIn 0.15s ease-out',
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Encabezado del mes y año ── */}
+      {/* Pestañas para pantallas muy estrechas (< 420px) */}
+      {isNarrow && (
+        <div
+          style={{
+            display: 'flex',
+            background: '#f1f5f9',
+            borderRadius: 8,
+            padding: 2,
+            marginBottom: 8,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setMobileTab('fecha')}
+            style={{
+              flex: 1,
+              padding: '4px 0',
+              borderRadius: 6,
+              border: 'none',
+              background: mobileTab === 'fecha' ? '#ffffff' : 'transparent',
+              color: mobileTab === 'fecha' ? '#0f172a' : '#64748b',
+              fontWeight: 700,
+              fontSize: 11.5,
+              cursor: 'pointer',
+              boxShadow: mobileTab === 'fecha' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            Fecha
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('hora')}
+            style={{
+              flex: 1,
+              padding: '4px 0',
+              borderRadius: 6,
+              border: 'none',
+              background: mobileTab === 'hora' ? '#ffffff' : 'transparent',
+              color: mobileTab === 'hora' ? '#0f172a' : '#64748b',
+              fontWeight: 700,
+              fontSize: 11.5,
+              cursor: 'pointer',
+              boxShadow: mobileTab === 'hora' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            Hora
+          </button>
+        </div>
+      )}
+
+      {/* Contenido principal en 2 columnas (side-by-side) en desktop/tablets */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 12,
+          gap: 12,
+          alignItems: 'stretch',
         }}
       >
-        <button
-          type="button"
-          onClick={prevMonth}
-          aria-label="Mes anterior"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            border: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: '#475569',
-            transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#e2e8f0')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-          {MONTH_NAMES[viewMonth]} {viewYear}
-        </div>
-
-        <button
-          type="button"
-          onClick={nextMonth}
-          aria-label="Mes siguiente"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            border: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: '#475569',
-            transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#e2e8f0')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      {/* ── Días de la semana ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          textAlign: 'center',
-          gap: 2,
-          marginBottom: 6,
-        }}
-      >
-        {DAY_NAMES.map(d => (
-          <span
-            key={d}
-            style={{
-              fontSize: 11.5,
-              fontWeight: 700,
-              color: '#94a3b8',
-              padding: '4px 0',
-            }}
-          >
-            {d}
-          </span>
-        ))}
-      </div>
-
-      {/* ── Cuadrícula de días del mes ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 3,
-          marginBottom: 14,
-        }}
-      >
-        {/* Espacios vacíos antes del día 1 */}
-        {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
-
-        {/* Días del mes */}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const dayNumber = i + 1
-          const isSelected =
-            selectedDate &&
-            selectedDate.getDate() === dayNumber &&
-            selectedDate.getMonth() === viewMonth &&
-            selectedDate.getFullYear() === viewYear
-
-          const isToday = isCurrentMonth && dayNumber === todayDay
-
-          return (
-            <button
-              key={dayNumber}
-              type="button"
-              onClick={() => handleSelectDay(dayNumber)}
+        {/* ── Columna Izquierda: Calendario ── */}
+        {(!isNarrow || mobileTab === 'fecha') && (
+          <div style={{ flex: '1 1 auto', minWidth: 200 }}>
+            {/* Encabezado Mes / Año */}
+            <div
               style={{
-                height: 34,
-                borderRadius: '50%',
-                border: isSelected ? 'none' : isToday ? `1.5px solid ${accentColor}` : 'none',
-                background: isSelected ? accentColor : 'transparent',
-                color: isSelected ? '#ffffff' : isToday ? accentColor : '#1e293b',
-                fontWeight: isSelected || isToday ? 800 : 600,
-                fontSize: 13,
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.12s ease',
-                boxShadow: isSelected ? `0 4px 10px ${accentColor}40` : 'none',
-              }}
-              onMouseEnter={e => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = '#f1f5f9'
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = 'transparent'
-                }
+                justifyContent: 'space-between',
+                marginBottom: 6,
               }}
             >
-              {dayNumber}
-            </button>
-          )
-        })}
-      </div>
+              <button
+                type="button"
+                onClick={prevMonth}
+                aria-label="Mes anterior"
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#475569',
+                }}
+              >
+                <ChevronLeft size={14} />
+              </button>
 
-      {/* ── Selector moderno de Hora y Minutos ── */}
-      <div
-        style={{
-          borderTop: '1px solid #f1f5f9',
-          paddingTop: 12,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#334155' }}>
-            <Clock size={15} color={accentColor} />
-            <span>Hora del evento:</span>
-          </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>
+                {MONTH_NAMES[viewMonth]} {viewYear}
+              </div>
 
-          {/* AM / PM Toggle */}
-          <div
-            style={{
-              display: 'inline-flex',
-              background: '#f1f5f9',
-              borderRadius: 20,
-              padding: 2,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                if (isPM) handleHourChange(selectedHour - 12)
-              }}
-              style={{
-                padding: '3px 10px',
-                borderRadius: 16,
-                border: 'none',
-                background: !isPM ? accentColor : 'transparent',
-                color: !isPM ? '#ffffff' : '#64748b',
-                fontSize: 11.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              AM
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!isPM) handleHourChange(selectedHour + 12)
-              }}
-              style={{
-                padding: '3px 10px',
-                borderRadius: 16,
-                border: 'none',
-                background: isPM ? accentColor : 'transparent',
-                color: isPM ? '#ffffff' : '#64748b',
-                fontSize: 11.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              PM
-            </button>
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={nextMonth}
+                aria-label="Mes siguiente"
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#475569',
+                }}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
 
-        {/* Inputs de Hora y Minutos con controles amigables */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {/* Horas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <select
-              value={display12Hour}
-              onChange={e => {
-                const val = parseInt(e.target.value, 10)
-                const finalHour = isPM ? (val === 12 ? 12 : val + 12) : val === 12 ? 0 : val
-                handleHourChange(finalHour)
-              }}
-              aria-label="Seleccionar hora"
+            {/* Días de la semana */}
+            <div
               style={{
-                padding: '6px 10px',
-                borderRadius: 8,
-                border: '1px solid #cbd5e1',
-                background: '#f8fafc',
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#0f172a',
-                cursor: 'pointer',
-                outline: 'none',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                textAlign: 'center',
+                gap: 1,
+                marginBottom: 2,
               }}
             >
-              {Array.from({ length: 12 }).map((_, i) => {
-                const h = i + 1
+              {DAY_NAMES.map(d => (
+                <span
+                  key={d}
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: '#94a3b8',
+                    padding: '1px 0',
+                  }}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+
+            {/* Días del mes */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                gap: 2,
+              }}
+            >
+              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const dayNumber = i + 1
+                const isSelected =
+                  selectedDate &&
+                  selectedDate.getDate() === dayNumber &&
+                  selectedDate.getMonth() === viewMonth &&
+                  selectedDate.getFullYear() === viewYear
+
+                const isToday = isCurrentMonth && dayNumber === todayDay
+
                 return (
-                  <option key={h} value={h}>
-                    {pad(h)}
-                  </option>
+                  <button
+                    key={dayNumber}
+                    type="button"
+                    onClick={() => handleSelectDay(dayNumber)}
+                    style={{
+                      height: 25,
+                      width: 25,
+                      margin: '0 auto',
+                      borderRadius: '50%',
+                      border: isSelected ? 'none' : isToday ? `1.5px solid ${accentColor}` : 'none',
+                      background: isSelected ? accentColor : 'transparent',
+                      color: isSelected ? '#ffffff' : isToday ? accentColor : '#1e293b',
+                      fontWeight: isSelected || isToday ? 800 : 600,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.12s ease',
+                      boxShadow: isSelected ? `0 2px 5px ${accentColor}40` : 'none',
+                      padding: 0,
+                    }}
+                    onMouseEnter={e => {
+                      if (!isSelected) e.currentTarget.style.background = '#f1f5f9'
+                    }}
+                    onMouseLeave={e => {
+                      if (!isSelected) e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    {dayNumber}
+                  </button>
                 )
               })}
-            </select>
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#94a3b8' }}>:</span>
+            </div>
           </div>
+        )}
 
-          {/* Minutos en intervalos de 5 min */}
-          <div>
-            <select
-              value={selectedMinute}
-              onChange={e => handleMinuteChange(parseInt(e.target.value, 10))}
-              aria-label="Seleccionar minutos"
-              style={{
-                padding: '6px 10px',
-                borderRadius: 8,
-                border: '1px solid #cbd5e1',
-                background: '#f8fafc',
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#0f172a',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              {[0, 5, 10, 15, 20, 25, 30, 35, 40, 41, 42, 45, 50, 55].map(m => (
-                <option key={m} value={m}>
-                  {pad(m)}
-                </option>
-              ))}
-            </select>
+        {/* Separador vertical en modo side-by-side */}
+        {!isNarrow && (
+          <div style={{ width: 1, background: '#f1f5f9', alignSelf: 'stretch' }} />
+        )}
+
+        {/* ── Columna Derecha: Selector de Hora y Atajos ── */}
+        {(!isNarrow || mobileTab === 'hora') && (
+          <div
+            style={{
+              width: isNarrow ? '100%' : 126,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              {/* Header de hora y AM/PM toggle */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 6,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, fontWeight: 700, color: '#334155' }}>
+                  <Clock size={12} color={accentColor} />
+                  <span>Hora</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    background: '#f1f5f9',
+                    borderRadius: 12,
+                    padding: 1.5,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isPM) handleHourChange(selectedHour - 12)
+                    }}
+                    style={{
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: !isPM ? accentColor : 'transparent',
+                      color: !isPM ? '#ffffff' : '#64748b',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    AM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isPM) handleHourChange(selectedHour + 12)
+                    }}
+                    style={{
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: isPM ? accentColor : 'transparent',
+                      color: isPM ? '#ffffff' : '#64748b',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    PM
+                  </button>
+                </div>
+              </div>
+
+              {/* Selects de Hora y Minuto */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 8 }}>
+                <select
+                  value={display12Hour}
+                  onChange={e => {
+                    const val = parseInt(e.target.value, 10)
+                    const finalHour = isPM ? (val === 12 ? 12 : val + 12) : val === 12 ? 0 : val
+                    handleHourChange(finalHour)
+                  }}
+                  aria-label="Hora"
+                  style={{
+                    padding: '3px 4px',
+                    borderRadius: 6,
+                    border: '1px solid #cbd5e1',
+                    background: '#f8fafc',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {Array.from({ length: 12 }).map((_, i) => {
+                    const h = i + 1
+                    return (
+                      <option key={h} value={h}>
+                        {pad(h)}
+                      </option>
+                    )
+                  })}
+                </select>
+
+                <span style={{ fontWeight: 800, fontSize: 13, color: '#94a3b8' }}>:</span>
+
+                <select
+                  value={selectedMinute}
+                  onChange={e => handleMinuteChange(parseInt(e.target.value, 10))}
+                  aria-label="Minutos"
+                  style={{
+                    padding: '3px 4px',
+                    borderRadius: 6,
+                    border: '1px solid #cbd5e1',
+                    background: '#f8fafc',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                    <option key={m} value={m}>
+                      {pad(m)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Atajos de hora rápida en cuadrícula compacta */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 4,
+                }}
+              >
+                {[
+                  { label: '09:00 AM', h: 9, m: 0 },
+                  { label: '12:00 PM', h: 12, m: 0 },
+                  { label: '04:00 PM', h: 16, m: 0 },
+                  { label: '07:00 PM', h: 19, m: 0 },
+                ].map(shortcut => {
+                  const isCur = selectedHour === shortcut.h && selectedMinute === shortcut.m
+                  return (
+                    <button
+                      key={shortcut.label}
+                      type="button"
+                      onClick={() => {
+                        setSelectedHour(shortcut.h)
+                        setSelectedMinute(shortcut.m)
+                        emitChange(selectedDate, shortcut.h, shortcut.m)
+                      }}
+                      style={{
+                        padding: '3px 2px',
+                        borderRadius: 5,
+                        background: isCur ? '#e8f8f2' : '#f8fafc',
+                        border: isCur ? `1px solid ${accentColor}` : '1px solid #e2e8f0',
+                        color: isCur ? accentColor : '#64748b',
+                        fontSize: 9.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {shortcut.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Atajos de hora rápida */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-          {[
-            { label: '09:00 AM', h: 9, m: 0 },
-            { label: '11:00 AM', h: 11, m: 0 },
-            { label: '04:00 PM', h: 16, m: 0 },
-            { label: '06:30 PM', h: 18, m: 30 },
-          ].map(shortcut => (
-            <button
-              key={shortcut.label}
-              type="button"
-              onClick={() => {
-                setSelectedHour(shortcut.h)
-                setSelectedMinute(shortcut.m)
-                emitChange(selectedDate, shortcut.h, shortcut.m)
-              }}
-              style={{
-                padding: '3px 8px',
-                borderRadius: 6,
-                background: selectedHour === shortcut.h && selectedMinute === shortcut.m ? '#e8f8f2' : '#f1f5f9',
-                border: selectedHour === shortcut.h && selectedMinute === shortcut.m ? `1px solid ${accentColor}` : '1px solid #e2e8f0',
-                color: selectedHour === shortcut.h && selectedMinute === shortcut.m ? accentColor : '#64748b',
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {shortcut.label}
-            </button>
-          ))}
-        </div>
+        )}
       </div>
 
-      {/* ── Barra de acciones inferiores ── */}
+      {/* ── Barra inferior de acciones ── */}
       <div
         style={{
-          marginTop: 14,
-          paddingTop: 10,
+          marginTop: 8,
+          paddingTop: 6,
           borderTop: '1px solid #f1f5f9',
           display: 'flex',
           alignItems: 'center',
@@ -604,7 +699,7 @@ export const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
             background: 'transparent',
             border: 'none',
             color: accentColor,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 700,
             cursor: 'pointer',
             display: 'inline-flex',
@@ -612,28 +707,28 @@ export const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
             gap: 4,
           }}
         >
-          <Sparkles size={13} /> Hoy y ahora
+          <Sparkles size={11} /> Hoy y ahora
         </button>
 
         <button
           type="button"
           onClick={() => setIsOpen(false)}
           style={{
-            padding: '6px 16px',
-            borderRadius: 20,
+            padding: '4px 12px',
+            borderRadius: 12,
             background: accentColor,
             color: '#ffffff',
             border: 'none',
-            fontSize: 12.5,
+            fontSize: 11.5,
             fontWeight: 800,
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
-            boxShadow: `0 2px 8px ${accentColor}40`,
+            gap: 4,
+            boxShadow: `0 2px 6px ${accentColor}40`,
           }}
         >
-          <Check size={13} strokeWidth={3} /> Listo
+          <Check size={12} strokeWidth={3} /> Listo
         </button>
       </div>
     </div>

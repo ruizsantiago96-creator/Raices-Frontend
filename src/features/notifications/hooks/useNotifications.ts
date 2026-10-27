@@ -20,26 +20,47 @@ function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationI
   const explicitUrl = (n.url ?? n.redirect_url ?? n.redirectUrl ?? n.ruta ?? n.path ?? n.enlace ?? n.link ?? n.redireccion) as string | undefined
   if (explicitUrl) return explicitUrl
 
-  // 2. Si no, deducir según las palabras clave en título o mensaje (body)
+  // 2. Mapeo prioritario por tipo formal de notificación
+  const type = (n.type ?? n.tipo ?? '').toLowerCase()
+  if (type.startsWith('publicacion_') || type.startsWith('evento_') || type === 'nuevo_comentario' || type === 'nuevo_me_gusta' || type === 'respuesta_foro') {
+    return '/social'
+  }
+  if (type.startsWith('identidad_')) {
+    return '/verificacion-identidad'
+  }
+  if (type === 'bienvenida') {
+    return '/profile'
+  }
+  if (type.startsWith('postulacion_')) {
+    return '/jobs'
+  }
+  if (type === 'institucion_aprobada') {
+    return '/explore'
+  }
+
+  // 3. Deducir según palabras clave en título o mensaje (body)
   const text = `${n.title ?? n.titulo ?? ''} ${n.body ?? n.mensaje ?? n.contenido ?? ''}`.toLowerCase()
   
-  if (text.includes('administra') || text.includes('admin') || text.includes('aprob') || text.includes('rechaz') || text.includes('pendiente')) {
-    return '/admin'
+  if (text.includes('identidad') || text.includes('curp') || text.includes('ine') || text.includes('documento')) {
+    return '/verificacion-identidad'
   }
-  if (text.includes('mensaje') || text.includes('chat') || text.includes('grupo') || text.includes('comunidad') || text.includes('social')) {
+  if (text.includes('publicaci') || text.includes('evento') || text.includes('mensaje') || text.includes('chat') || text.includes('grupo') || text.includes('comunidad') || text.includes('social') || text.includes('coment') || text.includes('gusta')) {
     return '/social'
+  }
+  if (text.includes('bienvenid') || text.includes('perfil') || text.includes('onboarding') || text.includes('datos')) {
+    return '/profile'
   }
   if (text.includes('empleo') || text.includes('vacante') || text.includes('trabajo') || text.includes('postula')) {
     return '/jobs'
   }
-  if (text.includes('perfil') || text.includes('onboarding') || text.includes('datos')) {
-    return '/profile'
-  }
   if (text.includes('instituc') || text.includes('reseñ') || text.includes('opinio')) {
     return '/explore'
   }
+  if (text.includes('administra') || text.includes('panel admin')) {
+    return '/admin'
+  }
 
-  // 3. Fallback genérico a la página de notificaciones
+  // 4. Fallback genérico a la página de notificaciones
   return '/notifications'
 }
 
@@ -66,12 +87,12 @@ export function useNotifications() {
         return normalized
       })
 
-      // Filtrar para que solo el rol 'admin' vea notificaciones destinadas al panel de administración
-      const filtered = mapped.filter(n => {
+      // Asegurar que usuarios no admin sean redirigidos a su perfil en lugar de ocultar sus notificaciones
+      const filtered = mapped.map(n => {
         if (n.url === '/admin' && userRole !== 'admin') {
-          return false
+          return { ...n, url: '/profile' }
         }
-        return true
+        return n
       })
 
       // Si el usuario es administrador, inyectar dinámicamente avisos de tareas pendientes

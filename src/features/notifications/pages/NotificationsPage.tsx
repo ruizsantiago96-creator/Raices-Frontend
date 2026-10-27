@@ -11,6 +11,17 @@ const TYPE_META: Record<string, { color: string; icon: (props?: { s?: number }) 
   error: { color: '#D46A6A', icon: Icons.x, label: 'Error' },
   publicacion_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.check, label: 'Publicación Aprobada' },
   publicacion_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.shieldAlert, label: 'Moderación' },
+  identidad_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.shieldCheck, label: 'Identidad Verificada' },
+  identidad_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.shieldAlert, label: 'Identidad' },
+  institucion_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.building, label: 'Institución Aprobada' },
+  evento_cercano: { color: '#01ADFF', icon: Icons.calendar, label: 'Evento Cercano' },
+  evento_recordatorio: { color: '#D4944C', icon: Icons.calendar, label: 'Recordatorio Evento' },
+  nuevo_comentario: { color: '#6C63FF', icon: Icons.message, label: 'Comentario' },
+  nuevo_me_gusta: { color: '#E25555', icon: Icons.heart, label: 'Me Gusta' },
+  respuesta_foro: { color: '#6C63FF', icon: Icons.message, label: 'Foro' },
+  bienvenida: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.sparkles, label: 'Bienvenida' },
+  postulacion_aceptada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.briefcase, label: 'Postulación' },
+  postulacion_rechazada: { color: '#888888', icon: Icons.briefcase, label: 'Postulación' },
 }
 
 function relativeDate(d: string | number | Date) {

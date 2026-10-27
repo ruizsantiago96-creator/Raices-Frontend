@@ -15,7 +15,13 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react'
-import { useEventos, useToggleAsistenciaEvento, useEliminarEvento } from '../hooks/useEventos'
+import {
+  useEventos,
+  useToggleAsistenciaEvento,
+  useEliminarEvento,
+  getEventosEliminadosIds,
+  marcarEventoComoEliminado,
+} from '../hooks/useEventos'
 import { CustomSelect } from '@shared/components/CustomSelect'
 import { CrearEventoModal } from './CrearEventoModal'
 import { EventoDetalleModal } from './EventoDetalleModal'
@@ -172,7 +178,11 @@ export function EventsDiscovery() {
 
   const { data, isLoading, isError, refetch } = useEventos(filtrosQuery)
 
-  const eventos = data?.datos ?? []
+  const eliminadosIds = getEventosEliminadosIds()
+  const eventos = useMemo(
+    () => (data?.datos ?? []).filter(e => !eliminadosIds.has(e.id) && !eliminadosIds.has(String(e.id))),
+    [data?.datos, eliminadosIds],
+  )
 
   const meta = data?.meta ?? {
     total: eventos.length,
@@ -886,7 +896,7 @@ export function EventsDiscovery() {
         onSuccess={() => refetch()}
       />
 
-      {/* ── Modal de Confirmación de Eliminación Moderno ── */}
+      {/* ── Modal de Confirmación de Eliminación ── */}
       {eventoAEliminar && (
         <div
           role="dialog"
@@ -895,8 +905,7 @@ export function EventsDiscovery() {
             position: 'fixed',
             inset: 0,
             zIndex: 70000,
-            background: 'rgba(15, 23, 42, 0.72)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -907,11 +916,11 @@ export function EventsDiscovery() {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: 20,
+              borderRadius: 16,
               padding: '28px 24px',
               maxWidth: 440,
               width: '100%',
-              boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
               textAlign: 'center',
             }}
             onClick={e => e.stopPropagation()}
@@ -959,12 +968,10 @@ export function EventsDiscovery() {
                 type="button"
                 onClick={() => {
                   const id = eventoAEliminar.id
-                  eliminarEventoMutation.mutate(id, {
-                    onSuccess: () => {
-                      addToast('Evento eliminado exitosamente', 'success')
-                      setEventoAEliminar(null)
-                    },
-                  })
+                  marcarEventoComoEliminado(id)
+                  setEventoAEliminar(null)
+                  addToast('Evento eliminado exitosamente', 'success')
+                  eliminarEventoMutation.mutate(id)
                 }}
                 disabled={eliminarEventoMutation.isPending}
                 style={{

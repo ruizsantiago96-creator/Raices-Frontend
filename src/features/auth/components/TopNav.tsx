@@ -37,7 +37,7 @@ export interface TopNavProps {
 export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLogout }) => {
   const nav = useNavigate()
   const { darkMode, toggleDarkMode } = useA11yStore()
-  const { toggleSidebar, setFloatingChatOpen, setFloatingChatMinimized, toggleA11yPanel, a11yPanelOpen } = useUiStore()
+  const { toggleSidebar, setFloatingChatOpen, setFloatingChatMinimized } = useUiStore()
   const hasSidebar = !!user
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -115,25 +115,6 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
       {user && <TopNavSearchBar />}
 
       <div className="topnav-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Botón de Accesibilidad global */}
-        <button
-          onClick={toggleA11yPanel}
-          aria-label="Opciones de accesibilidad"
-          title="Accesibilidad"
-          className="topnav-icon-btn"
-          style={{
-            color: a11yPanelOpen ? 'var(--color-matcha, #A8B86B)' : undefined,
-            borderColor: a11yPanelOpen ? 'var(--color-matcha, #A8B86B)' : undefined,
-            background: a11yPanelOpen ? 'color-mix(in srgb, var(--color-matcha, #A8B86B) 15%, transparent)' : undefined,
-          }}
-        >
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="4.5" r="2.5" />
-            <path d="m4.5 9.5 7.5 1 7.5-1" />
-            <path d="M12 10.5V17l-3 4.5" />
-            <path d="m12 17 3 4.5" />
-          </svg>
-        </button>
 
         {/* Theme toggle button — circular, with border */}
         {user && (

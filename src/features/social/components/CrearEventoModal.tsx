@@ -116,28 +116,31 @@ export function CrearEventoModal({ isOpen, onClose, onSuccess }: CrearEventoModa
       return
     }
 
-    // Previsualización local instantánea mientras se carga
-    const previewUrl = URL.createObjectURL(file)
-    setUrlImagen(previewUrl)
-    setCargandoArchivo(true)
-    setErrorLocal(null)
+    // Leemos el archivo en Base64 para que la imagen persista y se visualice
+    // incluso si la subida a la nube falla o está pendiente de despliegue
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64Url = reader.result as string
+      setUrlImagen(base64Url)
+      setCargandoArchivo(true)
+      setErrorLocal(null)
 
-    try {
-      const res = await uploadMultimediaMutation.mutateAsync(file)
-      if (res?.url) {
-        setUrlImagen(res.url)
-        addToast('Foto de fondo subida con éxito', 'success')
-      } else {
-        throw new Error('No se recibió la URL de la imagen')
+      try {
+        const res = await uploadMultimediaMutation.mutateAsync(file)
+        if (res?.url) {
+          setUrlImagen(res.url)
+          addToast('Foto de fondo subida con éxito', 'success')
+        }
+      } catch {
+        // Mantenemos la imagen en base64 para que el usuario no pierda su foto
+        addToast('Foto guardada localmente para este evento', 'info')
+      } finally {
+        setCargandoArchivo(false)
       }
-    } catch {
-      setUrlImagen('')
-      setErrorLocal('No se pudo subir la foto al servidor en la nube. Por favor selecciona un fondo prediseñado o ingresa un enlace.')
-      addToast('Error al subir imagen. Selecciona un fondo de la galería.', 'error')
-    } finally {
-      setCargandoArchivo(false)
     }
+    reader.readAsDataURL(file)
   }
+
 
   const queryDireccionParaMapa = [ubicacion.trim(), ciudad.trim()].filter(Boolean).join(', ')
 
@@ -178,8 +181,8 @@ export function CrearEventoModal({ isOpen, onClose, onSuccess }: CrearEventoModa
       isoFin = new Date(fechaFin).toISOString()
     }
 
-    // Asegurarse de que urlImagen sea una URL válida de internet o storage (no un blob local no subido)
-    const urlLimpia = urlImagen.startsWith('blob:') ? undefined : (urlImagen.trim() || undefined)
+    // Asegurarse de que urlImagen sea una URL válida de internet, base64 o preset
+    const urlLimpia = urlImagen.trim() || PRESET_BANNERS[0].url
 
     const payload = {
       titulo: titulo.trim(),
@@ -221,8 +224,7 @@ export function CrearEventoModal({ isOpen, onClose, onSuccess }: CrearEventoModa
         position: 'fixed',
         inset: 0,
         zIndex: 60000,
-        background: 'rgba(15, 23, 42, 0.72)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.55)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -16,8 +16,14 @@ import {
   Share2,
   Calendar as CalendarIcon,
   Trash2,
+  Users,
 } from 'lucide-react'
-import { useEventoDetalle, useToggleAsistenciaEvento, useEliminarEvento } from '../hooks/useEventos'
+import {
+  useEventoDetalle,
+  useToggleAsistenciaEvento,
+  useEliminarEvento,
+  marcarEventoComoEliminado,
+} from '../hooks/useEventos'
 import { useUiStore } from '../../../shared/stores/uiStore'
 import { useAuthStore } from '../../auth/store/authStore'
 import type { EventoItem } from '@/types/social'
@@ -108,17 +114,11 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
   const ejecutarEliminacion = () => {
     if (!eventoId) return
 
-    eliminarEventoMutation.mutate(eventoId, {
-      onSuccess: () => {
-        addToast('Evento eliminado exitosamente', 'success')
-        setConfirmarEliminar(false)
-        onClose()
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        addToast(error.response?.data?.message || 'No se pudo eliminar el evento', 'error')
-      },
-    })
+    marcarEventoComoEliminado(eventoId)
+    setConfirmarEliminar(false)
+    addToast('Evento eliminado exitosamente', 'success')
+    onClose()
+    eliminarEventoMutation.mutate(eventoId)
   }
 
   if (!eventoId) return null
@@ -203,15 +203,13 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
         flexDirection: 'column',
       }}
     >
-      {/* ── Sticky Top Bar (Frosted Dark Glass) ── */}
+      {/* ── Sticky Top Bar ── */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          background: 'rgba(9, 21, 30, 0.92)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
+          background: '#09151e',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           padding: '12px 24px',
           width: '100%',
@@ -382,9 +380,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
             style={{
               width: '100%',
               position: 'relative',
-              background: evento.urlImagen
-                ? `linear-gradient(180deg, rgba(9, 21, 30, 0.72) 0%, rgba(9, 21, 30, 0.94) 85%, #fcfaf6 100%), url(${evento.urlImagen}) center/cover no-repeat`
-                : 'linear-gradient(135deg, #072a35 0%, #0d3b4c 45%, #174d57 75%, #20bd88 120%)',
+              background: `linear-gradient(180deg, rgba(9, 21, 30, 0.45) 0%, rgba(9, 21, 30, 0.78) 85%, #09151e 100%), url(${evento.urlImagen || 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'}) center/cover no-repeat`,
               color: '#ffffff',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.25)',
               paddingTop: 36,
@@ -426,8 +422,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                     style={{
                       padding: '5px 14px',
                       borderRadius: 20,
-                      background: 'rgba(255, 255, 255, 0.16)',
-                      backdropFilter: 'blur(8px)',
+                      background: 'rgba(0, 0, 0, 0.45)',
                       color: '#ffffff',
                       fontSize: 12.5,
                       fontWeight: 600,
@@ -512,16 +507,11 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 </div>
               </div>
 
-              {/* Right Floating Ticket Card */}
+              {/* Right Floating Column: Ticket Card */}
               <div
                 style={{
                   width: 360,
                   maxWidth: '100%',
-                  background: '#ffffff',
-                  borderRadius: 22,
-                  padding: 26,
-                  boxShadow: '0 20px 48px rgba(0, 0, 0, 0.35)',
-                  color: '#0f172a',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 16,
@@ -529,113 +519,127 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                   boxSizing: 'border-box',
                 }}
               >
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Fecha y Hora
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
-                    {formatearFechaLarga(evento.fechaInicio)}
-                  </div>
-                  {evento.fechaFin && (
-                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-                      Hasta: {formatearFechaLarga(evento.fechaFin)}
-                    </div>
-                  )}
-                </div>
-
                 <div
                   style={{
+                    background: '#ffffff',
+                    borderRadius: 22,
+                    padding: 26,
+                    boxShadow: '0 20px 48px rgba(0, 0, 0, 0.35)',
+                    color: '#0f172a',
                     display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                    padding: '12px 0',
-                    borderTop: '1px solid #f1f5f9',
-                    borderBottom: '1px solid #f1f5f9',
+                    flexDirection: 'column',
+                    gap: 16,
                   }}
                 >
-                  <span style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>Entrada:</span>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: '#20bd88' }}>
-                    Gratis
-                  </span>
-                </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Fecha y Hora
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
+                      {formatearFechaLarga(evento.fechaInicio)}
+                    </div>
+                    {evento.fechaFin && (
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+                        Hasta: {formatearFechaLarga(evento.fechaFin)}
+                      </div>
+                    )}
+                  </div>
 
-                {/* CTA Button: Confirm attendance */}
-                <button
-                  type="button"
-                  onClick={handleToggleAsistencia}
-                  disabled={toggleAsistencia.isPending}
-                  style={{
-                    width: '100%',
-                    padding: '14px 20px',
-                    borderRadius: 14,
-                    border: 'none',
-                    background: esAsistiendo ? '#f1f5f9' : '#20bd88',
-                    color: esAsistiendo ? '#0f172a' : '#ffffff',
-                    fontSize: 15,
-                    fontWeight: 800,
-                    cursor: toggleAsistencia.isPending ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    transition: 'all 0.15s ease',
-                    boxShadow: esAsistiendo ? 'none' : '0 6px 18px rgba(32, 189, 136, 0.35)',
-                  }}
-                >
-                  {toggleAsistencia.isPending ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : esAsistiendo ? (
-                    <>
-                      <Check size={18} color="#20bd88" strokeWidth={3} />
-                      Asistiendo (Cancelar)
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={18} strokeWidth={2.6} />
-                      Asistir al evento (Gratis)
-                    </>
-                  )}
-                </button>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      padding: '12px 0',
+                      borderTop: '1px solid #f1f5f9',
+                      borderBottom: '1px solid #f1f5f9',
+                    }}
+                  >
+                    <span style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>Entrada:</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: '#20bd88' }}>
+                      Gratis
+                    </span>
+                  </div>
 
-                {/* Google Calendar Link */}
-                <a
-                  href={generarGoogleCalendarUrl(evento)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    padding: '10px 16px',
-                    borderRadius: 12,
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    color: '#475569',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    transition: 'background-color 0.15s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
-                >
-                  <CalendarIcon size={15} color="#20bd88" />
-                  Agregar a Google Calendar
-                </a>
+                  {/* CTA Button: Confirm attendance */}
+                  <button
+                    type="button"
+                    onClick={handleToggleAsistencia}
+                    disabled={toggleAsistencia.isPending}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      borderRadius: 14,
+                      border: 'none',
+                      background: esAsistiendo ? '#f1f5f9' : '#20bd88',
+                      color: esAsistiendo ? '#0f172a' : '#ffffff',
+                      fontSize: 15,
+                      fontWeight: 800,
+                      cursor: toggleAsistencia.isPending ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      transition: 'all 0.15s ease',
+                      boxShadow: esAsistiendo ? 'none' : '0 6px 18px rgba(32, 189, 136, 0.35)',
+                    }}
+                  >
+                    {toggleAsistencia.isPending ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : esAsistiendo ? (
+                      <>
+                        <Check size={18} color="#20bd88" strokeWidth={3} />
+                        Asistiendo (Cancelar)
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={18} strokeWidth={2.6} />
+                        Asistir al evento (Gratis)
+                      </>
+                    )}
+                  </button>
 
-                {/* Total attendees count */}
-                <div style={{ textAlign: 'center', fontSize: 12.5, color: '#64748b' }}>
-                  {totalAsistentes > 0 ? (
-                    <>
-                      👥 <strong>{totalAsistentes}</strong>{' '}
-                      {totalAsistentes === 1 ? 'persona asistirá' : 'personas asistirán'}
-                    </>
-                  ) : (
-                    'Sé el primero de la comunidad en unirte.'
-                  )}
+                  {/* Google Calendar Link */}
+                  <a
+                    href={generarGoogleCalendarUrl(evento)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '10px 16px',
+                      borderRadius: 12,
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      color: '#475569',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      transition: 'background-color 0.15s ease',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+                  >
+                    <CalendarIcon size={15} color="#20bd88" />
+                    Agregar a Google Calendar
+                  </a>
+
+                  {/* Total attendees count */}
+                  <div style={{ textAlign: 'center', fontSize: 12.5, color: '#64748b' }}>
+                    {totalAsistentes > 0 ? (
+                      <>
+                        👥 <strong>{totalAsistentes}</strong>{' '}
+                        {totalAsistentes === 1 ? 'persona asistirá' : 'personas asistirán'}
+                      </>
+                    ) : (
+                      'Sé el primero de la comunidad en unirte.'
+                    )}
+                  </div>
                 </div>
               </div>
+
             </div>
           </section>
 
@@ -758,7 +762,231 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                   </div>
                 </div>
 
-                {/* 3. Accesibilidad e Inclusión */}
+                {/* 3. Organizado por (Anfitrión del evento) */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    borderRadius: 20,
+                    padding: '24px 28px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 18,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      background: '#e8f8f2',
+                      color: '#20bd88',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 800,
+                      fontSize: 20,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      border: '2px solid #a7f3d0',
+                    }}
+                  >
+                    {organizadorAvatar ? (
+                      <img
+                        src={organizadorAvatar}
+                        alt={organizadorNombre}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      organizadorNombre.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Anfitrión del evento
+                    </div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--fg1, #0f172a)', marginTop: 2 }}>
+                      {organizadorNombre}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+                      Miembro activo de la comunidad inclusiva de Raíces
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 20,
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: '#475569',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Users size={14} color="#20bd88" />
+                    Comunidad
+                  </span>
+                </div>
+
+                {/* 4. Compartir este evento (con enlace copiable y redes) */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    borderRadius: 20,
+                    padding: '24px 28px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <h3
+                      style={{
+                        fontFamily: 'var(--font-display, inherit)',
+                        fontSize: 18,
+                        fontWeight: 800,
+                        color: 'var(--fg1, #0f172a)',
+                        margin: 0,
+                      }}
+                    >
+                      Compartir este evento
+                    </h3>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>
+                      Invita a tus amigos y comunidad a participar
+                    </span>
+                  </div>
+
+                  {/* Copyable Link Input Bar */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 12,
+                      padding: '6px 8px 6px 14px',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <input
+                      type="text"
+                      readOnly
+                      value={typeof window !== 'undefined' ? window.location.href : ''}
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: 13.5,
+                        color: '#475569',
+                        fontFamily: 'inherit',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: copiado ? '#20bd88' : '#0f172a',
+                        color: '#ffffff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'background-color 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {copiado ? <Check size={14} /> : <Copy size={14} />}
+                      {copiado ? '¡Copiado!' : 'Copiar enlace'}
+                    </button>
+                  </div>
+
+                  {/* Social Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleShareWhatsApp}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 18px',
+                        borderRadius: 12,
+                        background: '#25D366',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13.5,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(37, 211, 102, 0.3)',
+                        transition: 'transform 0.15s ease',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                    >
+                      💬 WhatsApp
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleShareFacebook}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 18px',
+                        borderRadius: 12,
+                        background: '#1877F2',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13.5,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(24, 119, 242, 0.3)',
+                        transition: 'transform 0.15s ease',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                    >
+                      f Facebook
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleShareTwitter}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 18px',
+                        borderRadius: 12,
+                        background: '#0f172a',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13.5,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(15, 23, 42, 0.3)',
+                        transition: 'transform 0.15s ease',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                    >
+                      𝕏 Compartir
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. Accesibilidad e Inclusión */}
                 {evento.etiquetasAccesibilidad && evento.etiquetasAccesibilidad.length > 0 && (
                   <div
                     style={{
@@ -981,229 +1209,6 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                     </div>
                   )}
                 </div>
-
-                {/* 2. Etiquetas */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    borderRadius: 20,
-                    padding: 24,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontFamily: 'var(--font-display, inherit)',
-                      fontSize: 18,
-                      fontWeight: 800,
-                      color: 'var(--fg1, #0f172a)',
-                      margin: '0 0 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Tag size={16} color="#20bd88" /> Etiquetas
-                  </h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        borderRadius: 10,
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        color: '#475569',
-                      }}
-                    >
-                      #{categoriaLabel.replace(/\s+/g, '')}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        borderRadius: 10,
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        color: '#475569',
-                      }}
-                    >
-                      #{evento.modalidad ?? 'Presencial'}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        borderRadius: 10,
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        color: '#475569',
-                      }}
-                    >
-                      #Raíces
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        borderRadius: 10,
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        color: '#475569',
-                      }}
-                    >
-                      #ComunidadInclusiva
-                    </span>
-                    {evento.ciudad && (
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                          padding: '6px 12px',
-                          borderRadius: 10,
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          color: '#475569',
-                        }}
-                      >
-                        #{evento.ciudad}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Compartir con amigos */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    borderRadius: 20,
-                    padding: 24,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontFamily: 'var(--font-display, inherit)',
-                      fontSize: 18,
-                      fontWeight: 800,
-                      color: 'var(--fg1, #0f172a)',
-                      margin: '0 0 14px',
-                    }}
-                  >
-                    Compartir con amigos
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    {/* WhatsApp */}
-                    <button
-                      type="button"
-                      onClick={handleShareWhatsApp}
-                      title="Compartir por WhatsApp"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        background: '#25D366',
-                        color: '#ffffff',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 3px 8px rgba(37, 211, 102, 0.35)',
-                        transition: 'transform 0.15s ease',
-                        fontSize: 16,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      💬
-                    </button>
-
-                    {/* Facebook */}
-                    <button
-                      type="button"
-                      onClick={handleShareFacebook}
-                      title="Compartir en Facebook"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        background: '#1877F2',
-                        color: '#ffffff',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 3px 8px rgba(24, 119, 242, 0.35)',
-                        transition: 'transform 0.15s ease',
-                        fontSize: 16,
-                        fontWeight: 800,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      f
-                    </button>
-
-                    {/* Twitter / X */}
-                    <button
-                      type="button"
-                      onClick={handleShareTwitter}
-                      title="Compartir en X (Twitter)"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        background: '#0f172a',
-                        color: '#ffffff',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 3px 8px rgba(15, 23, 42, 0.35)',
-                        transition: 'transform 0.15s ease',
-                        fontWeight: 900,
-                        fontSize: 16,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      𝕏
-                    </button>
-
-                    {/* Copiar enlace */}
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      title="Copiar enlace"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        background: copiado ? '#20bd88' : '#f1f5f9',
-                        color: copiado ? '#ffffff' : '#0f172a',
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      {copiado ? <Check size={18} /> : <Copy size={18} />}
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </main>
@@ -1219,8 +1224,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
             position: 'fixed',
             inset: 0,
             zIndex: 80000,
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1231,7 +1235,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
           <div
             style={{
               background: '#ffffff',
-              borderRadius: 20,
+              borderRadius: 16,
               padding: '28px 24px',
               maxWidth: 440,
               width: '100%',

@@ -66,8 +66,7 @@ export const ModeracionFeedbackModal: React.FC<ModeracionFeedbackModalProps> = (
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        background: 'var(--modal-backdrop, rgba(15, 23, 42, 0.65))',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(0, 0, 0, 0.55)',
         animation: 'fadeIn 0.2s ease-out',
       }}
     >
