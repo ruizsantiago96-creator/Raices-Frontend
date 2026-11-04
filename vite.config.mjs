@@ -12,6 +12,7 @@ export default defineConfig({
       '@features': path.resolve(__dirname, 'src/features'),
       '@styles': path.resolve(__dirname, 'src/styles'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
     // El worker de maplibre-gl v6 puede fallar durante el pre-bundling de deps.
@@ -46,7 +47,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    strictPort: true,
+    strictPort: false,
     proxy: {
       '/api': {
         target: 'https://raices-backend-219843566314.us-central1.run.app',

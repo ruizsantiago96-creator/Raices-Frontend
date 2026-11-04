@@ -10,7 +10,7 @@ const TYPE_META: Record<string, { color: string; icon: (props?: { s?: number }) 
   warning: { color: '#D4944C', icon: Icons.shieldAlert, label: 'Advertencia' },
   error: { color: '#D46A6A', icon: Icons.x, label: 'Error' },
   publicacion_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.check, label: 'Publicación Aprobada' },
-  publicacion_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.shieldAlert, label: 'Moderación' },
+  publicacion_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.flag, label: 'Moderación' },
   identidad_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.shieldCheck, label: 'Identidad Verificada' },
   identidad_rechazada: { color: 'var(--color-coral, #FF4D68)', icon: Icons.shieldAlert, label: 'Identidad' },
   institucion_aprobada: { color: 'var(--color-matcha, #A8B86B)', icon: Icons.building, label: 'Institución Aprobada' },

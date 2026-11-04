@@ -38,20 +38,56 @@ export interface AlertsTabProps {
   onNavigate?: (tab: string) => void
 }
 
-export default function AlertsTab({ alerts: initialAlerts }: AlertsTabProps) {
+export default function AlertsTab({ alerts: initialAlerts, onNavigate }: AlertsTabProps) {
   const [filter, setFilter] = useState('all')
   const { data: freshAlerts } = useAdminAlerts()
   const alerts = freshAlerts ?? initialAlerts ?? []
 
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter)
+  const filtered = filter === 'all'
+    ? alerts
+    : alerts.filter(a => {
+        const s = a.severity ?? a.severidad
+        if (filter === 'alta') return s === 'alta' || s === 'critica' || s === 'critical' || s === 'high'
+        if (filter === 'media') return s === 'media' || s === 'medium'
+        return s === 'info'
+      })
+
+  const handleAction = (tipoEntidad?: string) => {
+    if (!onNavigate) return
+    if (tipoEntidad === 'institutions' || tipoEntidad === 'institution' || tipoEntidad === 'institutions_pending') {
+      onNavigate('institutions')
+    } else if (tipoEntidad === 'reviews') {
+      onNavigate('reviews')
+    } else if (tipoEntidad === 'users') {
+      onNavigate('users')
+    } else if (tipoEntidad === 'intelligence') {
+      onNavigate('intelligence')
+    } else if (tipoEntidad === 'settings') {
+      onNavigate('settings')
+    } else {
+      onNavigate('overview')
+    }
+  }
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         {[{ k: 'all', l: `Todas (${alerts.length})` }, { k: 'alta', l: 'Alta' }, { k: 'media', l: 'Media' }, { k: 'info', l: 'Info' }].map(f => (
-          <button key={f.k} onClick={() => setFilter(f.k)}
-            style={{ padding: '7px 16px', borderRadius: 10, border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-              background: filter === f.k ? (f.k === 'alta' ? 'var(--color-error)' : f.k === 'media' ? 'var(--color-empleo)' : 'var(--primary)') : 'var(--bg-surface)', color: filter === f.k ? '#fff' : 'var(--fg2)' }}>
+          <button
+            key={f.k}
+            onClick={() => setFilter(f.k)}
+            style={{
+              padding: '7px 16px',
+              borderRadius: 10,
+              border: '1px solid var(--border-color)',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'var(--font-body)',
+              background: filter === f.k ? (f.k === 'alta' ? 'var(--color-error)' : f.k === 'media' ? 'var(--color-empleo)' : 'var(--primary)') : 'var(--bg-surface)',
+              color: filter === f.k ? '#fff' : 'var(--fg2)',
+            }}
+          >
             {f.l}
           </button>
         ))}
@@ -62,16 +98,47 @@ export default function AlertsTab({ alerts: initialAlerts }: AlertsTabProps) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map(a => {
-            const meta = SEVERITY_META[a.severity] ?? SEVERITY_META.info
+            const sevKey = (a.severity === 'alta' || a.severidad === 'critica' || a.severidad === 'alta')
+              ? 'alta'
+              : (a.severity === 'media' || a.severidad === 'media')
+                ? 'media'
+                : 'info'
+            const meta = SEVERITY_META[sevKey] ?? SEVERITY_META.info
+            const title = a.titulo ?? a.title ?? 'Alerta del sistema'
+            const message = a.descripcion ?? a.mensaje ?? a.message ?? ''
+            const rawTime = a.fechaCreacion ?? a.created_at
+            const timeFormatted = rawTime ? formatTimeAgo(rawTime) : 'Detectada en tiempo real'
+
             return (
               <Card key={a.id} style={{ padding: 18, display: 'flex', gap: 16, alignItems: 'flex-start', borderLeft: `4px solid ${meta.color}` }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in oklch, ${meta.color} 14%, transparent)`, color: meta.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {meta.icon({ s: 20 })}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg1)', marginBottom: 4 }}>{a.title}</div>
-                  <div style={{ fontSize: 13, color: 'var(--fg2)', lineHeight: 1.5 }}>{a.message}</div>
-                  <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 8 }}>{formatTimeAgo(a.created_at)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 4 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: 'var(--fg2)', lineHeight: 1.5 }}>{message}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: 'var(--fg3)' }}>{timeFormatted}</span>
+                    {a.accion && (
+                      <button
+                        type="button"
+                        onClick={() => handleAction(a.tipoEntidad)}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 8,
+                          border: `1px solid ${meta.color}`,
+                          background: 'transparent',
+                          color: meta.color,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                      >
+                        {a.accion} &rarr;
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             )

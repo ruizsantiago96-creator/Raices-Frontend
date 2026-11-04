@@ -27,14 +27,43 @@ function mapUsuarioAdmin(u: RawBackendUsuarioAdmin): UsuarioAdmin {
  * Hook para listar todos los usuarios (panel admin).
  * GET /api/administracion/usuarios
  */
-export function useAdminUsers() {
-  return useQuery<UsuarioAdmin[]>({
-    queryKey: ['admin', 'users'],
-    queryFn: () => api.get('/administracion/usuarios').then(r => {
-      const res = r.data
-      const data: RawBackendUsuarioAdmin[] = Array.isArray(res) ? res : (res?.datos ?? [])
-      return data.map(mapUsuarioAdmin)
-    }),
+export interface AdminUsersQueryOptions {
+  pagina?: number
+  limite?: number
+  buscar?: string
+  ordenarPor?: string
+  direccion?: 'asc' | 'desc'
+}
+
+export interface PaginatedAdminUsers {
+  datos: UsuarioAdmin[]
+  total: number
+  pagina: number
+  limite: number
+  totalPaginas: number
+}
+
+export function useAdminUsers(params: AdminUsersQueryOptions = {}) {
+  const { pagina = 1, limite = 10, buscar, ordenarPor, direccion } = params
+  return useQuery<PaginatedAdminUsers>({
+    queryKey: ['admin', 'users', pagina, limite, buscar, ordenarPor, direccion],
+    queryFn: () => {
+      const q: Record<string, unknown> = { pagina, limite }
+      if (buscar && buscar.trim()) q.buscar = buscar.trim()
+      if (ordenarPor) q.ordenarPor = ordenarPor
+      if (direccion) q.direccion = direccion
+      return api.get('/administracion/usuarios', { params: q }).then(r => {
+        const res = r.data
+        const rawList: RawBackendUsuarioAdmin[] = Array.isArray(res) ? res : (res?.datos ?? [])
+        return {
+          datos: rawList.map(mapUsuarioAdmin),
+          total: Number(res?.total ?? rawList.length),
+          pagina: Number(res?.pagina ?? pagina),
+          limite: Number(res?.limite ?? limite),
+          totalPaginas: Number(res?.totalPaginas ?? Math.max(1, Math.ceil((res?.total ?? rawList.length) / limite))),
+        }
+      })
+    },
   })
 }
 

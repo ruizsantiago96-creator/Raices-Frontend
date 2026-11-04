@@ -69,7 +69,7 @@ export default function MainLayout() {
   const { data: adminAlerts = [] } = useAdminAlerts({ enabled: isAdmin })
   const { data: rejectedPostsData } = usePublicacionesRechazadas({}, { enabled: isAdmin })
   const totalPendingCount = pendingInsts.length
-  const criticalCount = adminAlerts.filter(a => a.severity === 'critical' || a.severity === 'high').length
+  const criticalCount = adminAlerts.filter(a => a.severity === 'alta' || a.severity === 'critical' || a.severity === 'high' || a.severidad === 'critica').length
   const pendingModeracionCount = rejectedPostsData?.total ?? 0
 
   // La entidad institución sostiene tanto el portal institucional como el de empresa

@@ -73,7 +73,7 @@ describe('Icons', () => {
     'target', 'logout', 'plus', 'edit', 'shieldAlert', 'barChart',
     'compass', 'milestone', 'heartPulse', 'bell', 'briefcase',
     'graduationCap', 'grid', 'list', 'loader', 'camera', 'sliders',
-    'chevronDown', 'eye', 'eyeOff', 'link', 'trash',
+    'chevronDown', 'eye', 'eyeOff', 'link', 'trash', 'flag',
   ]
 
   iconNames.forEach((name) => {

@@ -51,7 +51,7 @@ export default function AdminPage() {
 
       <div key={`content-${tab}`} className="animate-tab-in">
         {tab === 'overview' && <OverviewTab onNavigate={onTab} />}
-        {tab === 'intelligence' && <IntelligenceTab />}
+        {tab === 'intelligence' && <IntelligenceTab onNavigate={onTab} />}
         {tab === 'institutions' && <InstitutionsTab />}
         {tab === 'users' && <UsersTab currentUserId={user?.id} />}
         {tab === 'identities' && <IdentitiesTab />}

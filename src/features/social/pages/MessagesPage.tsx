@@ -985,37 +985,6 @@ export function DirectMessages({
 
             {/* Opciones de Ventana / Menú estilo Reddit */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--fg3)' }}>
-              {/* Botón directo Borrar Chat */}
-              <button
-                type="button"
-                onClick={handleDeleteChat}
-                disabled={deleteConversation.isPending}
-                title="Borrar chat"
-                aria-label="Borrar chat"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: deleteConversation.isPending ? 'default' : 'pointer',
-                  color: 'var(--fg3)',
-                  padding: 6,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s ease',
-                  opacity: deleteConversation.isPending ? 0.5 : 1,
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.color = 'var(--color-error)'
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.color = 'var(--fg3)'
-                  e.currentTarget.style.background = 'none'
-                }}
-              >
-                {Icons.trash({ s: 17 })}
-              </button>
 
               {/* Menú contextual de la conversación (⋮) */}
               <button
@@ -1074,47 +1043,6 @@ export function DirectMessages({
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
-                  </button>
-                  <button
-                    onClick={() => setFloatingChatMaximized(!floatingChatMaximized)}
-                    title={floatingChatMaximized ? 'Restaurar' : 'Maximizar'}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'inherit',
-                      padding: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {floatingChatMaximized ? (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                      </svg>
-                    ) : (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      </svg>
-                    )}
                   </button>
                   <button
                     onClick={() => setFloatingChatMinimized(true)}
@@ -1616,36 +1544,6 @@ export function DirectMessages({
                     style={{ display: 'none' }}
                   />
                 </label>
-
-                {/* Nota de voz */}
-                <button
-                  type="button"
-                  title="Mensaje de voz"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--fg3)',
-                    padding: 4,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" x2="12" y1="19" y2="22" />
-                  </svg>
-                </button>
               </div>
 
               {/* Botón enviar */}
@@ -1745,47 +1643,6 @@ export function DirectMessages({
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
-                  </button>
-                  <button
-                    onClick={() => setFloatingChatMaximized(!floatingChatMaximized)}
-                    title={floatingChatMaximized ? 'Restaurar' : 'Maximizar'}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'inherit',
-                      padding: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {floatingChatMaximized ? (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                      </svg>
-                    ) : (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      </svg>
-                    )}
                   </button>
                   <button
                     onClick={() => setFloatingChatMinimized(true)}

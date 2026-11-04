@@ -99,7 +99,20 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
 }
 
 /* ════════════════════ TAB: Usuarios ════════════════════ */
-const USER_PAGE_SIZE = 8
+const USER_PAGE_SIZE = 20
+
+function getPaginationRange(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total]
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total]
+}
 
 export interface UsersTabProps {
   currentUserId?: string | number
@@ -107,14 +120,40 @@ export interface UsersTabProps {
 
 export default function UsersTab({ currentUserId }: UsersTabProps) {
   const { addToast } = useUiStore()
-  const { data: users = [], isLoading } = useAdminUsers()
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const effectiveSearch = debouncedSearch.trim() || (roleFilter !== 'all' ? roleFilter : undefined)
+
+  const { data: usersData, isLoading } = useAdminUsers({
+    pagina: page,
+    limite: USER_PAGE_SIZE,
+    buscar: effectiveSearch,
+  })
+
+  const rawUsers = usersData?.datos ?? []
+  const totalUsers = usersData?.total ?? 0
+  const totalPages = usersData?.totalPaginas ?? 1
+  const safePage = Math.min(page, totalPages)
+
+  const displayedUsers: UsuarioAdmin[] = roleFilter === 'all' || !debouncedSearch.trim()
+    ? rawUsers
+    : rawUsers.filter((u: UsuarioAdmin) => u.role === roleFilter)
+
   const toggleActive = useToggleUserActive()
   const changeRole = useChangeUserRole()
   const deleteUser = useDeleteUser()
   const updateUser = useUpdateUserAdmin()
-  const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('all')
-  const [page, setPage] = useState(1)
   const [actionMenuId, setActionMenuId] = useState<string | number | null>(null)
   const [confirm, setConfirm] = useState<UsuarioAdmin | null>(null)
   const [roleConfirm, setRoleConfirm] = useState<UsuarioAdmin | null>(null)
@@ -135,15 +174,6 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
     if (actionMenuId) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [actionMenuId])
-
-  const filtered = users.filter(u => {
-    const matchSearch = !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
-    const matchRole = roleFilter === 'all' || u.role === roleFilter
-    return matchSearch && matchRole
-  })
-  const totalPages = Math.max(1, Math.ceil(filtered.length / USER_PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const paged = filtered.slice((safePage - 1) * USER_PAGE_SIZE, safePage * USER_PAGE_SIZE)
 
   const onToggle = (u: UsuarioAdmin) => toggleActive.mutate(u.id, {
     onSuccess: (d) => { addToast(d.is_active ? 'Usuario activado' : 'Usuario desactivado', 'success'); setActionMenuId(null) },
@@ -251,7 +281,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
         </div>
         <CustomSelect
           value={roleFilter}
-          onChange={val => setRoleFilter(val)}
+          onChange={val => { setRoleFilter(val); setPage(1) }}
           minWidth={170}
           options={[
             { value: 'all', label: USERS_UI.FILTER_ALL },
@@ -266,7 +296,7 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
 
       {isLoading ? (
         <Card><Skeleton h={40} style={{ marginBottom: 12 }} /><Skeleton h={40} style={{ marginBottom: 12 }} /><Skeleton h={40} /></Card>
-      ) : filtered.length === 0 ? (
+      ) : displayedUsers.length === 0 ? (
         <EmptyState icon={Icons.users({ s: 32 })} title={USERS_UI.EMPTY_STATE} />
       ) : (
         <>
@@ -280,11 +310,11 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((u, i) => {
+                {displayedUsers.map((u: UsuarioAdmin, i: number) => {
                   const isSelf = String(u.id) === String(currentUserId)
                   const meta = ROLE_META[u.role] ?? ROLE_META.user
                   return (
-                    <tr key={u.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}
+                    <tr key={u.id} style={{ borderBottom: i < displayedUsers.length - 1 ? '1px solid var(--border-color)' : 'none', transition: 'background 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.backgroundColor = 'color-mix(in oklch, var(--primary) 2%, var(--bg-surface))'}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                       <td style={{ padding: '14px 16px' }}>
@@ -355,22 +385,74 @@ export default function UsersTab({ currentUserId }: UsersTabProps) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 18 }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === 1 ? 'transparent' : 'var(--bg-surface)', color: safePage === 1 ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
-                Anterior
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => setPage(p)}
-                  style={{ width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-body)',
-                    background: p === safePage ? 'var(--primary)' : 'transparent', color: p === safePage ? '#fff' : 'var(--fg3)', transition: 'all 0.15s' }}>
-                  {p}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginTop: 20 }}>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border-color)',
+                    background: safePage === 1 ? 'transparent' : 'var(--bg-surface)',
+                    color: safePage === 1 ? 'var(--fg3)' : 'var(--fg2)',
+                    cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  Anterior
                 </button>
-              ))}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-color)', background: safePage === totalPages ? 'transparent' : 'var(--bg-surface)', color: safePage === totalPages ? 'var(--fg3)' : 'var(--fg2)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}>
-                Siguiente
-              </button>
+                {getPaginationRange(safePage, totalPages).map((item, idx) => {
+                  if (item === '...') {
+                    return (
+                      <span key={`ellipsis-${idx}`} style={{ padding: '0 6px', color: 'var(--fg3)', fontSize: 13, userSelect: 'none' }}>
+                        …
+                      </span>
+                    )
+                  }
+                  const pageNum = Number(item)
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-body)',
+                        background: pageNum === safePage ? 'var(--primary)' : 'transparent',
+                        color: pageNum === safePage ? '#fff' : 'var(--fg3)',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border-color)',
+                    background: safePage === totalPages ? 'transparent' : 'var(--bg-surface)',
+                    color: safePage === totalPages ? 'var(--fg3)' : 'var(--fg2)',
+                    cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  Siguiente
+                </button>
             </div>
           )}
         </>

@@ -1113,7 +1113,15 @@ function GroupDetailSection({
 }
 
 /* ─── Conectemos Gallery View ────────────────────────────── */
-function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUserId?: string | number; currentUserName?: string }) {
+function ConectemosGalleryView({
+  currentUserId,
+  currentUserName,
+  onNavigateToCreate,
+}: {
+  currentUserId?: string | number
+  currentUserName?: string
+  onNavigateToCreate?: (categoria?: string) => void
+}) {
   const [categoria, setCategoria] = useState<string | null>(null)
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar, setBuscar] = useState('')
@@ -1195,8 +1203,35 @@ function ConectemosGalleryView({ currentUserId, currentUserName }: { currentUser
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 48, textAlign: 'center' }}>
-          <p style={{ color: 'var(--fg3)', margin: 0 }}>No hay creaciones disponibles en esta categoría.</p>
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: 4 }}>
+            {categoria === 'arte' ? Icons.palette({ s: 28 }) : categoria === 'historia' ? Icons.book({ s: 28 }) : Icons.layers({ s: 28 })}
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+            {categoria === 'arte'
+              ? 'Aún no hay obras de Arte en la galería'
+              : categoria === 'historia'
+              ? 'Aún no hay historias o relatos compartidos'
+              : 'No hay creaciones disponibles en esta categoría'}
+          </h3>
+          <p style={{ color: 'var(--fg3)', margin: 0, fontSize: 14, maxWidth: 460, lineHeight: 1.5 }}>
+            {categoria === 'arte'
+              ? 'Sé el primero en compartir un dibujo, pintura o expresión artística con la comunidad.'
+              : categoria === 'historia'
+              ? 'Comparte una vivencia, anécdota o experiencia inspiradora para la comunidad.'
+              : 'Las creaciones con fotos, dibujos o videos compartidas por la comunidad aparecerán aquí.'}
+          </p>
+          {onNavigateToCreate && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => onNavigateToCreate(categoria ?? 'general')}
+              style={{ marginTop: 8, padding: '10px 22px', borderRadius: 'var(--radius-pill)', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+            >
+              {Icons.plus({ s: 16 })}
+              {categoria === 'arte' ? 'Compartir obra de arte' : categoria === 'historia' ? 'Compartir una historia' : 'Publicar una creación'}
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
@@ -1531,7 +1566,14 @@ export default function SocialPage() {
             />
           )
         ) : mainTab === 'galeria' ? (
-          <ConectemosGalleryView currentUserId={user?.id} currentUserName={user?.full_name} />
+          <ConectemosGalleryView
+            currentUserId={user?.id}
+            currentUserName={user?.full_name}
+            onNavigateToCreate={(cat) => {
+              if (cat) setPostCategory(cat)
+              setMainTab('comunidad')
+            }}
+          />
         ) : mainTab === 'eventos' ? (
           <EventsDiscovery />
         ) : mainTab === 'acerca' ? (
@@ -1625,6 +1667,21 @@ export default function SocialPage() {
                             />
                           </div>
                         )}
+
+                        {/* Creative Category Selection */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--fg3)', fontWeight: 600 }}>Categoría:</span>
+                          <CustomSelect
+                            options={[
+                              { value: 'general', label: 'General' },
+                              { value: 'arte', label: '🎨 Arte / Dibujo' },
+                              { value: 'historia', label: '📖 Historia / Vivencia' },
+                            ]}
+                            value={postCategory}
+                            onChange={val => setPostCategory(val || 'general')}
+                            minWidth={160}
+                          />
+                        </div>
 
                         {/* Exclusive Parents Checkbox */}
                         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--fg1)', cursor: 'pointer', fontWeight: 600, userSelect: 'none' }}>
