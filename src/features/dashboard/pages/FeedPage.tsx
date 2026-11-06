@@ -819,7 +819,7 @@ export default function FeedPage() {
             background: 'linear-gradient(135deg, rgba(34,155,88,0.08) 0%, rgba(7,59,76,0.05) 100%)',
             border: '1px solid rgba(34,155,88,0.2)',
             borderRadius: 16, padding: '16px 20px', marginBottom: 20,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap'
           }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -854,6 +854,7 @@ export default function FeedPage() {
           <div className="animate-fade-in-up" style={{
             display: 'inline-flex', background: 'var(--bg-cool)',
             borderRadius: 10, padding: 3, gap: 2, marginBottom: 20,
+            maxWidth: '100%', overflowX: 'auto', scrollbarWidth: 'none',
           }}>
             {SORT_TABS.map(tab => (
               <button
@@ -1028,8 +1029,8 @@ export default function FeedPage() {
               boxShadow: '0 2px 10px rgba(34,155,88,0.08)',
             }}
           >
-            <div style={{ flex: 1, minWidth: 260 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                 <span
                   style={{
                     fontSize: 11,

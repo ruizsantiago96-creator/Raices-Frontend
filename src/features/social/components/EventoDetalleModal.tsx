@@ -194,8 +194,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
         width: '100vw',
         height: '100vh',
         zIndex: 60000,
-        background: '#09151e',
-        color: '#0f172a',
+        background: 'var(--bg-warm, #09151e)',
+        color: 'var(--fg1)',
         overflowY: 'auto',
         overflowX: 'hidden',
         fontFamily: 'var(--font-body, system-ui, sans-serif)',
@@ -209,9 +209,9 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          background: '#09151e',
+          background: 'var(--bg-surface, #09151e)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '12px 24px',
+          padding: '10px 16px',
           width: '100%',
           boxSizing: 'border-box',
         }}
@@ -223,12 +223,14 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 16,
+            gap: 10,
           }}
         >
           <button
             type="button"
             onClick={onClose}
+            aria-label="Volver a eventos"
+            title="Volver a eventos"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -236,11 +238,14 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
               background: 'rgba(255, 255, 255, 0.12)',
               border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 24,
-              padding: '8px 20px',
+              padding: '8px 16px',
+              height: 38,
               fontSize: 13.5,
               fontWeight: 700,
               color: '#ffffff',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={e => {
@@ -252,27 +257,34 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
               e.currentTarget.style.transform = 'translateX(0)'
             }}
           >
-            <ArrowLeft size={16} /> Volver a eventos
+            <ArrowLeft size={16} />
+            <span className="evento-btn-text">Volver a eventos</span>
+            <span className="evento-btn-short-text">Volver</span>
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             {esCreadorOAdmin && (
               <button
                 type="button"
                 onClick={handleEliminarEvento}
                 disabled={eliminarEventoMutation.isPending}
+                aria-label="Eliminar evento"
+                title="Eliminar evento"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: 6,
                   background: 'rgba(239, 68, 68, 0.16)',
                   border: '1px solid rgba(239, 68, 68, 0.45)',
                   borderRadius: 24,
-                  padding: '8px 16px',
+                  padding: '8px 14px',
+                  height: 38,
                   fontSize: 13,
                   fontWeight: 700,
                   color: '#fca5a5',
                   cursor: eliminarEventoMutation.isPending ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={e => {
@@ -285,40 +297,46 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 }}
               >
                 {eliminarEventoMutation.isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 size={15} className="animate-spin" />
                 ) : (
-                  <Trash2 size={14} />
+                  <Trash2 size={15} />
                 )}
-                Eliminar evento
+                <span className="evento-btn-text">Eliminar evento</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={handleCopyLink}
+              aria-label={copiado ? 'Enlace copiado' : 'Compartir evento'}
+              title={copiado ? 'Enlace copiado' : 'Compartir evento'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 6,
                 background: copiado ? '#20bd88' : 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.18)',
                 borderRadius: 24,
-                padding: '8px 16px',
+                padding: '8px 14px',
+                height: 38,
                 fontSize: 13,
                 fontWeight: 600,
                 color: '#ffffff',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
                 transition: 'all 0.15s ease',
               }}
             >
-              {copiado ? <Check size={14} /> : <Copy size={14} />}
-              {copiado ? 'Enlace copiado' : 'Compartir'}
+              {copiado ? <Check size={15} /> : <Copy size={15} />}
+              <span className="evento-btn-text">{copiado ? 'Enlace copiado' : 'Compartir'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
               aria-label="Cerrar vista completa"
+              title="Cerrar"
               style={{
                 width: 38,
                 height: 38,
@@ -330,6 +348,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
+                flexShrink: 0,
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)')}
@@ -401,7 +420,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
               }}
             >
               {/* Left Column: Category, Title, Organizer & Venue summary */}
-              <div style={{ flex: '1 1 540px', minWidth: 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ flex: '1 1 280px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Badges */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <span
@@ -431,7 +450,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                   >
                     {evento.modalidad ?? 'Presencial'}
                   </span>
-                  {evento.cupoMaximo && (
+                  {Boolean(evento.cupoMaximo && Number(evento.cupoMaximo) > 0) && (
                     <span
                       style={{
                         padding: '5px 12px',
@@ -510,36 +529,37 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
               {/* Right Floating Column: Ticket Card */}
               <div
                 style={{
-                  width: 360,
+                  width: 'min(360px, 100%)',
                   maxWidth: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 16,
-                  flexShrink: 0,
+                  flexShrink: 1,
                   boxSizing: 'border-box',
                 }}
               >
                 <div
                   style={{
-                    background: '#ffffff',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 22,
-                    padding: 26,
+                    padding: 24,
                     boxShadow: '0 20px 48px rgba(0, 0, 0, 0.35)',
-                    color: '#0f172a',
+                    color: 'var(--fg1)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 16,
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Fecha y Hora
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--fg1)', marginTop: 4 }}>
                       {formatearFechaLarga(evento.fechaInicio)}
                     </div>
                     {evento.fechaFin && (
-                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+                      <div style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 2 }}>
                         Hasta: {formatearFechaLarga(evento.fechaFin)}
                       </div>
                     )}
@@ -551,11 +571,11 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                       alignItems: 'baseline',
                       justifyContent: 'space-between',
                       padding: '12px 0',
-                      borderTop: '1px solid #f1f5f9',
-                      borderBottom: '1px solid #f1f5f9',
+                      borderTop: '1px solid var(--border-color)',
+                      borderBottom: '1px solid var(--border-color)',
                     }}
                   >
-                    <span style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>Entrada:</span>
+                    <span style={{ fontSize: 14, color: 'var(--fg2)', fontWeight: 600 }}>Entrada:</span>
                     <span style={{ fontSize: 22, fontWeight: 900, color: '#20bd88' }}>
                       Gratis
                     </span>
@@ -611,9 +631,9 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                       gap: 8,
                       padding: '10px 16px',
                       borderRadius: 12,
-                      border: '1px solid #e2e8f0',
-                      background: '#f8fafc',
-                      color: '#475569',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-cool)',
+                      color: 'var(--fg1)',
                       fontSize: 13,
                       fontWeight: 700,
                       textDecoration: 'none',
@@ -627,7 +647,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                   </a>
 
                   {/* Total attendees count */}
-                  <div style={{ textAlign: 'center', fontSize: 12.5, color: '#64748b' }}>
+                  <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--fg3)' }}>
                     {totalAsistentes > 0 ? (
                       <>
                         👥 <strong>{totalAsistentes}</strong>{' '}
@@ -650,18 +670,16 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
             style={{
               flex: 1,
               width: '100%',
-              background: 'var(--bg-warm, #fcfaf6)',
-              padding: '40px 24px 100px',
+              background: 'var(--bg-warm)',
+              padding: '32px 16px 100px',
               boxSizing: 'border-box',
             }}
           >
             <div
+              className="evento-detalle-grid"
               style={{
                 maxWidth: 1280,
                 margin: '0 auto',
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 380px',
-                gap: 36,
               }}
             >
               {/* ── Left Column: Description, Schedule, Accessibility ── */}
@@ -669,8 +687,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {/* 1. Descripción */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 20,
                     padding: '28px 32px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -681,7 +699,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                       fontFamily: 'var(--font-display, inherit)',
                       fontSize: 22,
                       fontWeight: 800,
-                      color: 'var(--fg1, #0f172a)',
+                      color: 'var(--fg1)',
                       margin: '0 0 16px',
                     }}
                   >
@@ -691,7 +709,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                     style={{
                       fontSize: 15.5,
                       lineHeight: 1.7,
-                      color: 'var(--fg2, #334155)',
+                      color: 'var(--fg2)',
                       whiteSpace: 'pre-wrap',
                     }}
                   >
@@ -703,8 +721,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {/* 2. Horario y Fechas */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 20,
                     padding: '28px 32px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -730,7 +748,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                         fontFamily: 'var(--font-display, inherit)',
                         fontSize: 20,
                         fontWeight: 800,
-                        color: 'var(--fg1, #0f172a)',
+                        color: 'var(--fg1)',
                         margin: 0,
                       }}
                     >
@@ -740,21 +758,21 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
                     <div>
-                      <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Inicio del evento:</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
+                      <div style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 600 }}>Inicio del evento:</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', marginTop: 4 }}>
                         {formatearFechaLarga(evento.fechaInicio)}
                       </div>
                     </div>
                     {evento.fechaFin && (
                       <div>
-                        <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Finalización:</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
+                        <div style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 600 }}>Finalización:</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', marginTop: 4 }}>
                           {formatearFechaLarga(evento.fechaFin)}
                         </div>
                       </div>
                     )}
                     <div>
-                      <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Modalidad:</div>
+                      <div style={{ fontSize: 13, color: 'var(--fg3)', fontWeight: 600 }}>Modalidad:</div>
                       <div style={{ fontSize: 15, fontWeight: 800, color: '#20bd88', marginTop: 4, textTransform: 'capitalize' }}>
                         {evento.modalidad ?? 'Presencial'}
                       </div>
@@ -765,8 +783,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {/* 3. Organizado por (Anfitrión del evento) */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 20,
                     padding: '24px 28px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -803,13 +821,13 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Anfitrión del evento
                     </div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--fg1, #0f172a)', marginTop: 2 }}>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--fg1)', marginTop: 2 }}>
                       {organizadorNombre}
                     </div>
-                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+                    <div style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 2 }}>
                       Miembro activo de la comunidad inclusiva de Raíces
                     </div>
                   </div>
@@ -835,8 +853,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {/* 4. Compartir este evento (con enlace copiable y redes) */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 20,
                     padding: '24px 28px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -848,13 +866,13 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                         fontFamily: 'var(--font-display, inherit)',
                         fontSize: 18,
                         fontWeight: 800,
-                        color: 'var(--fg1, #0f172a)',
+                        color: 'var(--fg1)',
                         margin: 0,
                       }}
                     >
                       Compartir este evento
                     </h3>
-                    <span style={{ fontSize: 13, color: '#64748b' }}>
+                    <span style={{ fontSize: 13, color: 'var(--fg3)' }}>
                       Invita a tus amigos y comunidad a participar
                     </span>
                   </div>
@@ -990,8 +1008,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {evento.etiquetasAccesibilidad && evento.etiquetasAccesibilidad.length > 0 && (
                   <div
                     style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color, #e2e8f0)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: 20,
                       padding: '28px 32px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -1017,7 +1035,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                           fontFamily: 'var(--font-display, inherit)',
                           fontSize: 20,
                           fontWeight: 800,
-                          color: 'var(--fg1, #0f172a)',
+                          color: 'var(--fg1)',
                           margin: 0,
                         }}
                       >
@@ -1025,7 +1043,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                       </h3>
                     </div>
 
-                    <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 16px' }}>
+                    <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '0 0 16px' }}>
                       Este evento cuenta con adaptaciones y facilidades para personas con discapacidad:
                     </p>
 
@@ -1060,8 +1078,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                 {/* 1. REAL GOOGLE MAPS CARD */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 20,
                     padding: 24,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -1072,7 +1090,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                       fontFamily: 'var(--font-display, inherit)',
                       fontSize: 18,
                       fontWeight: 800,
-                      color: 'var(--fg1, #0f172a)',
+                      color: 'var(--fg1)',
                       margin: '0 0 14px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1093,10 +1111,10 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
                         Evento Virtual / En Línea
                       </div>
-                      <div style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: 'var(--fg3)', marginBottom: 14 }}>
                         Acceso directo para toda la comunidad vía enlace seguro.
                       </div>
                       {evento.ubicacion?.startsWith('http') ? (
@@ -1120,7 +1138,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                           Unirse a la reunión <ExternalLink size={14} />
                         </a>
                       ) : (
-                        <div style={{ fontSize: 12.5, color: '#64748b' }}>
+                        <div style={{ fontSize: 12.5, color: 'var(--fg3)' }}>
                           El enlace se enviará al confirmar tu asistencia.
                         </div>
                       )}
@@ -1155,11 +1173,11 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
 
                           {/* Venue details below map */}
                           <div style={{ marginTop: 14 }}>
-                            <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)' }}>
                               {evento.ubicacion || evento.ciudad || 'Ubicación'}
                             </div>
                             {evento.ciudad && (
-                              <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+                              <div style={{ fontSize: 13, color: 'var(--fg3)', marginTop: 2 }}>
                                 {evento.ciudad}
                               </div>
                             )}
@@ -1175,8 +1193,8 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                                 marginTop: 12,
                                 padding: '9px 16px',
                                 borderRadius: 10,
-                                background: '#e8f8f2',
-                                color: '#0f766e',
+                                background: 'color-mix(in srgb, #20bd88 15%, transparent)',
+                                color: '#20bd88',
                                 fontSize: 13,
                                 fontWeight: 700,
                                 textDecoration: 'none',
@@ -1198,10 +1216,10 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
                           }}
                         >
                           <MapPin size={28} color="#94a3b8" style={{ margin: '0 auto 8px' }} />
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg1)' }}>
                             Ubicación por confirmar
                           </div>
-                          <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4 }}>
+                          <div style={{ fontSize: 12.5, color: 'var(--fg3)', marginTop: 4 }}>
                             El organizador especificará la dirección física pronto.
                           </div>
                         </div>
@@ -1234,7 +1252,7 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
         >
           <div
             style={{
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
               borderRadius: 16,
               padding: '28px 24px',
               maxWidth: 440,
@@ -1259,10 +1277,10 @@ export function EventoDetalleModal({ eventoId, eventoInicial, onClose }: EventoD
             >
               <Trash2 size={24} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--fg1)', margin: '0 0 8px' }}>
               ¿Eliminar este evento?
             </h3>
-            <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 24px', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: 'var(--fg3)', margin: '0 0 24px', lineHeight: 1.5 }}>
               Se removerá permanentemente el evento <strong>"{evento?.titulo || 'Evento'}"</strong> de la plataforma.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>

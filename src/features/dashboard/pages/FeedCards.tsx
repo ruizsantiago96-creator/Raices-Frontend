@@ -406,7 +406,7 @@ export function RouteRecommendationCard({ item }: { item: RouteRecommendationIte
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 240 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--fg1)', lineHeight: 1.3 }}>
             {item.titulo}
           </h3>
@@ -436,7 +436,7 @@ export function RouteRecommendationCard({ item }: { item: RouteRecommendationIte
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <TextToSpeechButton
             text={`${item.titulo}. Recomendado por tu ruta de desarrollo. ${item.pasoActualTitulo ? 'Paso actual: ' + item.pasoActualTitulo + '. ' : ''}${isInst ? (item.categoriaLabel || item.categoria || '') + ' en tu ciudad' : 'Vacante ' + (item.modalidad || '')}`}
             size="sm"
@@ -491,7 +491,7 @@ export function CommunityHighlightCard({ postCount }: { postCount?: number }) {
         marginBottom: 10,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 260, flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
         <div
           style={{
             width: 46,

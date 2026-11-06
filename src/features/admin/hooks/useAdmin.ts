@@ -391,7 +391,16 @@ export function usePalabrasProhibidas(
     queryFn: () =>
       api.get('/admin/palabras-prohibidas').then(r => {
         const d = r.data
-        return (Array.isArray(d) ? d : d?.datos ?? []) as PalabraProhibidaAdmin[]
+        const arr = (Array.isArray(d) ? d : d?.datos ?? []) as Record<string, unknown>[]
+        return arr.map(item => ({
+          id: String(item.id ?? ''),
+          palabra: String(item.palabra ?? ''),
+          palabraNormalizada: String(item.palabraNormalizada ?? item.palabra ?? ''),
+          categoria: String(item.categoria ?? 'insulto_local'),
+          creadoPor: String(item.creadoPor ?? ''),
+          fechaCreacion: String(item.fechaCreacion ?? ''),
+          activa: item.activa !== false,
+        })) as PalabraProhibidaAdmin[]
       }),
     staleTime: 1000 * 60 * 2,
     enabled: isAdmin && callerEnabled !== false,

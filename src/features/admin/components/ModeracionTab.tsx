@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
   usePublicacionesRechazadas,
   useModerarPublicacion,
@@ -52,7 +53,13 @@ function formatDate(iso: string) {
 export default function ModeracionTab() {
   const [seccion, setSeccion] = useState<'cola' | 'palabras'>('cola')
   const [pagina, setPagina] = useState(1)
-  const { data, isLoading, isError, refetch } = usePublicacionesRechazadas({ pagina, limite: 15 })
+  const {
+    data,
+    isLoading,
+    isFetching: isFetchingPosts,
+    isError,
+    refetch,
+  } = usePublicacionesRechazadas({ pagina, limite: 15 })
   const moderar = useModerarPublicacion()
   const { addToast } = useUiStore()
 
@@ -60,9 +67,28 @@ export default function ModeracionTab() {
   const {
     data: palabras = [],
     isLoading: isLoadingPalabras,
+    isFetching: isFetchingPalabras,
     isError: isErrorPalabras,
     refetch: refetchPalabras,
   } = usePalabrasProhibidas()
+
+  const handleRefetchPosts = async () => {
+    try {
+      await refetch()
+      addToast('Cola de moderación actualizada', 'success')
+    } catch {
+      addToast('Error al actualizar cola de moderación', 'error')
+    }
+  }
+
+  const handleRefetchPalabras = async () => {
+    try {
+      await refetchPalabras()
+      addToast('Diccionario de moderación actualizado', 'success')
+    } catch {
+      addToast('Error al actualizar diccionario', 'error')
+    }
+  }
   const crearPalabra = useCrearPalabraProhibida()
   const eliminarPalabra = useEliminarPalabraProhibida()
 
@@ -89,13 +115,16 @@ export default function ModeracionTab() {
   const palabrasFiltradas = useMemo(() => {
     return palabras.filter((p) => {
       const q = busquedaPalabra.trim().toLowerCase()
+      const palabraStr = (p?.palabra || '').toLowerCase()
+      const palabraNorm = (p?.palabraNormalizada || p?.palabra || '').toLowerCase()
       const coincideTexto =
         !q ||
-        p.palabra.toLowerCase().includes(q) ||
-        p.palabraNormalizada.toLowerCase().includes(q)
+        palabraStr.includes(q) ||
+        palabraNorm.includes(q)
+      const cat = (p?.categoria || '').toLowerCase()
       const coincideCat =
         filtroCategoria === 'todas' ||
-        p.categoria.toLowerCase() === filtroCategoria.toLowerCase()
+        cat === filtroCategoria.toLowerCase()
       return coincideTexto && coincideCat
     })
   }, [palabras, busquedaPalabra, filtroCategoria])
@@ -300,8 +329,9 @@ export default function ModeracionTab() {
                 {total} {total === 1 ? 'pendiente' : 'pendientes'}
               </span>
               <button
-                onClick={() => refetch()}
-                disabled={isLoading}
+                type="button"
+                onClick={handleRefetchPosts}
+                disabled={isLoading || isFetchingPosts}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -313,10 +343,20 @@ export default function ModeracionTab() {
                   color: 'var(--fg2)',
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: isLoading || isFetchingPosts ? 'not-allowed' : 'pointer',
+                  opacity: isLoading || isFetchingPosts ? 0.7 : 1,
+                  transition: 'all 0.2s ease',
                 }}
               >
-                {Icons.refresh({ s: 15 })} Actualizar
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    animation: (isLoading || isFetchingPosts) ? 'spin 1s linear infinite' : 'none',
+                  }}
+                >
+                  {Icons.refresh({ s: 15 })}
+                </span>{' '}
+                {isLoading || isFetchingPosts ? 'Actualizando...' : 'Actualizar'}
               </button>
             </div>
           </div>
@@ -740,8 +780,9 @@ export default function ModeracionTab() {
                 {Icons.plus({ s: 16 })} Agregar palabra
               </button>
               <button
-                onClick={() => refetchPalabras()}
-                disabled={isLoadingPalabras}
+                type="button"
+                onClick={handleRefetchPalabras}
+                disabled={isLoadingPalabras || isFetchingPalabras}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -753,10 +794,20 @@ export default function ModeracionTab() {
                   color: 'var(--fg2)',
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: isLoadingPalabras || isFetchingPalabras ? 'not-allowed' : 'pointer',
+                  opacity: isLoadingPalabras || isFetchingPalabras ? 0.7 : 1,
+                  transition: 'all 0.2s ease',
                 }}
               >
-                {Icons.refresh({ s: 15 })} Actualizar
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    animation: (isLoadingPalabras || isFetchingPalabras) ? 'spin 1s linear infinite' : 'none',
+                  }}
+                >
+                  {Icons.refresh({ s: 15 })}
+                </span>{' '}
+                {isLoadingPalabras || isFetchingPalabras ? 'Actualizando...' : 'Actualizar'}
               </button>
             </div>
           </div>
@@ -966,7 +1017,7 @@ export default function ModeracionTab() {
                           border: '1px solid var(--border-color)',
                         }}
                       >
-                        {item.palabraNormalizada}
+                        {item.palabraNormalizada || item.palabra}
                       </code>
                     </div>
 
@@ -1033,10 +1084,11 @@ export default function ModeracionTab() {
       {/* ═══════════════════════════════════════════════════════════════════
           MODAL: AGREGAR PALABRA PROHIBIDA
           ═══════════════════════════════════════════════════════════════════ */}
-      {modalAgregarPalabra && (
+      {modalAgregarPalabra && createPortal(
         <div
           role="dialog"
           aria-modal="true"
+          onClick={() => setModalAgregarPalabra(false)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1050,6 +1102,7 @@ export default function ModeracionTab() {
           }}
         >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
               maxWidth: 480,
@@ -1217,16 +1270,18 @@ export default function ModeracionTab() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           MODAL: CONFIRMAR ELIMINACIÓN DE PALABRA
           ═══════════════════════════════════════════════════════════════════ */}
-      {palabraAEliminar && (
+      {palabraAEliminar && createPortal(
         <div
           role="dialog"
           aria-modal="true"
+          onClick={() => setPalabraAEliminar(null)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1240,6 +1295,7 @@ export default function ModeracionTab() {
           }}
         >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
               maxWidth: 440,
@@ -1296,16 +1352,18 @@ export default function ModeracionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           MODAL: NOTA DE RESOLUCIÓN PARA PUBLICACIONES RETENIDAS
           ═══════════════════════════════════════════════════════════════════ */}
-      {activeItem && (
+      {activeItem && createPortal(
         <div
           role="dialog"
           aria-modal="true"
+          onClick={() => setActiveItem(null)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1319,6 +1377,7 @@ export default function ModeracionTab() {
           }}
         >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
               maxWidth: 460,
@@ -1423,7 +1482,8 @@ export default function ModeracionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

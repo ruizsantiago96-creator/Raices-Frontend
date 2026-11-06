@@ -6,25 +6,31 @@ export interface LordIconProps {
   src?: string
   name?: 'theme' | 'sun' | 'moon' | 'message' | 'chat' | 'bell' | 'notification'
   size?: number
+  color?: string
+  hoverColor?: string
   trigger?: string
   className?: string
   style?: CSSProperties
   ariaLabel?: string
 }
 
-const DEFAULT_COLOR = '#213052'
-const HOVER_COLOR = '#229b58'
+const DEFAULT_COLOR = 'currentColor'
+const HOVER_COLOR = 'var(--color-verde, #229b58)'
 
 export const LordIcon: FC<LordIconProps> = ({
   src = '',
   name,
   size = 22,
+  color,
+  hoverColor,
   className,
   style,
   ariaLabel,
 }) => {
   const [isHovered, setIsHovered] = useState(false)
-  const iconColor = isHovered ? HOVER_COLOR : DEFAULT_COLOR
+  const defaultColor = color || DEFAULT_COLOR
+  const activeHover = hoverColor || HOVER_COLOR
+  const iconColor = isHovered ? activeHover : defaultColor
 
   const iconType = name || (src.includes('sun') ? 'sun' : src.includes('moon') ? 'moon' : src.includes('chat') ? 'chat' : 'bell')
 

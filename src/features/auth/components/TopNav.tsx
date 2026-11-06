@@ -168,7 +168,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
               />
               {unreadCount > 0 && (
                 <span style={{
-                  position: 'absolute', top: 10, right: 10,
+                  position: 'absolute', top: 6, right: 6,
                   width: 8, height: 8, borderRadius: '50%',
                   background: '#ef4444',
                 }} />
@@ -280,7 +280,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                 transition: 'background-color 0.2s',
               }}
             >
-              <div style={{
+              <div className="topnav-profile-avatar" style={{
                 width: 36, height: 36, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', flexShrink: 0,
@@ -299,7 +299,7 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
               <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg2)' }} className="topnav-username">
                 {user.full_name?.split(' ')[0]}
               </span>
-              <span style={{ color: 'var(--fg3)', display: 'flex', alignItems: 'center', transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>
+              <span className="topnav-chevron" style={{ color: 'var(--fg3)', display: 'flex', alignItems: 'center', transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>
                 {Icons.chevronDown({ s: 14 })}
               </span>
             </button>

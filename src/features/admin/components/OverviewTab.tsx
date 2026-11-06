@@ -12,6 +12,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  LabelList,
 } from 'recharts'
 import { Icons } from '@shared/components/shared'
 import { useAdminStats, useAdminDetailedAnalytics, useAdminActiveUsersDetail } from '../hooks/useAdmin'
@@ -252,13 +253,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* ─── Tarjetas KPI Superiores (3 arriba y 3 abajo) ─── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 16,
-        }}
-      >
+      <div className="overview-kpi-grid">
         {statCards.map((card, idx) => (
           <div
             key={idx}
@@ -307,9 +302,9 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
       </div>
 
       {/* ─── Grid de Gráficas Modernas (Recharts) ─── */}
-      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
+      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, minWidth: 0, width: '100%' }}>
         {/* Gráfica Izquierda: Métricas por Entidad */}
-        <Card style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <Card className="analytics-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
               <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Métricas del Ecosistema</h3>
@@ -355,19 +350,47 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
             </div>
           </div>
 
-          <div style={{ width: '100%', height: 250, marginTop: 4 }}>
+          <div style={{ width: '100%', height: 270, marginTop: 4, minWidth: 0 }}>
             {isAnalyticsLoading ? (
               <div style={{ display: 'flex', alignItems: 'end', gap: 16, height: '100%', padding: '0 8px' }}>
                 {[60, 80, 45, 90, 70, 85].map((h, i) => <Skeleton key={i} h={`${h}%`} style={{ flex: 1 }} />)}
               </div>
             ) : chartView === 'bar' ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={entityBars} margin={{ top: 15, right: 15, left: -15, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                  <XAxis dataKey="name" stroke="var(--fg3)" tick={{ fill: 'var(--fg3)', fontSize: 12, fontWeight: 600 }} />
-                  <YAxis stroke="var(--fg3)" tick={{ fill: 'var(--fg3)', fontSize: 12 }} />
-                  <Tooltip content={<CustomBarTooltip />} />
-                  <Bar dataKey="valor" radius={[6, 6, 0, 0]} maxBarSize={52} isAnimationActive={false} stroke="none">
+                <BarChart data={entityBars} margin={{ top: 25, right: 15, left: -5, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.4} vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="var(--fg3)"
+                    interval={0}
+                    tickLine={false}
+                    axisLine={{ stroke: 'var(--border-color)' }}
+                    tickFormatter={(val: string) => val === 'Publicaciones' ? 'Pubs' : val === 'Instituciones' ? 'Inst.' : val}
+                    tick={{ fill: 'var(--fg2)', fontSize: 11, fontWeight: 600 }}
+                  />
+                  <YAxis
+                    stroke="var(--fg3)"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'var(--fg3)', fontSize: 11 }}
+                  />
+                  <Tooltip content={<CustomBarTooltip />} cursor={false} />
+                  <Bar
+                    dataKey="valor"
+                    name="Registros"
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={48}
+                    minPointSize={8}
+                    isAnimationActive={false}
+                    stroke="none"
+                  >
+                    <LabelList
+                      dataKey="valor"
+                      position="top"
+                      offset={6}
+                      formatter={(val: any) => (val != null && val !== '' ? Number(val).toLocaleString() : '0')}
+                      style={{ fill: 'var(--fg1)', fontSize: 11, fontWeight: 700 }}
+                    />
                     {entityBars.map((entry) => (
                       <Cell key={entry.key} fill={entry.color} stroke="none" />
                     ))}
@@ -376,7 +399,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
               </ResponsiveContainer>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyTrend} margin={{ top: 15, right: 15, left: -15, bottom: 0 }}>
+                <AreaChart data={monthlyTrend} margin={{ top: 20, right: 15, left: -5, bottom: 25 }}>
                   <defs>
                     <linearGradient id="areaUsuarios" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={COLORS.usuarios} stopOpacity={0.4} />
@@ -392,9 +415,9 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                  <XAxis dataKey="label" stroke="var(--fg3)" tick={{ fill: 'var(--fg3)', fontSize: 12, fontWeight: 600 }} />
-                  <YAxis stroke="var(--fg3)" tick={{ fill: 'var(--fg3)', fontSize: 12 }} domain={[0, 'auto']} />
-                  <Tooltip content={<CustomBarTooltip />} />
+                  <XAxis dataKey="label" stroke="var(--fg3)" tickLine={false} axisLine={{ stroke: 'var(--border-color)' }} tick={{ fill: 'var(--fg2)', fontSize: 11, fontWeight: 600 }} />
+                  <YAxis stroke="var(--fg3)" tickLine={false} axisLine={false} tick={{ fill: 'var(--fg3)', fontSize: 11 }} domain={[0, 'auto']} />
+                  <Tooltip content={<CustomBarTooltip />} cursor={{ stroke: 'var(--border-color)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <Area type="monotone" dataKey="usuarios" name="Usuarios" stroke={COLORS.usuarios} fillOpacity={1} fill="url(#areaUsuarios)" strokeWidth={2.5} isAnimationActive={false} />
                   <Area type="monotone" dataKey="publicaciones" name="Publicaciones" stroke={COLORS.publicaciones} fillOpacity={1} fill="url(#areaPublicaciones)" strokeWidth={2} isAnimationActive={false} />
                   <Area type="monotone" dataKey="instituciones" name="Instituciones" stroke={COLORS.instituciones} fillOpacity={1} fill="url(#areaInstituciones)" strokeWidth={2} isAnimationActive={false} />
@@ -415,7 +438,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
         </Card>
 
         {/* Gráfica Derecha: Distribución (Dona con Recharts) */}
-        <Card style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <Card className="analytics-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', gap: 16, minWidth: 0 }}>
           <div style={{ width: '100%', textAlign: 'left' }}>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Distribución</h3>
             <div style={{ fontSize: 12, color: 'var(--fg3)', marginTop: 2 }}>Proporción relativa del ecosistema</div>
@@ -511,7 +534,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
         </Card>
 
         {/* ─── Tarjeta Inferior: Visitantes en Vivo ─── */}
-        <Card style={{ padding: 28, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Card className="analytics-card" style={{ padding: 28, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Visitantes en Vivo</h3>
             <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
@@ -581,8 +604,8 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-                <div style={{ display: 'flex', width: '100%', maxWidth: 640, justifyContent: 'space-around', gap: 16 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '10px 14px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
+                <div className="live-stats-row" style={{ display: 'flex', width: '100%', maxWidth: 640, justifyContent: 'space-around', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 80px', padding: '10px 10px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#0D9488', fontFamily: 'var(--font-display)' }}>
                       {activeUsersDetail?.promedioDiario ?? 1}
                     </span>
@@ -591,7 +614,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '10px 14px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 80px', padding: '10px 10px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6', fontFamily: 'var(--font-display)' }}>
                       {activeUsersDetail?.promedioSemanal ?? 1}
                     </span>
@@ -600,7 +623,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '10px 14px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 80px', padding: '10px 10px', borderRadius: 10, background: 'var(--bg-canvas)' }}>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#8B5CF6', fontFamily: 'var(--font-display)' }}>
                       {activeUsersDetail?.promedioMensual ?? 1}
                     </span>

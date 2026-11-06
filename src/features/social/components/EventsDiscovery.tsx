@@ -483,7 +483,7 @@ export function EventsDiscovery() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
             gap: 20,
           }}
         >
@@ -614,6 +614,7 @@ export function EventsDiscovery() {
               >
                 {/* ── Left Date Column (Colored box matching reference) ── */}
                 <div
+                  className="evento-date-col"
                   style={{
                     width: 104,
                     minWidth: 104,

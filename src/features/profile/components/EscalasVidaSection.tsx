@@ -464,7 +464,7 @@ export default function EscalasVidaSection() {
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-color)',
               borderRadius: 14,
-              padding: '24px 28px',
+              padding: '20px 16px',
               marginBottom: 20,
               boxShadow: 'var(--shadow-sm)',
             }}
@@ -564,7 +564,7 @@ export default function EscalasVidaSection() {
                   flexWrap: 'wrap',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 240 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 24, background: 'var(--bg-surface)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                     🧭
                   </span>
@@ -625,7 +625,7 @@ export default function EscalasVidaSection() {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
                     fontSize: 11.5,
@@ -656,7 +656,7 @@ export default function EscalasVidaSection() {
               </div>
 
               {/* Indicador visual de acompañamiento a autonomía */}
-              <div style={{ width: 180, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <div style={{ width: 180, maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 700, color: 'var(--fg3)', fontFamily: 'var(--font-body)' }}>
                   <span>{hasAnswered ? 'Mayor apoyo' : 'Apoyo'}</span>
                   <span>{hasAnswered ? 'Mayor autonomía' : 'Autonomía'}</span>
@@ -684,7 +684,7 @@ export default function EscalasVidaSection() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
                 gap: 14,
               }}
             >

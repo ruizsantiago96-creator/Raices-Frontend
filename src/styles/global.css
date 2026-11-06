@@ -1116,24 +1116,36 @@ html[data-theme="dark"] .btn-secondary:hover {
   border-radius: 50%;
   background: #f6eddf;
   border: 1px solid var(--border-color);
+  color: var(--primary, #213052);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   padding: 0;
   outline: none;
 }
 
 html[data-theme="dark"] .topnav-icon-btn {
-  background: var(--bg-warm);
+  background: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #F1F5F9 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
 }
 
 .topnav-icon-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(7, 59, 76, 0.08);
-  border-color: var(--primary-dark);
+  border-color: var(--color-verde, #229B58);
+  color: var(--color-verde, #229B58);
+}
+
+html[data-theme="dark"] .topnav-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: var(--primary, #3fac91) !important;
+  color: var(--primary, #3fac91) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .topnav-icon-btn:active {
@@ -1142,7 +1154,7 @@ html[data-theme="dark"] .topnav-icon-btn {
 }
 
 .topnav-icon-btn svg {
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .topnav-icon-btn:hover svg {
@@ -1266,7 +1278,21 @@ html.sidebar-collapsed .sidebar-user-container a {
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   :root {
+    --sidebar-width: 0px !important;
     --topnav-height: 56px;
+  }
+  /* Prevenir desbordamiento horizontal global en móvil */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+  }
+  #root, .responsive-main {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   /* Sidebar: hidden on mobile */
   .responsive-sidebar {
@@ -1276,15 +1302,19 @@ html.sidebar-collapsed .sidebar-user-container a {
   .responsive-main {
     margin-left: 0 !important;
     margin-right: 0 !important;
-    padding: calc(var(--topnav-height, 56px) + 24px) 16px 40px !important;
+    padding: calc(var(--topnav-height, 56px) + 18px) 16px 40px !important;
     max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .responsive-topnav {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: 0 16px !important;
+    max-width: 100vw !important;
+    padding: 0 12px !important;
     height: 56px !important;
+    box-sizing: border-box !important;
   }
 
   .responsive-header {
@@ -1320,22 +1350,40 @@ html.sidebar-collapsed .sidebar-user-container a {
      se muestre completo; en el header solo quedan marca + iconos de acción,
      que nunca se comprimen ni desbordan. */
   .responsive-topnav .topnav-search-wrap {
-    display: none; /* el buscador está en el drawer móvil */
+    display: none !important; /* el buscador está en el drawer móvil */
+  }
+  .mobile-hamburger-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
   }
   .responsive-topnav .topnav-left-section {
     flex-shrink: 0;
+    gap: 6px !important;
   }
   .responsive-topnav .topnav-actions {
-    gap: 8px;
+    gap: 4px !important;
     flex-shrink: 0; /* los iconos nunca se comprimen ni salen del header */
   }
   .responsive-topnav .topnav-actions .topnav-icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+  .responsive-topnav .topnav-actions .topnav-icon-btn svg {
+    width: 18px !important;
+    height: 18px !important;
   }
   .responsive-topnav .topnav-profile-btn {
-    padding: 4px 2px !important;
-    gap: 4px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+  .responsive-topnav .topnav-profile-btn .topnav-profile-avatar {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  .responsive-topnav .topnav-profile-btn .topnav-chevron {
+    display: none !important;
   }
   
   /* Brand subtitle */
@@ -1349,6 +1397,58 @@ html.sidebar-collapsed .sidebar-user-container a {
     border-radius: 6px !important;
     font-size: 14px !important;
     height: 44px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN & EVENTOS RESPONSIVE UTILITIES
+   ═══════════════════════════════════════════════════════════ */
+.overview-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 991px) {
+  .overview-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+@media (max-width: 600px) {
+  .overview-kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+.evento-detalle-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 36px;
+}
+@media (max-width: 991px) {
+  .evento-detalle-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* Event date pill dark mode support */
+html[data-theme="dark"] .evento-date-col {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Event modal topbar button text responsiveness */
+.evento-btn-short-text {
+  display: none;
+}
+@media (max-width: 640px) {
+  .evento-btn-text {
+    display: none !important;
+  }
+  .evento-btn-short-text {
+    display: inline !important;
   }
 }
 
@@ -1745,13 +1845,24 @@ html.sidebar-collapsed .sidebar-user-container a {
 
 .analytics-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 20px;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 991px) {
   .analytics-grid {
     grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 640px) {
+  .analytics-card {
+    padding: 16px 14px !important;
+  }
+  .live-stats-row {
+    gap: 8px !important;
   }
   .dashboard-banner {
     flex-direction: column !important;
