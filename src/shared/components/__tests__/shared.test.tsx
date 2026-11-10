@@ -74,6 +74,7 @@ describe('Icons', () => {
     'compass', 'milestone', 'heartPulse', 'bell', 'briefcase',
     'graduationCap', 'grid', 'list', 'loader', 'camera', 'sliders',
     'chevronDown', 'eye', 'eyeOff', 'link', 'trash', 'flag',
+    'fileText', 'download', 'printer',
   ]
 
   iconNames.forEach((name) => {

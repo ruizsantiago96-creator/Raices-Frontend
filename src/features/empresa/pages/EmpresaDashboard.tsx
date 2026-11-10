@@ -9,6 +9,8 @@ import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { ForosExplorer } from '@features/social/pages/ForosPage'
 import VacanteCard, { type VacanteItem } from '../components/VacanteCard'
 import PerfilPostulanteModal from '../components/PerfilPostulanteModal'
+import CvModal, { type CvCandidateData } from '@features/jobs/components/CvModal'
+import { downloadCvFile } from '@features/jobs/components/CvDocumentPreview'
 import EmpresaOnboardingModal from '../components/EmpresaOnboardingModal'
 import { useEmpresaOnboardingPendiente } from '../components/EmpresaOnboardingModal.constants'
 import { CsfRequiredModal } from '@shared/components/CsfRequiredModal'
@@ -594,6 +596,23 @@ function PostulantesTab() {
   const [search, setSearch] = useState('')
   const [cartaAbierta, setCartaAbierta] = useState<string | number | null>(null)
   const [perfilTarget, setPerfilTarget] = useState<InstitutionJobApplicant | null>(null)
+  const [cvTarget, setCvTarget] = useState<InstitutionJobApplicant | null>(null)
+
+  const toCvCandidateData = (app: InstitutionJobApplicant): CvCandidateData => ({
+    name: app.user_name || app.usuario?.nombreCompleto || 'Postulante',
+    email: app.user_email || app.usuario?.email || '',
+    phone: (app as Record<string, unknown>).telefono as string || (app as Record<string, unknown>).phone as string || '',
+    location: (app as Record<string, unknown>).ciudad as string || 'Mérida, Yucatán',
+    jobTitle: app.job_title || 'Postulante',
+    coverLetter: app.cover_letter || '',
+    fileUrl: ((app as Record<string, unknown>).cv_url || (app as Record<string, unknown>).cvUrl || (app as Record<string, unknown>).fileUrl) as string || null,
+  })
+
+  const handleDownloadCv = (app: InstitutionJobApplicant) => {
+    const data = toCvCandidateData(app)
+    downloadCvFile(data)
+    addToast(`Descargando CV de ${data.name}...`, 'info')
+  }
 
   // El gate de rol (institution | empresa) vive dentro de los hooks
   const { data: applicants = [], isLoading, isError, refetch } = useAllJobApplicants()
@@ -701,7 +720,7 @@ function PostulantesTab() {
           <table className="responsive-table" style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
-                {['Postulante', 'Vacante', 'Carta', 'Fecha', 'Estado', 'Perfil', 'Acciones'].map(h => (
+                {['Postulante', 'Vacante', 'CV', 'Carta', 'Fecha', 'Estado', 'Perfil', 'Acciones'].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -727,6 +746,40 @@ function PostulantesTab() {
                     </td>
                     <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>
                       {app.job_title ?? '—'}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => setCvTarget(app)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '6px 11px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
+                            cursor: 'pointer', border: '1.5px solid var(--primary)',
+                            background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+                            color: 'var(--primary)', fontFamily: 'var(--font-body)',
+                            transition: 'all 0.15s',
+                          }}
+                          title="Ver Currículum Vitae (CV)"
+                        >
+                          {Icons.fileText ? Icons.fileText({ s: 13 }) : '📄'} Ver CV
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadCv(app)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '6px 8px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                            cursor: 'pointer', border: '1.5px solid var(--border-color)',
+                            background: 'var(--bg-surface)', color: 'var(--fg2)', fontFamily: 'var(--font-body)',
+                            transition: 'all 0.15s',
+                          }}
+                          title="Descargar Currículum (PDF/HTML)"
+                          aria-label="Descargar CV"
+                        >
+                          {Icons.download ? Icons.download({ s: 13 }) : '📥'}
+                        </button>
+                      </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       {app.cover_letter ? (
@@ -805,6 +858,15 @@ function PostulantesTab() {
         <PerfilPostulanteModal
           postulacion={perfilTarget}
           onClose={() => setPerfilTarget(null)}
+        />
+      )}
+
+      {/* Modal: Currículum Vitae (CV) */}
+      {cvTarget && (
+        <CvModal
+          isOpen={!!cvTarget}
+          onClose={() => setCvTarget(null)}
+          candidate={toCvCandidateData(cvTarget)}
         />
       )}
 

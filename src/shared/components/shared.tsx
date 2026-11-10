@@ -61,6 +61,9 @@ import {
   Lock,
   Layers,
   Flag,
+  FileText,
+  Download,
+  Printer,
 } from 'lucide-react'
 
 export interface LeafIconProps {
@@ -155,6 +158,9 @@ export const Icons: Record<string, (p?: IconProps) => React.JSX.Element> = {
   lock: (p) => <IconWrapper style={p?.style}><Lock size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
   layers: (p) => <IconWrapper style={p?.style}><Layers size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
   flag: (p) => <IconWrapper style={p?.style}><Flag size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  fileText: (p) => <IconWrapper style={p?.style}><FileText size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  download: (p) => <IconWrapper style={p?.style}><Download size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
+  printer: (p) => <IconWrapper style={p?.style}><Printer size={p?.s || 20} color={p?.color || 'currentColor'} /></IconWrapper>,
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {

@@ -7,6 +7,8 @@ import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useAuthStore } from '@features/auth/store/authStore'
 import { useMessages, useSendMessage, useMarcarConversacionLeida } from '@features/social/hooks/useMessages'
 import { usePerfilPcd, type PerfilPcd } from '../hooks/usePerfilPcd'
+import CvModal, { type CvCandidateData } from '@features/jobs/components/CvModal'
+import { downloadCvFile } from '@features/jobs/components/CvDocumentPreview'
 import type { InstitutionJobApplicant } from '@/types/institutions'
 
 export interface PerfilPostulanteModalProps {
@@ -223,7 +225,19 @@ function ChatConPostulante({
 
 /* ── Contenido del perfil (datos + accesibilidad) ──────────── */
 
-function PerfilCargado({ perfil, postulacion, onContactar }: { perfil: PerfilPcd; postulacion: InstitutionJobApplicant; onContactar: () => void }) {
+function PerfilCargado({
+  perfil,
+  postulacion,
+  onContactar,
+  onVerCv,
+  onDescargarCv,
+}: {
+  perfil: PerfilPcd
+  postulacion: InstitutionJobApplicant
+  onContactar: () => void
+  onVerCv: () => void
+  onDescargarCv: () => void
+}) {
   const ext = perfil.perfilNecesidades ?? null
 
   const tiposDiscapacidad = pickArray(perfil, ['perfilNecesidades', 'tiposDiscapacidad'], ['tiposDiscapacidad'])
@@ -274,6 +288,92 @@ function PerfilCargado({ perfil, postulacion, onContactar }: { perfil: PerfilPcd
         {' · '}
         {postulacion.created_at ? new Date(postulacion.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
       </div>
+
+      {/* Currículum Vitae (CV) */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={labelStyle}>Currículum Vitae (CV)</span>
+        <div
+          style={{
+            background: 'var(--bg-warm)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: 12,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: 'color-mix(in oklch, var(--primary) 12%, transparent)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {Icons.fileText ? Icons.fileText({ s: 20 }) : '📄'}
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--fg1)' }}>
+                Currículum de {perfil.nombreCompleto ?? postulacion.user_name ?? 'Postulante'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--fg3)' }}>
+                Documento curricular y trayectoria para la vacante
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={onVerCv}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: 12.5,
+                fontWeight: 700,
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              {Icons.fileText ? Icons.fileText({ s: 13 }) : '📄'} Ver CV
+            </button>
+            <button
+              type="button"
+              onClick={onDescargarCv}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 12px',
+                borderRadius: 8,
+                fontSize: 12.5,
+                fontWeight: 600,
+                background: 'var(--bg-surface)',
+                color: 'var(--fg2)',
+                border: '1.5px solid var(--border-color)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              {Icons.download ? Icons.download({ s: 13 }) : '📥'} Descargar PDF
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Carta de presentación */}
       {postulacion.cover_letter && (
@@ -403,9 +503,26 @@ function PerfilSkeleton() {
 export default function PerfilPostulanteModal({ postulacion, onClose }: PerfilPostulanteModalProps) {
   const usuarioId = postulacion?.user_id ?? null
   const [chatAbierto, setChatAbierto] = useState(false)
+  const [mostrarCv, setMostrarCv] = useState(false)
+  const { addToast } = useUiStore()
   const { data: perfil, isLoading, isError } = usePerfilPcd(usuarioId)
 
   if (!postulacion) return null
+
+  const candidateData: CvCandidateData = {
+    name: perfil?.nombreCompleto || postulacion.user_name || 'Postulante',
+    email: perfil?.email || postulacion.user_email || '',
+    phone: ((perfil as Record<string, unknown>)?.telefono as string) || ((postulacion as Record<string, unknown>).telefono as string) || '',
+    location: [perfil?.ciudad, perfil?.estado].filter(Boolean).join(', ') || 'Mérida, Yucatán',
+    jobTitle: postulacion.job_title || 'Postulante',
+    coverLetter: postulacion.cover_letter || '',
+    fileUrl: ((postulacion as Record<string, unknown>).cv_url || (postulacion as Record<string, unknown>).cvUrl || (postulacion as Record<string, unknown>).fileUrl) as string || null,
+  }
+
+  const handleDescargarCv = () => {
+    downloadCvFile(candidateData)
+    addToast(`Descargando CV de ${candidateData.name}...`, 'info')
+  }
 
   // Al abrir el modal se muestra el perfil; el CTA cambia a la vista de chat
   const modo = chatAbierto && postulacion.user_id ? 'chat' : 'perfil'
@@ -463,9 +580,24 @@ export default function PerfilPostulanteModal({ postulacion, onClose }: PerfilPo
             </p>
           </div>
         ) : (
-          <PerfilCargado perfil={perfil} postulacion={postulacion} onContactar={() => setChatAbierto(true)} />
+          <PerfilCargado
+            perfil={perfil}
+            postulacion={postulacion}
+            onContactar={() => setChatAbierto(true)}
+            onVerCv={() => setMostrarCv(true)}
+            onDescargarCv={handleDescargarCv}
+          />
         )}
       </div>
+
+      {/* Modal secundario para ver el CV completo */}
+      {mostrarCv && (
+        <CvModal
+          isOpen={mostrarCv}
+          onClose={() => setMostrarCv(false)}
+          candidate={candidateData}
+        />
+      )}
     </div>,
     document.body
   )

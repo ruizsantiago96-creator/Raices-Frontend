@@ -66,10 +66,12 @@ function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationI
 
 export function useNotifications() {
   const token = useAuthStore(s => s.token)
-  const userRole = useAuthStore(s => s.user?.role)
+  const user = useAuthStore(s => s.user)
+  const roleRaw = String(user?.role ?? (user as unknown as Record<string, unknown>)?.rol ?? '').toLowerCase()
+  const isAdmin = roleRaw === 'admin' || roleRaw === 'administrador'
 
   return useQuery<NotificationItem[]>({
-    queryKey: ['notifications', userRole],
+    queryKey: ['notifications', roleRaw],
     queryFn: async () => {
       const r = await api.get('/notificaciones')
       const res = r.data
@@ -89,15 +91,16 @@ export function useNotifications() {
 
       // Asegurar que usuarios no admin sean redirigidos a su perfil en lugar de ocultar sus notificaciones
       const filtered = mapped.map(n => {
-        if (n.url === '/admin' && userRole !== 'admin') {
+        if (n.url === '/admin' && !isAdmin) {
           return { ...n, url: '/profile' }
         }
         return n
       })
 
-      // Si el usuario es administrador, inyectar dinámicamente avisos de tareas pendientes
-      if (userRole === 'admin') {
+      // Si el usuario es administrador, inyectar dinámicamente avisos de tareas pendientes y alertas
+      if (isAdmin) {
         try {
+          // 1. Estadísticas de aprobación y verificación
           const statsRes = await api.get<StatsData>('/administracion/estadisticas').catch(() => null)
           if (statsRes?.data) {
             const pendingApproval = statsRes.data.aprobacionPendiente ?? 0
@@ -126,6 +129,22 @@ export function useNotifications() {
               })
             }
           }
+
+          // 2. Alertas activas de la plataforma
+          const alertsRes = await api.get<Record<string, unknown>[]>('/administracion/alertas').catch(() => null)
+          const rawAlerts = Array.isArray(alertsRes?.data) ? alertsRes.data : []
+          rawAlerts.forEach((a, idx) => {
+            const isCritica = String(a.severidad ?? a.severity ?? '').toLowerCase() === 'critica' || String(a.severidad ?? a.severity ?? '').toLowerCase() === 'alta'
+            filtered.unshift({
+              id: `virtual-admin-alert-${a.id ?? idx}`,
+              title: (a.titulo ?? a.title ?? 'Alerta de riesgo') as string,
+              body: (a.descripcion ?? a.mensaje ?? a.message ?? 'Atención requerida en el panel de administración') as string,
+              is_read: false,
+              type: isCritica ? 'error' : 'warning',
+              created_at: (a.fechaCreacion ?? a.created_at ?? new Date().toISOString()) as string,
+              url: '/admin',
+            })
+          })
         } catch (e) {
           console.error('[Notifications] Error generating virtual admin notification:', e)
         }

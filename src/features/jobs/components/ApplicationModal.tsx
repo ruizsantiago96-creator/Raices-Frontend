@@ -376,7 +376,16 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg2)', textAlign: 'left' }}>Vista previa de tu CV:</span>
-                  <CvDocumentPreview name={contactInfo.nombreCompleto} email={contactInfo.email} phone={contactInfo.telefono} location={location.ciudadEstado} jobTitle={job.title} fileUrl={cvFileUrl} />
+                  <CvDocumentPreview
+                    name={contactInfo.nombreCompleto}
+                    email={contactInfo.email}
+                    phone={contactInfo.telefono}
+                    location={location.ciudadEstado}
+                    jobTitle={job.title}
+                    fileName={cvFile?.name}
+                    coverLetter={letter}
+                    fileUrl={cvFileUrl}
+                  />
                 </div>
               </div>
             )}
@@ -436,7 +445,16 @@ export default function ApplicationModal({ job, onClose }: ApplicationModalProps
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{filePdfIcon}<div style={{ textAlign: 'left' }}><span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--fg1)', display: 'block' }}>{cvFile.name}</span><span style={{ fontSize: 11.5, color: 'var(--fg3)' }}>Se acaba de subir</span></div></div>
                   <div style={{ border: '1px solid var(--border-color)', borderRadius: 6, padding: 8, background: 'var(--bg-cool)', overflow: 'hidden' }}>
                     <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center', maxHeight: 180, overflow: 'hidden' }}>
-                      <CvDocumentPreview name={contactInfo.nombreCompleto} email={contactInfo.email} phone={contactInfo.telefono} location={location.ciudadEstado} jobTitle={job.title} fileUrl={cvFileUrl} />
+                      <CvDocumentPreview
+                        name={contactInfo.nombreCompleto}
+                        email={contactInfo.email}
+                        phone={contactInfo.telefono}
+                        location={location.ciudadEstado}
+                        jobTitle={job.title}
+                        fileName={cvFile?.name}
+                        coverLetter={letter}
+                        fileUrl={cvFileUrl}
+                      />
                     </div>
                   </div>
                 </div>

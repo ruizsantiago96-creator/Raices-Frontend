@@ -167,11 +167,30 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                 trigger="hover"
               />
               {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: 6, right: 6,
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: '#ef4444',
-                }} />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    minWidth: 18,
+                    height: 18,
+                    padding: '0 4px',
+                    borderRadius: 10,
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 0 2px var(--bg-surface)',
+                    pointerEvents: 'none',
+                    lineHeight: 1,
+                    zIndex: 2,
+                  }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
             </button>
 

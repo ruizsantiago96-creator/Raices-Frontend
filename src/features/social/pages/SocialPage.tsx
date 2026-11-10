@@ -191,14 +191,16 @@ function decodeAndExtract(content: string) {
 const CATEGORY_MAP: Record<string, { label: string; icon: React.ReactNode; bg: string; color: string }> = {
   arte: { label: 'Arte', icon: Icons.palette({ s: 13 }), bg: '#FEF3C7', color: '#92400E' },
   dibujo: { label: 'Arte', icon: Icons.palette({ s: 13 }), bg: '#FEF3C7', color: '#92400E' },
-  historia: { label: 'Historia', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
+  experiencias: { label: 'Experiencias', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
+  experiencia: { label: 'Experiencias', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
+  historia: { label: 'Experiencias', icon: Icons.book({ s: 13 }), bg: '#FCE7F3', color: '#9D174D' },
   general: { label: 'General', icon: Icons.message({ s: 13 }), bg: 'var(--primary-subtle)', color: 'var(--primary)' },
 }
 
 const CATEGORY_OPTIONS: Array<{ value: string; label: string; icon: React.ReactNode }> = [
   { value: 'general', label: 'General', icon: Icons.message({ s: 14 }) },
   { value: 'arte', label: 'Arte', icon: Icons.palette({ s: 14 }) },
-  { value: 'historia', label: 'Historia', icon: Icons.book({ s: 14 }) },
+  { value: 'historia', label: 'Experiencias', icon: Icons.book({ s: 14 }) },
 ]
 
 function PostCard({ post, onLike, currentUserId, currentUserName }: PostCardProps) {
@@ -1145,7 +1147,7 @@ function ConectemosGalleryView({
           Galería Conectemos
         </h2>
         <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0 }}>
-          Explora obras de arte e historias compartidas por la comunidad
+          Explora obras de arte y experiencias compartidas por la comunidad
         </p>
       </div>
 
@@ -1167,7 +1169,7 @@ function ConectemosGalleryView({
         {[
           { label: 'Todas las creaciones', icon: Icons.layers({ s: 14 }), value: null },
           { label: 'Arte', icon: Icons.palette({ s: 14 }), value: 'arte' },
-          { label: 'Historia', icon: Icons.book({ s: 14 }), value: 'historia' },
+          { label: 'Experiencias', icon: Icons.book({ s: 14 }), value: 'historia' },
           { label: 'General', icon: Icons.message({ s: 14 }), value: 'general' },
         ].map(cat => (
           <button
@@ -1205,19 +1207,19 @@ function ConectemosGalleryView({
       ) : posts.length === 0 ? (
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: 4 }}>
-            {categoria === 'arte' ? Icons.palette({ s: 28 }) : categoria === 'historia' ? Icons.book({ s: 28 }) : Icons.layers({ s: 28 })}
+            {categoria === 'arte' ? Icons.palette({ s: 28 }) : (categoria === 'historia' || categoria === 'experiencias') ? Icons.book({ s: 28 }) : Icons.layers({ s: 28 })}
           </div>
           <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
             {categoria === 'arte'
               ? 'Aún no hay obras de Arte en la galería'
-              : categoria === 'historia'
-              ? 'Aún no hay historias o relatos compartidos'
+              : (categoria === 'historia' || categoria === 'experiencias')
+              ? 'Aún no hay experiencias o vivencias compartidas'
               : 'No hay creaciones disponibles en esta categoría'}
           </h3>
           <p style={{ color: 'var(--fg3)', margin: 0, fontSize: 14, maxWidth: 460, lineHeight: 1.5 }}>
             {categoria === 'arte'
               ? 'Sé el primero en compartir un dibujo, pintura o expresión artística con la comunidad.'
-              : categoria === 'historia'
+              : (categoria === 'historia' || categoria === 'experiencias')
               ? 'Comparte una vivencia, anécdota o experiencia inspiradora para la comunidad.'
               : 'Las creaciones con fotos, dibujos o videos compartidas por la comunidad aparecerán aquí.'}
           </p>
@@ -1229,7 +1231,7 @@ function ConectemosGalleryView({
               style={{ marginTop: 8, padding: '10px 22px', borderRadius: 'var(--radius-pill)', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}
             >
               {Icons.plus({ s: 16 })}
-              {categoria === 'arte' ? 'Compartir obra de arte' : categoria === 'historia' ? 'Compartir una historia' : 'Publicar una creación'}
+              {categoria === 'arte' ? 'Compartir obra de arte' : (categoria === 'historia' || categoria === 'experiencias') ? 'Compartir una experiencia' : 'Publicar una creación'}
             </button>
           )}
         </div>
@@ -1319,6 +1321,9 @@ export default function SocialPage() {
       list = list.filter(p => {
         const cat = (p.categoriaCreativa || '').toLowerCase()
         if (feedCategoryFilter.toLowerCase() === 'arte') return cat === 'arte' || cat === 'dibujo'
+        if (feedCategoryFilter.toLowerCase() === 'historia' || feedCategoryFilter.toLowerCase() === 'experiencias') {
+          return cat === 'historia' || cat === 'experiencias' || cat === 'experiencia'
+        }
         return cat === feedCategoryFilter.toLowerCase()
       })
     }
@@ -1675,11 +1680,11 @@ export default function SocialPage() {
                             options={[
                               { value: 'general', label: 'General' },
                               { value: 'arte', label: '🎨 Arte / Dibujo' },
-                              { value: 'historia', label: '📖 Historia / Vivencia' },
+                              { value: 'historia', label: '📖 Experiencias / Vivencias' },
                             ]}
                             value={postCategory}
                             onChange={val => setPostCategory(val || 'general')}
-                            minWidth={160}
+                            minWidth={190}
                           />
                         </div>
 

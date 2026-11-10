@@ -6,6 +6,8 @@ import { useAllJobApplicants, useUpdateApplicationStatus } from '../hooks/useIns
 import { PORTAL_UI, PORTAL_TOAST, APPLICATION_STATUS_COLORS } from '../constants/institutionPortalMessages'
 import BackendFallback from '@shared/components/BackendFallback'
 import { JOB_ENDPOINTS } from '@shared/constants/backendEndpoints'
+import CvModal, { type CvCandidateData } from '@features/jobs/components/CvModal'
+import { downloadCvFile } from '@features/jobs/components/CvDocumentPreview'
 import type { InstitutionJobApplicant } from '@/types/institutions'
 
 interface StatusOption {
@@ -117,9 +119,26 @@ export default function CandidatosTab() {
   const { addToast } = useUiStore()
   const [filter, setFilter] = useState<'all' | 'pending' | 'reviewed' | 'accepted'>('all')
   const [search, setSearch] = useState('')
+  const [cvTarget, setCvTarget] = useState<InstitutionJobApplicant | null>(null)
 
   const { data: applicants = [], isLoading, isError, refetch } = useAllJobApplicants()
   const updateStatus = useUpdateApplicationStatus()
+
+  const toCvCandidateData = (app: InstitutionJobApplicant): CvCandidateData => ({
+    name: app.user_name || app.usuario?.nombreCompleto || 'Postulante',
+    email: app.user_email || app.usuario?.email || '',
+    phone: (app as Record<string, unknown>).telefono as string || (app as Record<string, unknown>).phone as string || '',
+    location: (app as Record<string, unknown>).ciudad as string || 'Mérida, Yucatán',
+    jobTitle: app.job_title || 'Postulante',
+    coverLetter: app.cover_letter || '',
+    fileUrl: ((app as Record<string, unknown>).cv_url || (app as Record<string, unknown>).cvUrl || (app as Record<string, unknown>).fileUrl) as string || null,
+  })
+
+  const handleDownloadCv = (app: InstitutionJobApplicant) => {
+    const data = toCvCandidateData(app)
+    downloadCvFile(data)
+    addToast(`Descargando CV de ${data.name}...`, 'info')
+  }
 
   const filtered = (applicants as InstitutionJobApplicant[]).filter(app => {
     const matchesFilter = filter === 'all' || app.status === filter
@@ -205,7 +224,7 @@ export default function CandidatosTab() {
           <table className="responsive-table" style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'color-mix(in oklch, var(--bg-warm) 60%, var(--bg-surface))' }}>
-                {[PORTAL_UI.COL_NAME, PORTAL_UI.COL_JOB, PORTAL_UI.COL_DATE, PORTAL_UI.COL_STATUS].map(h => (
+                {[PORTAL_UI.COL_NAME, PORTAL_UI.COL_JOB, 'CV', PORTAL_UI.COL_DATE, PORTAL_UI.COL_STATUS].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -229,6 +248,40 @@ export default function CandidatosTab() {
                   <td style={{ padding: '14px 16px' }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg1)' }}>{app.job_title ?? '—'}</span>
                   </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setCvTarget(app)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '6px 11px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
+                          cursor: 'pointer', border: '1.5px solid var(--primary)',
+                          background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+                          color: 'var(--primary)', fontFamily: 'var(--font-body)',
+                          transition: 'all 0.15s',
+                        }}
+                        title="Ver Currículum Vitae (CV)"
+                      >
+                        {Icons.fileText ? Icons.fileText({ s: 13 }) : '📄'} Ver CV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadCv(app)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '6px 8px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer', border: '1.5px solid var(--border-color)',
+                          background: 'var(--bg-surface)', color: 'var(--fg2)', fontFamily: 'var(--font-body)',
+                          transition: 'all 0.15s',
+                        }}
+                        title="Descargar Currículum (PDF/HTML)"
+                        aria-label="Descargar CV"
+                      >
+                        {Icons.download ? Icons.download({ s: 13 }) : '📥'}
+                      </button>
+                    </div>
+                  </td>
                   <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg3)' }}>
                     {app.created_at ? new Date(app.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
@@ -244,6 +297,15 @@ export default function CandidatosTab() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Modal: Currículum Vitae (CV) */}
+      {cvTarget && (
+        <CvModal
+          isOpen={!!cvTarget}
+          onClose={() => setCvTarget(null)}
+          candidate={toCvCandidateData(cvTarget)}
+        />
       )}
     </div>
   )
