@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useNotifications, useMarkRead, useMarkAllRead } from '../hooks/useNotifications'
+import type { NotificationItem } from '@/types/notifications'
 import { Icons, EmptyState } from '@shared/components/shared'
 import BackendFallback from '@shared/components/BackendFallback'
 import { NOTIFICATION_UI } from '../constants/notificationMessages'
@@ -36,6 +38,7 @@ function relativeDate(d: string | number | Date) {
 }
 
 export default function NotificationsPage() {
+  const nav = useNavigate()
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications()
   const markRead = useMarkRead()
   const markAll = useMarkAllRead()
@@ -46,8 +49,13 @@ export default function NotificationsPage() {
     : filter === 'unread' ? notifications.filter(n => !n.is_read)
     : notifications.filter(n => n.type === filter)
 
-  const handleMarkRead = (id: string | number) => {
-    markRead.mutate(id)
+  const handleNotificationClick = (n: NotificationItem) => {
+    if (n.id && !String(n.id).startsWith('virtual-') && !n.is_read) {
+      markRead.mutate(n.id)
+    }
+    if (n.url && n.url !== '/notifications') {
+      nav(n.url)
+    }
   }
 
   const handleMarkAllRead = () => {
@@ -114,30 +122,27 @@ export default function NotificationsPage() {
         />
       ) : (
         <div className="animate-fade-in-up delay-2" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {filtered.map((n: { id: string | number; type: string; created_at: string | number; is_read: boolean; body?: string; title?: string }) => {
+          {filtered.map((n: NotificationItem) => {
             const meta = TYPE_META[n.type as keyof typeof TYPE_META] ?? { icon: Icons.bell, color: 'var(--primary)' }
             const timeStr = relativeDate(n.created_at)
+            const hasTarget = !!n.url && n.url !== '/notifications'
             return (
-              <div key={n.id} onClick={() => handleMarkRead(n.id)}
+              <div key={n.id} onClick={() => handleNotificationClick(n)}
                 style={{
                   background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
                   borderRadius: 14, padding: 18, boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                  cursor: n.is_read ? 'default' : 'pointer',
+                  cursor: 'pointer',
                   position: 'relative', overflow: 'hidden',
                   transition: 'transform 0.15s, box-shadow 0.15s',
                   display: 'flex', gap: 16, alignItems: 'flex-start'
                 }}
                 onMouseEnter={e => {
-                  if (!n.is_read) {
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                    e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.04)'
-                  }
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.04)'
                 }}
                 onMouseLeave={e => {
-                  if (!n.is_read) {
-                    e.currentTarget.style.transform = 'none'
-                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
-                  }
+                  e.currentTarget.style.transform = 'none'
+                  e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                 }}
               >
                 {/* Visual indicator of read state */}
@@ -169,6 +174,11 @@ export default function NotificationsPage() {
                     <p style={{ fontSize: 14, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
                       {n.body ?? ''}
                     </p>
+                    {hasTarget && (
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                        Ir a la sección →
+                      </span>
+                    )}
                   </div>
                   {!n.is_read && (
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0, marginTop: 6 }} />

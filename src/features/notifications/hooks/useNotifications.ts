@@ -15,46 +15,67 @@ interface StatsData {
   institucionesVerificadas?: number
 }
 
-function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationItem>): string {
+function detectNotificationUrl(n: RawBackendNotification & Partial<NotificationItem>, isAdmin = false, isEmpresa = false): string {
   // 1. Si el backend ya mandó una URL explícita, usarla
   const explicitUrl = (n.url ?? n.redirect_url ?? n.redirectUrl ?? n.ruta ?? n.path ?? n.enlace ?? n.link ?? n.redireccion) as string | undefined
   if (explicitUrl) return explicitUrl
 
   // 2. Mapeo prioritario por tipo formal de notificación
   const type = (n.type ?? n.tipo ?? '').toLowerCase()
-  if (type.startsWith('publicacion_') || type.startsWith('evento_') || type === 'nuevo_comentario' || type === 'nuevo_me_gusta' || type === 'respuesta_foro') {
+  if (type === 'publicacion_rechazada' && isAdmin) {
+    return '/admin?tab=moderacion'
+  }
+  if (type.startsWith('publicacion_') || type === 'nuevo_comentario' || type === 'nuevo_me_gusta') {
     return '/social'
   }
+  if (type.startsWith('evento_')) {
+    return '/social?tab=eventos'
+  }
+  if (type === 'respuesta_foro') {
+    return '/foros'
+  }
   if (type.startsWith('identidad_')) {
-    return '/verificacion-identidad'
+    return isAdmin ? '/admin?tab=identities' : '/verificacion-identidad'
   }
   if (type === 'bienvenida') {
     return '/profile'
   }
   if (type.startsWith('postulacion_')) {
-    return '/jobs'
+    return isEmpresa ? '/empresa/dashboard' : '/jobs'
   }
-  if (type === 'institucion_aprobada') {
-    return '/explore'
+  if (type.startsWith('institucion_')) {
+    return isAdmin ? '/admin?tab=institutions' : '/explore'
   }
 
   // 3. Deducir según palabras clave en título o mensaje (body)
   const text = `${n.title ?? n.titulo ?? ''} ${n.body ?? n.mensaje ?? n.contenido ?? ''}`.toLowerCase()
   
   if (text.includes('identidad') || text.includes('curp') || text.includes('ine') || text.includes('documento')) {
-    return '/verificacion-identidad'
+    return isAdmin ? '/admin?tab=identities' : '/verificacion-identidad'
   }
-  if (text.includes('publicaci') || text.includes('evento') || text.includes('mensaje') || text.includes('chat') || text.includes('grupo') || text.includes('comunidad') || text.includes('social') || text.includes('coment') || text.includes('gusta')) {
+  if (text.includes('moderaci') || text.includes('palabra prohibida') || text.includes('rechazada') || text.includes('revisión')) {
+    return isAdmin ? '/admin?tab=moderacion' : '/social'
+  }
+  if (text.includes('evento')) {
+    return '/social?tab=eventos'
+  }
+  if (text.includes('foro')) {
+    return '/foros'
+  }
+  if (text.includes('publicaci') || text.includes('mensaje') || text.includes('chat') || text.includes('grupo') || text.includes('comunidad') || text.includes('social') || text.includes('coment') || text.includes('gusta')) {
     return '/social'
   }
   if (text.includes('bienvenid') || text.includes('perfil') || text.includes('onboarding') || text.includes('datos')) {
     return '/profile'
   }
-  if (text.includes('empleo') || text.includes('vacante') || text.includes('trabajo') || text.includes('postula')) {
-    return '/jobs'
+  if (text.includes('empleo') || text.includes('vacante') || text.includes('trabajo') || text.includes('postula') || text.includes('candidat') || text.includes('cv')) {
+    return isEmpresa ? '/empresa/dashboard' : '/jobs'
   }
   if (text.includes('instituc') || text.includes('reseñ') || text.includes('opinio')) {
-    return '/explore'
+    return isAdmin ? '/admin?tab=institutions' : '/explore'
+  }
+  if (text.includes('alerta') || text.includes('riesgo') || text.includes('severidad')) {
+    return '/admin?tab=alerts'
   }
   if (text.includes('administra') || text.includes('panel admin')) {
     return '/admin'
@@ -69,6 +90,7 @@ export function useNotifications() {
   const user = useAuthStore(s => s.user)
   const roleRaw = String(user?.role ?? (user as unknown as Record<string, unknown>)?.rol ?? '').toLowerCase()
   const isAdmin = roleRaw === 'admin' || roleRaw === 'administrador'
+  const isEmpresa = roleRaw === 'empresa'
 
   return useQuery<NotificationItem[]>({
     queryKey: ['notifications', roleRaw],
@@ -85,13 +107,13 @@ export function useNotifications() {
           type: (n.type ?? n.tipo ?? 'info') as string,
           created_at: (n.created_at ?? n.creado_at ?? n.fecha ?? new Date().toISOString()) as string,
         }
-        normalized.url = detectNotificationUrl({ ...n, ...normalized })
+        normalized.url = detectNotificationUrl({ ...n, ...normalized }, isAdmin, isEmpresa)
         return normalized
       })
 
-      // Asegurar que usuarios no admin sean redirigidos a su perfil en lugar de ocultar sus notificaciones
+      // Asegurar que usuarios no admin sean redirigidos a su perfil en lugar de intentar ir a admin
       const filtered = mapped.map(n => {
-        if (n.url === '/admin' && !isAdmin) {
+        if (n.url?.startsWith('/admin') && !isAdmin) {
           return { ...n, url: '/profile' }
         }
         return n
@@ -125,7 +147,7 @@ export function useNotifications() {
                 is_read: false,
                 type: 'warning',
                 created_at: new Date().toISOString(),
-                url: '/admin'
+                url: '/admin?tab=institutions'
               })
             }
           }
@@ -142,7 +164,7 @@ export function useNotifications() {
               is_read: false,
               type: isCritica ? 'error' : 'warning',
               created_at: (a.fechaCreacion ?? a.created_at ?? new Date().toISOString()) as string,
-              url: '/admin',
+              url: '/admin?tab=alerts',
             })
           })
         } catch (e) {

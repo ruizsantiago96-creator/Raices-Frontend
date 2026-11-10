@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMe } from '@features/auth'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useAdminAlerts } from '../hooks/useAdmin'
@@ -37,10 +39,19 @@ const TAB_TITLES: Record<string, string> = {
 
 export default function AdminPage() {
   const { data: user } = useMe()
+  const [searchParams] = useSearchParams()
   const rawTab = useUiStore(s => s.adminTab)
-  const tab: AdminTabKey = (rawTab === 'settings' || !(rawTab in TAB_TITLES)) ? 'overview' : (rawTab as AdminTabKey)
   const onTab = useUiStore(s => s.setAdminTab)
   const { data: alerts = [] } = useAdminAlerts()
+
+  const tabFromUrl = searchParams.get('tab') as AdminTabKey | null
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl in TAB_TITLES) {
+      onTab(tabFromUrl)
+    }
+  }, [tabFromUrl, onTab])
+
+  const tab: AdminTabKey = (rawTab === 'settings' || !(rawTab in TAB_TITLES)) ? 'overview' : (rawTab as AdminTabKey)
 
   return (
     <main id="main" className="responsive-main" style={{ '--main-max-width': '1200px' } as Record<string, string>}>

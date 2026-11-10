@@ -226,8 +226,14 @@ export const TopNav: FC<TopNavProps> = ({ currentPage: _currentPage, user, onLog
                           key={n.id}
                           onClick={() => {
                             setNotifDropdownOpen(false)
-                            if (n.id) markRead(n.id)
-                            if (n.url) nav(n.url)
+                            if (n.id && !String(n.id).startsWith('virtual-')) {
+                              markRead(n.id)
+                            }
+                            if (n.url) {
+                              nav(n.url)
+                            } else {
+                              nav('/notifications')
+                            }
                           }}
                           className="notif-item"
                           style={{

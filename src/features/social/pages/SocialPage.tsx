@@ -1283,6 +1283,15 @@ export default function SocialPage() {
   const { user } = useAuthStore()
   const { data: groups = [] } = useGroups()
 
+  // Sincronizar tab desde URL search params (ej. ?tab=eventos o ?tab=galeria)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const tabParam = params.get('tab')
+    if (tabParam && ['comunidad', 'grupos', 'galeria', 'eventos', 'acerca'].includes(tabParam)) {
+      setMainTab(tabParam as 'comunidad' | 'grupos' | 'galeria' | 'eventos' | 'acerca')
+    }
+  }, [location.search])
+
   const joinedGroupIds = useMemo(() => {
     return new Set(groups.filter(g => g.is_member).map(g => String(g.id)))
   }, [groups])
