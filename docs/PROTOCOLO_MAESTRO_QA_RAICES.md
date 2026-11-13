@@ -337,3 +337,4 @@ El módulo se divide en 5 pestañas principales (`mainTab`):
 | **TC-14** | Notificaciones | `/notifications` | Cualquiera | Clic en `Ir a la sección →` | Marca leída y navega al destino correspondiente. | [ ] PASS |
 | **TC-15** | Directorio | `/explore` | Cualquiera | Búsqueda por CP (06000) | Resuelve estado y colonias de forma reactiva. | [ ] PASS |
 | **TC-16** | A11y | Barra Accesibilidad | Cualquiera | Aumentar fuente (+A) | Escala tipografía sin romper componentes visuales. | [ ] PASS |
+

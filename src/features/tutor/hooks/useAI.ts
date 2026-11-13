@@ -117,11 +117,40 @@ export function useAIResumen() {
   const cached = qc.getQueryData<AIResumenResponse>(['ai', 'resumen'])
 
   const mutation = useMutation<AIResumenResponse, AxiosError>({
-    mutationFn: () => {
+    mutationFn: async () => {
       const user = useAuthStore.getState().user
       const depName = localStorage.getItem('raices_dep_name')?.trim() || ''
       const dest = localStorage.getItem('raices_destinatario')?.trim() || 'hijo'
-      const isTutor = user?.role === 'tutor' || user?.role === 'padre_tutor' || user?.rol === 'padre_tutor' || Boolean(depName)
+      const isPcd = user?.role === 'pcd' || user?.rol === 'pcd'
+      const isTutor = !isPcd && (user?.role === 'tutor' || user?.role === 'padre_tutor' || user?.rol === 'padre_tutor' || Boolean(depName))
+
+      // Sincronizar escalas locales (incluyendo tieneDiagnostico) con el backend si están guardadas localmente
+      try {
+        const rawScales = localStorage.getItem('raices_user_scales')
+        if (rawScales) {
+          const parsed = JSON.parse(rawScales) as Record<string, unknown>
+          if (parsed && typeof parsed === 'object' && typeof parsed.tieneDiagnostico === 'boolean') {
+            const clamp = (v: unknown): number => Math.min(4, Math.max(1, Number(v) || 3))
+            const rawMov = Number(parsed.nivelMovilidad ?? parsed.movilidad ?? 3)
+            const normMov = rawMov >= 7 ? 4 : (rawMov === 6 || rawMov === 4) ? 3 : (rawMov === 5 || rawMov === 3) ? 2 : 1
+            await api.post('/usuarios/escalas-vida', {
+              nivelAutonomia: clamp(parsed.nivelAutonomia ?? parsed.autonomia),
+              nivelIndependencia: clamp(parsed.nivelIndependencia ?? parsed.independencia),
+              nivelComunicacion: clamp(parsed.nivelComunicacion ?? parsed.comunicacion),
+              nivelComprension: clamp(parsed.nivelComprension ?? parsed.comprension),
+              nivelEnergia: clamp(parsed.nivelEnergia ?? parsed.energia),
+              nivelMovilidad: normMov,
+              nivelSocial: clamp(parsed.nivelSocial ?? parsed.social),
+              nivelEmocional: clamp(parsed.nivelEmocional ?? parsed.emocional),
+              tieneDiagnostico: Boolean(parsed.tieneDiagnostico),
+              ...(typeof parsed.temporalidadOrigen === 'string' && parsed.temporalidadOrigen ? { temporalidadOrigen: parsed.temporalidadOrigen } : {}),
+              ...(typeof parsed.preferenciaFormato === 'string' && parsed.preferenciaFormato ? { preferenciaFormato: parsed.preferenciaFormato } : {}),
+              ...(Array.isArray(parsed.areasInteres) ? { areasInteres: parsed.areasInteres } : {}),
+              ...(typeof parsed.viabilidadEconomica === 'string' && parsed.viabilidadEconomica ? { viabilidadEconomica: parsed.viabilidadEconomica } : {}),
+            }).catch(() => {})
+          }
+        }
+      } catch {}
 
       const body: Record<string, unknown> = {}
       if (isTutor) {

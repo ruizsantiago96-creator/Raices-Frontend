@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@shared/lib/api'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useUpdateProfile, useUpdateNeedsProfile, useMe } from '@features/auth/hooks/useAuth'
+import { useUpdateProfile, useUpdateNeedsProfile, useMe, useProfile } from '@features/auth/hooks/useAuth'
 import { mapErrorMessage } from '@features/auth/lib/mapErrorMessage'
 import { useOnboardingStatus, useSaveOnboardingBorrador } from '@features/institutions/hooks/useRecommendations'
 import { formatOnboardingQuestion } from '../lib/onboardingInterpolation'
@@ -28,6 +28,7 @@ import { WizardNavButtons, ScaleCard, CheckChip, VerticalCheckCard, WizardProgre
 import { CatalogIcon } from '@features/auth/components/CatalogIcon'
 import { FluentEmoji } from '@features/auth/constants/fluentEmojis'
 import { calcEdad365, calcEtapaVida365 } from '@features/auth/lib/age'
+import StandardizedDiagnosisPicker from './StandardizedDiagnosisPicker'
 import { saveOnboardingData, saveOnboardingStepProgress, getOnboardingStepProgress } from '@features/auth/lib/onboardingStorage'
 import { useQueryClient } from '@tanstack/react-query'
 import { ProfileSummaryCard } from '@features/dashboard/components/AICards'
@@ -105,6 +106,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
   const updateNeedsProfile = useUpdateNeedsProfile()
   const qc = useQueryClient()
   const { data: me } = useMe()
+  const { data: profileData } = useProfile()
 
   // Contract hooks
   const { data: onboardingStatus } = useOnboardingStatus()
@@ -197,9 +199,14 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
 
   // Reanudación automática en ultimoPasoCompletado + 1
   useEffect(() => {
-    if (onboardingStatus && !onboardingStatus.onboardingCompleto && typeof onboardingStatus.ultimoPasoCompletado === 'number') {
+    if (
+      onboardingStatus &&
+      !onboardingStatus.onboardingCompleto &&
+      typeof onboardingStatus.ultimoPasoCompletado === 'number' &&
+      onboardingStatus.ultimoPasoCompletado > 0
+    ) {
       const targetStepIdx = onboardingStatus.ultimoPasoCompletado
-      if (targetStepIdx >= 0 && targetStepIdx < activeSteps.length) {
+      if (targetStepIdx < activeSteps.length) {
         const nextStep = activeSteps[targetStepIdx]
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setStep(prev => (prev === 'cover' ? nextStep : prev))
@@ -379,8 +386,17 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
     setSending(true)
 
     try {
-      const edad = birthDate ? calcEdad365(birthDate) : undefined
-      const etapa = birthDate ? calcEtapaVida365(birthDate) : undefined
+      const rawProfile = profileData as unknown as Record<string, unknown> | undefined
+      const rawMe = me as unknown as Record<string, unknown> | undefined
+      const effectiveBirthDate =
+        birthDate ||
+        String(rawProfile?.fechaNacimiento || rawProfile?.fecha_nacimiento || rawMe?.fechaNacimiento || rawMe?.fecha_nacimiento || '').trim() ||
+        '2000-01-01'
+      const effectiveCiudad =
+        String(rawMe?.city || rawMe?.ciudad || rawProfile?.ciudad || rawProfile?.city || '').trim() ||
+        'Mérida'
+      const edad = calcEdad365(effectiveBirthDate)
+      const etapa = calcEtapaVida365(effectiveBirthDate) || 'adulto'
       const disabilityTypes = conditionData.conditions.filter(c => c !== 'Prefiero no responder')
       const allConditions = [...disabilityTypes, ...conditionData.neurodivergencias]
 
@@ -390,42 +406,56 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
         ? Array.from(new Set([...barrerasSociales, ...(otraBarreraSocial.trim() ? [otraBarreraSocial.trim()] : [])]))
         : []
 
+      const validTemporalidades = ['nacimiento', 'infancia', 'adolescencia', 'vida_adulta', 'progresiva', 'en_evaluacion']
+      const validFormatos = ['texto', 'imagenes', 'audio', 'video', 'presencial']
+
+      let temporalidad = String(conditionData.temporalidad || '').trim()
+      if (!validTemporalidades.includes(temporalidad)) {
+        temporalidad = 'nacimiento'
+      }
+
+      let formato = String(formatos[0] || '').trim()
+      if (formato === 'persona') {
+        formato = 'presencial'
+      }
+      if (!validFormatos.includes(formato)) {
+        formato = 'texto'
+      }
+
+      const clampScale = (v: number | undefined): number => Math.min(4, Math.max(1, v ?? 3))
+      const normMovilidad = (v: number | undefined): number => {
+        const n = v ?? 3
+        if (n >= 7) return 4
+        if (n === 6 || n === 4) return 3
+        if (n === 5 || n === 3) return 2
+        return 1
+      }
+
+      const scalesPayload = {
+        nivelAutonomia: clampScale(scales.autonomia),
+        nivelIndependencia: clampScale(scales.independencia),
+        nivelComunicacion: clampScale(scales.comunicacion),
+        nivelComprension: clampScale(scales.comprension),
+        nivelEnergia: clampScale(scales.energia),
+        nivelMovilidad: normMovilidad(scales.movilidad),
+        nivelSocial: clampScale(scales.social),
+        nivelEmocional: clampScale(scales.emocional),
+        barrerasSociales: finalBarrerasSociales,
+        tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+        diagnosticoEspecifico: conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null,
+        temporalidadOrigen: temporalidad,
+        preferenciaFormato: formato,
+        areasInteres: selectedInterests,
+        viabilidadEconomica: viabilidad || 'sin_restricciones',
+      }
+
       // 1. Save scales (solo si no eligió explorar_solo)
       if (!isExplorarSolo) {
-        const validTemporalidades = ['nacimiento', 'infancia', 'adolescencia', 'vida_adulta', 'progresiva', 'en_evaluacion']
-        const validFormatos = ['texto', 'imagenes', 'audio', 'video', 'presencial']
-
-        let temporalidad = String(conditionData.temporalidad || '').trim()
-        if (!validTemporalidades.includes(temporalidad)) {
-          temporalidad = 'nacimiento'
-        }
-
-        let formato = String(formatos[0] || '').trim()
-        if (formato === 'persona') {
-          formato = 'presencial'
-        }
-        if (!validFormatos.includes(formato)) {
-          formato = 'texto'
-        }
-
-        const scalesPayload = {
-          nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
-          nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
-          nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
-          nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
-          barrerasSociales: finalBarrerasSociales,
-          tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
-          diagnosticoEspecifico: conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null,
-          temporalidadOrigen: temporalidad,
-          preferenciaFormato: formato,
-          areasInteres: selectedInterests,
-          viabilidadEconomica: viabilidad || 'sin_restricciones',
-        }
-        try { 
-          await api.post('/usuarios/escalas-vida', scalesPayload) 
+        try {
+          await api.post('/usuarios/escalas-vida', scalesPayload)
           localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
-        } catch (err) { 
-          console.warn('Scales save notice:', err) 
+        } catch (err) {
+          console.warn('Scales save notice:', err)
           localStorage.setItem('raices_user_scales', JSON.stringify(scalesPayload))
         }
       }
@@ -436,46 +466,100 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
           localStorage.setItem('raices_acompanamiento', acompanamiento)
         }
         await updateProfile.mutateAsync({
-          preferenciasAcompanamiento: acompanamiento,
-          ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
+          preferenciasAcompanamiento: acompanamiento || 'recomendaciones_paso',
+          ...(curpInput.trim() ? { curp: curpInput.trim().toUpperCase() } : {}),
         })
-        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
         const specDiag = conditionData.tieneDiagnostico === 'si' ? (conditionData.diagnosticoEspecifico.trim() || null) : null
+        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : []), ...(specDiag ? [`Condición compartida: ${specDiag}`] : [])]))
+        const finalEduHistory = isExplorarSolo ? ['Exploración libre'] : (educacionHistory.length > 0 ? educacionHistory : ['Sin especificar'])
+        const finalTherapyHistory = isExplorarSolo ? ['Exploración libre'] : (terapiaHistory.length > 0 ? terapiaHistory : ['Sin especificar'])
+        const finalNeeds = isExplorarSolo ? ['Orientación general'] : (needsList.length > 0 ? needsList : ['Orientación general'])
+        const finalDisabilityTypes = isExplorarSolo ? ['General'] : (allConditions.length > 0 ? allConditions : (disabilityTypes.length > 0 ? disabilityTypes : ['General']))
+        const finalGoals = combinedGoals.length > 0 ? combinedGoals : ['Bienestar integral']
+        const finalInterests = isExplorarSolo ? ['Comunidad'] : (selectedInterests.length > 0 ? selectedInterests : ['Comunidad'])
+
         await updateNeedsProfile.mutateAsync({
           profiling: {
-            disability_types: isExplorarSolo ? [] : (allConditions.length > 0 ? allConditions : disabilityTypes),
+            disability_types: finalDisabilityTypes,
             severity: isExplorarSolo ? null : (conditionData.conditions.includes('Prefiero no responder') ? null : conditionData.conditions.join(', ')),
             communication_modes: isExplorarSolo ? [] : formatos.filter(f => f !== 'Prefiero no responder'),
             mobility_needs: isExplorarSolo ? [] : (scales.movilidad >= 4 ? [] : ['Movilidad reducida']),
             tech_access: isExplorarSolo ? [] : formatos,
             preferred_zones: isExplorarSolo ? [] : preferredZones,
-            needs: isExplorarSolo ? [] : needsList,
-            goals: combinedGoals,
+            needs: finalNeeds,
+            goals: finalGoals,
             support_areas: isExplorarSolo ? [] : supportAreas,
-            education_history: isExplorarSolo ? [] : educacionHistory,
+            education_history: finalEduHistory,
             grado_estudios: isExplorarSolo ? '' : gradoEstudios,
             gradoEstudios: isExplorarSolo ? '' : gradoEstudios,
-            therapy_history: isExplorarSolo ? [] : terapiaHistory,
-            life_stage: etapa || null,
+            therapy_history: finalTherapyHistory,
+            life_stage: etapa,
             current_concerns: isExplorarSolo ? '' : (specDiag || ''),
             diagnostico_especifico: specDiag,
             diagnosticoEspecifico: specDiag,
             barreras_sociales: isExplorarSolo ? [] : finalBarrerasSociales,
             barrerasSociales: isExplorarSolo ? [] : finalBarrerasSociales,
             support_level: isExplorarSolo ? null : (scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo'),
-            ...(birthDate ? { birth_date: birthDate, age: edad } : {}),
+            birth_date: effectiveBirthDate,
+            age: edad,
           } as Record<string, unknown>,
         })
+
+        // Guardar borrador DESPUÉS de updateNeedsProfile con tonoContextual válido ('cercano' | 'empatico' | 'directo')
+        // para que SaveDraftOnboardingDto (@IsIn) nunca rechace con 400 ni sea sobrescrito por saveProfilingData.
+        const validTono =
+          acompanamiento === 'explorar_solo'
+            ? 'directo'
+            : acompanamiento === 'apoyo_necesite'
+              ? 'empatico'
+              : 'cercano'
+
+        try {
+          await api.post('/onboarding/borrador', {
+            fechaNacimiento: effectiveBirthDate,
+            ciudad: effectiveCiudad,
+            etapaVida: etapa,
+            tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+            historialEducacion: finalEduHistory,
+            historialTerapia: finalTherapyHistory,
+            tiposDiscapacidad: finalDisabilityTypes,
+            necesidades: finalNeeds,
+            metasActuales: finalGoals,
+            areasInteres: finalInterests,
+            preferenciasAcompanamiento: acompanamiento || 'recomendaciones_paso',
+            tonoContextual: validTono,
+            escalasVida: {
+              autonomia: scalesPayload.nivelAutonomia,
+              independencia: scalesPayload.nivelIndependencia,
+              comunicacion: scalesPayload.nivelComunicacion,
+              comprension: scalesPayload.nivelComprension,
+              energia: scalesPayload.nivelEnergia,
+              movilidad: scalesPayload.nivelMovilidad,
+              social: scalesPayload.nivelSocial,
+              emocional: scalesPayload.nivelEmocional,
+            },
+            ...(curpInput.trim() ? { curp: curpInput.trim().toUpperCase() } : {}),
+          })
+        } catch (borradorErr) {
+          console.warn('Onboarding draft save notice:', borradorErr)
+        }
       } catch (profErr) { console.warn('Profile save notice:', profErr) }
 
-      // 3. Save local data
+      // 3. Save local data & clean any leftover tutor session keys
+      localStorage.setItem('raices_pcd_questionnaire_done', 'true')
+      localStorage.removeItem('raices_dep_name')
+      localStorage.removeItem('raices_destinatario')
+      localStorage.removeItem('ai_resumen_last_fetch_ts')
+      localStorage.removeItem('ai_last_fetch_ts')
       saveOnboardingData({
         interests: isExplorarSolo ? [] : selectedInterests,
         viability: isExplorarSolo ? '' : viabilidad,
         formatos: isExplorarSolo ? [] : formatos,
       })
 
-      // 4. Invalidate queries to refresh dashboard
+      // 4. Invalidate queries to refresh dashboard & AI story
+      qc.removeQueries({ queryKey: ['ai', 'resumen'] })
+      qc.removeQueries({ queryKey: ['ai', 'next-steps'] })
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
@@ -503,7 +587,7 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
 
   return (
     <div className="profile-wizard-scroll" style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {step !== 'cover' && <WizardProgress accent="#229B58" title="Completa tu perfil" stepIndex={stepIndex} totalSteps={totalSteps} />}
+      {step !== 'cover' && step !== 'done' && <WizardProgress accent="#229B58" title="Completa tu perfil" stepIndex={stepIndex} totalSteps={totalSteps} />}
       <WizardErrorBanner error={error} />
 
       {/* ── STEP: COVER (PORTADA DE ETAPA 1) ── */}
@@ -591,40 +675,42 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
                 onSelect={() => setConditionData({
                   ...conditionData,
                   tieneDiagnostico: opt.id,
-                  ...(opt.id !== 'si' ? { diagnosticoEspecifico: '' } : {}),
+                  ...(opt.id !== 'si'
+                    ? { diagnosticoEspecifico: '', temporalidad: 'en_evaluacion' }
+                    : { temporalidad: conditionData.temporalidad === 'en_evaluacion' ? 'nacimiento' : conditionData.temporalidad }),
                 })}
               />
             ))}
           </div>
           {conditionData.tieneDiagnostico === 'si' && (
-            <div style={{ marginTop: 14, animation: 'fadeInUp 0.3s ease both' }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
-                Diagnóstico específico <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span>
-              </label>
-              <textarea
-                className="auth-input"
-                rows={3}
-                style={{ width: '100%', resize: 'vertical', minHeight: 74, fontFamily: 'var(--font-body)', padding: '10px 14px', borderRadius: 10 }}
-                placeholder="Describir el diagnóstico específico..."
-                value={conditionData.diagnosticoEspecifico || ''}
-                onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })}
-              />
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>¿Desde cuándo vives con esta condición?</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {LIST_TEMPORALIDAD.map(t => (
-                <VerticalCheckCard
-                  key={t.id}
-                  type="radio"
-                  label={t.label}
-                  selected={conditionData.temporalidad === t.id}
-                  onSelect={() => setConditionData({ ...conditionData, temporalidad: t.id })}
+            <>
+              <div style={{ marginTop: 14, animation: 'fadeInUp 0.3s ease both' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
+                  Diagnóstico específico <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span>
+                </label>
+                <StandardizedDiagnosisPicker
+                  value={conditionData.diagnosticoEspecifico || ''}
+                  onChange={val => setConditionData({ ...conditionData, diagnosticoEspecifico: val })}
+                  selectedConditions={conditionData.conditions}
+                  selectedNeuro={conditionData.neurodivergencias}
                 />
-              ))}
-            </div>
-          </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, animation: 'fadeInUp 0.3s ease both' }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg1)' }}>¿Desde cuándo vives con esta condición?</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {LIST_TEMPORALIDAD.filter(t => t.id !== 'en_evaluacion').map(t => (
+                    <VerticalCheckCard
+                      key={t.id}
+                      type="radio"
+                      label={t.label}
+                      selected={conditionData.temporalidad === t.id}
+                      onSelect={() => setConditionData({ ...conditionData, temporalidad: t.id })}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           <WizardNavButtons onBack={goBack} onSaveLater={handleSaveLater} submitLabel="Continuar" />
         </form>
       )}
@@ -904,21 +990,18 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
 
       {/* ── STEP: DONE ── */}
       {step === 'done' && (
-        <div style={{ textAlign: 'center', padding: '20px 0', animation: 'fadeIn 0.4s ease-out' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <h2 style={headingStyle}>¡Tu perfil está completo!</h2>
-          <p style={descStyle}>Raíces ha analizado tus preferencias y personalizado tu experiencia.</p>
-          
-          <div style={{ marginTop: 24, textAlign: 'left' }}>
-            <ProfileSummaryCard />
+        <div style={{ textAlign: 'center', padding: '4px 0', animation: 'fadeIn 0.4s ease-out' }}>
+          <div style={{ textAlign: 'left' }}>
+            <ProfileSummaryCard autoGenerate />
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => nav('/feed')}
+              onClick={() => nav('/verificacion-identidad')}
               style={{
                 flex: 1,
+                minWidth: 220,
                 padding: '12px 24px',
                 borderRadius: 10,
                 background: 'var(--primary)',
@@ -943,7 +1026,28 @@ export default function PcdProfileWizard({ birthDate, onDone }: PcdProfileWizard
                 e.currentTarget.style.transform = 'none'
               }}
             >
-              Ir a mi Dashboard {Icons.arrowRight({ s: 18 })}
+              Subir CURP e Identificación (100%) {Icons.arrowRight({ s: 18 })}
+            </button>
+            <button
+              type="button"
+              onClick={() => nav('/feed')}
+              style={{
+                padding: '12px 20px',
+                borderRadius: 10,
+                background: 'var(--bg-warm)',
+                color: 'var(--fg1)',
+                border: '1px solid var(--border-color)',
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'all 0.2s',
+              }}
+            >
+              Ir a mi Dashboard
             </button>
           </div>
         </div>

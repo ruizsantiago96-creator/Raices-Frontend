@@ -4,12 +4,72 @@ import { esEmpresa } from '@features/auth/lib/empresaRole'
 
 const FIELD_LABELS: Record<string, string> = {
   curp: 'CURP',
+  datosGenerales: 'Verificación de CURP y datos generales',
+  datosIdentidad: 'Verificación de identidad (CURP)',
+  historialEducativo: 'Historial educativo y etapa de vida',
+  terapias: 'Terapias y condición',
   perfilNecesidades: 'Perfil de necesidades',
+  escalasVida: 'Escalas de vida diaria',
+  preferencias: 'Preferencias e intereses',
+  observacionesGenerales: 'Observaciones generales',
   certificadoDiscapacidad: 'Certificado de discapacidad',
   telefono: 'Teléfono',
   direccion: 'Dirección o ubicación',
   biografia: 'Biografía',
   fechaNacimiento: 'Fecha de nacimiento',
+}
+
+const VERIFICATION_ONLY_KEYS = new Set([
+  'datosGenerales',
+  'datosIdentidad',
+  'curp',
+  'certificadoDiscapacidad',
+])
+
+export function getVerificationRouteByRole(role?: string | null): string {
+  const normalized = String(role || '').toLowerCase()
+  if (normalized === 'institution' || normalized === 'institucion') {
+    return '/institution-portal'
+  }
+  if (normalized === 'empresa' || normalized === 'enterprise') {
+    return '/empresa/dashboard'
+  }
+  return '/verificacion-identidad'
+}
+
+export function esSoloPendienteVerificacion(
+  onboardingStatus?: Record<string, unknown> | null,
+): boolean {
+  if (!onboardingStatus || onboardingStatus.onboardingCompleto === true) {
+    return false
+  }
+
+  const rawPending = Array.isArray(onboardingStatus.pasosPendientes)
+    ? onboardingStatus.pasosPendientes
+    : Array.isArray(onboardingStatus.camposFaltantes)
+      ? onboardingStatus.camposFaltantes
+      : []
+
+  const pending = rawPending.map(String).filter(Boolean)
+  const pct = Number(onboardingStatus.porcentajeProgreso ?? onboardingStatus.porcentaje ?? 0)
+  const hasLocalQuestionnaireDone =
+    typeof window !== 'undefined' &&
+    (localStorage.getItem('raices_pcd_questionnaire_done') === 'true' ||
+      Boolean(localStorage.getItem('raices_user_scales')))
+
+  if (pending.length > 0 && pending.every(k => VERIFICATION_ONLY_KEYS.has(k))) {
+    return true
+  }
+
+  if (pct >= 65 && !pending.includes('perfilNecesidades') && !pending.includes('escalasVida')) {
+    return true
+  }
+
+  if (pct >= 50 && hasLocalQuestionnaireDone) {
+    return true
+  }
+
+  return false
 }
 
 export interface ProfileCompletionModalProps {
@@ -57,14 +117,20 @@ export default function ProfileCompletionModal({
   }
 
   const camposFaltantes = onboardingStatus?.camposFaltantes || []
-  const porcentaje = onboardingStatus?.porcentaje ?? 0
+  const soloFaltaVerificacion = !isRejected && esSoloPendienteVerificacion(onboardingStatus)
 
-  const formattedMissing = camposFaltantes
-    .map((field: string) => FIELD_LABELS[field] || field)
-    .join(', ')
+  const formattedMissing = soloFaltaVerificacion
+    ? 'Verificación de identidad (CURP e identificación oficial)'
+    : camposFaltantes
+        .map((field: string) => FIELD_LABELS[field] || field)
+        .join(', ')
 
   const handleComplete = () => {
     onClose()
+    if (isRejected || soloFaltaVerificacion) {
+      nav(getVerificationRouteByRole(user?.role))
+      return
+    }
     nav('/completar-perfil')
   }
 
@@ -124,7 +190,9 @@ export default function ProfileCompletionModal({
           <p style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>
             {isRejected
               ? 'Tu documentación de identidad fue revisada y rechazada por el equipo de administración. Es necesario subirla nuevamente para validar tu identidad en Raíces.'
-              : 'Faltan datos en tu perfil. Completarlo permite que tus oportunidades, recomendaciones y caminos se adapten correctamente dentro del ecosistema de Raíces.'
+              : soloFaltaVerificacion
+                ? 'Ya completaste tu cuestionario de perfil. Para llegar al 100%, solo falta verificar tu identidad con tu CURP y documento oficial.'
+                : 'Faltan datos en tu perfil. Completarlo permite que tus oportunidades, recomendaciones y caminos se adapten correctamente dentro del ecosistema de Raíces.'
             }
           </p>
 
@@ -186,7 +254,7 @@ export default function ProfileCompletionModal({
                 />
               </div>
 
-              {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0 && (
+              {!soloFaltaVerificacion && typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0 && (
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: '#229B58', marginBottom: 6 }}>
                   📍 Te quedaste en el Paso {onboardingStatus.ultimoPasoCompletado} (Reanudarás automáticamente en el Paso {onboardingStatus.ultimoPasoCompletado + 1})
                 </div>
@@ -261,9 +329,11 @@ export default function ProfileCompletionModal({
             >
               {isRejected
                 ? 'Actualizar documentos'
-                : typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
-                  ? `Reanudar en Paso ${onboardingStatus.ultimoPasoCompletado + 1}`
-                  : 'Completar perfil'
+                : soloFaltaVerificacion
+                  ? 'Verificar CURP y documentos'
+                  : typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                    ? `Reanudar en Paso ${onboardingStatus.ultimoPasoCompletado + 1}`
+                    : 'Completar perfil'
               }
             </button>
           </div>

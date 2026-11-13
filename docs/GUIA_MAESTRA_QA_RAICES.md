@@ -227,3 +227,4 @@ Para ejecutar las pruebas en local, QA puede utilizar las siguientes cuentas sem
 - [x] **Políticas de Seguridad y CSP:** Carga de PDFs y CVs sin bloqueos `ERR_BLOCKED_BY_CSP`.
 - [x] **Flujo de Moderación IA:** Prevención activa de contenido dañino con explicación educativa en Lectura Fácil.
 - [x] **Sincronización Git:** Frontend y Backend sincronizados en la rama `main` sin conflictos.
+

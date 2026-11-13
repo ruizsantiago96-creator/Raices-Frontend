@@ -12,7 +12,10 @@ import { resolveCategoryWeights, getEngagementWeights, trackEngagement } from '@
 import { CommunityPostCard, ForumFeedCard, FeedItemSkeleton, RouteRecommendationCard, CommunityHighlightCard, type RouteRecommendationItem } from './FeedCards'
 import { NextStepsCard, ProfileSummaryCard } from '../components/AICards'
 import VerificationBadgeCard from '../components/VerificationBadgeCard'
-import ProfileCompletionModal from '../components/ProfileCompletionModal'
+import ProfileCompletionModal, {
+  esSoloPendienteVerificacion,
+  getVerificationRouteByRole,
+} from '../components/ProfileCompletionModal'
 import { useEstadoValidacion } from '@features/profile/hooks/useDocumentoIdentidad'
 import type { CommunityPost } from '@/types/social'
 import { CatalogIcon } from '@features/auth/components/CatalogIcon'
@@ -597,6 +600,8 @@ export default function FeedPage() {
 
   // Si los documentos están en revisión o aprobados, quitamos los candados y la barra de progreso
   const isIncomplete = !esRolSinOnboardingEstándar && Boolean(onboardingStatus && !isOnboardingComplete && !isPendingDocs && !isApproved)
+  const soloFaltaVerificacion = isIncomplete && !isRejected && esSoloPendienteVerificacion(onboardingStatus)
+  const targetIncompleteRoute = soloFaltaVerificacion ? getVerificationRouteByRole(user?.role) : '/completar-perfil'
 
   // El modal debe volver a aparecer siempre que el perfil sigue incompleto o fue
   // rechazado, aunque el usuario lo haya cerrado antes. No usamos modalDismissed como
@@ -833,18 +838,22 @@ export default function FeedPage() {
                 )}
               </div>
               <p style={{ fontSize: 13, color: 'var(--fg2)', margin: 0, lineHeight: 1.4 }}>
-                {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
-                  ? `Último paso completado: Paso ${onboardingStatus.ultimoPasoCompletado}. Reanudarás automáticamente en el Paso ${onboardingStatus.ultimoPasoCompletado + 1}.`
-                  : 'Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.'}
+                {soloFaltaVerificacion
+                  ? 'Ya completaste tu cuestionario. Verifica tu CURP y documentos para llegar al 100%.'
+                  : typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                    ? `Último paso completado: Paso ${onboardingStatus.ultimoPasoCompletado}. Reanudarás automáticamente en el Paso ${onboardingStatus.ultimoPasoCompletado + 1}.`
+                    : 'Complétalo para desbloquear el contacto con especialistas y recomendaciones personalizadas.'}
               </p>
               <div style={{ height: 6, background: 'rgba(34,155,88,0.15)', borderRadius: 3, marginTop: 12, overflow: 'hidden' }}>
                 <div style={{ width: `${(onboardingStatus?.porcentajeProgreso ?? onboardingStatus?.porcentaje ?? 20)}%`, height: '100%', background: '#229B58', borderRadius: 3, transition: 'width 0.3s ease' }} />
               </div>
             </div>
-            <Link to="/completar-perfil" style={{ padding: '10px 18px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(34,155,88,0.25)' }}>
-              {typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
-                ? `Reanudar (Paso ${onboardingStatus.ultimoPasoCompletado + 1})`
-                : 'Completar ahora'}
+            <Link to={targetIncompleteRoute} style={{ padding: '10px 18px', background: 'var(--primary)', color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(34,155,88,0.25)' }}>
+              {soloFaltaVerificacion
+                ? 'Verificar CURP ahora'
+                : typeof onboardingStatus?.ultimoPasoCompletado === 'number' && onboardingStatus.ultimoPasoCompletado > 0
+                  ? `Reanudar (Paso ${onboardingStatus.ultimoPasoCompletado + 1})`
+                  : 'Completar ahora'}
             </Link>
           </div>
         )}
@@ -915,7 +924,9 @@ export default function FeedPage() {
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--fg1)', textAlign: 'center', maxWidth: 280 }}>Desbloquea recomendaciones</div>
                 <div style={{ fontSize: 13, color: 'var(--fg2)', textAlign: 'center', maxWidth: 280, marginTop: 4, fontWeight: 500 }}>Completa tu perfil para ver especialistas adaptados a ti</div>
-                <Link to="/completar-perfil" style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 'var(--radius-btn)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>Completar perfil</Link>
+                <Link to={targetIncompleteRoute} style={{ marginTop: 12, padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: 'var(--radius-btn)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(34,155,88,0.3)' }}>
+                  {soloFaltaVerificacion ? 'Verificar CURP' : 'Completar perfil'}
+                </Link>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

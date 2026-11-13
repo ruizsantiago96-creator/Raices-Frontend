@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import api from '@shared/lib/api'
 import { Icons, labelStyle, inputStyle } from '@shared/components/shared'
 import { IdentityStatusCard } from './IdentityStatusCard'
 import {
@@ -12,6 +14,23 @@ import {
 } from '@features/institutions/hooks/useInstitutions'
 import { useUiStore } from '@shared/stores/uiStore'
 import { useEsEmpresa } from '@features/auth/lib/empresaRole'
+
+async function syncCurpWithOnboarding(
+  curpValue: string,
+  qc: ReturnType<typeof useQueryClient>,
+) {
+  const clean = curpValue.trim().toUpperCase()
+  if (!clean || clean.length < 18) return
+  await Promise.allSettled([
+    api.post('/onboarding/borrador', { curp: clean }),
+    api.patch('/usuarios/perfil', { curp: clean }),
+  ])
+  qc.invalidateQueries({ queryKey: ['onboarding-status'] })
+  qc.invalidateQueries({ queryKey: ['perfil'] })
+  qc.invalidateQueries({ queryKey: ['profile'] })
+  qc.invalidateQueries({ queryKey: ['me'] })
+  qc.invalidateQueries({ queryKey: ['documento-identidad'] })
+}
 
 export function useIdentitySection(_state?: unknown) {
   const [curpNumber, setCurpNumber] = useState<string>('')
@@ -30,6 +49,9 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
   onUploaded,
 }) => {
   const [localCurp, setLocalCurp] = useState(status?.numeroCurp ?? '')
+  const [savingCurp, setSavingCurp] = useState(false)
+  const qc = useQueryClient()
+  const addToast = useUiStore((s) => s.addToast)
   // Persona moral: sin CURP ni identificación oficial. Se oculta en el origen
   // para que ninguna vista que lo monte (MiIdentidadPage, /verificacion-identidad)
   // pueda ofrecerle la validación individual.
@@ -38,6 +60,23 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
   if (isEmpresa) return null
   if (estado === 'aprobado') return null
   if (estado === 'pendiente' && status?.tieneCurp && status?.tieneIdentificacion) return null
+
+  const cleanLocalCurp = localCurp.trim().toUpperCase()
+  const canSaveCurpOnly = cleanLocalCurp.length === 18 && cleanLocalCurp !== (status?.numeroCurp ?? '').toUpperCase()
+
+  const handleSaveCurpOnly = async () => {
+    if (cleanLocalCurp.length !== 18) return
+    setSavingCurp(true)
+    try {
+      await syncCurpWithOnboarding(cleanLocalCurp, qc)
+      addToast('CURP guardada en tu perfil', 'success')
+      onUploaded?.()
+    } catch {
+      addToast('No se pudo guardar la CURP', 'error')
+    } finally {
+      setSavingCurp(false)
+    }
+  }
 
   return (
     <div
@@ -66,16 +105,38 @@ export const IdentityUploadSection: React.FC<IdentityUploadSectionProps> = ({
 
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Número de CURP (18 caracteres)</label>
-        <input
-          type="text"
-          className="onboarding-input"
-          style={{ ...inputStyle, marginTop: 6, fontFamily: 'monospace', letterSpacing: '0.05em' }}
-          value={localCurp}
-          onChange={(e) => setLocalCurp(e.target.value.toUpperCase())}
-          placeholder="GAPL800101HMCYRL09"
-          maxLength={18}
-          readOnly={Boolean(status?.tieneCurp && estado !== 'rechazado')}
-        />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
+          <input
+            type="text"
+            className="onboarding-input"
+            style={{ ...inputStyle, marginTop: 0, flex: 1, fontFamily: 'monospace', letterSpacing: '0.05em' }}
+            value={localCurp}
+            onChange={(e) => setLocalCurp(e.target.value.toUpperCase())}
+            placeholder="GAPL800101HMCYRL09"
+            maxLength={18}
+            readOnly={Boolean(status?.tieneCurp && estado !== 'rechazado')}
+          />
+          {canSaveCurpOnly && (
+            <button
+              type="button"
+              onClick={handleSaveCurpOnly}
+              disabled={savingCurp}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#ffffff',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: savingCurp ? 'wait' : 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {savingCurp ? 'Guardando...' : 'Guardar CURP'}
+            </button>
+          )}
+        </div>
         <div style={{ fontSize: 11.5, color: 'var(--fg3)', marginTop: 4 }}>
           Ingresa las 18 letras de tu Clave Única de Registro de Población
         </div>
@@ -154,6 +215,7 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
   // CSF va por su propio endpoint, la del resto por el de identidad de usuario.
   const isEnviando = esCsf ? subirVerificacion.isPending : subirDoc.isPending
   const addToast = useUiStore((s) => s.addToast)
+  const qc = useQueryClient()
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -186,7 +248,12 @@ export const IdentityDocumentUploader: React.FC<IdentityDocumentUploaderProps> =
 
   const handleUpload = () => {
     if (!selectedFile) return
-    const onSuccess = () => {
+    const onSuccess = async () => {
+      if (tipo === 'curp' && numeroCurp && numeroCurp.trim().length >= 18) {
+        await syncCurpWithOnboarding(numeroCurp, qc)
+      } else {
+        qc.invalidateQueries({ queryKey: ['onboarding-status'] })
+      }
       addToast(`${tipoLabel} subido exitosamente`, 'success')
       handleClear()
       onUploadSuccess?.()

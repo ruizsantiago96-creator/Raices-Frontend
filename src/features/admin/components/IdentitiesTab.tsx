@@ -77,16 +77,29 @@ interface DocumentRowProps {
 
 function DocumentRow({ doc, onApprove, onReject, isProcessing }: DocumentRowProps) {
   const isPending = doc.estado === 'pendiente'
+  const isApproved = doc.estado === 'aprobado'
+  const isRejected = doc.estado === 'rechazado'
   const isCurp = doc.tipo === 'curp'
   const fileUrl = doc.urlDocumento ?? doc.urlArchivo
+
+  const rowBackground = isApproved
+    ? 'rgba(16,185,129,0.06)'
+    : isRejected
+      ? 'rgba(220,53,69,0.06)'
+      : 'var(--bg-warm, #f8fafc)'
+  const rowBorder = isApproved
+    ? '1px solid rgba(16,185,129,0.25)'
+    : isRejected
+      ? '1px solid rgba(220,53,69,0.25)'
+      : '1px solid transparent'
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '14px 16px', background: 'var(--bg-warm, #f8fafc)',
+      padding: '14px 16px', background: rowBackground, border: rowBorder,
       borderRadius: 10, gap: 12, flexWrap: 'wrap',
       opacity: isProcessing ? 0.6 : 1,
-      transition: 'opacity 0.2s',
+      transition: 'opacity 0.2s, background 0.2s, border-color 0.2s',
     }}>
       {/* Left: icon + label + status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 200 }}>
@@ -137,7 +150,7 @@ function DocumentRow({ doc, onApprove, onReject, isProcessing }: DocumentRowProp
           <span style={{ fontSize: 12, color: 'var(--fg3)', padding: '6px 0' }}>Sin archivo</span>
         )}
 
-        {isPending && (
+        {isPending ? (
           <>
             <button
               onClick={() => onApprove(doc.id)}
@@ -172,6 +185,16 @@ function DocumentRow({ doc, onApprove, onReject, isProcessing }: DocumentRowProp
               Rechazar
             </button>
           </>
+        ) : (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: isApproved ? 'rgba(16,185,129,0.12)' : 'rgba(220,53,69,0.12)',
+            color: isApproved ? '#059669' : '#DC3545',
+          }}>
+            {isApproved ? Icons.check({ s: 12 }) : Icons.x({ s: 12 })}
+            {isApproved ? 'Aprobado' : 'Rechazado'}
+          </span>
         )}
       </div>
     </div>
@@ -306,6 +329,18 @@ function UserCard({ user, onApproveOne, onRejectOne, onApproveAll, onRejectAll, 
           </button>
         </div>
       )}
+
+      {/* ── Confirmation footer when all documents are approved ── */}
+      {pending.length === 0 && user.documentos.length > 0 && user.documentos.every(d => d.estado === 'aprobado') && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 14px', borderRadius: 8,
+          background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.22)',
+          color: '#059669', fontSize: 12.5, fontWeight: 700,
+        }}>
+          {Icons.check({ s: 14 })} Documentos aprobados — Usuario verificado
+        </div>
+      )}
     </div>
   )
 }
@@ -325,6 +360,8 @@ export default function IdentitiesTab() {
 
   // Track which document IDs are currently being processed
   const [processingIds, setProcessingIds] = useState<Set<string | number>>(() => new Set())
+  // Track recently approved/rejected docs locally so the admin sees immediate visual confirmation
+  const [resolvedDocs, setResolvedDocs] = useState<Record<string, DocumentoIdentidadAdmin>>({})
 
   // Rejection modal state
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -333,18 +370,43 @@ export default function IdentitiesTab() {
   const [rejectMode, setRejectMode] = useState<'single' | 'batch'>('single')
 
   const groupedUsers = useMemo(() => {
-    if (!Array.isArray(queue)) return []
-    return groupByUser(queue)
-  }, [queue])
+    const baseQueue = Array.isArray(queue) ? queue : []
+    const merged: DocumentoIdentidadAdmin[] = baseQueue.map(d => resolvedDocs[String(d.id)] ?? d)
+    const presentIds = new Set(baseQueue.map(d => String(d.id)))
+    for (const resolved of Object.values(resolvedDocs)) {
+      if (!presentIds.has(String(resolved.id))) {
+        merged.push(resolved)
+      }
+    }
+    return groupByUser(merged)
+  }, [queue, resolvedDocs])
+
+  const pendingUsersCount = useMemo(
+    () => groupedUsers.filter(u => u.documentos.some(d => d.estado === 'pendiente')).length,
+    [groupedUsers]
+  )
+  const hasResolvedDocs = Object.keys(resolvedDocs).length > 0
 
   // ── Process a single document ──────────────────────────
   const processDoc = useCallback(async (id: string | number, action: 'approve' | 'reject', reason?: string): Promise<boolean> => {
+    const key = String(id)
+    const targetDoc = (Array.isArray(queue) ? queue.find(d => String(d.id) === key) : undefined) ?? resolvedDocs[key]
     setProcessingIds(prev => new Set(prev).add(id))
     try {
       if (action === 'approve') {
         await approveVerif.mutateAsync(id)
       } else {
         await rejectVerif.mutateAsync({ id, motivo: reason })
+      }
+      if (targetDoc) {
+        setResolvedDocs(prev => ({
+          ...prev,
+          [key]: {
+            ...targetDoc,
+            estado: action === 'approve' ? 'aprobado' : 'rechazado',
+            motivoRechazo: action === 'reject' ? reason : undefined,
+          },
+        }))
       }
       return true
     } catch {
@@ -356,7 +418,7 @@ export default function IdentitiesTab() {
         return next
       })
     }
-  }, [approveVerif, rejectVerif])
+  }, [approveVerif, rejectVerif, queue, resolvedDocs])
 
   // ── Single doc actions ─────────────────────────────────
   const handleApproveOne = useCallback(async (id: string | number) => {
@@ -373,7 +435,6 @@ export default function IdentitiesTab() {
 
   // ── Batch actions ──────────────────────────────────────
   const handleApproveAll = useCallback(async (pendingDocs: DocumentoIdentidadAdmin[]) => {
-    if (!window.confirm(`¿Aprobar los ${pendingDocs.length} documentos de este usuario?`)) return
     let ok = 0
     let fail = 0
     for (const doc of pendingDocs) {
@@ -426,11 +487,23 @@ export default function IdentitiesTab() {
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
 
       {/* ── Title ── */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Cola de Verificación de Identidad</h2>
-        <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>
-          Revisa CURPs e identificaciones oficiales — {groupedUsers.length} usuario{groupedUsers.length !== 1 ? 's' : ''} en la cola
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>Cola de Verificación de Identidad</h2>
+          <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>
+            Revisa CURPs e identificaciones oficiales — {pendingUsersCount} usuario{pendingUsersCount !== 1 ? 's' : ''} pendiente{pendingUsersCount !== 1 ? 's' : ''} en la cola
+          </p>
+        </div>
+        {hasResolvedDocs && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setResolvedDocs({})}
+            style={{ fontSize: 12.5, padding: '6px 12px' }}
+          >
+            Ocultar procesados
+          </button>
+        )}
       </div>
 
       {/* ── Content ── */}

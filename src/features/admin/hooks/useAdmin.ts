@@ -217,7 +217,11 @@ export function useAdminVerificaciones(
     queryKey: ['admin', 'verificaciones', params.pagina ?? null, params.limite ?? null, params.ordenarPor ?? null, params.direccion ?? null, params.buscar ?? null],
     queryFn: () =>
       api
-        .get('/administracion/documentos-identidad/pendientes', { params })
+        .get('/administracion/documentos-identidad/pendientes', {
+          params,
+          // Evita que ETagInterceptor devuelva 304 Not Modified con cola cacheada tras aprobar/rechazar
+          headers: { 'If-None-Match': `"bust-${Date.now()}"` },
+        })
         .then(r => {
           const data = r.data
           // Respuesta paginada { datos, total } o lista plana (compatibilidad)
@@ -225,7 +229,7 @@ export function useAdminVerificaciones(
           if (Array.isArray(data?.datos)) return data.datos as DocumentoIdentidadAdmin[]
           return []
         }),
-    staleTime: 1000 * 60 * 2,
+    staleTime: 0,
     // 🛡️ Anti-bucle: los errores del backend (500) no deben re-disparar peticiones.
     retry: false,
     retryOnMount: false,
@@ -236,13 +240,25 @@ export function useAdminVerificaciones(
   })
 }
 
+function invalidateVerificacionQueries(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
+  qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
+  qc.invalidateQueries({ queryKey: ['documento-identidad'] })
+  qc.invalidateQueries({ queryKey: ['onboarding-status'] })
+  qc.invalidateQueries({ queryKey: ['me'] })
+  qc.invalidateQueries({ queryKey: ['profile'] })
+}
+
 export function useAprobarVerificacion() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string | number) => api.post(`/administracion/documentos-identidad/${id}/aprobar`).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
+    onSuccess: (_data, id) => {
+      qc.setQueriesData<DocumentoIdentidadAdmin[]>(
+        { queryKey: ['admin', 'verificaciones'] },
+        old => (Array.isArray(old) ? old.filter(d => String(d.id) !== String(id)) : old)
+      )
+      invalidateVerificacionQueries(qc)
     },
   })
 }
@@ -252,9 +268,12 @@ export function useRechazarVerificacion() {
   return useMutation({
     mutationFn: ({ id, ...body }: RechazarVerificacionPayload) =>
       api.post(`/administracion/documentos-identidad/${id}/rechazar`, body).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'verificaciones'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'stats'] })
+    onSuccess: (_data, variables) => {
+      qc.setQueriesData<DocumentoIdentidadAdmin[]>(
+        { queryKey: ['admin', 'verificaciones'] },
+        old => (Array.isArray(old) ? old.filter(d => String(d.id) !== String(variables.id)) : old)
+      )
+      invalidateVerificacionQueries(qc)
     },
   })
 }

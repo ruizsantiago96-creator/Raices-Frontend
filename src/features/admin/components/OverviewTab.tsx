@@ -302,7 +302,7 @@ export default function OverviewTab({ onNavigate }: { onNavigate?: (tab: string)
       </div>
 
       {/* ─── Grid de Gráficas Modernas (Recharts) ─── */}
-      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, minWidth: 0, width: '100%' }}>
+      <div className="analytics-grid">
         {/* Gráfica Izquierda: Métricas por Entidad */}
         <Card className="analytics-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>

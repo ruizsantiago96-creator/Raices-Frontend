@@ -245,3 +245,4 @@ En `AuditInterceptor`: Asegurarse de que campos sensibles como `password`, `toke
 | **Rate Limit** | > 5 posts por minuto | `429 Too Many Requests` | [ ] PASS |
 | **Stack Trace Leak** | Errores 500 intencionales | Sin rutas de servidor ni código fuente | [ ] PASS |
 | **Protección CURP** | Redirección de rol Empresa en identidad | Redirigido a `/empresa/dashboard` | [ ] PASS |
+

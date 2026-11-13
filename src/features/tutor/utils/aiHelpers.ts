@@ -8,6 +8,8 @@ export interface TutorResumenContext {
   dependentName?: string
   parentesco?: string
   isTutor?: boolean
+  tieneDiagnostico?: boolean
+  diagnosticoEspecifico?: string
 }
 
 export interface NormalizedAIRecommendations {
@@ -182,7 +184,91 @@ export function normalizeAIResumen(
   ctx?: TutorResumenContext
 ): AIResumenResponse | null {
   if (!data) return null
-  if (!ctx?.isTutor) return data
+
+  let storedHasDiag = Boolean(ctx?.tieneDiagnostico || ctx?.diagnosticoEspecifico?.trim())
+  let storedDiagName = ctx?.diagnosticoEspecifico?.trim() || ''
+  try {
+    const rawScales = localStorage.getItem('raices_user_scales')
+    if (rawScales) {
+      const parsed = JSON.parse(rawScales) as Record<string, unknown>
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.tieneDiagnostico === true) storedHasDiag = true
+        if (typeof parsed.diagnosticoEspecifico === 'string' && parsed.diagnosticoEspecifico.trim()) {
+          storedHasDiag = true
+          if (!storedDiagName) storedDiagName = parsed.diagnosticoEspecifico.trim()
+        }
+      }
+    }
+  } catch {}
+
+  const fixDiagnosisMentions = (input?: string): string => {
+    if (!input || typeof input !== 'string') return ''
+    let s = input
+
+    // Limpiar posible inyección rota "no Mateo cuenta con un diagnóstico formal" -> "no cuenta con un diagnóstico formal"
+    s = s.replace(/\bno\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\s+cuenta con un diagnóstico formal\b/g, 'no cuenta con un diagnóstico formal')
+
+    // Suavizar lenguaje clínico para dejar claro que es información compartida por el usuario (Raíces no diagnostica)
+    if (!ctx?.isTutor) {
+      s = s.replace(/\bcuenta con un diagnóstico formal de\b/gi, 'compartió en su perfil vivir con')
+    }
+
+    if (!storedHasDiag) return s
+
+    const diagPhrase = storedDiagName
+      ? `compartió en su perfil vivir con ${storedDiagName.toLowerCase()}`
+      : 'indicó en su perfil contar con valoración previa'
+    const diagPhraseCap = storedDiagName
+      ? `Compartió en su perfil vivir con ${storedDiagName.toLowerCase()}`
+      : 'Indicó en su perfil contar con valoración previa'
+
+    // Limpiar contradicción ", actualmente en etapa de evaluación" cuando sí tiene condición registrada
+    s = s.replace(/,\s*actualmente en (?:etapa|proceso) de evaluación\b/gi, '')
+
+    // Caso 1: "Aunque actualmente no cuenta con un diagnóstico formal ni historial de terapias,"
+    s = s.replace(
+      /Aunque actualmente no\s+(?:[A-ZÁÉÍÓÚÑa-záéíóúñ]+\s+)?cuenta con un diagnóstico formal\s+ni\s+historial de terapias,?\s*/gi,
+      `${diagPhraseCap} y, aunque actualmente no registra historial de terapias, `
+    )
+
+    // Caso 2: "Aunque (actualmente )?no cuenta con un diagnóstico formal,"
+    s = s.replace(
+      /Aunque\s+(?:actualmente\s+)?no\s+(?:[A-ZÁÉÍÓÚÑa-záéíóúñ]+\s+)?cuenta con un diagnóstico formal,?\s*/gi,
+      `${diagPhraseCap}, y `
+    )
+
+    // Caso 3: "actualmente no cuenta con un diagnóstico formal" / "aún no cuenta con un diagnóstico formal" / "no cuenta con un diagnóstico formal"
+    s = s.replace(
+      /\b(?:actualmente\s+|aún\s+)?no\s+(?:[A-ZÁÉÍÓÚÑa-záéíóúñ]+\s+)?cuenta con un diagnóstico formal\b/gi,
+      diagPhrase
+    )
+
+    // Caso 4: "sin diagnóstico formal" / "sin un diagnóstico formal"
+    s = s.replace(
+      /\bsin\s+(?:un\s+|contar\s+(?:aún\s+)?con\s+un\s+)?diagnóstico formal\b/gi,
+      storedDiagName ? `habiendo compartido en su perfil vivir con ${storedDiagName.toLowerCase()}` : 'con valoración previa indicada en su perfil'
+    )
+
+    return s
+  }
+
+  if (!ctx?.isTutor) {
+    const fixedUnParrafo = fixDiagnosisMentions(data.resumenUnParrafo)
+    const parrafos = data.resumenTresParrafos as Record<string, string | undefined> | undefined
+    const fixedTresParrafos: Record<string, string | undefined> = parrafos ? { ...parrafos } : {}
+    if (parrafos) {
+      for (const key of Object.keys(parrafos)) {
+        if (parrafos[key]) {
+          fixedTresParrafos[key] = fixDiagnosisMentions(parrafos[key])
+        }
+      }
+    }
+    return {
+      ...data,
+      resumenUnParrafo: fixedUnParrafo || data.resumenUnParrafo,
+      resumenTresParrafos: fixedTresParrafos,
+    }
+  }
 
   const tutorName = ctx.tutorName?.trim() || 'Tutor'
   const tutorFirstName = tutorName.split(' ')[0]
@@ -195,7 +281,7 @@ export function normalizeAIResumen(
   const adaptText = (text?: string): string => {
     if (!text || typeof text !== 'string') return ''
 
-    let s = text
+    let s = fixDiagnosisMentions(text)
 
     // 1. "Lou Qtar es un niño valiente que reside en Mérida, Yucatán, junto a su padre tutor."
     // -> "Lou Qtar es tutor de su hijo Mateo, un niño valiente que reside en Mérida, Yucatán."
@@ -228,10 +314,10 @@ export function normalizeAIResumen(
       '.'
     )
 
-    // 4. "Cuenta con un diagnóstico formal..." -> "Mateo cuenta con un diagnóstico formal..."
+    // 4. "Cuenta con un diagnóstico formal..." (al inicio de oración, nunca después de "no ")
     s = s.replace(
-      /\bCuenta con un diagnóstico formal\b/gi,
-      `${dependentFirstName} cuenta con un diagnóstico formal`
+      /(^|\.\s+)Cuenta con un diagnóstico formal\b/g,
+      `$1${dependentFirstName} cuenta con un diagnóstico formal`
     )
 
     // 4. "Actualmente, Lou se encuentra en una situación donde cuenta con el respaldo necesario para su desarrollo..."

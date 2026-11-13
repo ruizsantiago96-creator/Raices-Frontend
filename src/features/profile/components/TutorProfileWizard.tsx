@@ -28,6 +28,7 @@ import { WizardNavButtons, ScaleCard, CheckChip, VerticalCheckCard, WizardProgre
 import { CatalogIcon } from '@features/auth/components/CatalogIcon'
 import { FluentEmoji } from '@features/auth/constants/fluentEmojis'
 import { calcEdad, calcEtapaDependiente, calcEtapaVida as calcEtapaPerfil } from '@features/auth/lib/age'
+import StandardizedDiagnosisPicker from './StandardizedDiagnosisPicker'
 import { saveOnboardingData, saveOnboardingStepProgress, getOnboardingStepProgress } from '@features/auth/lib/onboardingStorage'
 import { getMaxBirthDate, MIN_BIRTH_DATE } from '@features/auth/lib/validators'
 import { useQueryClient } from '@tanstack/react-query'
@@ -525,11 +526,24 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           formato = 'texto'
         }
 
+        const clampScale = (v: number | undefined): number => Math.min(4, Math.max(1, v ?? 3))
+        const normMovilidad = (v: number | undefined): number => {
+          const n = v ?? 3
+          if (n >= 7) return 4
+          if (n === 6 || n === 4) return 3
+          if (n === 5 || n === 3) return 2
+          return 1
+        }
+
         const scalesPayload = {
-          nivelAutonomia: scales.autonomia ?? 3, nivelIndependencia: scales.independencia ?? 3,
-          nivelComunicacion: scales.comunicacion ?? 3, nivelComprension: scales.comprension ?? 3,
-          nivelEnergia: scales.energia ?? 3, nivelMovilidad: scales.movilidad ?? 3,
-          nivelSocial: scales.social ?? 3, nivelEmocional: scales.emocional ?? 3,
+          nivelAutonomia: clampScale(scales.autonomia),
+          nivelIndependencia: clampScale(scales.independencia),
+          nivelComunicacion: clampScale(scales.comunicacion),
+          nivelComprension: clampScale(scales.comprension),
+          nivelEnergia: clampScale(scales.energia),
+          nivelMovilidad: normMovilidad(scales.movilidad),
+          nivelSocial: clampScale(scales.social),
+          nivelEmocional: clampScale(scales.emocional),
           barrerasSociales: finalBarrerasSociales,
           tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
           diagnosticoEspecifico: conditionData.diagnosticoEspecifico.trim() || null,
@@ -556,7 +570,19 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
           preferenciasAcompanamiento: acompanamiento,
           ...(curpInput.trim() ? { curp: curpInput.trim() } : {}),
         })
-        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : [])]))
+        const combinedGoals = isExplorarSolo ? [] : Array.from(new Set([...selectedInterests, ...selectedTemas, ...(otrosIntereses.trim() ? [otrosIntereses.trim()] : []), ...(specDiag ? [`Condición compartida: ${specDiag}`] : [])]))
+        try {
+          await api.post('/onboarding/borrador', {
+            tieneDiagnostico: conditionData.tieneDiagnostico === 'si',
+            historialEducacion: isExplorarSolo ? [] : educacionHistory,
+            historialTerapia: isExplorarSolo ? [] : terapiaHistory,
+            tiposDiscapacidad: isExplorarSolo ? [] : (allConditions.length > 0 ? allConditions : disabilityTypes),
+            necesidades: isExplorarSolo ? [] : needsList,
+            metasActuales: combinedGoals,
+            areasInteres: isExplorarSolo ? [] : selectedInterests,
+            ...(dependienteEtapaPerfil ? { etapaVida: dependienteEtapaPerfil } : {}),
+          })
+        } catch {}
         await updateNeedsProfile.mutateAsync({
           profiling: {
             disability_types: isExplorarSolo ? [] : (allConditions.length > 0 ? allConditions : disabilityTypes),
@@ -571,6 +597,9 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
             education_history: isExplorarSolo ? [] : educacionHistory,
             therapy_history: isExplorarSolo ? [] : terapiaHistory,
             life_stage: dependienteEtapaPerfil,
+            current_concerns: isExplorarSolo ? '' : (specDiag || ''),
+            diagnostico_especifico: specDiag,
+            diagnosticoEspecifico: specDiag,
             barreras_sociales: isExplorarSolo ? [] : finalBarrerasSociales,
             barrerasSociales: isExplorarSolo ? [] : finalBarrerasSociales,
             support_level: isExplorarSolo ? null : (scales.comunicacion >= 4 ? 'independiente' : scales.comunicacion >= 2 ? 'con_apoyo' : 'necesita_apoyo_intensivo'),
@@ -668,6 +697,10 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
       // 5. Invalidate queries (el estado de onboarding se lee SIEMPRE del
       // backend: sin bandera local que declare el onboarding completo, para que
       // el modal del Feed refleje el progreso real en cada recarga).
+      localStorage.removeItem('ai_resumen_last_fetch_ts')
+      localStorage.removeItem('ai_last_fetch_ts')
+      qc.removeQueries({ queryKey: ['ai', 'resumen'] })
+      qc.removeQueries({ queryKey: ['ai', 'next-steps'] })
       qc.invalidateQueries({ queryKey: ['onboarding-status'] })
       qc.invalidateQueries({ queryKey: ['perfil'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
@@ -716,7 +749,7 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
 
   return (
     <div className="profile-wizard-scroll" style={{ width: '100%', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {step !== 'cover' && <WizardProgress accent="#229B58" title="Completa tu perfil" stepIndex={stepIndex} totalSteps={totalSteps} />}
+      {step !== 'cover' && (step as string) !== 'done' && <WizardProgress accent="#229B58" title="Completa tu perfil" stepIndex={stepIndex} totalSteps={totalSteps} />}
       <WizardErrorBanner error={error} />
 
       {/* ── STEP: COVER (PORTADA DE ETAPA 1) ── */}
@@ -827,13 +860,11 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--fg1)', marginBottom: 6 }}>
                 Diagnóstico específico <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span>
               </label>
-              <textarea
-                className="auth-input"
-                rows={3}
-                style={{ width: '100%', resize: 'vertical', minHeight: 74, fontFamily: 'var(--font-body)', padding: '10px 14px', borderRadius: 10 }}
-                placeholder="Describir el diagnóstico específico..."
+              <StandardizedDiagnosisPicker
                 value={conditionData.diagnosticoEspecifico || ''}
-                onChange={e => setConditionData({ ...conditionData, diagnosticoEspecifico: e.target.value })}
+                onChange={val => setConditionData({ ...conditionData, diagnosticoEspecifico: val })}
+                selectedConditions={conditionData.conditions}
+                selectedNeuro={conditionData.neurodivergencias}
               />
             </div>
           )}
@@ -1144,16 +1175,12 @@ export default function TutorProfileWizard({ onDone }: TutorProfileWizardProps) 
 
       {/* ── STEP: DONE ── */}
       {(step as string) === 'done' && (
-        <div style={{ textAlign: 'center', padding: '20px 0', animation: 'fadeIn 0.4s ease-out' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <h2 style={headingStyle}>¡Tu perfil está completo!</h2>
-          <p style={descStyle}>Raíces ha analizado tus preferencias y personalizado tu experiencia.</p>
-          
-          <div style={{ marginTop: 24, textAlign: 'left' }}>
-            <ProfileSummaryCard />
+        <div style={{ textAlign: 'center', padding: '4px 0', animation: 'fadeIn 0.4s ease-out' }}>
+          <div style={{ textAlign: 'left' }}>
+            <ProfileSummaryCard autoGenerate />
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <button
               type="button"
               onClick={() => nav('/feed')}

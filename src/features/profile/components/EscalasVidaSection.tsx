@@ -11,6 +11,7 @@ import type {
 } from '@/types/rutas'
 import type { EscalasVidaPayload } from '@/types/profile'
 import { CustomSelect } from '@shared/components/CustomSelect'
+import StandardizedDiagnosisPicker from './StandardizedDiagnosisPicker'
 
 interface CatalogOption {
   id: string
@@ -1210,16 +1211,12 @@ export default function EscalasVidaSection() {
 
                 {form.tieneDiagnostico && (
                   <div>
-                    <label style={{ ...labelStyle, display: 'block', marginBottom: 4, fontFamily: 'var(--font-body)' }}>
-                      Diagnóstico o condición específica
+                    <label style={{ ...labelStyle, display: 'block', marginBottom: 6, fontFamily: 'var(--font-body)' }}>
+                      Diagnóstico o condición específica <span style={{ color: 'var(--fg3)', fontWeight: 500, fontSize: 12 }}>(opcional)</span>
                     </label>
-                    <input
-                      type="text"
-                      className="auth-input"
-                      placeholder="Ej. Autismo (TEA), TDAH, Parálisis cerebral, etc."
+                    <StandardizedDiagnosisPicker
                       value={form.diagnosticoEspecifico || ''}
-                      onChange={e => setForm(f => ({ ...f, diagnosticoEspecifico: e.target.value }))}
-                      style={{ fontSize: 13 }}
+                      onChange={val => setForm(f => ({ ...f, diagnosticoEspecifico: val }))}
                     />
                   </div>
                 )}
