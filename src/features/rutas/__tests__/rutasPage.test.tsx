@@ -59,16 +59,21 @@ function mockRutas(rutas: unknown[], opciones: { isLoading?: boolean } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.removeItem === 'function') {
+    window.localStorage.removeItem('raices_pasos_saltados')
+    window.localStorage.removeItem('raices_titulos_omitidos')
+    window.localStorage.removeItem('raices_caminos_omitidos')
+  }
   vi.mocked(useRutasSummary).mockReturnValue({ data: undefined, isLoading: false } as never)
-  vi.mocked(useUpdateRuta).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
-  vi.mocked(useDeleteRuta).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
+  vi.mocked(useUpdateRuta).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
+  vi.mocked(useDeleteRuta).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
   vi.mocked(useRutaDetail).mockReturnValue({ data: undefined, isLoading: false } as never)
-  vi.mocked(useAddPaso).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
-  vi.mocked(useCompletarPaso).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
-  vi.mocked(useDescompletarPaso).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
+  vi.mocked(useAddPaso).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
+  vi.mocked(useCompletarPaso).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
+  vi.mocked(useDescompletarPaso).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
   vi.mocked(useMiRuta).mockReturnValue({ data: undefined } as never)
   vi.mocked(useCatalogos).mockReturnValue({ data: undefined } as never)
-  vi.mocked(useCreateRuta).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never)
+  vi.mocked(useCreateRuta).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as never)
   vi.mocked(useOnboardingStatus).mockReturnValue({ data: { onboardingCompleto: true } } as never)
   vi.mocked(useUiStore).mockReturnValue({ addToast } as never)
   mockGenerar()
@@ -222,5 +227,101 @@ describe('RutasPage — motor de recomendación automatizado', () => {
     const btnCompletar = screen.getByRole('button', { name: /Marcar como realizada/i })
     fireEvent.click(btnCompletar)
     expect(completarMutate).toHaveBeenCalledWith('p1')
+  })
+
+  it('permite saltar una actividad que no quiera hacer y sugiere inmediatamente otra en su lugar', async () => {
+    const addPasoMutate = vi.fn().mockResolvedValue({})
+    vi.mocked(useAddPaso).mockReturnValue({ mutateAsync: addPasoMutate, isPending: false } as never)
+
+    mockRutas([
+      { id: 'r1', nombre: 'Ruta Laboral', estado: 'activa', prioridad: 'media', areaInteres: 'empleo' },
+    ])
+    vi.mocked(useRutaDetail).mockReturnValue({
+      data: {
+        id: 'r1',
+        nombre: 'Ruta Laboral',
+        estado: 'activa',
+        prioridad: 'media',
+        areaInteres: 'empleo',
+        pasos: [
+          { id: 'p1', titulo: 'Actividad original que no quiero hacer', completado: false, tipo: 'empleo' },
+        ],
+      },
+      isLoading: false,
+    } as never)
+
+    renderWithProviders(<RutasPage />)
+
+    expect(screen.getByText('Actividad original que no quiero hacer')).toBeInTheDocument()
+
+    const btnSaltar = screen.getByRole('button', { name: /Saltar y sugerir otra/i })
+    fireEvent.click(btnSaltar)
+
+    // La actividad original ya no aparece en activas y se sugiere una nueva
+    expect(screen.queryByText('Actividad original que no quiero hacer')).not.toBeInTheDocument()
+    expect(addPasoMutate).toHaveBeenCalledTimes(1)
+  })
+
+  it('desbloquea automáticamente nuevas actividades sugeridas cuando completa el último paso pendiente para que el camino nunca termine', async () => {
+    const completarMutate = vi.fn().mockResolvedValue({})
+    const addPasoMutate = vi.fn().mockResolvedValue({})
+    vi.mocked(useCompletarPaso).mockReturnValue({ mutateAsync: completarMutate, isPending: false } as never)
+    vi.mocked(useAddPaso).mockReturnValue({ mutateAsync: addPasoMutate, isPending: false } as never)
+
+    mockRutas([
+      { id: 'r1', nombre: 'Camino de Autonomía', estado: 'activa', prioridad: 'alta', areaInteres: 'salud' },
+    ])
+    vi.mocked(useRutaDetail).mockReturnValue({
+      data: {
+        id: 'r1',
+        nombre: 'Camino de Autonomía',
+        estado: 'activa',
+        prioridad: 'alta',
+        areaInteres: 'salud',
+        pasos: [
+          { id: 'p1', titulo: 'Último paso pendiente de la etapa', completado: false },
+        ],
+      },
+      isLoading: false,
+    } as never)
+
+    renderWithProviders(<RutasPage />)
+
+    const btnCompletar = screen.getByRole('button', { name: /Marcar como realizada/i })
+    fireEvent.click(btnCompletar)
+
+    expect(completarMutate).toHaveBeenCalledWith('p1')
+    // Aparece el banner de evolución constante y nuevas actividades sugeridas
+    expect(await screen.findByText(/Tu camino está en constante evolución/i)).toBeInTheDocument()
+    expect(addPasoMutate).toHaveBeenCalled()
+  })
+
+  it('muestra opciones de caminos sugeridos en constante cambio y permite saltar una opción para ver otra', () => {
+    mockRutas([
+      { id: 'r1', nombre: 'Mi ruta activa', estado: 'activa', prioridad: 'media', areaInteres: 'salud' },
+    ])
+    vi.mocked(useRutaDetail).mockReturnValue({
+      data: {
+        id: 'r1',
+        nombre: 'Mi ruta activa',
+        estado: 'activa',
+        prioridad: 'media',
+        areaInteres: 'salud',
+        pasos: [{ id: 'p1', titulo: 'Paso 1', completado: false }],
+      },
+      isLoading: false,
+    } as never)
+
+    renderWithProviders(<RutasPage />)
+
+    expect(screen.getByText(/Otros caminos sugeridos para acompañarte/i)).toBeInTheDocument()
+    expect(screen.getByText('Camino de Autonomía y Bienestar Diario')).toBeInTheDocument()
+
+    const botonesSaltarCamino = screen.getAllByRole('button', { name: /Saltar opción \/ Ver otro/i })
+    fireEvent.click(botonesSaltarCamino[0])
+
+    // Rota la opción saltada por otra sugerencia del catálogo
+    expect(screen.queryByText('Camino de Autonomía y Bienestar Diario')).not.toBeInTheDocument()
+    expect(screen.getByText('Camino de Educación y Nuevas Habilidades')).toBeInTheDocument()
   })
 })

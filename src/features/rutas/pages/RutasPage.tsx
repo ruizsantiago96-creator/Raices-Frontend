@@ -61,6 +61,281 @@ export interface GuiaAccion {
   ayuda: string
 }
 
+export interface ActividadSugeridaItem {
+  titulo: string
+  descripcion: string
+  tipo: string
+  categoria: string
+  area: 'salud' | 'empleo' | 'educacion' | 'comunidad' | 'autonomia'
+}
+
+export interface CaminoSugeridoTemplate {
+  id: string
+  nombre: string
+  descripcion: string
+  areaInteres: string
+  prioridad: RutaPrioridad
+  metaFinal: string
+  etiqueta: string
+  pasos: Array<{ titulo: string; descripcion: string; tipo: string; categoria: string }>
+}
+
+export const BANCO_ACTIVIDADES_EVOLUTIVAS: ActividadSugeridaItem[] = [
+  {
+    titulo: 'Consultar directorio de instituciones y especialistas verificados',
+    descripcion: 'Explora en Raíces las clínicas, centros y profesionales disponibles en tu zona para contactarlos cuando lo desees.',
+    tipo: 'institucion',
+    categoria: 'funcional',
+    area: 'salud',
+  },
+  {
+    titulo: 'Anotar dudas y recordatorios personales en tu perfil',
+    descripcion: 'Guarda en tu perfil tus propias notas, preguntas o fechas clave para llevar tu organización al día.',
+    tipo: 'perfil',
+    categoria: 'funcional',
+    area: 'autonomia',
+  },
+  {
+    titulo: 'Explorar o iniciar conversaciones en Conectemos',
+    descripcion: 'Conoce experiencias de otros usuarios y familias en la comunidad, o comparte tus propias vivencias.',
+    tipo: 'comunidad',
+    categoria: 'social',
+    area: 'comunidad',
+  },
+  {
+    titulo: 'Explorar vacantes inclusivas en la bolsa de empleo',
+    descripcion: 'Revisa las ofertas de trabajo adaptadas a tu perfil y conoce qué empresas promueven la inclusión.',
+    tipo: 'vacante',
+    categoria: 'laboral',
+    area: 'empleo',
+  },
+  {
+    titulo: 'Actualizar tus apoyos y preferencias de accesibilidad',
+    descripcion: 'Revisa en tu perfil qué ajustes o formatos visuales te resultan más cómodos para que Raíces se adapte a ti.',
+    tipo: 'perfil',
+    categoria: 'funcional',
+    area: 'autonomia',
+  },
+  {
+    titulo: 'Practicar una rutina de autonomía de 15 minutos en casa',
+    descripcion: 'Elige una actividad cotidiana en el hogar para realizar paso a paso a tu propio ritmo y registra tu avance.',
+    tipo: 'casa',
+    categoria: 'funcional',
+    area: 'autonomia',
+  },
+  {
+    titulo: 'Guardar en favoritos 2 instituciones de interés en tu ciudad',
+    descripcion: 'Explora el directorio y marca las organizaciones o centros que te gustaría conocer más adelante.',
+    tipo: 'institucion',
+    categoria: 'general',
+    area: 'salud',
+  },
+  {
+    titulo: 'Consultar al Asistente de Orientación sobre recursos locales',
+    descripcion: 'Abre el Asistente IA para preguntar por talleres, centros educativos o apoyos disponibles cerca de ti.',
+    tipo: 'asistente',
+    categoria: 'educacion',
+    area: 'educacion',
+  },
+  {
+    titulo: 'Explorar centros educativos y talleres de capacitación',
+    descripcion: 'Conoce instituciones que ofrecen formación accesible, cursos prácticos o acompañamiento pedagógico.',
+    tipo: 'institucion',
+    categoria: 'educacion',
+    area: 'educacion',
+  },
+  {
+    titulo: 'Preparar tus fortalezas y habilidades laborales en tu perfil',
+    descripcion: 'Identifica tus talentos e intereses principales para destacarlos cuando te postules a una oportunidad.',
+    tipo: 'perfil',
+    categoria: 'laboral',
+    area: 'empleo',
+  },
+  {
+    titulo: 'Unirte a un grupo o foro temático en Conectemos',
+    descripcion: 'Encuentra personas con intereses afines en arte, deporte, vida diaria o emprendimiento dentro de la comunidad.',
+    tipo: 'comunidad',
+    categoria: 'social',
+    area: 'comunidad',
+  },
+  {
+    titulo: 'Revisar eventos y actividades comunitarias de la semana',
+    descripcion: 'Descubre encuentros, charlas o actividades recreativas inclusivas publicadas en la comunidad.',
+    tipo: 'comunidad',
+    categoria: 'social',
+    area: 'comunidad',
+  },
+  {
+    titulo: 'Explorar opciones de cultura, deporte adaptado o recreación',
+    descripcion: 'Busca en el directorio espacios recreativos y culturales accesibles para fortalecer tu bienestar integral.',
+    tipo: 'institucion',
+    categoria: 'social',
+    area: 'salud',
+  },
+  {
+    titulo: 'Actualizar tus escalas de vida para afinar tus recomendaciones',
+    descripcion: 'Revisa en tu perfil cómo te sientes hoy en autonomía, energía y entorno social para recibir nuevas sugerencias.',
+    tipo: 'perfil',
+    categoria: 'funcional',
+    area: 'autonomia',
+  },
+]
+
+export const CATALOGO_CAMINOS_SUGERIDOS: CaminoSugeridoTemplate[] = [
+  {
+    id: 'camino-autonomia-bienestar',
+    nombre: 'Camino de Autonomía y Bienestar Diario',
+    descripcion: 'Fortalece tu independencia día a día combinando hábitos en casa, organización en tu perfil y especialistas verificados.',
+    areaInteres: 'salud',
+    prioridad: 'alta',
+    metaFinal: 'Fortalecer mi autonomía cotidiana y bienestar integral a mi propio ritmo',
+    etiqueta: 'Autonomía y Salud',
+    pasos: [
+      {
+        titulo: 'Consultar directorio de instituciones y especialistas verificados',
+        descripcion: 'Explora centros de apoyo y profesionales verificados en tu zona.',
+        tipo: 'institucion',
+        categoria: 'funcional',
+      },
+      {
+        titulo: 'Practicar una rutina de autonomía de 15 minutos en casa',
+        descripcion: 'Elige una actividad diaria en casa para avanzar a tu propio ritmo.',
+        tipo: 'casa',
+        categoria: 'funcional',
+      },
+      {
+        titulo: 'Actualizar tus apoyos y preferencias de accesibilidad',
+        descripcion: 'Registra en tu perfil los apoyos que facilitan tu día a día.',
+        tipo: 'perfil',
+        categoria: 'funcional',
+      },
+    ],
+  },
+  {
+    id: 'camino-empleo-inclusion',
+    nombre: 'Camino de Inclusión Laboral y Talento',
+    descripcion: 'Prepárate paso a paso para descubrir vacantes adaptadas, destacar tus habilidades y conectar con empresas inclusivas.',
+    areaInteres: 'empleo',
+    prioridad: 'alta',
+    metaFinal: 'Encontrar oportunidades laborales o de emprendimiento acordes a mis talentos',
+    etiqueta: 'Empleo y Futuro',
+    pasos: [
+      {
+        titulo: 'Preparar tus fortalezas y habilidades laborales en tu perfil',
+        descripcion: 'Actualiza tus preferencias e intereses laborales en tu perfil de Raíces.',
+        tipo: 'perfil',
+        categoria: 'laboral',
+      },
+      {
+        titulo: 'Explorar vacantes inclusivas en la bolsa de empleo',
+        descripcion: 'Revisa las ofertas de trabajo con adaptaciones y accesibilidad.',
+        tipo: 'vacante',
+        categoria: 'laboral',
+      },
+      {
+        titulo: 'Preparar tu entrevista y preguntas desde casa',
+        descripcion: 'Anota tus fortalezas y los apoyos que te ayudan a desempeñarte mejor.',
+        tipo: 'casa',
+        categoria: 'laboral',
+      },
+    ],
+  },
+  {
+    id: 'camino-educacion-aprendizaje',
+    nombre: 'Camino de Educación y Nuevas Habilidades',
+    descripcion: 'Descubre talleres, instituciones educativas inclusivas y herramientas de aprendizaje adaptadas a tus formatos preferidos.',
+    areaInteres: 'educacion',
+    prioridad: 'media',
+    metaFinal: 'Desarrollar nuevas habilidades académicas, artísticas o prácticas',
+    etiqueta: 'Educación y Talleres',
+    pasos: [
+      {
+        titulo: 'Explorar centros educativos y talleres de capacitación',
+        descripcion: 'Consulta en el directorio escuelas, centros y programas formativos accesibles.',
+        tipo: 'institucion',
+        categoria: 'educacion',
+      },
+      {
+        titulo: 'Consultar al Asistente de Orientación sobre recursos locales',
+        descripcion: 'Pregunta al Asistente IA qué programas educativos se ajustan a tus intereses.',
+        tipo: 'asistente',
+        categoria: 'educacion',
+      },
+      {
+        titulo: 'Anotar dudas y recordatorios personales en tu perfil',
+        descripcion: 'Organiza tus metas de aprendizaje y horarios en tu perfil.',
+        tipo: 'perfil',
+        categoria: 'educacion',
+      },
+    ],
+  },
+  {
+    id: 'camino-comunidad-redes',
+    nombre: 'Camino de Comunidad y Vida Social',
+    descripcion: 'Amplía tu red de apoyo, participa en grupos de Conectemos y descubre actividades culturales y recreativas.',
+    areaInteres: 'comunidad',
+    prioridad: 'media',
+    metaFinal: 'Integrarme activamente en la comunidad y construir vínculos de apoyo',
+    etiqueta: 'Comunidad y Redes',
+    pasos: [
+      {
+        titulo: 'Explorar o iniciar conversaciones en Conectemos',
+        descripcion: 'Comparte una experiencia o saluda a otros miembros en el espacio comunitario.',
+        tipo: 'comunidad',
+        categoria: 'social',
+      },
+      {
+        titulo: 'Unirte a un grupo o foro temático en Conectemos',
+        descripcion: 'Participa en foros sobre intereses que te apasionen.',
+        tipo: 'comunidad',
+        categoria: 'social',
+      },
+      {
+        titulo: 'Explorar opciones de cultura, deporte adaptado o recreación',
+        descripcion: 'Conoce espacios recreativos e inclusivos en tu localidad.',
+        tipo: 'institucion',
+        categoria: 'social',
+      },
+    ],
+  },
+]
+
+export function obtenerSiguienteActividadSugerida(
+  titulosExcluidos: Set<string>,
+  areaInteres?: string,
+  offset = 0,
+): ActividadSugeridaItem {
+  const areaNorm = (areaInteres || '').toLowerCase()
+  const ordenados = [
+    ...BANCO_ACTIVIDADES_EVOLUTIVAS.filter(a => a.area === areaNorm),
+    ...BANCO_ACTIVIDADES_EVOLUTIVAS.filter(a => a.area !== areaNorm),
+  ]
+  const disponibles = ordenados.filter(a => !titulosExcluidos.has(a.titulo.toLowerCase().trim()))
+  if (disponibles.length > 0) {
+    return disponibles[offset % disponibles.length]
+  }
+  const fallback = ordenados[offset % ordenados.length]
+  return {
+    ...fallback,
+    titulo: `${fallback.titulo} (Nueva etapa)`,
+  }
+}
+
+export function obtenerNuevaEtapaDePasos(
+  titulosExcluidos: Set<string>,
+  areaInteres?: string,
+  cantidad = 3,
+): ActividadSugeridaItem[] {
+  const copiaExcluidos = new Set(titulosExcluidos)
+  const nuevos: ActividadSugeridaItem[] = []
+  for (let i = 0; i < cantidad; i++) {
+    const sig = obtenerSiguienteActividadSugerida(copiaExcluidos, areaInteres, i)
+    copiaExcluidos.add(sig.titulo.toLowerCase().trim())
+    nuevos.push(sig)
+  }
+  return nuevos
+}
+
 /**
  * Genera actividades sugeridas cuando un camino tiene 0 actividades (0/0),
  * desglosando la meta del usuario en pasos reales que combinan el uso de la plataforma
@@ -378,7 +653,7 @@ export default function RutasPage() {
   // Filters
   const [filterEstado, setFilterEstado] = useState<string>('')
   const [filterArea, setFilterArea] = useState<string>('')
-  const [filtroActividad, setFiltroActividad] = useState<'todas' | 'pendientes' | 'completadas'>('todas')
+  const [filtroActividad, setFiltroActividad] = useState<'todas' | 'pendientes' | 'completadas' | 'saltadas'>('todas')
 
   // Queries
   const { data: routes = [], isLoading: loadingRoutes } = useRutas({
@@ -415,12 +690,42 @@ export default function RutasPage() {
   const [mostrarAgregarHito, setMostrarAgregarHito] = useState(false)
   const [mostrarOpcionesAvanzadas, setMostrarOpcionesAvanzadas] = useState(false)
   const [generandoSugerencias, setGenerandoSugerencias] = useState(false)
+  const [saltandoPasoId, setSaltandoPasoId] = useState<string | number | null>(null)
+  const [activandoCaminoId, setActivandoCaminoId] = useState<string | null>(null)
   const [newStepTitle, setNewStepTitle] = useState('')
   const [newStepDescription, setNewStepDescription] = useState('')
+
+  // Estado persistente para pasos saltados y rotación continua
+  const [pasosSaltados, setPasosSaltados] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('raices_pasos_saltados') || '{}')
+    } catch {
+      return {}
+    }
+  })
+  const [titulosOmitidos, setTitulosOmitidos] = useState<string[]>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('raices_titulos_pasos_omitidos') || '[]')
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
+  const [pasosInyectadosPorRuta, setPasosInyectadosPorRuta] = useState<Record<string, PasoRuta[]>>({})
+  const [caminosOmitidos, setCaminosOmitidos] = useState<string[]>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('raices_caminos_omitidos') || '[]')
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
+  const [etapaRecienDesbloqueada, setEtapaRecienDesbloqueada] = useState(false)
 
   // Determine active route
   const activeRoute = routes.find(r => r.id === selectedRouteId) ?? routes.find(r => r.estado === 'activa') ?? routes[0] ?? null
   const activeRouteId = activeRoute?.id ?? null
+  const routeKey = String(activeRouteId ?? 'vida-base')
 
   // Route details with steps
   const { data: rutaDetail, isLoading: loadingDetail } = useRutaDetail(activeRouteId)
@@ -568,61 +873,6 @@ export default function RutasPage() {
     }
   }
 
-  // Handle toggle step completion
-  const handleTogglePaso = async (paso: PasoRuta) => {
-    if (String(paso.id).startsWith('paso-vida-')) {
-      const nuevoEstado = !Boolean(pasosCompletadosLocal[paso.id])
-      const updated = { ...pasosCompletadosLocal, [paso.id]: nuevoEstado }
-      setPasosCompletadosLocal(updated)
-      try {
-        localStorage.setItem('raices_pasos_vida_completados', JSON.stringify(updated))
-      } catch {
-        // storage disabled or full
-      }
-      if (nuevoEstado) {
-        addToast('¡Excelente avance! Actividad completada.', 'success')
-      } else {
-        addToast('Actividad marcada como pendiente', 'info')
-      }
-      return
-    }
-
-    if (!activeRouteId) return
-    try {
-      if (paso.completado) {
-        await descompletarPaso.mutateAsync(paso.id)
-        addToast('Actividad marcada como pendiente', 'info')
-      } else {
-        await completarPaso.mutateAsync(paso.id)
-        addToast('¡Excelente avance! Actividad completada.', 'success')
-      }
-    } catch {
-      addToast('Error al actualizar la actividad', 'error')
-    }
-  }
-
-  // Action guidance execution: guides the user directly within the platform
-  const handleGuiarActividad = (paso: PasoRuta, guia: GuiaAccion) => {
-    if (guia.destino === 'chat') {
-      setFloatingChatOpen?.(true)
-      addToast('Abriendo Asistente de Orientación...', 'info')
-      return
-    }
-
-    addToast(`Guiándote a ${guia.etiqueta.replace(/^Ir a |^Explorar |^Participar en |^Revisar /, '')}...`, 'info')
-    navigate(guia.destino)
-  }
-
-  // Interest areas list
-  const listAreas: AreaItem[] = catalogos?.areasInteres ?? [
-    { id: 'salud', label: 'Salud y Terapia' },
-    { id: 'educacion', label: 'Educación' },
-    { id: 'empleo', label: 'Empleo' },
-    { id: 'comunidad', label: 'Comunidad y Recreación' },
-  ]
-
-  const generandoRutaInicial = !isExplorarSolo && generar.isPending
-
   // Pasos base de acompañamiento en la vida (cuando el camino aún no tiene pasos o se explora la app)
   const PASOS_VIDA_BASE: PasoRuta[] = [
     {
@@ -667,30 +917,340 @@ export default function RutasPage() {
     }
   })
 
-  // Resolve steps for the current view
+  // Resolve steps for the current view (combining backend steps + locally injected continuous steps)
   const rawPasos: PasoRuta[] = rutaDetail?.pasos ?? (activeRoute?.pasos as PasoRuta[] | undefined) ?? (activeRouteId === miRuta?.ruta?.id ? miRuta?.pasos : []) ?? []
-  
-  // Raíces siempre provee el camino que acompaña en la vida: si no hay pasos en el servidor, mostramos los pasos base
-  const pasos: PasoRuta[] = rawPasos.length > 0
-    ? rawPasos
+  const pasosBaseVista: PasoRuta[] = rawPasos.length > 0
+    ? rawPasos.map(p => ({
+        ...p,
+        completado: Boolean(p.completado || pasosCompletadosLocal[String(p.id)]),
+      }))
     : PASOS_VIDA_BASE.map(p => ({
         ...p,
-        completado: Boolean(pasosCompletadosLocal[p.id]),
+        completado: Boolean(pasosCompletadosLocal[String(p.id)]),
       }))
 
-  const totalPasos = pasos.length
-  const pasosCompletados = pasos.filter(p => p.completado).length
+  const pasosInyectados = pasosInyectadosPorRuta[routeKey] ?? []
+  const titulosEnBase = new Set(pasosBaseVista.map(p => p.titulo.toLowerCase().trim()))
+  const pasos: PasoRuta[] = [
+    ...pasosBaseVista,
+    ...pasosInyectados
+      .filter(p => !titulosEnBase.has(p.titulo.toLowerCase().trim()))
+      .map(p => ({
+        ...p,
+        completado: Boolean(p.completado || pasosCompletadosLocal[String(p.id)]),
+      })),
+  ]
+
+  // Conjunto de todos los títulos conocidos (actuales + omitidos) para no repetir sugerencias
+  const construirTitulosConocidos = (extraTitulos: string[] = []) => {
+    const s = new Set<string>()
+    pasos.forEach(p => s.add(p.titulo.toLowerCase().trim()))
+    titulosOmitidos.forEach(t => s.add(t.toLowerCase().trim()))
+    extraTitulos.forEach(t => s.add(t.toLowerCase().trim()))
+    return s
+  }
+
+  // Avanzar a la siguiente etapa cuando se completan los pasos actuales (acompañamiento continuo)
+  const handleAvanzarSiguienteEtapa = async (modo: 'auto' | 'manual' = 'manual', extraTitulos: string[] = []) => {
+    setGenerandoSugerencias(true)
+    try {
+      const conocidos = construirTitulosConocidos(extraTitulos)
+      const nuevosItems = obtenerNuevaEtapaDePasos(conocidos, activeRoute?.areaInteres, 3)
+      const nuevosPasosLocales: PasoRuta[] = nuevosItems.map((item, idx) => ({
+        id: `paso-vida-etapa-${Date.now()}-${idx}`,
+        titulo: item.titulo,
+        descripcion: item.descripcion,
+        categoria: item.categoria,
+        tipo: item.tipo,
+        completado: false,
+        orden: pasos.length + idx + 1,
+      }))
+
+      setPasosInyectadosPorRuta(prev => ({
+        ...prev,
+        [routeKey]: [...(prev[routeKey] ?? []), ...nuevosPasosLocales],
+      }))
+      setEtapaRecienDesbloqueada(true)
+
+      if (activeRouteId) {
+        for (const item of nuevosItems) {
+          try {
+            await addPaso.mutateAsync({
+              titulo: item.titulo,
+              descripcion: item.descripcion,
+              categoria: item.categoria,
+            })
+          } catch {
+            // conservar versión local si falla la red o mock
+          }
+        }
+        if (activeRoute?.estado === 'completada') {
+          try {
+            await updateRuta.mutateAsync({ estado: 'activa' })
+          } catch {
+            // ignorar en caso de mock
+          }
+        }
+      }
+
+      addToast(
+        modo === 'auto'
+          ? '🌱 ¡Completaste esta etapa! Desbloqueamos nuevas actividades sugeridas para seguir acompañándote.'
+          : '✨ ¡Nuevas actividades sugeridas agregadas a tu camino!',
+        'success'
+      )
+    } finally {
+      setGenerandoSugerencias(false)
+    }
+  }
+
+  // Saltar una actividad que el usuario no desea hacer y sugerir otra inmediatamente
+  const handleSaltarPaso = async (paso: PasoRuta) => {
+    const idStr = String(paso.id)
+    setSaltandoPasoId(paso.id)
+    try {
+      const nuevosSaltados = { ...pasosSaltados, [idStr]: true }
+      setPasosSaltados(nuevosSaltados)
+      try {
+        localStorage.setItem('raices_pasos_saltados', JSON.stringify(nuevosSaltados))
+      } catch {}
+
+      const nuevosTitulosOmitidos = [...titulosOmitidos, paso.titulo]
+      setTitulosOmitidos(nuevosTitulosOmitidos)
+      try {
+        localStorage.setItem('raices_titulos_pasos_omitidos', JSON.stringify(nuevosTitulosOmitidos))
+      } catch {}
+
+      const conocidos = construirTitulosConocidos([paso.titulo])
+      const sugerencia = obtenerSiguienteActividadSugerida(conocidos, activeRoute?.areaInteres, nuevosTitulosOmitidos.length)
+
+      const nuevoPasoLocal: PasoRuta = {
+        id: `paso-vida-sug-${Date.now()}`,
+        titulo: sugerencia.titulo,
+        descripcion: sugerencia.descripcion,
+        categoria: sugerencia.categoria,
+        tipo: sugerencia.tipo,
+        completado: false,
+        orden: pasos.length + 1,
+      }
+
+      setPasosInyectadosPorRuta(prev => ({
+        ...prev,
+        [routeKey]: [...(prev[routeKey] ?? []), nuevoPasoLocal],
+      }))
+
+      if (activeRouteId && !idStr.startsWith('paso-vida-')) {
+        try {
+          await addPaso.mutateAsync({
+            titulo: sugerencia.titulo,
+            descripcion: sugerencia.descripcion,
+            categoria: sugerencia.categoria,
+          })
+        } catch {
+          // mantenemos el paso inyectado en vista
+        }
+      }
+
+      addToast('Actividad saltada — agregamos una nueva sugerencia a tu camino', 'info')
+    } finally {
+      setSaltandoPasoId(null)
+    }
+  }
+
+  // Restaurar una actividad previamente saltada
+  const handleRestaurarPaso = (paso: PasoRuta) => {
+    const idStr = String(paso.id)
+    const copia = { ...pasosSaltados }
+    delete copia[idStr]
+    setPasosSaltados(copia)
+    try {
+      localStorage.setItem('raices_pasos_saltados', JSON.stringify(copia))
+    } catch {}
+    addToast('Actividad restaurada a tu camino activo', 'info')
+  }
+
+  // Handle toggle step completion (con evolución automática al completar la última actividad pendiente)
+  const handleTogglePaso = async (paso: PasoRuta) => {
+    const idStr = String(paso.id)
+    const estabaCompletado = Boolean(paso.completado)
+    const pendientesRestantes = pasos.filter(
+      p => !pasosSaltados[String(p.id)] && !p.completado && String(p.id) !== idStr
+    )
+
+    if (idStr.startsWith('paso-vida-')) {
+      const nuevoEstado = !Boolean(pasosCompletadosLocal[idStr])
+      const updated = { ...pasosCompletadosLocal, [idStr]: nuevoEstado }
+      setPasosCompletadosLocal(updated)
+      try {
+        localStorage.setItem('raices_pasos_vida_completados', JSON.stringify(updated))
+      } catch {
+        // storage disabled or full
+      }
+      if (nuevoEstado) {
+        addToast('¡Excelente avance! Actividad completada.', 'success')
+        if (pendientesRestantes.length === 0) {
+          await handleAvanzarSiguienteEtapa('auto', [paso.titulo])
+        }
+      } else {
+        addToast('Actividad marcada como pendiente', 'info')
+      }
+      return
+    }
+
+    if (!activeRouteId) return
+    try {
+      if (estabaCompletado) {
+        await descompletarPaso.mutateAsync(paso.id)
+        addToast('Actividad marcada como pendiente', 'info')
+      } else {
+        await completarPaso.mutateAsync(paso.id)
+        addToast('¡Excelente avance! Actividad completada.', 'success')
+        if (pendientesRestantes.length === 0) {
+          await handleAvanzarSiguienteEtapa('auto', [paso.titulo])
+        }
+      }
+    } catch {
+      addToast('Error al actualizar la actividad', 'error')
+    }
+  }
+
+  // Activar un nuevo camino sugerido del catálogo
+  const handleActivarCaminoSugerido = async (template: CaminoSugeridoTemplate) => {
+    setActivandoCaminoId(template.id)
+    try {
+      const nueva = await createRuta.mutateAsync({
+        nombre: template.nombre,
+        descripcion: template.descripcion,
+        areaInteres: template.areaInteres,
+        prioridad: template.prioridad,
+        metaFinal: template.metaFinal,
+      })
+      const targetId = nueva?.id ?? `ruta-local-${Date.now()}`
+      if (nueva?.id) {
+        setSelectedRouteId(nueva.id)
+        for (const p of template.pasos) {
+          try {
+            await api.post(`/rutas-desarrollo/${nueva.id}/pasos`, p)
+          } catch {}
+        }
+      }
+      setPasosInyectadosPorRuta(prev => ({
+        ...prev,
+        [String(targetId)]: template.pasos.map((p, idx) => ({
+          id: `paso-vida-camino-${Date.now()}-${idx}`,
+          titulo: p.titulo,
+          descripcion: p.descripcion,
+          categoria: p.categoria,
+          tipo: p.tipo,
+          completado: false,
+          orden: idx + 1,
+        })),
+      }))
+      addToast(`¡Camino "${template.nombre}" activado!`, 'success')
+    } catch {
+      addToast('No se pudo activar el nuevo camino en este momento', 'error')
+    } finally {
+      setActivandoCaminoId(null)
+    }
+  }
+
+  // Saltar una sugerencia de camino para recibir otra opción inmediatamente
+  const handleSaltarCaminoSugerido = (caminoId: string) => {
+    const candidatosRestantes = CATALOGO_CAMINOS_SUGERIDOS.filter(
+      c => c.id !== caminoId && !caminosOmitidos.includes(c.id)
+    )
+    // Si quedan menos de 2 en rotación, reiniciamos el ciclo dejando fuera solo el recién saltado
+    const actualizados = candidatosRestantes.length >= 2
+      ? [...caminosOmitidos, caminoId]
+      : [caminoId]
+    setCaminosOmitidos(actualizados)
+    try {
+      localStorage.setItem('raices_caminos_omitidos', JSON.stringify(actualizados))
+    } catch {}
+    addToast('Opción saltada — te mostramos otro camino sugerido', 'info')
+  }
+
+  // Saltar el camino actual completo y cambiar a otro sugerido
+  const handleSaltarCaminoActual = async () => {
+    const nombreActual = (activeRoute?.nombre || '').toLowerCase().trim()
+    const siguienteTemplate =
+      CATALOGO_CAMINOS_SUGERIDOS.find(
+        c => !caminosOmitidos.includes(c.id) && c.nombre.toLowerCase().trim() !== nombreActual
+      ) ?? CATALOGO_CAMINOS_SUGERIDOS[0]
+
+    // Si el usuario ya tiene otra ruta creada distinta a la actual, podemos alternar o crear la sugerida
+    const otraRutaExistente = routes.find(r => r.id !== activeRoute?.id && r.estado === 'activa')
+    if (activeRouteId) {
+      try {
+        await updateRuta.mutateAsync({ estado: 'pausada' })
+      } catch {}
+    }
+
+    if (otraRutaExistente) {
+      setSelectedRouteId(otraRutaExistente.id)
+      addToast(`Cambiaste al camino "${otraRutaExistente.nombre}"`, 'info')
+      return
+    }
+
+    if (siguienteTemplate) {
+      handleSaltarCaminoSugerido(siguienteTemplate.id)
+      await handleActivarCaminoSugerido(siguienteTemplate)
+    }
+  }
+
+  // Action guidance execution: guides the user directly within the platform
+  const handleGuiarActividad = (paso: PasoRuta, guia: GuiaAccion) => {
+    if (guia.destino === 'chat') {
+      setFloatingChatOpen?.(true)
+      addToast('Abriendo Asistente de Orientación...', 'info')
+      return
+    }
+
+    addToast(`Guiándote a ${guia.etiqueta.replace(/^Ir a |^Explorar |^Participar en |^Revisar /, '')}...`, 'info')
+    navigate(guia.destino)
+  }
+
+  // Interest areas list
+  const listAreas: AreaItem[] = catalogos?.areasInteres ?? [
+    { id: 'salud', label: 'Salud y Terapia' },
+    { id: 'educacion', label: 'Educación' },
+    { id: 'empleo', label: 'Empleo' },
+    { id: 'comunidad', label: 'Comunidad y Recreación' },
+  ]
+
+  const generandoRutaInicial = !isExplorarSolo && generar.isPending
+
+  // Pasos activos (excluyendo los saltados por el usuario)
+  const pasosActivos = pasos.filter(p => !pasosSaltados[String(p.id)])
+  const pasosOmitidosLista = pasos.filter(p => Boolean(pasosSaltados[String(p.id)]))
+
+  const totalPasos = pasosActivos.length
+  const pasosCompletados = pasosActivos.filter(p => p.completado).length
   const porcentaje = totalPasos > 0 ? Math.round((pasosCompletados / totalPasos) * 100) : (activeRoute ? Math.round(activeRoute.porcentajeProgreso ?? 0) : 0)
 
   // Filtered steps
   const pasosFiltrados = pasos.filter(p => {
+    const esSaltado = Boolean(pasosSaltados[String(p.id)])
+    if (filtroActividad === 'saltadas') return esSaltado
+    if (esSaltado) return false
     if (filtroActividad === 'pendientes') return !p.completado
     if (filtroActividad === 'completadas') return p.completado
     return true
   })
 
-  // Next suggested step
-  const siguientePasoIncompleto = pasos.find(p => !p.completado)
+  // Next suggested step (primero no completado ni saltado)
+  const siguientePasoIncompleto = pasosActivos.find(p => !p.completado)
+
+  // Caminos sugeridos visibles en rotación constante (2 tarjetas)
+  const nombreRutaActivaNorm = (activeRoute?.nombre || '').toLowerCase().trim()
+  const caminosDisponibles = CATALOGO_CAMINOS_SUGERIDOS.filter(
+    c => !caminosOmitidos.includes(c.id) && c.nombre.toLowerCase().trim() !== nombreRutaActivaNorm
+  )
+  const caminosSugeridosVisibles = (
+    caminosDisponibles.length >= 2
+      ? caminosDisponibles
+      : CATALOGO_CAMINOS_SUGERIDOS.filter(c => c.nombre.toLowerCase().trim() !== nombreRutaActivaNorm)
+  ).slice(0, 2)
 
   // Local entities tailored to the user and their path
   const institucionesRecomendadas = miRuta?.entidadesLocales?.instituciones ?? []
@@ -1009,7 +1569,51 @@ export default function RutasPage() {
                     )}
 
                     {/* Acciones del camino inline */}
-                    <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleAvanzarSiguienteEtapa('manual')}
+                          disabled={generandoSugerencias}
+                          style={{
+                            background: 'rgba(1, 173, 255, 0.1)',
+                            border: '1px solid rgba(1, 173, 255, 0.35)',
+                            color: 'var(--primary)',
+                            borderRadius: 8,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: generandoSugerencias ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <span>{generandoSugerencias ? 'Generando...' : '✨ Sugerir nuevas actividades'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleSaltarCaminoActual}
+                          disabled={generandoSugerencias}
+                          style={{
+                            background: 'var(--bg-warm)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--fg2)',
+                            borderRadius: 8,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: generandoSugerencias ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <span>Saltar este camino / Cambiar opción</span>
+                        </button>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setMostrarOpcionesAvanzadas(!mostrarOpcionesAvanzadas)}
@@ -1091,8 +1695,8 @@ export default function RutasPage() {
                     </div>
 
                     {/* Filtros de actividades */}
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {(['todas', 'pendientes', 'completadas'] as const).map(tipo => (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {(['todas', 'pendientes', 'completadas', 'saltadas'] as const).map(tipo => (
                         <button
                           key={tipo}
                           type="button"
@@ -1107,13 +1711,84 @@ export default function RutasPage() {
                             color: filtroActividad === tipo ? 'var(--primary)' : 'var(--fg2)',
                             cursor: 'pointer',
                             textTransform: 'capitalize',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
                           }}
                         >
-                          {tipo}
+                          <span>{tipo}</span>
+                          {tipo === 'saltadas' && pasosOmitidosLista.length > 0 && (
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 99,
+                                background: 'rgba(1, 173, 255, 0.14)',
+                                color: 'var(--primary)',
+                              }}
+                            >
+                              {pasosOmitidosLista.length}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Banner de acompañamiento continuo cuando se desbloquea una nueva etapa o se completan todas */}
+                  {(etapaRecienDesbloqueada || (totalPasos > 0 && pasosCompletados === totalPasos)) && (
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(1, 173, 255, 0.12) 100%)',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        borderRadius: 14,
+                        padding: '16px 20px',
+                        marginBottom: 18,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 14,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 240 }}>
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            color: '#10B981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 20,
+                            flexShrink: 0,
+                          }}
+                        >
+                          🌱
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--fg1)' }}>
+                            Tu camino está en constante evolución
+                          </div>
+                          <div style={{ fontSize: 13, color: 'var(--fg2)', marginTop: 2 }}>
+                            Raíces te acompaña todo el tiempo: cada vez que completas o saltas actividades, te sugerimos nuevos pasos adaptados a ti para que siempre tengas más por descubrir.
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() => handleAvanzarSiguienteEtapa('manual')}
+                        disabled={generandoSugerencias}
+                        style={{ padding: '8px 16px', fontSize: 12.5, fontWeight: 700, borderRadius: 8, whiteSpace: 'nowrap' }}
+                      >
+                        {generandoSugerencias ? 'Generando...' : '✨ Descubrir más actividades sugeridas'}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Lista interactiva de actividades */}
                   {loadingDetail ? (
@@ -1144,7 +1819,9 @@ export default function RutasPage() {
                             : `Desglosa tu meta "${activeRoute?.nombre ?? ''}" en pasos prácticos`
                           : filtroActividad === 'completadas'
                             ? 'Aún no has completado actividades en este camino.'
-                            : '¡Felicidades! No tienes actividades pendientes.'}
+                            : filtroActividad === 'saltadas'
+                              ? 'No tienes actividades saltadas en este momento.'
+                              : '¡Completaste las actividades actuales! Sigue evolucionando tu camino.'}
                       </h3>
 
                       <p style={{ fontSize: 13.5, color: 'var(--fg2)', margin: '0 auto 20px', maxWidth: 540, lineHeight: 1.5 }}>
@@ -1152,10 +1829,12 @@ export default function RutasPage() {
                           ? isExplorarSolo
                             ? 'Como elegiste explorar por tu cuenta, puedes organizar tus propios pasos como prefieras, o cargar una estructura base con accesos al directorio, notas personales y comunidad.'
                             : 'Puedes cargar una plantilla organizativa con accesos al directorio, notas personales y comunidad, o agregar tus propios pasos libremente.'
-                          : 'Puedes revisar todas las actividades del camino o agregar un paso nuevo.'}
+                          : filtroActividad === 'saltadas'
+                            ? 'Cuando saltes una actividad que no quieras realizar ahora, aparecerá aquí por si deseas retomarla después.'
+                            : 'Raíces te acompaña continuamente: genera nuevas actividades sugeridas para tu siguiente etapa o agrega tus propios pasos.'}
                       </p>
 
-                      {totalPasos === 0 && (
+                      {totalPasos === 0 ? (
                         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                           <button
                             type="button"
@@ -1173,6 +1852,18 @@ export default function RutasPage() {
                             style={{ padding: '10px 18px', fontSize: 13.5, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                           >
                             <span>+ Agregar un paso a mi manera</span>
+                          </button>
+                        </div>
+                      ) : filtroActividad !== 'saltadas' && (
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => handleAvanzarSiguienteEtapa('manual')}
+                            disabled={generandoSugerencias}
+                            style={{ padding: '10px 22px', fontSize: 13.5, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                          >
+                            <span>{generandoSugerencias ? 'Generando nuevas sugerencias...' : '✨ Desbloquear nuevas actividades sugeridas'}</span>
                           </button>
                         </div>
                       )}
@@ -1196,6 +1887,7 @@ export default function RutasPage() {
                       )}
                       {pasosFiltrados.map((paso, idx) => {
                         const esSiguiente = paso === siguientePasoIncompleto
+                        const esSaltado = Boolean(pasosSaltados[String(paso.id)])
                         const guia = resolverGuiaActividad(paso, activeRoute?.areaInteres)
 
                         return (
@@ -1221,11 +1913,12 @@ export default function RutasPage() {
                               display: 'flex',
                               gap: 16,
                               alignItems: 'flex-start',
+                              opacity: esSaltado ? 0.78 : 1,
                             }}
                           >
                             {/* Nodo / Indicador numérico o de check */}
                             <div
-                              onClick={() => handleTogglePaso(paso)}
+                              onClick={() => !esSaltado && handleTogglePaso(paso)}
                               title={paso.completado ? 'Haz clic para desmarcar' : 'Haz clic para marcar como completada'}
                               style={{
                                 width: 38,
@@ -1239,7 +1932,7 @@ export default function RutasPage() {
                                 flexShrink: 0,
                                 fontWeight: 700,
                                 fontSize: 15,
-                                cursor: 'pointer',
+                                cursor: esSaltado ? 'default' : 'pointer',
                                 boxShadow: esSiguiente ? '0 0 0 4px rgba(1, 173, 255, 0.2)' : 'none',
                                 marginTop: 2,
                               }}
@@ -1267,9 +1960,14 @@ export default function RutasPage() {
 
                                 {/* Badge de estado */}
                                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                  {esSiguiente && (
+                                  {esSiguiente && !esSaltado && (
                                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'rgba(1, 173, 255, 0.15)', color: '#01ADFF' }}>
                                       Sugerido ahora
+                                    </span>
+                                  )}
+                                  {esSaltado && (
+                                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#D97706' }}>
+                                      Saltada
                                     </span>
                                   )}
                                   {paso.completado && (
@@ -1309,7 +2007,7 @@ export default function RutasPage() {
                                 </div>
                               </div>
 
-                              {/* Fila de Acciones: Guiar en el sistema + Toggle Completada */}
+                              {/* Fila de Acciones: Guiar en el sistema + Toggle Completada + Saltar y sugerir otra */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                                 {/* Botón principal: Guiar a la acción en el sistema */}
                                 <button
@@ -1330,35 +2028,84 @@ export default function RutasPage() {
                                   {guia.tipo === 'casa' ? '💡' : Icons.arrowRight({ s: 15 })}
                                 </button>
 
-                                {/* Botón secundario: Alternar estado completado */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePaso(paso)}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    padding: '8px 14px',
-                                    borderRadius: 8,
-                                    fontSize: 12.5,
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    border: paso.completado ? '1px solid #10B981' : '1px solid var(--border-color)',
-                                    background: paso.completado ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-surface)',
-                                    color: paso.completado ? '#10B981' : 'var(--fg2)',
-                                  }}
-                                >
-                                  {paso.completado ? (
-                                    <>
-                                      {Icons.check({ s: 14 })}
-                                      <span>Completada (desmarcar)</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span>Marcar como realizada</span>
-                                    </>
-                                  )}
-                                </button>
+                                {esSaltado ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRestaurarPaso(paso)}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      padding: '8px 14px',
+                                      borderRadius: 8,
+                                      fontSize: 12.5,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      border: '1px solid var(--primary)',
+                                      background: 'var(--bg-surface)',
+                                      color: 'var(--primary)',
+                                    }}
+                                  >
+                                    <span>Restaurar actividad</span>
+                                  </button>
+                                ) : (
+                                  <>
+                                    {/* Botón secundario: Alternar estado completado */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTogglePaso(paso)}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '8px 14px',
+                                        borderRadius: 8,
+                                        fontSize: 12.5,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        border: paso.completado ? '1px solid #10B981' : '1px solid var(--border-color)',
+                                        background: paso.completado ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-surface)',
+                                        color: paso.completado ? '#10B981' : 'var(--fg2)',
+                                      }}
+                                    >
+                                      {paso.completado ? (
+                                        <>
+                                          {Icons.check({ s: 14 })}
+                                          <span>Completada (desmarcar)</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>Marcar como realizada</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    {/* Botón para saltar actividad y sugerir otra */}
+                                    {!paso.completado && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaltarPaso(paso)}
+                                        disabled={saltandoPasoId === paso.id}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: 6,
+                                          padding: '8px 14px',
+                                          borderRadius: 8,
+                                          fontSize: 12.5,
+                                          fontWeight: 600,
+                                          cursor: saltandoPasoId === paso.id ? 'wait' : 'pointer',
+                                          border: '1px dashed var(--border-color)',
+                                          background: 'var(--bg-warm)',
+                                          color: 'var(--fg3)',
+                                        }}
+                                        title="Omitir esta actividad por ahora y recibir otra sugerencia en su lugar"
+                                      >
+                                        <span>{saltandoPasoId === paso.id ? 'Sugiriendo otra...' : 'Saltar y sugerir otra'}</span>
+                                      </button>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1442,6 +2189,109 @@ export default function RutasPage() {
                         </div>
                       </form>
                     )}
+                  </div>
+                </div>
+
+                {/* ── SECCIÓN DE OPCIONES DE CAMINOS EN CONSTANTE CAMBIO (SUGERENCIAS ROTATIVAS) ── */}
+                <div
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 16,
+                    padding: 24,
+                    boxShadow: 'var(--shadow-sm)',
+                    marginBottom: 24,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                    <div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+                        <span>✨ En constante evolución</span>
+                      </div>
+                      <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg1)', margin: 0 }}>
+                        Otros caminos sugeridos para acompañarte
+                      </h2>
+                      <p style={{ fontSize: 13, color: 'var(--fg3)', margin: '4px 0 0' }}>
+                        Tu progreso en Raíces no termina en un solo camino. Activa nuevas rutas o salta las opciones que no quieras hacer para ver otras sugerencias.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+                    {caminosSugeridosVisibles.map(camino => {
+                      const areaLabel = listAreas.find(a => a.id === camino.areaInteres)?.label || camino.areaInteres
+                      const estaActivando = activandoCaminoId === camino.id
+                      return (
+                        <div
+                          key={camino.id}
+                          style={{
+                            background: 'var(--bg-warm)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 14,
+                            padding: 18,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: 14,
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '3px 9px',
+                                  borderRadius: 99,
+                                  background: 'rgba(1, 173, 255, 0.12)',
+                                  color: 'var(--primary)',
+                                }}
+                              >
+                                {areaLabel}
+                              </span>
+                              <span style={{ fontSize: 11.5, color: 'var(--fg3)', fontWeight: 600 }}>
+                                {camino.pasos.length} actividades iniciales
+                              </span>
+                            </div>
+
+                            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg1)', margin: '0 0 6px' }}>
+                              {camino.nombre}
+                            </h3>
+                            <p style={{ fontSize: 12.5, color: 'var(--fg2)', margin: 0, lineHeight: 1.5 }}>
+                              {camino.descripcion}
+                            </p>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid var(--border-color)' }}>
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              disabled={estaActivando}
+                              onClick={() => handleActivarCaminoSugerido(camino)}
+                              style={{ padding: '7px 14px', fontSize: 12.5, fontWeight: 700, borderRadius: 8 }}
+                            >
+                              {estaActivando ? 'Activando...' : 'Activar este camino'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaltarCaminoSugerido(camino.id)}
+                              style={{
+                                padding: '7px 12px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                borderRadius: 8,
+                                border: '1px dashed var(--border-color)',
+                                background: 'var(--bg-surface)',
+                                color: 'var(--fg3)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Saltar opción / Ver otro
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
